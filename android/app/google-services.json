@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "782461473266",
+    "project_id": "mind-turf",
+    "storage_bucket": "mind-turf.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:782461473266:android:95407f6cbffad2f3f19b6b",
+        "android_client_info": {
+          "package_name": "com.example.mtquotes"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCyFD7LxGCRnFPrOLzL6A4jzkPjwjZzGCI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
