@@ -223,6 +223,7 @@ class HomeScreen extends StatelessWidget {
           child: Icon(icon, color: color, size: 30),
         ),
         SizedBox(height: 5),
+        Text(title, style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w500)),
       ],
     ),
   );
