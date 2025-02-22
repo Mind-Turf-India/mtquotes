@@ -1,30 +1,28 @@
 //home screen.dart
-import 'package:curved_labeled_navigation_bar/curved_navigation_bar.dart';
-import 'package:curved_labeled_navigation_bar/curved_navigation_bar_item.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class HomeScreen extends StatelessWidget {
+
+class HomeScreen extends StatefulWidget {
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-
-      //App Bar
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: Row(
-          // mainAxisAlignment: MainAxisAlignment.spaceBetween,
-
           children: [
             CircleAvatar(
               backgroundColor: Colors.grey[300],
               child: Icon(Icons.person, color: Colors.black),
             ),
-            SizedBox(
-              width: 20,
-            ),
+            SizedBox(width: 20),
             Text(
               "Hi, ABC\nGood Evening",
               textAlign: TextAlign.left,
@@ -33,15 +31,11 @@ class HomeScreen extends StatelessWidget {
                 fontWeight: FontWeight.w500,
               ),
             ),
-            SizedBox(
-              width: 140,
-            ),
+            SizedBox(width: 140),
             Icon(Icons.notifications_active_outlined, color: Colors.black),
           ],
         ),
       ),
-
-      // App Body
       body: SingleChildScrollView(
         child: Padding(
           padding: EdgeInsets.all(16.0),
@@ -77,7 +71,7 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
               SizedBox(height: 20),
-        
+
               // Recent Quotes
               Text("Recents",
                   style: GoogleFonts.poppins(
@@ -97,7 +91,7 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
               SizedBox(height: 20),
-        
+
               // Categories
               Text("Categories",
                   style: GoogleFonts.poppins(
@@ -136,56 +130,10 @@ class HomeScreen extends StatelessWidget {
               ),
               SizedBox(height: 20),
 
-              
+
             ],
           ),
         ),
-      ),
-      bottomNavigationBar: CurvedNavigationBar(
-        backgroundColor: Colors.transparent,
-        color: Colors.blueAccent,
-        items: [
-          CurvedNavigationBarItem(
-              child: Icon(
-                Icons.home_outlined,
-                color: Colors.white,
-              ),
-              label: 'Home',
-              labelStyle: TextStyle(color: Colors.white, fontSize: 12)),
-          CurvedNavigationBarItem(
-              child: Icon(
-                Icons.search,
-                color: Colors.white,
-              ),
-              label: 'Search',
-              labelStyle: TextStyle(color: Colors.white, fontSize: 12)),
-          CurvedNavigationBarItem(
-              child: Icon(
-                Icons.add,
-                color: Colors.white,
-              ),
-              label: 'Create',
-              labelStyle: TextStyle(color: Colors.white, fontSize: 12)),
-          CurvedNavigationBarItem(
-              child: Icon(
-                Icons.folder,
-                color: Colors.white,
-              ),
-              label: 'Files',
-              labelStyle: TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-              )),
-          CurvedNavigationBarItem(
-              child: Icon(
-                Icons.person,
-                color: Colors.white,
-              ),
-              label: 'Profile',
-              labelStyle: TextStyle(color: Colors.white, fontSize: 12)),
-
-          
-        ],
       ),
     );
   }
@@ -228,5 +176,4 @@ class HomeScreen extends StatelessWidget {
     ),
   );
 }
-
 }
