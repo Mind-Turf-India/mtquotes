@@ -81,6 +81,7 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.18.0"
+<<<<<<< Updated upstream
   colorful_iconify_flutter:
     dependency: transitive
     description:
@@ -89,6 +90,8 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.0.5"
+=======
+>>>>>>> Stashed changes
   crypto:
     dependency: transitive
     description:
