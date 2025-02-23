@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:mtquotes/screens/User_Home/components/navbar_mainscreen.dart';
-import 'package:mtquotes/screens/User_Home/components/onboarding_screen.dart';
+import 'package:mtquotes/screens/Onboarding_Screen/onboarding_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final prefs = await SharedPreferences.getInstance();
-  final seenOnboarding = prefs.getBool('seenOnboarding') ?? false;
+  bool stayLoggedIn = prefs.getBool('stayLoggedIn') ?? true;
 
-  runApp(MyApp(startScreen: seenOnboarding ? MainScreen() : OnboardingScreen()));
+  runApp(MyApp(startScreen: stayLoggedIn ? MainScreen() : OnboardingScreen()));
 }
 
 class MyApp extends StatelessWidget {
@@ -20,7 +20,11 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: startScreen,
+      home: startScreen, // Display the chosen start screen
+      routes: {
+        'onboarding': (context) => OnboardingScreen(),
+        'main': (context) => MainScreen(),
+      },
     );
   }
 }
