@@ -1,6 +1,10 @@
 //home screen.dart
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:iconify_flutter/iconify_flutter.dart';
+import 'package:iconify_flutter/icons/mdi.dart';
+import 'package:lucide_icons/lucide_icons.dart';
+
 
 
 class HomeScreen extends StatefulWidget {
@@ -20,7 +24,7 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             CircleAvatar(
               backgroundColor: Colors.grey[300],
-              child: Icon(Icons.person, color: Colors.black),
+              child: Icon(LucideIcons.user,color: Colors.black)
             ),
             SizedBox(width: 20),
             Text(
@@ -32,7 +36,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             SizedBox(width: 140),
-            Icon(Icons.notifications_active_outlined, color: Colors.black),
+            Icon(LucideIcons.bellRing, color: Colors.black),
           ],
         ),
       ),

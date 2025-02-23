@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mtquotes/screens/home_screen.dart';
+import 'home_screen.dart';
 
 class FilesPage extends StatefulWidget {
   @override
@@ -45,26 +45,25 @@ class _FilesPageState extends State<FilesPage> {
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 8.0),
                   child: ChoiceChip(
-  label: Text(
-    tabs[index],
-    style: TextStyle(
-      color: selectedTab == index ? Colors.white : Colors.blueAccent, // Text color changes
-    ),
-  ),
-  selected: selectedTab == index,
-  selectedColor: Colors.blueAccent, // Background color when selected
-  backgroundColor: Colors.white, // Background color when not selected
-  side: BorderSide(
-    color: Colors.blueAccent, // Border color when not selected
-  ),
-  showCheckmark: false,
-  onSelected: (bool selected) {
-    setState(() {
-      selectedTab = index;
-    });
-  },
-),
-
+                    label: Text(
+                      tabs[index],
+                      style: TextStyle(
+                        color: selectedTab == index ? Colors.white : Colors.blueAccent, // Text color changes
+                      ),
+                    ),
+                    selected: selectedTab == index,
+                    selectedColor: Colors.blueAccent, // Background color when selected
+                    backgroundColor: Colors.white, // Background color when not selected
+                    side: BorderSide(
+                      color: Colors.blueAccent, // Border color when not selected
+                    ),
+                    showCheckmark: false,
+                    onSelected: (bool selected) {
+                      setState(() {
+                        selectedTab = index;
+                      });
+                    },
+                  ),
                 );
               }),
             ),

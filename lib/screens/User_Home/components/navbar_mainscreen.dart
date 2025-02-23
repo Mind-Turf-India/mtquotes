@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:curved_labeled_navigation_bar/curved_navigation_bar.dart';
 import 'package:curved_labeled_navigation_bar/curved_navigation_bar_item.dart';
 import 'package:mtquotes/screens/User_Home/home_screen.dart';
-import 'package:mtquotes/screens/files_screen.dart';
-import 'search_screen.dart';
+import 'package:mtquotes/screens/User_Home/files_screen.dart';
+import '../search_screen.dart';
 
 class MainScreen extends StatefulWidget {
   @override
