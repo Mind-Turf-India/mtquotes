@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:mtquotes/screens/Signup_Screen/signup_screen.dart';
 import 'package:mtquotes/screens/User_Home/components/navbar_mainscreen.dart';
+import 'package:mtquotes/screens/forgot_password.dart';
 import '../User_Home/home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -12,6 +14,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  
   bool _rememberMe = false;
 
   Future<void> _signInWithEmailAndPassword() async {
@@ -28,13 +31,20 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
   Future<void> _signInWithGoogle() async {
     try {
       final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
       if (googleUser == null) return;
 
       final GoogleSignInAuthentication googleAuth =
-      await googleUser.authentication;
+          await googleUser!.authentication;
 
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
@@ -63,13 +73,14 @@ class _LoginScreenState extends State<LoginScreen> {
               children: [
                 const SizedBox(height: 80),
                 const Text('LOGO',
-                    style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
+                    style:
+                        TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 50),
                 const Text('Welcome back!',
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.w500)),
+                    style:
+                        TextStyle(fontSize: 24, fontWeight: FontWeight.w500)),
                 const Text('Login to your account',
                     style: TextStyle(color: Colors.grey)),
-
                 const SizedBox(height: 50),
                 TextField(
                   controller: _emailController,
@@ -88,7 +99,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     border: OutlineInputBorder(),
                   ),
                 ),
-
                 const SizedBox(height: 10),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -108,19 +118,29 @@ class _LoginScreenState extends State<LoginScreen> {
                         const Text('Remember me'),
                       ],
                     ),
-                    TextButton(
-                      onPressed: () {},
-                      child: const Text(
-                        'Forgot Password?',
-                        style: TextStyle(
-                          color: Colors.black, // Change this to any color you want
-                          fontWeight: FontWeight.bold,
+                    GestureDetector(
+                       onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => ForgotPasswordScreen()),
+                        );
+                      },
+                      
+                      child: TextButton(
+                        onPressed: () {},
+                        child: const Text(
+                          'Forgot Password?',
+                          style: TextStyle(
+                            color:
+                                Colors.black, // Change this to any color you want
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
                   ],
                 ),
-
                 const SizedBox(height: 10),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
@@ -128,12 +148,11 @@ class _LoginScreenState extends State<LoginScreen> {
                     minimumSize: const Size(double.infinity, 50),
                   ),
                   onPressed: _signInWithEmailAndPassword,
-                  child: const Text('Log In', style: TextStyle(fontSize: 18,color: Colors.white)),
+                  child: const Text('Log In',
+                      style: TextStyle(fontSize: 18, color: Colors.white)),
                 ),
-
                 const SizedBox(height: 20),
                 const Text('or', style: TextStyle(color: Colors.black)),
-
                 const SizedBox(height: 10),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -150,7 +169,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ],
                 ),
-
                 const SizedBox(height: 20),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -161,7 +179,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (context) => HomeScreen()),
+                              builder: (context) => SignupScreen()),
                         );
                       },
                       child: const Text(

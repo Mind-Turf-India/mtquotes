@@ -41,7 +41,7 @@ dependencies:
   curved_labeled_navigation_bar: ^2.0.6
   iconify_flutter: ^0.0.7
   lucide_icons: ^0.257.0
-  shared_preferences: ^2.3.3
+  shared_preferences: ^2.5.2
   google_sign_in: ^6.2.2
 
 dev_dependencies:
