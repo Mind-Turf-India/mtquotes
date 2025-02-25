@@ -4,7 +4,6 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:mtquotes/screens/Signup_Screen/signup_screen.dart';
 import 'package:mtquotes/screens/User_Home/components/navbar_mainscreen.dart';
 import 'package:mtquotes/screens/forgot_password.dart';
-import '../User_Home/home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -14,7 +13,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  
+
   bool _rememberMe = false;
 
   Future<void> _signInWithEmailAndPassword() async {
@@ -40,11 +39,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _signInWithGoogle() async {
     try {
+      // Check of signout
+      await GoogleSignIn().signOut();
+
       final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-      if (googleUser == null) return;
+      if (googleUser == null) return; // User canceled the sign-in
 
       final GoogleSignInAuthentication googleAuth =
-          await googleUser!.authentication;
+          await googleUser.authentication;
 
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
@@ -112,30 +114,25 @@ class _LoginScreenState extends State<LoginScreen> {
                               _rememberMe = value ?? false;
                             });
                           },
-                          activeColor: Colors.blue, // Change this to any color
+                          activeColor: Colors.blue,
                           checkColor: Colors.white,
                         ),
                         const Text('Remember me'),
                       ],
                     ),
-                    GestureDetector(
-                       onTap: () {
+                    TextButton(
+                      onPressed: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
                               builder: (context) => ForgotPasswordScreen()),
                         );
                       },
-                      
-                      child: TextButton(
-                        onPressed: () {},
-                        child: const Text(
-                          'Forgot Password?',
-                          style: TextStyle(
-                            color:
-                                Colors.black, // Change this to any color you want
-                            fontWeight: FontWeight.bold,
-                          ),
+                      child: const Text(
+                        'Forgot Password?',
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),

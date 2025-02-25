@@ -7,25 +7,28 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
   await Firebase.initializeApp();
+  
   final prefs = await SharedPreferences.getInstance();
-  bool stayLoggedIn = prefs.getBool('stayLoggedIn') ?? true;
+  bool hasCompletedOnboarding = prefs.getBool('hasCompletedOnboarding') ?? false;
 
-  runApp(MyApp(startScreen: stayLoggedIn ? LoginScreen() : OnboardingScreen ()));
+  runApp(MyApp(startScreen: hasCompletedOnboarding ? LoginScreen() : OnboardingScreen()));
 }
 
 class MyApp extends StatelessWidget {
   final Widget startScreen;
 
-  MyApp({required this.startScreen});
+  const MyApp({super.key, required this.startScreen});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: startScreen, // Display the chosen start screen
+      home: startScreen, 
       routes: {
         'onboarding': (context) => OnboardingScreen(),
+        'login': (context) => LoginScreen(),
         'main': (context) => MainScreen(),
       },
     );

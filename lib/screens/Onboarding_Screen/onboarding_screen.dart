@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:mtquotes/screens/User_Home/components/navbar_mainscreen.dart';
+import 'package:mtquotes/screens/Login_Screen/login_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
   @override
@@ -13,25 +13,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   void completeOnboarding() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('seenOnboarding', true);
-    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => MainScreen()));
+    await prefs.setBool('hasCompletedOnboarding', true);
+
+    // Navigate to LoginScreen and remove OnboardingScreen from navigation stack
+    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => LoginScreen()));
   }
 
   @override
   Widget build(BuildContext context) {
     final List<Map<String, String>> onboardingData = [
-      {
-        "title": "Search Templates",
-        "image": "assets/search.png"
-      },
-      {
-        "title": "Edit Templates",
-        "image": "assets/edit.png"
-      },
-      {
-        "title": "Use It",
-        "image": "assets/use it.png"
-      },
+      {"title": "Search Templates", "image": "assets/search.png"},
+      {"title": "Edit Templates", "image": "assets/edit.png"},
+      {"title": "Use It", "image": "assets/use it.png"},
     ];
 
     return Scaffold(
@@ -44,7 +37,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           image: onboardingData[index]['image']!,
           isLast: index == onboardingData.length - 1,
           onComplete: completeOnboarding,
-          onNext: () => _controller.nextPage(duration: Duration(milliseconds: 300), curve: Curves.ease),
+          onNext: () => _controller.nextPage(
+            duration: Duration(milliseconds: 300),
+            curve: Curves.ease,
+          ),
         ),
       ),
     );
@@ -73,7 +69,7 @@ class OnboardingPage extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          SizedBox(height: 70,),
+          SizedBox(height: 70),
           Text(title, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
           SizedBox(height: 40),
           Image.asset(image, height: 300),
