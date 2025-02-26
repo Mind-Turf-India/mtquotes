@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:iconify_flutter/iconify_flutter.dart';
 import 'package:iconify_flutter/icons/mdi.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:mtquotes/screens/User_Home/notifications.dart';
 
 
 
@@ -12,7 +13,18 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
+ 
 class _HomeScreenState extends State<HomeScreen> {
+
+  void _showNotificationsSheet() {
+    showModalBottomSheet(
+      context: context,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => NotificationsSheet(), // Show the bottom sheet
+    );
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -35,8 +47,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 fontWeight: FontWeight.w500,
               ),
             ),
-            SizedBox(width: 140),
-            Icon(LucideIcons.bellRing, color: Colors.black),
+            Spacer(),
+            GestureDetector(
+              onTap: _showNotificationsSheet,    
+              child: Icon(LucideIcons.bellRing, color: Colors.black,
+              ),
+            ),
           ],
         ),
       ),

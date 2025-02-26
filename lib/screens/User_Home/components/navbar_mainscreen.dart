@@ -3,6 +3,7 @@ import 'package:curved_labeled_navigation_bar/curved_navigation_bar.dart';
 import 'package:curved_labeled_navigation_bar/curved_navigation_bar_item.dart';
 import 'package:mtquotes/screens/User_Home/home_screen.dart';
 import 'package:mtquotes/screens/User_Home/files_screen.dart';
+import 'package:mtquotes/screens/User_Home/profile_screen.dart';
 import '../search_screen.dart';
 
 class MainScreen extends StatefulWidget {
@@ -20,7 +21,7 @@ class _MainScreenState extends State<MainScreen> {
     SearchScreen(),
     Container(),
     FilesPage(),
-    Center(child: Text("Profile Screen")),
+    ProfileScreen(),
   ];
 
   void _toggleCreateOptions() {
@@ -91,7 +92,7 @@ class _MainScreenState extends State<MainScreen> {
       body: _screens[_currentIndex],
       bottomNavigationBar: CurvedNavigationBar(
         backgroundColor: Colors.transparent,
-        color: Colors.blue,
+        color: Colors.blueAccent,
         index: _currentIndex,
         onTap: (index) {
           if (index == 2) {
