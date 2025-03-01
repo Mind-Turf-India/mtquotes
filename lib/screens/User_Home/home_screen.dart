@@ -5,16 +5,51 @@ import 'package:iconify_flutter/iconify_flutter.dart';
 import 'package:iconify_flutter/icons/mdi.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mtquotes/screens/User_Home/notifications.dart';
-
-
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:mtquotes/screens/User_Home/profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
- 
 class _HomeScreenState extends State<HomeScreen> {
+  String userName = "User";
+  String greetings = "Good Morning";
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserDisplayName();
+    _updateGreeting();
+  }
+
+  void _fetchUserDisplayName() {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null &&
+        user.displayName != null &&
+        user.displayName!.isNotEmpty) {
+      setState(() {
+        userName = user.displayName!;
+      });
+    }
+  }
+
+  void _updateGreeting() {
+    int hour = DateTime.now().hour;
+
+    setState(() {
+      if (hour >= 5 && hour < 12) {
+        greetings = "Good Morning";
+      } else if (hour >= 12 && hour < 17) {
+        greetings = "Good Afternoon";
+      } else if (hour >= 17 && hour < 21) {
+        greetings = "Good Evening";
+      } else {
+        greetings = "Good Night";
+      }
+    });
+  }
 
   void _showNotificationsSheet() {
     showModalBottomSheet(
@@ -25,6 +60,7 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (context) => NotificationsSheet(), // Show the bottom sheet
     );
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -34,13 +70,21 @@ class _HomeScreenState extends State<HomeScreen> {
         elevation: 0,
         title: Row(
           children: [
-            CircleAvatar(
-              backgroundColor: Colors.grey[300],
-              child: Icon(LucideIcons.user,color: Colors.black)
+            GestureDetector(
+              onTap: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => ProfileScreen()),
+                );
+              },
+              child: CircleAvatar(
+                  backgroundColor: Colors.grey[300],
+                  child: 
+                   Icon(LucideIcons.user, color: Colors.black)),
             ),
             SizedBox(width: 20),
             Text(
-              "Hi, ABC\nGood Evening",
+              "Hi, $userName\n$greetings",
               textAlign: TextAlign.left,
               style: GoogleFonts.poppins(
                 fontSize: 14,
@@ -49,8 +93,10 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             Spacer(),
             GestureDetector(
-              onTap: _showNotificationsSheet,    
-              child: Icon(LucideIcons.bellRing, color: Colors.black,
+              onTap: _showNotificationsSheet,
+              child: Icon(
+                LucideIcons.bellRing,
+                color: Colors.black,
               ),
             ),
           ],
@@ -80,11 +126,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     SizedBox(height: 10),
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blueAccent
-                      ),
+                          backgroundColor: Colors.blueAccent),
                       onPressed: () {},
-                      child: Text("Share",
-                      style: TextStyle(color: Colors.white),
+                      child: Text(
+                        "Share",
+                        style: TextStyle(color: Colors.white),
                       ),
                     ),
                   ],
@@ -120,17 +166,19 @@ class _HomeScreenState extends State<HomeScreen> {
               SizedBox(
                 height: 100,
                 child: ListView(
-                scrollDirection: Axis.horizontal,
-                children: [
-                categoryCard(Icons.lightbulb, "Motivational", Colors.green),
-                categoryCard(Icons.favorite, "Love", Colors.red),
-                categoryCard(Icons.emoji_emotions, "Funny", Colors.orange),
-                categoryCard(Icons.people, "Friendship", Colors.blue),
-                categoryCard(Icons.self_improvement, "Life", Colors.purple),
+                  scrollDirection: Axis.horizontal,
+                  children: [
+                    categoryCard(Icons.lightbulb, "Motivational", Colors.green),
+                    categoryCard(Icons.favorite, "Love", Colors.red),
+                    categoryCard(Icons.emoji_emotions, "Funny", Colors.orange),
+                    categoryCard(Icons.people, "Friendship", Colors.blue),
+                    categoryCard(Icons.self_improvement, "Life", Colors.purple),
                   ],
                 ),
               ),
-              SizedBox(height: 20,),
+              SizedBox(
+                height: 20,
+              ),
               Text("Trending Quotes",
                   style: GoogleFonts.poppins(
                       fontSize: 16, fontWeight: FontWeight.bold)),
@@ -149,8 +197,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               SizedBox(height: 20),
-
-
             ],
           ),
         ),
@@ -177,23 +223,25 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget categoryCard(IconData icon, String title, Color color) {
-  return Padding(
-    padding: EdgeInsets.only(right: 12),
-    child: Column(
-      children: [
-        Container(
-          width: 60,
-          height: 60,
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(12),
+    return Padding(
+      padding: EdgeInsets.only(right: 12),
+      child: Column(
+        children: [
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: color, size: 30),
           ),
-          child: Icon(icon, color: color, size: 30),
-        ),
-        SizedBox(height: 5),
-        Text(title, style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w500)),
-      ],
-    ),
-  );
-}
+          SizedBox(height: 5),
+          Text(title,
+              style: GoogleFonts.poppins(
+                  fontSize: 12, fontWeight: FontWeight.w500)),
+        ],
+      ),
+    );
+  }
 }
