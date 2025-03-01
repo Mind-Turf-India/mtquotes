@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-
+import 'package:mtquotes/screens/Create_Screen/edit_screen.dart';
+import 'package:mtquotes/screens/User_Home/files_screen.dart';
 import '../Create_screen/template.dart';
 
 class CreateBottomSheet extends StatefulWidget {
@@ -79,14 +80,22 @@ class _CreateBottomSheetState extends State<CreateBottomSheet> {
     );
   }
 
+  void _navigateToScreen(BuildContext context, Widget screen) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => screen),
+    );
+  }
+
   Widget _buildOptionItem(BuildContext context, String label, IconData icon) {
     return GestureDetector(
       onTap: () {
         if (label == "Template") {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => TemplatePage()),
-          );
+          _navigateToScreen(context, TemplatePage());
+        } else if (label == "Gallery") {
+          _navigateToScreen(context, EditScreen(title: 'Image Editor'));
+        } else if (label == "Drafts") {
+          _navigateToScreen(context, FilesPage());
         }
       },
       child: Column(

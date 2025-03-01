@@ -4,6 +4,8 @@ import 'package:curved_labeled_navigation_bar/curved_navigation_bar_item.dart';
 import 'package:mtquotes/screens/User_Home/home_screen.dart';
 import 'package:mtquotes/screens/User_Home/files_screen.dart';
 import 'package:mtquotes/screens/User_Home/profile_screen.dart';
+import '../../Create_Screen/edit_screen.dart';
+import '../../Create_Screen/template.dart';
 import '../search_screen.dart';
 
 class MainScreen extends StatefulWidget {
@@ -65,26 +67,48 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   Widget _buildCreateOption(String label, IconData icon) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 60,
-          height: 60,
-          decoration: BoxDecoration(
-            color: Colors.blue,
-            shape: BoxShape.circle,
+    return GestureDetector(
+      onTap: () {
+        _hideCreateOptions();
+        if (label == "Template") {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => TemplatePage()),
+          );
+        } else if (label == "Gallery") {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => EditScreen(title: 'Image Editor')),
+          );
+        } else if (label == "Drafts") {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => FilesPage()),
+          );
+        }
+      },
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              color: Colors.blue,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: Colors.white, size: 30),
           ),
-          child: Icon(icon, color: Colors.white, size: 30),
-        ),
-        SizedBox(height: 8),
-        Text(
-          label,
-          style: TextStyle(color: Colors.blue,fontSize: 12, fontWeight: FontWeight.w500,decoration: TextDecoration.none,),
-        ),
-      ],
+          SizedBox(height: 8),
+          Text(
+            label,
+            style: TextStyle(color: Colors.blue, fontSize: 12, fontWeight: FontWeight.w500, decoration: TextDecoration.none),
+          ),
+        ],
+      ),
     );
   }
+
 
   @override
   Widget build(BuildContext context) {
