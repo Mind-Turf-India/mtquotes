@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../Create_screen/template.dart';
-
 class CreateBottomSheet extends StatefulWidget {
   @override
   State<CreateBottomSheet> createState() => _CreateBottomSheetState();
@@ -14,6 +12,7 @@ class _CreateBottomSheetState extends State<CreateBottomSheet> {
   Widget build(BuildContext context) {
     return Stack(
       children: [
+        // Expanded options (Gallery, Template, Drafts)
         AnimatedPositioned(
           duration: Duration(milliseconds: 300),
           curve: Curves.easeInOut,
@@ -28,11 +27,10 @@ class _CreateBottomSheetState extends State<CreateBottomSheet> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _buildOptionItem(context, 'Gallery', Icons.image),
-                  _buildOptionItem(context, 'Template', Icons.folder),
-                  _buildOptionItem(context, 'Drafts', Icons.description),
+                  _buildOptionItem('Gallery', Icons.image),
+                  _buildOptionItem('Template', Icons.folder),
+                  _buildOptionItem('Drafts', Icons.description),
                 ],
-
               ),
             ),
           ),
@@ -79,43 +77,33 @@ class _CreateBottomSheetState extends State<CreateBottomSheet> {
     );
   }
 
-  Widget _buildOptionItem(BuildContext context, String label, IconData icon) {
-    return GestureDetector(
-      onTap: () {
-        if (label == "Template") {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => TemplatePage()),
-          );
-        }
-      },
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              color: Colors.blue,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              icon,
-              color: Colors.white,
-              size: 24,
-            ),
+  Widget _buildOptionItem(String label, IconData icon) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 60,
+          height: 60,
+          decoration: BoxDecoration(
+            color: Colors.blue,
+            shape: BoxShape.circle,
           ),
-          SizedBox(height: 8),
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.blue,
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-            ),
+          child: Icon(
+            icon,
+            color: Colors.white,
+            size: 24,
           ),
-        ],
-      ),
+        ),
+        SizedBox(height: 8),
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.blue,
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
     );
   }
 }

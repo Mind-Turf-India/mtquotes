@@ -1,8 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:mtquotes/screens/Create_screen/edit_screen.dart';
-import 'package:mtquotes/screens/Create_screen/template.dart';
 import 'package:mtquotes/screens/Login_Screen/login_screen.dart';
 import 'package:mtquotes/screens/User_Home/components/navbar_mainscreen.dart';
 import 'package:mtquotes/screens/Onboarding_Screen/onboarding_screen.dart';
