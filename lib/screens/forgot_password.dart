@@ -84,11 +84,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const SizedBox(height: 80),
-                const Text('LOGO',
-                    style:
-                        TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 70),
+                SizedBox(height: 70),
+                Image.asset(
+                  'assets/logo.png',
+                  height: 100,
+                  width: 100,
+                ),
+                const SizedBox(height: 30),
                 const Text('Forgot Password',
                     style:
                         TextStyle(fontSize: 24, fontWeight: FontWeight.w500)),

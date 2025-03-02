@@ -133,11 +133,13 @@ class _SignupScreenState extends State<SignupScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const SizedBox(height: 80),
-                  const Text('LOGO',
-                      style:
-                          TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 50),
+                  SizedBox(height: 50),
+                  Image.asset(
+                    'assets/logo.png',
+                    height: 100,
+                    width: 100,
+                  ),
+                  const SizedBox(height: 10),
                   const Text('Welcome',
                       style:
                           TextStyle(fontSize: 24, fontWeight: FontWeight.w500)),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:speech_to_text/speech_to_text.dart';
 
 class SearchScreen extends StatefulWidget {
   @override
@@ -8,6 +9,57 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
+  final SpeechToText _speechToText = SpeechToText();
+  bool _speechEnabled = false;
+  bool _isListening = false;
+
+  @override
+  void initState() {
+    super.initState();
+    initSpeech();
+  }
+
+  void initSpeech() async{
+    _speechEnabled = await _speechToText.initialize();
+    setState(() {});
+  }
+
+  void _startListening() async {
+    if (_speechEnabled) {
+      await _speechToText.listen(onResult: _onSpeechResult);
+      setState(() {
+        _isListening = true;
+      });
+    } else {
+      setState(() {
+        _isListening = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Speech recognition not available')),
+      );
+    }
+  }
+
+  void _stopListening() async {
+    await _speechToText.stop();
+    setState(() {
+      _isListening = false;
+    });
+  }
+
+  void _onSpeechResult(result) {
+    setState(() {
+      _searchController.text = result.recognizedWords;
+    });
+  }
+
+  void _toggleListening() {
+    if (_isListening) {
+      _stopListening();
+    } else {
+      _startListening();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -45,7 +97,13 @@ class _SearchScreenState extends State<SearchScreen> {
                       color: Colors.grey[500],
                     ),
                     prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
-                    suffixIcon: Icon(Icons.mic, color: Colors.grey[600]),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _isListening ? Icons.mic : Icons.mic_none,
+                        color: _isListening ? Colors.blue : Colors.grey[600],
+                      ),
+                      onPressed: _toggleListening,
+                    ),
                     border: InputBorder.none,
                     contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                   ),
