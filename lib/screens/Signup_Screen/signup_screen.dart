@@ -16,14 +16,16 @@ class _SignupScreenState extends State<SignupScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   bool _rememberMe = false;
+  bool _isObscure1 = true;
+  bool _isObscure2 = true;
 
   @override
   void initState() {
     super.initState();
     _checkUserLoginStatus();
-  }  
+  }
 
-   Future<void> _checkUserLoginStatus() async {
+  Future<void> _checkUserLoginStatus() async {
     User? user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       // User is already logged in, navigate to main screen
@@ -62,7 +64,8 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   bool passwordConfirmed() {
-    return _passwordController.text.trim() == _confirmPasswordController.text.trim();
+    return _passwordController.text.trim() ==
+        _confirmPasswordController.text.trim();
   }
 
   @override
@@ -80,7 +83,8 @@ class _SignupScreenState extends State<SignupScreen> {
       final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
       if (googleUser == null) return;
 
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
 
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
@@ -89,9 +93,9 @@ class _SignupScreenState extends State<SignupScreen> {
 
       await FirebaseAuth.instance.signInWithCredential(credential);
       Navigator.of(context).pushAndRemoveUntil(
-  MaterialPageRoute(builder: (context) => MainScreen()),
-  (Route<dynamic> route) => false, // Remove all previous screens
-);
+        MaterialPageRoute(builder: (context) => MainScreen()),
+        (Route<dynamic> route) => false, // Remove all previous screens
+      );
     } catch (e) {
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text("Google Sign-In Failed: $e")));
@@ -156,21 +160,40 @@ class _SignupScreenState extends State<SignupScreen> {
                   const SizedBox(height: 20),
                   TextField(
                     controller: _passwordController,
-                    obscureText: true,
-                    decoration: const InputDecoration(
+                    obscureText: _isObscure1,
+                    decoration: InputDecoration(
                       labelText: 'Password',
-                      suffixIcon: Icon(Icons.visibility_off),
-                      border: OutlineInputBorder(),
+                      border: const OutlineInputBorder(),
+                      suffixIcon: IconButton(
+                        icon: Icon(_isObscure1
+                            ? Icons.visibility_off
+                            : Icons.visibility),
+                        onPressed: () {
+                          setState(() {
+                            _isObscure1 = !_isObscure1;
+                          });
+                        },
+                      ),
                     ),
                   ),
                   const SizedBox(height: 20),
                   TextField(
                     controller: _confirmPasswordController,
-                    obscureText: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Confirm Password',
-                      suffixIcon: Icon(Icons.visibility_off),
-                      border: OutlineInputBorder(),
+                    obscureText: _isObscure2, 
+                    decoration: InputDecoration(
+                      labelText: 'Password',
+                      border: const OutlineInputBorder(),
+                      suffixIcon: IconButton(
+                        icon: Icon(_isObscure2
+                            ? Icons.visibility_off
+                            : Icons.visibility),
+                        onPressed: () {
+                          setState(() {
+                            _isObscure2 =
+                                !_isObscure2; 
+                          });
+                        },
+                      ),
                     ),
                   ),
                   const SizedBox(height: 10),

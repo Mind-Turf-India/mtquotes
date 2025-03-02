@@ -47,7 +47,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.arrow_back, size: 24),
+                        icon: const Icon(Icons.arrow_back_ios, size: 24),
                         onPressed: () {
                           Navigator.pushReplacementNamed(context, 'main');
                         },
@@ -56,10 +56,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       IconButton(
                         icon: Icon(LucideIcons.bellRing, color: Colors.black),
                         onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => NotificationsSheet()),
+                          showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.vertical(
+                                  top: Radius.circular(16)),
+                            ),
+                            builder: (context) => NotificationsSheet(),
                           );
                         },
                       ),
@@ -72,7 +76,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child:
                       const Icon(Icons.person, size: 50, color: Colors.black54),
                 ),
-
                 const SizedBox(height: 10),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -86,7 +89,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const Icon(Icons.edit, size: 18, color: Colors.grey),
                   ],
                 ),
-
                 const SizedBox(height: 10),
                 Container(
                   padding:
@@ -109,7 +111,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 20),
                 Expanded(
                   child: Column(

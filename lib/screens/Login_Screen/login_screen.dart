@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mtquotes/screens/Signup_Screen/signup_screen.dart';
 import 'package:mtquotes/screens/User_Home/components/navbar_mainscreen.dart';
 import 'package:mtquotes/screens/forgot_password.dart';
@@ -15,45 +16,100 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
 
   bool _rememberMe = false;
+  bool _isObscure = true;
 
   @override
   void initState() {
     super.initState();
-    _checkUserLoginStatus();
+    _checkSavedCredentials();
   }
 
-  Future<void> _checkUserLoginStatus() async {
-    User? user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      // User is already logged in, navigate to main screen
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => MainScreen()),
-        );
-      });
+  /// Check if credentials exist and prompt user
+  Future<void> _checkSavedCredentials() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? savedEmail = prefs.getString('saved_email');
+    String? savedPassword = prefs.getString('saved_password');
+
+    if (savedEmail != null && savedPassword != null) {
+      _showLoginPopup(savedEmail, savedPassword);
     }
   }
 
-  Future<void> _signInWithEmailAndPassword() async {
+  /// Show a popup to login with saved credentials
+  void _showLoginPopup(String email, String password) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Login with saved credentials?"),
+        content: Text("Would you like to log in as $email?"),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context); // Close popup
+            },
+            child: Text("No"),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context); // Close popup
+              _signInWithSavedCredentials(email, password);
+            },
+            child: Text("Yes"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Login automatically with saved credentials
+  Future<void> _signInWithSavedCredentials(String email, String password) async {
     try {
       await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
+        email: email,
+        password: password,
       );
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => MainScreen()),
       );
     } catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text("Login Failed: $e")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Login Failed: $e")),
+      );
+    }
+  }
+
+  /// Save credentials when Remember Me is checked
+  Future<void> _saveCredentials() async {
+    if (_rememberMe) {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString('saved_email', _emailController.text.trim());
+      await prefs.setString('saved_password', _passwordController.text.trim());
+    }
+  }
+
+  /// Sign in with email & password
+  Future<void> _signInWithEmailAndPassword() async {
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+      );
+      await _saveCredentials();
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => MainScreen()),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Login Failed: $e")),
+      );
     }
   }
 
   Future<void> _signInWithGoogle() async {
     try {
-      await GoogleSignIn().signOut(); // Ensures a fresh login
+      await GoogleSignIn().signOut();
 
       final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
       if (googleUser == null) return;
@@ -67,9 +123,9 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       await FirebaseAuth.instance.signInWithCredential(credential);
-      Navigator.pushReplacement(
-        context,
+      Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (context) => MainScreen()),
+        (Route<dynamic> route) => false, // Remove all previous screens
       );
     } catch (e) {
       ScaffoldMessenger.of(context)
