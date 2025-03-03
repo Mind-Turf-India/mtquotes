@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:curved_labeled_navigation_bar/curved_navigation_bar.dart';
 import 'package:curved_labeled_navigation_bar/curved_navigation_bar_item.dart';
@@ -36,23 +38,40 @@ class _MainScreenState extends State<MainScreen> {
 
   void _showCreateOptions() {
     _overlayEntry = OverlayEntry(
-      builder: (context) => Positioned(
-        bottom: 100,
-        left: 0,
-        right: 0,
-        child: Center(
-          child: Container(
-            padding: EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                Flexible(child: _buildCreateOption('Gallery', Icons.image)),
-                Flexible(child: _buildCreateOption('Template', Icons.grid_view)),
-                Flexible(child: _buildCreateOption('Drafts', Icons.folder)),
-              ],
+      builder: (context) => Stack(
+        children: [
+          // This is the blur effect layer
+          Positioned.fill(
+            child: GestureDetector(
+              onTap: _hideCreateOptions,
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                child: Container(
+                  color: Colors.black.withOpacity(0.3),
+                ),
+              ),
             ),
           ),
-        ),
+          // Options positioned above the blur
+          Positioned(
+            bottom: 100,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Flexible(child: _buildCreateOption('Gallery', Icons.image)),
+                    Flexible(child: _buildCreateOption('Template', Icons.grid_view)),
+                    Flexible(child: _buildCreateOption('Drafts', Icons.folder)),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
 

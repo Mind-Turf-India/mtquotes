@@ -122,33 +122,36 @@ class _TemplatePageState extends State<TemplatePage> {
             ),
 
             SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: List.generate(tabs.length, (index) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                  child: ChoiceChip(
-                    label: Text(
-                      tabs[index],
-                      style: TextStyle(
-                        color: selectedTab == index
-                            ? Colors.white
-                            : Colors.blueAccent,
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: List.generate(tabs.length, (index) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    child: ChoiceChip(
+                      label: Text(
+                        tabs[index],
+                        style: TextStyle(
+                          color: selectedTab == index
+                              ? Colors.white
+                              : Colors.blueAccent,
+                        ),
                       ),
+                      selected: selectedTab == index,
+                      selectedColor: Colors.blueAccent,
+                      backgroundColor: Colors.white,
+                      side: BorderSide(color: Colors.blueAccent),
+                      showCheckmark: false,
+                      onSelected: (bool selected) {
+                        setState(() {
+                          selectedTab = index;
+                        });
+                      },
                     ),
-                    selected: selectedTab == index,
-                    selectedColor: Colors.blueAccent,
-                    backgroundColor: Colors.white,
-                    side: BorderSide(color: Colors.blueAccent),
-                    showCheckmark: false,
-                    onSelected: (bool selected) {
-                      setState(() {
-                        selectedTab = index;
-                      });
-                    },
-                  ),
-                );
-              }),
+                  );
+                }),
+              ),
             ),
             SizedBox(height: 16),
             Expanded(

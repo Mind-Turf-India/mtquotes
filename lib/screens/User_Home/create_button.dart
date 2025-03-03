@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:mtquotes/screens/Create_Screen/edit_screen.dart';
 import 'package:mtquotes/screens/User_Home/files_screen.dart';
@@ -33,7 +35,6 @@ class _CreateBottomSheetState extends State<CreateBottomSheet> {
                   _buildOptionItem(context, 'Template', Icons.folder),
                   _buildOptionItem(context, 'Drafts', Icons.description),
                 ],
-
               ),
             ),
           ),
@@ -81,6 +82,9 @@ class _CreateBottomSheetState extends State<CreateBottomSheet> {
   }
 
   void _navigateToScreen(BuildContext context, Widget screen) {
+    setState(() {
+      isExpanded = false; // Close the menu when an option is selected
+    });
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => screen),
