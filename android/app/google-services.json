@@ -1,6 +1,7 @@
 {
   "project_info": {
     "project_number": "782461473266",
+    "firebase_url": "https://mind-turf-default-rtdb.firebaseio.com",
     "project_id": "mind-turf",
     "storage_bucket": "mind-turf.firebasestorage.app"
   },

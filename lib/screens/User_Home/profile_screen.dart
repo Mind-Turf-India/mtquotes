@@ -1,7 +1,9 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mtquotes/screens/User_Home/components/notifications.dart';
+import 'package:share_plus/share_plus.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -11,19 +13,54 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  User? _user;
+  String _rewardPoints = "0";
+  String _referralCode = "Loading...";
+  final User? _currentUser = FirebaseAuth.instance.currentUser;
+  final String _appPlayStoreLink = "https://play.google.com/store/apps/details?id=com.example.app"; 
+
 
   @override
   void initState() {
     super.initState();
-    _getUser();
+    _fetchUserData();
+    // _getUser();
   }
 
-  void _getUser() {
-    setState(() {
-      _user = FirebaseAuth.instance.currentUser;
-    });
+  // void _getUser() {
+  //   setState(() {
+  //     User = FirebaseAuth.instance.currentUser;
+  //   });
+  // }
+
+    Future<void> _fetchUserData() async {
+    if (_currentUser != null) {
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(_currentUser!.uid)
+          .get();
+
+      if (userDoc.exists) {
+        setState(() {
+          _rewardPoints = (userDoc['rewardPoints'] ?? 0).toString();
+          _referralCode = userDoc['referralCode'] ?? "Not Assigned";
+        });
+      }
+    }
   }
+
+   void _shareReferralCode(BuildContext context) {
+  if (_referralCode != "Not Assigned") {
+    final String message = "Join this amazing app using my referral code: $_referralCode.\n"
+        "Get rewards when you sign up!\nDownload now: $_appPlayStoreLink";
+    
+    Share.share(message);
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Referral code not available.")),
+    );
+  }
+}
+
 
   Future<void> _logout() async {
     await FirebaseAuth.instance.signOut();
@@ -36,7 +73,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: _user == null
+      body: _currentUser == null
           ? Center(child: CircularProgressIndicator())
           : Column(
               children: [
@@ -81,7 +118,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      _user!.displayName ?? "User",
+                      _currentUser!.displayName ?? "User",
                       style: const TextStyle(
                           fontSize: 18, fontWeight: FontWeight.w600),
                     ),
@@ -97,20 +134,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     color: Colors.grey.shade200,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Text.rich(
+                  child:  Text.rich(
                     TextSpan(
-                      text: "Earn Credits : ",
+                      text: "Earned Credits : ",
                       style: TextStyle(fontSize: 14, color: Colors.black),
                       children: [
                         TextSpan(
-                          text: "250 Points",
+                          text: " $_rewardPoints",
                           style: TextStyle(
                               fontWeight: FontWeight.bold, color: Colors.green),
                         ),
                       ],
                     ),
                   ),
+                   
                 ),
+                SizedBox(height: 10,),
+                GestureDetector(
+                  onTap: () => _shareReferralCode(context),
+                  child: Text.rich(
+                      TextSpan(
+                        text: "Referral Code : ",
+                        style: TextStyle(fontSize: 14, color: Colors.black),
+                        children: [
+                          TextSpan(
+                            text: " $_referralCode",
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold, color: Colors.green),
+                          ),
+                        ],
+                      ),
+                    ),
+                ), 
                 const SizedBox(height: 20),
                 Expanded(
                   child: Column(
