@@ -1,8 +1,8 @@
 import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:curved_labeled_navigation_bar/curved_navigation_bar.dart';
 import 'package:curved_labeled_navigation_bar/curved_navigation_bar_item.dart';
+import 'package:mtquotes/l10n/app_localization.dart';
 import 'package:mtquotes/screens/User_Home/home_screen.dart';
 import 'package:mtquotes/screens/User_Home/files_screen.dart';
 import 'package:mtquotes/screens/User_Home/profile_screen.dart';
@@ -40,7 +40,6 @@ class _MainScreenState extends State<MainScreen> {
     _overlayEntry = OverlayEntry(
       builder: (context) => Stack(
         children: [
-          // This is the blur effect layer
           Positioned.fill(
             child: GestureDetector(
               onTap: _hideCreateOptions,
@@ -52,7 +51,6 @@ class _MainScreenState extends State<MainScreen> {
               ),
             ),
           ),
-          // Options positioned above the blur
           Positioned(
             bottom: 100,
             left: 0,
@@ -63,9 +61,9 @@ class _MainScreenState extends State<MainScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    Flexible(child: _buildCreateOption('Gallery', Icons.image)),
-                    Flexible(child: _buildCreateOption('Template', Icons.grid_view)),
-                    Flexible(child: _buildCreateOption('Drafts', Icons.folder)),
+                    Flexible(child: _buildCreateOption(context.loc.gallery, Icons.image)),
+                    Flexible(child: _buildCreateOption(context.loc.template, Icons.grid_view)),
+                    Flexible(child: _buildCreateOption(context.loc.drafts, Icons.folder)),
                   ],
                 ),
               ),
@@ -89,17 +87,17 @@ class _MainScreenState extends State<MainScreen> {
     return GestureDetector(
       onTap: () {
         _hideCreateOptions();
-        if (label == "Template") {
+        if (label == context.loc.template) {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => TemplatePage()),
           );
-        } else if (label == "Gallery") {
+        } else if (label == context.loc.gallery) {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => EditScreen(title: 'Image Editor')),
+            MaterialPageRoute(builder: (context) => EditScreen(title: context.loc.imageeditor)),
           );
-        } else if (label == "Drafts") {
+        } else if (label == context.loc.drafts) {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => FilesPage()),
@@ -128,7 +126,6 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -148,27 +145,27 @@ class _MainScreenState extends State<MainScreen> {
         items: [
           CurvedNavigationBarItem(
             child: Icon(Icons.home, color: Colors.white),
-            label: 'Home',
+            label: context.loc.home,
             labelStyle: TextStyle(color: Colors.white),
           ),
           CurvedNavigationBarItem(
             child: Icon(Icons.search, color: Colors.white),
-            label: 'Search',
+            label: context.loc.search,
             labelStyle: TextStyle(color: Colors.white),
           ),
           CurvedNavigationBarItem(
             child: Icon(Icons.add, color: Colors.white),
-            label: 'Create',
+            label: context.loc.create,
             labelStyle: TextStyle(color: Colors.white),
           ),
           CurvedNavigationBarItem(
             child: Icon(Icons.folder, color: Colors.white),
-            label: 'Files',
+            label: context.loc.files,
             labelStyle: TextStyle(color: Colors.white),
           ),
           CurvedNavigationBarItem(
             child: Icon(Icons.person, color: Colors.white),
-            label: 'Profile',
+            label: context.loc.profile,
             labelStyle: TextStyle(color: Colors.white),
           ),
         ],

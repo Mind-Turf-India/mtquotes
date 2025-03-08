@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import 'package:speech_to_text/speech_to_text.dart';
+
+import '../../l10n/app_localization.dart';
+import '../../providers/text_size_provider.dart';
 
 class SearchScreen extends StatefulWidget {
   @override
@@ -19,7 +23,7 @@ class _SearchScreenState extends State<SearchScreen> {
     initSpeech();
   }
 
-  void initSpeech() async{
+  void initSpeech() async {
     _speechEnabled = await _speechToText.initialize();
     setState(() {});
   }
@@ -30,13 +34,6 @@ class _SearchScreenState extends State<SearchScreen> {
       setState(() {
         _isListening = true;
       });
-    } else {
-      setState(() {
-        _isListening = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Speech recognition not available')),
-      );
     }
   }
 
@@ -63,15 +60,18 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final textSizeProvider = Provider.of<TextSizeProvider>(context);
+    double fontSize = textSizeProvider.fontSize;
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: Text(
-          "Search",
+          context.loc.search,
           style: GoogleFonts.poppins(
-            fontSize: 20,
+            fontSize: fontSize + 6,
             fontWeight: FontWeight.w600,
             color: Colors.black,
           ),
@@ -92,8 +92,9 @@ class _SearchScreenState extends State<SearchScreen> {
                 child: TextField(
                   controller: _searchController,
                   decoration: InputDecoration(
-                    hintText: 'Search quotes...',
+                    hintText: context.loc.searchquotes,
                     hintStyle: GoogleFonts.poppins(
+                      fontSize: fontSize,
                       color: Colors.grey[500],
                     ),
                     prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
@@ -109,63 +110,40 @@ class _SearchScreenState extends State<SearchScreen> {
                   ),
                 ),
               ),
-              // Categories
-              SizedBox(height: 30,),
-              Text("Categories",
+              SizedBox(height: 30),
+              Text(context.loc.categories,
                   style: GoogleFonts.poppins(
-                      fontSize: 16, fontWeight: FontWeight.bold)),
+                      fontSize: fontSize + 2, fontWeight: FontWeight.bold)),
               SizedBox(height: 10),
               SizedBox(
                 height: 100,
                 child: ListView(
                   scrollDirection: Axis.horizontal,
                   children: [
-                    categoryCard(Icons.lightbulb, "Motivational", Colors.green),
-                    categoryCard(Icons.favorite, "Love", Colors.red),
-                    categoryCard(Icons.emoji_emotions, "Funny", Colors.orange),
-                    categoryCard(Icons.people, "Friendship", Colors.blue),
-                    categoryCard(Icons.self_improvement, "Life", Colors.purple),
+                    categoryCard(Icons.lightbulb, context.loc.motivational, Colors.green, fontSize),
+                    categoryCard(Icons.favorite, context.loc.love, Colors.red, fontSize),
+                    categoryCard(Icons.emoji_emotions, context.loc.funny, Colors.orange, fontSize),
+                    categoryCard(Icons.people, context.loc.friendship, Colors.blue, fontSize),
+                    categoryCard(Icons.self_improvement, context.loc.life, Colors.purple, fontSize),
                   ],
                 ),
               ),
-              SizedBox(height: 30,),
-              Text("Trending Quotes",
+              SizedBox(height: 30),
+              Text(context.loc.trendingQuotes,
                   style: GoogleFonts.poppins(
-                      fontSize: 16, fontWeight: FontWeight.bold)),
+                      fontSize: fontSize + 2, fontWeight: FontWeight.bold)),
               SizedBox(height: 10),
               SizedBox(
                 height: 120,
                 child: ListView(
                   scrollDirection: Axis.horizontal,
                   children: [
-                    quoteCard("Everything requires hard work."),
-                    quoteCard("Success comes from daily efforts."),
-                    quoteCard("Believe in yourself."),
-                    quoteCard("Believe in yourself."),
-                    quoteCard("Believe in yourself."),
+                    quoteCard("Everything requires hard work.", fontSize),
+                    quoteCard("Success comes from daily efforts.", fontSize),
+                    quoteCard("Believe in yourself.", fontSize),
                   ],
                 ),
               ),
-              SizedBox(height: 30,),
-              Text("New ✨",
-                  style: GoogleFonts.poppins(
-                      fontSize: 16, fontWeight: FontWeight.bold)),
-              SizedBox(height: 10),
-              SizedBox(
-                height: 120,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  children: [
-                    quoteCard("Cookie."),
-                    quoteCard("Happy"),
-                    quoteCard("August"),
-                    quoteCard("Believe in yourself."),
-                    quoteCard("Believe in yourself."),
-                  ],
-                ),
-              ),
-              SizedBox(height: 20),
-
             ],
           ),
         ),
@@ -173,7 +151,7 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  Widget quoteCard(String text) {
+  Widget quoteCard(String text, double fontSize) {
     return Container(
       width: 100,
       margin: EdgeInsets.only(right: 10),
@@ -186,12 +164,12 @@ class _SearchScreenState extends State<SearchScreen> {
       child: Center(
         child: Text(text,
             textAlign: TextAlign.center,
-            style: GoogleFonts.poppins(fontSize: 12)),
+            style: GoogleFonts.poppins(fontSize: fontSize - 2)),
       ),
     );
   }
 
-  Widget categoryCard(IconData icon, String title, Color color) {
+  Widget categoryCard(IconData icon, String title, Color color, double fontSize) {
     return Padding(
       padding: EdgeInsets.only(right: 12),
       child: Column(
@@ -206,7 +184,9 @@ class _SearchScreenState extends State<SearchScreen> {
             child: Icon(icon, color: color, size: 30),
           ),
           SizedBox(height: 5),
-          Text(title, style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w500)),
+          Text(title,
+              style: GoogleFonts.poppins(
+                  fontSize: fontSize - 2, fontWeight: FontWeight.w500)),
         ],
       ),
     );

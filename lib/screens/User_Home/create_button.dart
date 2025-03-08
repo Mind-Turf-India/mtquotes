@@ -1,8 +1,11 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:mtquotes/l10n/app_localization.dart';
 import 'package:mtquotes/screens/Create_Screen/edit_screen.dart';
 import 'package:mtquotes/screens/User_Home/files_screen.dart';
+import 'package:provider/provider.dart';
+import '../../providers/text_size_provider.dart';
 import '../Create_screen/template.dart';
 
 class CreateBottomSheet extends StatefulWidget {
@@ -15,6 +18,10 @@ class _CreateBottomSheetState extends State<CreateBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
+    double screenWidth = MediaQuery.of(context).size.width;
+    final textSizeProvider = Provider.of<TextSizeProvider>(context);
+    double fontSize = textSizeProvider.fontSize; // Dynamically adjust font size
+
     return Stack(
       children: [
         AnimatedPositioned(
@@ -31,9 +38,9 @@ class _CreateBottomSheetState extends State<CreateBottomSheet> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _buildOptionItem(context, 'Gallery', Icons.image),
-                  _buildOptionItem(context, 'Template', Icons.folder),
-                  _buildOptionItem(context, 'Drafts', Icons.description),
+                  _buildOptionItem(context, context.loc.gallery, Icons.image, fontSize),
+                  _buildOptionItem(context, context.loc.template, Icons.folder, fontSize),
+                  _buildOptionItem(context, context.loc.drafts, Icons.description, fontSize),
                 ],
               ),
             ),
@@ -91,14 +98,14 @@ class _CreateBottomSheetState extends State<CreateBottomSheet> {
     );
   }
 
-  Widget _buildOptionItem(BuildContext context, String label, IconData icon) {
+  Widget _buildOptionItem(BuildContext context, String label, IconData icon, double fontSize) {
     return GestureDetector(
       onTap: () {
-        if (label == "Template") {
+        if (label == context.loc.template) {
           _navigateToScreen(context, TemplatePage());
-        } else if (label == "Gallery") {
-          _navigateToScreen(context, EditScreen(title: 'Image Editor'));
-        } else if (label == "Drafts") {
+        } else if (label == context.loc.gallery) {
+          _navigateToScreen(context, EditScreen(title: context.loc.imageeditor));
+        } else if (label == context.loc.drafts) {
           _navigateToScreen(context, FilesPage());
         }
       },
@@ -123,7 +130,7 @@ class _CreateBottomSheetState extends State<CreateBottomSheet> {
             label,
             style: TextStyle(
               color: Colors.blue,
-              fontSize: 12,
+              fontSize: fontSize,
               fontWeight: FontWeight.w500,
             ),
           ),

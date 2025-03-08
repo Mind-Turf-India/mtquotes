@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:mtquotes/l10n/app_localization.dart';
 import 'package:speech_to_text/speech_to_text.dart';
-import 'home_screen.dart';
-import 'package:mtquotes/screens/User_Home/home_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:mtquotes/providers/text_size_provider.dart';
 
 class FilesPage extends StatefulWidget {
   @override
@@ -34,13 +35,6 @@ class _FilesPageState extends State<FilesPage> {
       setState(() {
         _isListening = true;
       });
-    } else {
-      setState(() {
-        _isListening = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Speech recognition not available')),
-      );
     }
   }
 
@@ -67,10 +61,16 @@ class _FilesPageState extends State<FilesPage> {
 
   @override
   Widget build(BuildContext context) {
+    final textSizeProvider = Provider.of<TextSizeProvider>(context);
+    double fontSize = textSizeProvider.fontSize;
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text("Files", style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w600, color: Colors.black)),
+        title: Text(
+          context.loc.files,
+          style: GoogleFonts.poppins(fontSize: fontSize + 4, fontWeight: FontWeight.w600, color: Colors.black),
+        ),
         backgroundColor: Colors.white,
         elevation: 0,
       ),
@@ -85,9 +85,10 @@ class _FilesPageState extends State<FilesPage> {
               ),
               child: TextField(
                 controller: _searchController,
+                style: TextStyle(fontSize: fontSize),
                 decoration: InputDecoration(
-                  hintText: 'Search files...',
-                  hintStyle: GoogleFonts.poppins(color: Colors.grey[500]),
+                  hintText: context.loc.searchfiles,
+                  hintStyle: GoogleFonts.poppins(fontSize: fontSize, color: Colors.grey[500]),
                   prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
                   suffixIcon: IconButton(
                     icon: Icon(
@@ -111,6 +112,7 @@ class _FilesPageState extends State<FilesPage> {
                     label: Text(
                       tabs[index],
                       style: GoogleFonts.poppins(
+                        fontSize: fontSize,
                         color: selectedTab == index ? Colors.white : Colors.blueAccent,
                       ),
                     ),
@@ -130,7 +132,7 @@ class _FilesPageState extends State<FilesPage> {
             ),
             Expanded(
               child: SingleChildScrollView(
-                child: _buildTabContent(selectedTab),
+                child: _buildTabContent(selectedTab, fontSize),
               ),
             ),
           ],
@@ -139,16 +141,15 @@ class _FilesPageState extends State<FilesPage> {
     );
   }
 
-  Widget _buildTabContent(int index) {
+  Widget _buildTabContent(int index, double textSize) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (index == 1)
-          SizedBox(height: 300,),
-        //put drafts logic here
+          SizedBox(height: 300),
         if (index == 0)
           SizedBox(
-            height: 900, // Set an appropriate height
+            height: 900,
             child: GridView.builder(
               padding: EdgeInsets.all(10),
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -177,7 +178,7 @@ class _FilesPageState extends State<FilesPage> {
                       Positioned(
                         top: 10,
                         right: 10,
-                        child: Icon(Icons.download, color: Colors.white),
+                        child: Icon(Icons.download, color: Colors.white, size: textSize + 4),
                       ),
                     ],
                   ),
