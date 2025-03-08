@@ -43,6 +43,27 @@
   "points": "अंक",
   "imageeditor": "छवि संपादक",
   "selectimage": "छवि चुनें",
+  "speechRecognitionNotAvailable": "स्पीच रिकग्निशन उपलब्ध नहीं है",
+
+  "selectImageFromGallery": "गैलरी से छवि चुनें",
+
+  "sizeStandard": "आकार मानक",
+
+  "sizeWide": "आकार चौड़ा",
+
+  "sizeCommon": "आकार सामान्य",
+
+  "sizeSquare": "आकार चौकोर",
+
+  "sizeNarrow": "आकार संकीर्ण",
+
+  "sizeVertical": "आकार लंबवत",
+
+  "sizeUltraWide": "आकार अल्ट्रा चौड़ा",
+
+  "sizePortrait": "आकार चित्र",
+
+  "sizePanoramic": "आकार पैनोरमिक",
   "@languageChanged": {
     "placeholders": {
       "language": {}

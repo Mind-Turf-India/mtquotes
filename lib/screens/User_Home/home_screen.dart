@@ -1,15 +1,18 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:mtquotes/screens/Create_Screen/edit_screen_create.dart';
 import 'package:mtquotes/screens/User_Home/components/notifications.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mtquotes/screens/User_Home/profile_screen.dart';
 import 'package:provider/provider.dart';
-
 import '../../l10n/app_localization.dart';
 import '../../providers/text_size_provider.dart';
+import '../Templates/quote_template.dart';
+import '../Templates/subscription_popup.dart';
+import '../Templates/template_section.dart';
+import '../Templates/template_service.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -19,6 +22,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   String userName = "User";
   String greetings = "";
+  final TemplateService _templateService = TemplateService();
 
   @override
   void initState() {
@@ -36,6 +40,24 @@ class _HomeScreenState extends State<HomeScreen> {
       });
     }
   }
+
+  void _handleTemplateSelection(QuoteTemplate template) async {
+    bool isSubscribed = await _templateService.isUserSubscribed();
+
+    if (!template.isPaid || isSubscribed) {
+      // Navigate to template editor
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => EditScreen(title: 'image',),
+        ),
+      );
+    } else {
+      // Show subscription popup
+      SubscriptionPopup.show(context);
+    }
+  }
+
 
   String _getGreeting(BuildContext context) {
     int hour = DateTime.now().hour;
@@ -166,6 +188,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 SizedBox(height: 20),
 
+                SizedBox(height: 20),
+
                 // Categories
                 Text(context.loc.categories,
                     style: GoogleFonts.poppins(
@@ -176,7 +200,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: ListView(
                     scrollDirection: Axis.horizontal,
                     children: [
-                      categoryCard(Icons.lightbulb, context.loc.motivational, Colors.green,fontSize),
+                      categoryCard(Icons.lightbulb, context.loc.motivational, Colors.green, fontSize),
                       categoryCard(Icons.favorite, context.loc.love, Colors.red,fontSize),
                       categoryCard(Icons.emoji_emotions, context.loc.funny, Colors.orange,fontSize),
                       categoryCard(Icons.people, context.loc.friendship, Colors.blue,fontSize),
@@ -187,24 +211,33 @@ class _HomeScreenState extends State<HomeScreen> {
                 SizedBox(
                   height: 20,
                 ),
-                Text(context.loc.trendingQuotes,
-                    style: GoogleFonts.poppins(
-                        fontSize: fontSize, fontWeight: FontWeight.bold)),
+
+                TemplateSection(
+                  title: context.loc.trendingQuotes,
+                  fetchTemplates: _templateService.fetchRecentTemplates,
+                  fontSize: fontSize,
+                  onTemplateSelected: _handleTemplateSelection,
+                ),
+
+                SizedBox(height: 30),
+                Text(
+                  "New ✨",
+                  style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
                 SizedBox(height: 10),
                 SizedBox(
                   height: 120,
                   child: ListView(
                     scrollDirection: Axis.horizontal,
                     children: [
-                      quoteCard("Everything requires hard work.",fontSize),
-                      quoteCard("Success comes from daily efforts.",fontSize),
+                      quoteCard("Cookie.",fontSize),
+                      quoteCard("Happy",fontSize),
+                      quoteCard("August",fontSize),
                       quoteCard("Believe in yourself.",fontSize),
-                      quoteCard("Believe in yourself.",fontSize),
-                      quoteCard("Believe in yourself.",fontSize),
+                      quoteCard("Never give up.",fontSize),
                     ],
                   ),
                 ),
-                SizedBox(height: 20),
               ],
             ),
           ),

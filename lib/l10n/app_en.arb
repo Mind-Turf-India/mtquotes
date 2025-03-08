@@ -43,6 +43,17 @@
   "points": "Points",
   "imageeditor": "Image Editor",
   "selectimage": "Select Image",
+  "speechRecognitionNotAvailable": "Speech Recognition Not Available",
+  "selectImageFromGallery": "Select Image From Gallery",
+  "sizeStandard": "Size Standard",
+  "sizeWide": "Size Wide",
+  "sizeCommon": "Size Common",
+  "sizeSquare": "Size Square",
+  "sizeNarrow": "Size Narrow",
+  "sizeVertical": "Size Vertical",
+  "sizeUltraWide":"Size Ultra Wide",
+  "sizePortrait": "Size Portrait",
+  "sizePanoramic": "Size Panoramic",
   "@languageChanged": {
     "placeholders": {
       "language": {}

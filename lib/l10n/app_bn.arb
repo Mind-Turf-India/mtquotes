@@ -43,6 +43,17 @@
   "points": "পয়েন্ট",
   "imageeditor": "ছবি সম্পাদক",
   "selectimage": "ছবি নির্বাচন করুন",
+  "speechRecognitionNotAvailable": "বাক্ স্বীকৃতি উপলব্ধ নয়",
+  "selectImageFromGallery": "গ্যালারি থেকে চিত্র নির্বাচন করুন",
+  "sizeStandard": "আকার মান",
+  "sizeWide": "প্রশস্ত আকার",
+  "sizeCommon": "সাধারণ আকার",
+  "sizeSquare": "বর্গাকার আকার",
+  "sizeNarrow": "সংকীর্ণ আকার",
+  "sizeVertical": "উল্লম্ব আকার",
+  "sizeUltraWide": "অত্যন্ত প্রশস্ত আকার",
+  "sizePortrait": "প্রতিকৃতি আকার",
+  "sizePanoramic": "প্যানোরামিক আকার",
   "@languageChanged": {
     "placeholders": {
       "language": {}

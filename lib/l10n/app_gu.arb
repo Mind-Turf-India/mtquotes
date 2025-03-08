@@ -43,6 +43,27 @@
   "points": "પોઈન્ટ્સ",
   "imageeditor": "છબી સંપાદક",
   "selectimage": "છબી પસંદ કરો",
+  "speechRecognitionNotAvailable": "સ્વર માન્યતા ઉપલબ્ધ નથી",
+
+  "selectImageFromGallery": "ગેલેરીમાંથી છબી પસંદ કરો",
+
+  "sizeStandard": "કદ માનક",
+
+  "sizeWide": "કદ પહોળું",
+
+  "sizeCommon": "કદ સામાન્ય",
+
+  "sizeSquare": "કદ ચોરસ",
+
+  "sizeNarrow": "કદ સાંકણું",
+
+  "sizeVertical": "કદ લંબાવ",
+
+  "sizeUltraWide": "કદ અલ્ટ્રા પહોળું",
+
+  "sizePortrait": "કદ પોટ્રેટ",
+
+  "sizePanoramic": "કદ પેનોરામિક",
   "@languageChanged": {
     "placeholders": {
       "language": {}

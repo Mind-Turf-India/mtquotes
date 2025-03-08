@@ -6,8 +6,8 @@ import 'package:mtquotes/l10n/app_localization.dart';
 import 'package:mtquotes/screens/User_Home/home_screen.dart';
 import 'package:mtquotes/screens/User_Home/files_screen.dart';
 import 'package:mtquotes/screens/User_Home/profile_screen.dart';
-import '../../Create_Screen/edit_screen.dart';
-import '../../Create_Screen/template.dart';
+import '../../Create_Screen/edit_screen_create.dart';
+import '../../Create_Screen/template_screen_create.dart';
 import '../search_screen.dart';
 
 class MainScreen extends StatefulWidget {

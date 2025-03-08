@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mtquotes/providers/text_size_provider.dart';
+import 'package:mtquotes/screens/Templates/subscription_screen.dart';
+import 'package:mtquotes/screens/Templates/template_handler.dart';
 import 'package:mtquotes/screens/User_Home/home_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -13,6 +15,7 @@ import 'package:mtquotes/l10n/app_localization.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+  await TemplateHandler.initializeTemplatesIfNeeded();
 
   final prefs = await SharedPreferences.getInstance();
   bool hasCompletedOnboarding = prefs.getBool('hasCompletedOnboarding') ?? false;
@@ -86,6 +89,7 @@ class MyAppState extends State<MyApp> {
             'onboarding': (context) => OnboardingScreen(),
             'login': (context) => LoginScreen(),
             'main': (context) => MainScreen(),
+            '/subscription': (context) => SubscriptionScreen(),
           },
         );
       },

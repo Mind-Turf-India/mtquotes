@@ -43,6 +43,27 @@
   "points": "పాయింట్లు",
   "imageeditor": "చిత్ర ఎడిటర్",
   "selectimage": "చిత్రం ఎంచుకోండి",
+  "speechRecognitionNotAvailable": "ప్రసంగ గుర్తింపు అందుబాటులో లేదు",
+
+  "selectImageFromGallery": "గ్యాలరీ నుండి చిత్రం ఎంచుకోండి",
+
+  "sizeStandard": "పరిమాణం ప్రామాణిక",
+
+  "sizeWide": "పరిమాణం విస్తారమైన",
+
+  "sizeCommon": "పరిమాణం సాధారణ",
+
+  "sizeSquare": "పరిమాణం చతురస్రం",
+
+  "sizeNarrow": "పరిమాణం సన్నగా",
+
+  "sizeVertical": "పరిమాణం నిలువు",
+
+  "sizeUltraWide": "పరిమాణం అతి విస్తారమైన",
+
+  "sizePortrait": "పరిమాణం చిత్రం",
+
+  "sizePanoramic": "పరిమాణం పానోరామిక్",
   "@languageChanged": {
     "placeholders": {
       "language": {}

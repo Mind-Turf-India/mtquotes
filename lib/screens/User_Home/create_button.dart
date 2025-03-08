@@ -2,11 +2,11 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:mtquotes/l10n/app_localization.dart';
-import 'package:mtquotes/screens/Create_Screen/edit_screen.dart';
+import 'package:mtquotes/screens/Create_Screen/edit_screen_create.dart';
 import 'package:mtquotes/screens/User_Home/files_screen.dart';
 import 'package:provider/provider.dart';
 import '../../providers/text_size_provider.dart';
-import '../Create_screen/template.dart';
+import '../Create_screen/template_screen_create.dart';
 
 class CreateBottomSheet extends StatefulWidget {
   @override

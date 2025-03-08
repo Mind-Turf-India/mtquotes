@@ -5,6 +5,11 @@ import 'package:speech_to_text/speech_to_text.dart';
 
 import '../../l10n/app_localization.dart';
 import '../../providers/text_size_provider.dart';
+import '../Create_Screen/edit_screen_create.dart';
+import '../Templates/quote_template.dart';
+import '../Templates/subscription_popup.dart';
+import '../Templates/template_section.dart';
+import '../Templates/template_service.dart';
 
 class SearchScreen extends StatefulWidget {
   @override
@@ -16,6 +21,8 @@ class _SearchScreenState extends State<SearchScreen> {
   final SpeechToText _speechToText = SpeechToText();
   bool _speechEnabled = false;
   bool _isListening = false;
+  final TemplateService _templateService = TemplateService();
+
 
   @override
   void initState() {
@@ -55,6 +62,23 @@ class _SearchScreenState extends State<SearchScreen> {
       _stopListening();
     } else {
       _startListening();
+    }
+  }
+
+  void _handleTemplateSelection(QuoteTemplate template) async {
+    bool isSubscribed = await _templateService.isUserSubscribed();
+
+    if (!template.isPaid || isSubscribed) {
+      // Navigate to template editor
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => EditScreen(title: 'image',),
+        ),
+      );
+    } else {
+      // Show subscription popup
+      SubscriptionPopup.show(context);
     }
   }
 
@@ -129,20 +153,13 @@ class _SearchScreenState extends State<SearchScreen> {
                 ),
               ),
               SizedBox(height: 30),
-              Text(context.loc.trendingQuotes,
-                  style: GoogleFonts.poppins(
-                      fontSize: fontSize + 2, fontWeight: FontWeight.bold)),
-              SizedBox(height: 10),
-              SizedBox(
-                height: 120,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  children: [
-                    quoteCard("Everything requires hard work.", fontSize),
-                    quoteCard("Success comes from daily efforts.", fontSize),
-                    quoteCard("Believe in yourself.", fontSize),
-                  ],
-                ),
+
+
+              TemplateSection(
+                title: context.loc.trendingQuotes,
+                fetchTemplates: _templateService.fetchRecentTemplates,
+                fontSize: fontSize,
+                onTemplateSelected: _handleTemplateSelection,
               ),
             ],
           ),

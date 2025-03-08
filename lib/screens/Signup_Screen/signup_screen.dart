@@ -114,6 +114,7 @@ Future<void> _saveUserToFirestore(User? user) async {
       'referrerUid': null, // Will be set if a referral code is used
       'rewardPoints': 0,  // Initial reward points
       'previousRewardPoints' : 0,
+      'isSubscribed': false,
     };
 
     if (_referralController.text.trim().isNotEmpty) {

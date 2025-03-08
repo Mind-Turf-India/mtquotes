@@ -3,7 +3,14 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
 import 'package:speech_to_text/speech_to_text.dart';
+import '../../l10n/app_localization.dart';
+import '../../providers/text_size_provider.dart';
+import '../Templates/quote_template.dart';
+import '../Templates/subscription_popup.dart';
+import '../Templates/template_service.dart';
+import 'edit_screen_create.dart';
 
 class TemplatePage extends StatefulWidget {
   @override
@@ -12,12 +19,13 @@ class TemplatePage extends StatefulWidget {
 
 class _TemplatePageState extends State<TemplatePage> {
   int selectedTab = 0;
-  final List<String> tabs = ["Category", "Gallery", "Custom Size"];
+  List<String> tabs = [];
   final TextEditingController _searchController = TextEditingController();
   File? _image;
   final SpeechToText _speechToText = SpeechToText();
   bool _speechEnabled = false;
   bool _isListening = false;
+  final TemplateService _templateService = TemplateService();
 
   @override
   void initState() {
@@ -25,7 +33,7 @@ class _TemplatePageState extends State<TemplatePage> {
     initSpeech();
   }
 
-  void initSpeech() async{
+  void initSpeech() async {
     _speechEnabled = await _speechToText.initialize();
     setState(() {});
   }
@@ -41,7 +49,7 @@ class _TemplatePageState extends State<TemplatePage> {
         _isListening = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Speech recognition not available')),
+        SnackBar(content: Text(context.loc.speechRecognitionNotAvailable)),
       );
     }
   }
@@ -67,6 +75,23 @@ class _TemplatePageState extends State<TemplatePage> {
     }
   }
 
+  void _handleTemplateSelection(QuoteTemplate template) async {
+    bool isSubscribed = await _templateService.isUserSubscribed();
+
+    if (!template.isPaid || isSubscribed) {
+      // Navigate to template editor
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => EditScreen(title: 'image',),
+        ),
+      );
+    } else {
+      // Show subscription popup
+      SubscriptionPopup.show(context);
+    }
+  }
+
   Future<void> _pickImage() async {
     final pickedFile =
     await ImagePicker().pickImage(source: ImageSource.gallery);
@@ -77,12 +102,23 @@ class _TemplatePageState extends State<TemplatePage> {
       });
     }
   }
+
   @override
   Widget build(BuildContext context) {
+    // Initialize tabs with localized strings
+    tabs = [
+      context.loc.category,
+      context.loc.gallery,
+      context.loc.customesize
+    ];
+
+    final textSizeProvider = Provider.of<TextSizeProvider>(context);
+    double fontSize = textSizeProvider.fontSize;
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text("Template"),
+        title: Text(context.loc.template),
         backgroundColor: Colors.white,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios),
@@ -103,7 +139,7 @@ class _TemplatePageState extends State<TemplatePage> {
               child: TextField(
                 controller: _searchController,
                 decoration: InputDecoration(
-                  hintText: 'Search quotes...',
+                  hintText: context.loc.searchquotes,
                   hintStyle: GoogleFonts.poppins(
                     color: Colors.grey[500],
                   ),
@@ -115,8 +151,9 @@ class _TemplatePageState extends State<TemplatePage> {
                     ),
                     onPressed: _toggleListening,
                   ),
-                  border: InputBorder.none, // Removed default border
-                  contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(
+                      horizontal: 20, vertical: 16),
                 ),
               ),
             ),
@@ -166,11 +203,13 @@ class _TemplatePageState extends State<TemplatePage> {
   }
 
   Widget _buildTabContent(int index) {
+    final textSizeProvider = Provider.of<TextSizeProvider>(context, listen: false);
+    double fontSize = textSizeProvider.fontSize;
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       if (index == 0) ...[
         SizedBox(height: 10),
         Text(
-          "Categories",
+          context.loc.categories,
           style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         SizedBox(height: 10),
@@ -179,17 +218,17 @@ class _TemplatePageState extends State<TemplatePage> {
           child: ListView(
             scrollDirection: Axis.horizontal,
             children: [
-              categoryCard(Icons.lightbulb, "Motivational", Colors.green),
-              categoryCard(Icons.favorite, "Love", Colors.red),
-              categoryCard(Icons.emoji_emotions, "Funny", Colors.orange),
-              categoryCard(Icons.people, "Friendship", Colors.blue),
-              categoryCard(Icons.self_improvement, "Life", Colors.purple),
+              categoryCard(Icons.lightbulb, context.loc.motivational, Colors.green, fontSize),
+              categoryCard(Icons.favorite, context.loc.love, Colors.red, fontSize),
+              categoryCard(Icons.emoji_emotions, context.loc.funny, Colors.orange, fontSize),
+              categoryCard(Icons.people, context.loc.friendship, Colors.blue, fontSize),
+              categoryCard(Icons.self_improvement, context.loc.life, Colors.purple, fontSize),
             ],
           ),
         ),
         SizedBox(height: 30),
         Text(
-          "New ✨",
+          context.loc.newtemplate + " ✨",
           style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         SizedBox(height: 10),
@@ -198,11 +237,11 @@ class _TemplatePageState extends State<TemplatePage> {
           child: ListView(
             scrollDirection: Axis.horizontal,
             children: [
-              quoteCard("Cookie."),
-              quoteCard("Happy"),
-              quoteCard("August"),
-              quoteCard("Believe in yourself."),
-              quoteCard("Never give up."),
+              quoteCard("Cookie.", fontSize),
+              quoteCard("Happy", fontSize),
+              quoteCard("August", fontSize),
+              quoteCard("believeInYourself", fontSize),
+              quoteCard("neverGiveUp", fontSize),
             ],
           ),
         ),
@@ -221,7 +260,7 @@ class _TemplatePageState extends State<TemplatePage> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  'Select Image from Gallery',
+                  context.loc.selectImageFromGallery,
                   style: GoogleFonts.poppins(
                     color: Colors.white,
                     fontSize: 16,),
@@ -258,15 +297,15 @@ class _TemplatePageState extends State<TemplatePage> {
               itemCount: 9,
               itemBuilder: (context, index) {
                 List<String> sizes = [
-                  "Standard (4:3)",
-                  "Wide (19:6)",
-                  "Common (3:2)",
-                  "Square (1:1)",
-                  "Narrow (5:4)",
-                  "Vertical (9:16)",
-                  "Ultra Wide (21:9)",
-                  "Portrait (10:16)",
-                  "Panoramic (32:9)"
+                  context.loc.sizeStandard,
+                  context.loc.sizeWide,
+                  context.loc.sizeCommon,
+                  context.loc.sizeSquare,
+                  context.loc.sizeNarrow,
+                  context.loc.sizeVertical,
+                  context.loc.sizeUltraWide,
+                  context.loc.sizePortrait,
+                  context.loc.sizePanoramic
                 ];
                 return Column(
                   children: [
@@ -289,7 +328,8 @@ class _TemplatePageState extends State<TemplatePage> {
       ]
     ]);
   }
-  Widget categoryCard(IconData icon, String title, Color color) {
+
+  Widget categoryCard(IconData icon, String title, Color color, double fontSize) {
     return Padding(
       padding: EdgeInsets.only(right: 12),
       child: Column(
@@ -306,27 +346,26 @@ class _TemplatePageState extends State<TemplatePage> {
           SizedBox(height: 5),
           Text(title,
               style: GoogleFonts.poppins(
-                  fontSize: 12, fontWeight: FontWeight.w500)),
+                  fontSize: fontSize - 2, fontWeight: FontWeight.w500)),
         ],
       ),
     );
   }
 
-  Widget quoteCard(String quote) {
+  Widget quoteCard(String text, double fontSize) {
     return Container(
-      width: 120,
-      margin: EdgeInsets.symmetric(horizontal: 5),
+      width: 100,
+      margin: EdgeInsets.only(right: 10),
       padding: EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: Colors.grey[200],
-        borderRadius: BorderRadius.circular(10),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [BoxShadow(color: Colors.grey.shade300, blurRadius: 5)],
       ),
       child: Center(
-        child: Text(
-          quote,
-          textAlign: TextAlign.center,
-          style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.bold),
-        ),
+        child: Text(text,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.poppins(fontSize: fontSize - 2)),
       ),
     );
   }
