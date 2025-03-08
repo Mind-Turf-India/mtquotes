@@ -109,6 +109,9 @@ Future<void> _saveUserToFirestore(User? user) async {
     Map<String, dynamic> userData = {
       'uid': user.uid,
       'email': user.email,
+      'name': null,
+      'bio': null,
+      'profilePicture': null, 
       'createdAt': FieldValue.serverTimestamp(),
       'referralCode': referralCode,
       'referrerUid': null, // Will be set if a referral code is used
