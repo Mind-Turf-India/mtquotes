@@ -20,8 +20,6 @@ import '../../l10n/app_localization.dart';
 import '../../providers/text_size_provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:http/http.dart' as http;
-import 'package:share_plus/share_plus.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -33,41 +31,67 @@ class _HomeScreenState extends State<HomeScreen> {
   String userName = "User";
   String greetings = "";
   String? qotdImageUrl;
+  String? profileImageUrl;
   final TemplateService _templateService = TemplateService();
 
   @override
   void initState() {
     super.initState();
+    _fetchUserData();
     _fetchUserDisplayName();
     _fetchQOTDImage();
-     _checkUserProfile();
+    _checkUserProfile();
   }
 
-void _checkUserProfile() async {
+  void _checkUserProfile() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user == null || user.email == null) return;
+
+    String userEmail = user.email!.replaceAll(".", "_");
+
+    DocumentSnapshot userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userEmail)
+        .get();
+
+    if (!userDoc.exists || userDoc['name'] == null || userDoc['bio'] == null) {
+      Future.delayed(Duration.zero, () => _showUserProfileDialog());
+    }
+  }
+
+  void _fetchUserData() async {
   User? user = FirebaseAuth.instance.currentUser;
-  if (user == null) return;
+  if (user == null || user.email == null) return;
+
+  String emailIdWithUnderscores = user.email!.replaceAll('.', '_');
 
   DocumentSnapshot userDoc = await FirebaseFirestore.instance
       .collection('users')
-      .doc(user.uid)
+      .doc(emailIdWithUnderscores)
       .get();
 
-  if (!userDoc.exists || userDoc['name'] == null || userDoc['bio'] == null) {
-    Future.delayed(Duration.zero, () => _showUserProfileDialog());
+  if (userDoc.exists && mounted) {  // Add mounted check here
+    final data = userDoc.data() as Map<String, dynamic>;
+    
+    setState(() {
+      userName = data['name'] ?? '';
+      profileImageUrl = data.containsKey('profileImage') ? data['profileImage'] : null;
+    });
   }
 }
 
-void _showUserProfileDialog() {
+  // Update your _showUserProfileDialog method with fixes
+  void _showUserProfileDialog() {
   showDialog(
     context: context,
-    barrierDismissible: false, // Prevent closing without completing
-    builder: (context) {
+    barrierDismissible: false,
+    builder: (dialogContext) {  // Use dialogContext instead of context for the dialog
       TextEditingController nameController = TextEditingController();
       TextEditingController bioController = TextEditingController();
       File? _selectedImage;
 
       return StatefulBuilder(
-        builder: (context, setState) {
+        builder: (dialogContext, setDialogState) {  // Rename setState to setDialogState to avoid confusion
           return AlertDialog(
             title: Text("Complete Your Profile"),
             content: Column(
@@ -77,7 +101,7 @@ void _showUserProfileDialog() {
                   onTap: () async {
                     final pickedImage = await _pickImage();
                     if (pickedImage != null) {
-                      setState(() {
+                      setDialogState(() {
                         _selectedImage = pickedImage;
                       });
                     }
@@ -86,8 +110,13 @@ void _showUserProfileDialog() {
                     radius: 40,
                     backgroundImage: _selectedImage != null
                         ? FileImage(_selectedImage!)
-                        : null,
-                    child: _selectedImage == null
+                        : (profileImageUrl != null &&
+                                profileImageUrl!.isNotEmpty
+                            ? NetworkImage(profileImageUrl!) as ImageProvider
+                            : null),
+                    child: (_selectedImage == null &&
+                            (profileImageUrl == null ||
+                                profileImageUrl!.isEmpty))
                         ? Icon(Icons.camera_alt, size: 40)
                         : null,
                   ),
@@ -103,10 +132,66 @@ void _showUserProfileDialog() {
               ],
             ),
             actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(dialogContext);
+                },
+                child: Text("Cancel"),
+              ),
               ElevatedButton(
                 onPressed: () async {
-                  await _updateUserProfile(nameController.text, bioController.text, _selectedImage);
-                  Navigator.pop(context);
+                  try {
+                    // Validate input before proceeding
+                    if (nameController.text.isEmpty) {
+                      ScaffoldMessenger.of(dialogContext).showSnackBar(
+                        const SnackBar(content: Text("Name cannot be empty")),
+                      );
+                      return;
+                    }
+
+                    // Store values before closing dialog
+                    final String newName = nameController.text;
+                    final String newBio = bioController.text;
+                    final File? imageToUpload = _selectedImage;
+
+                    // First close the dialog to prevent context issues
+                    Navigator.pop(dialogContext);
+
+                    // Use a flag to check if we can proceed with UI updates
+                    bool canUpdateUI = true;
+                    
+                    try {
+                      await _updateUserProfile(
+                        newName,
+                        newBio,
+                        imageToUpload,
+                      );
+                    } catch (e) {
+                      canUpdateUI = false;
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text("Error updating profile: $e")),
+                        );
+                      }
+                    }
+
+                    // Only fetch data and show success if the main widget is still mounted
+                    // and the update completed successfully
+                    if (canUpdateUI && mounted) {
+                      _fetchUserData();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text("Profile updated successfully")),
+                      );
+                    }
+                  } catch (e) {
+                    print("Error in profile update flow: $e");
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text("Error updating profile: $e")),
+                      );
+                    }
+                  }
                 },
                 child: Text("Save"),
               ),
@@ -118,52 +203,85 @@ void _showUserProfileDialog() {
   );
 }
 
-Future<File?> _pickImage() async {
-  final picker = ImagePicker();
-  final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-  if (pickedFile != null) {
-    return File(pickedFile.path);
-  }
-  return null;
-}
-
-Future<void> _updateUserProfile(String name, String bio, File? image) async {
-  User? user = FirebaseAuth.instance.currentUser;
-  if (user == null) return;
-
-  String? imageUrl;
-  if (image != null) {
-    imageUrl = await _uploadProfileImage(user.uid, image);
+  Future<File?> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      return File(pickedFile.path);
+    }
+    return null;
   }
 
-  await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
-    'name': name,
-    'bio': bio,
-    'profileImage': imageUrl,
-  }, SetOptions(merge: true));
+  Future<void> _updateUserProfile(String name, String bio, File? image) async {
+    try {
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user == null || user.email == null) {
+        print("Error: No user logged in.");
+        return;
+      }
 
-  setState(() {
-    userName = name;
-  });
-}
+      String userEmail = user.email!.replaceAll(".", "_");
+      String imageUrl = "";
 
-Future<String?> _uploadProfileImage(String uid, File image) async {
-  Reference storageRef = FirebaseStorage.instance.ref().child('profile_pictures/$uid.jpg');
-  UploadTask uploadTask = storageRef.putFile(image);
-  TaskSnapshot snapshot = await uploadTask;
-  return await snapshot.ref.getDownloadURL();
-}
+      if (image != null) {
+        print("Uploading image...");
+        TaskSnapshot snapshot = await FirebaseStorage.instance
+            .ref(
+                'profile_pictures/${userEmail}_${DateTime.now().millisecondsSinceEpoch}.jpg')
+            .putFile(image);
 
-  
+        imageUrl = await snapshot.ref.getDownloadURL();
+        print("Image uploaded successfully: $imageUrl");
+      }
 
-  void _fetchUserDisplayName() {
+      await FirebaseFirestore.instance.collection('users').doc(userEmail).set({
+        'name': name,
+        'bio': bio,
+        'profileImage': imageUrl.isNotEmpty
+            ? imageUrl
+            : profileImageUrl, // Keep existing if no new one
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+
+      print("User profile updated successfully");
+
+      if (mounted) {
+        setState(() {
+          userName = name;
+          if (imageUrl.isNotEmpty) {
+            profileImageUrl = imageUrl;
+          }
+        });
+      }
+    } catch (e) {
+      print("Error in _updateUserProfile: $e");
+    }
+  }
+
+  Future<String?> _uploadProfileImage(String uid, File image) async {
+    Reference storageRef =
+        FirebaseStorage.instance.ref().child('profile_pictures/$uid.jpg');
+    UploadTask uploadTask = storageRef.putFile(image);
+    TaskSnapshot snapshot = await uploadTask;
+    return await snapshot.ref.getDownloadURL();
+  }
+
+  void _fetchUserDisplayName() async {
     User? user = FirebaseAuth.instance.currentUser;
-    if (user != null &&
-        user.displayName != null &&
-        user.displayName!.isNotEmpty) {
-      setState(() {
-        userName = user.displayName!;
-      });
+    if (user != null) {
+      String emailIdWithUnderscores = user.email!.replaceAll('.', '_');
+
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(emailIdWithUnderscores)
+          .get();
+
+      if (userDoc.exists) {
+        setState(() {
+          userName =
+              userDoc['name'] ?? ''; // Ensure a fallback if 'name' is null
+        });
+      }
     }
   }
 
@@ -175,7 +293,9 @@ Future<String?> _uploadProfileImage(String uid, File image) async {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => EditScreen(title: 'image',),
+          builder: (context) => EditScreen(
+            title: 'image',
+          ),
         ),
       );
     } else {
@@ -183,7 +303,6 @@ Future<String?> _uploadProfileImage(String uid, File image) async {
       SubscriptionPopup.show(context);
     }
   }
-
 
   String _getGreeting(BuildContext context) {
     int hour = DateTime.now().hour;
@@ -230,29 +349,29 @@ Future<String?> _uploadProfileImage(String uid, File image) async {
   }
 
   void shareImage(String? qotdImageUrl) async {
-  if (qotdImageUrl != null && qotdImageUrl.isNotEmpty) {
-    try {
-      final uri = Uri.parse(qotdImageUrl);
-      final response = await http.get(uri);
+    if (qotdImageUrl != null && qotdImageUrl.isNotEmpty) {
+      try {
+        final uri = Uri.parse(qotdImageUrl);
+        final response = await http.get(uri);
 
-      if (response.statusCode == 200) {
-        final tempDir = await getTemporaryDirectory();
-        final filePath = '${tempDir.path}/quote_image.jpg';
-        File file = File(filePath);
-        await file.writeAsBytes(response.bodyBytes);
+        if (response.statusCode == 200) {
+          final tempDir = await getTemporaryDirectory();
+          final filePath = '${tempDir.path}/quote_image.jpg';
+          File file = File(filePath);
+          await file.writeAsBytes(response.bodyBytes);
 
-        /// ✅ Correct way to share files using `share_plus`
-        await Share.shareXFiles([XFile(filePath)], text: "Quote of the Day");
-      } else {
-        debugPrint("Failed to download image");
+          /// ✅ Correct way to share files using `share_plus`
+          await Share.shareXFiles([XFile(filePath)], text: "Quote of the Day");
+        } else {
+          debugPrint("Failed to download image");
+        }
+      } catch (e) {
+        debugPrint("Error: $e");
       }
-    } catch (e) {
-      debugPrint("Error: $e");
+    } else {
+      await Share.share("Check out this amazing quote!");
     }
-  } else {
-    await Share.share("Check out this amazing quote!");
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -272,16 +391,22 @@ Future<String?> _uploadProfileImage(String uid, File image) async {
           title: Row(
             children: [
               GestureDetector(
-                onTap: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (context) => ProfileScreen()),
-                  );
-                },
-                child: CircleAvatar(
+                  onTap: () {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (context) => ProfileScreen()),
+                    );
+                  },
+                  child: CircleAvatar(
                     backgroundColor: Colors.grey[300],
-                    child: Icon(LucideIcons.user, color: Colors.black)),
-              ),
+                    backgroundImage:
+                        profileImageUrl != null && profileImageUrl!.isNotEmpty
+                            ? NetworkImage(profileImageUrl!)
+                            : null,
+                    child: profileImageUrl == null || profileImageUrl!.isEmpty
+                        ? Icon(LucideIcons.user, color: Colors.black)
+                        : null,
+                  )),
               SizedBox(width: 20),
               Text(
                 "Hi, $userName\n$greetings",
@@ -318,7 +443,7 @@ Future<String?> _uploadProfileImage(String uid, File image) async {
                       width: double.infinity,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(12),
-                        color: Colors.transparent, 
+                        color: Colors.transparent,
                       ),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(12),
@@ -429,7 +554,8 @@ Future<String?> _uploadProfileImage(String uid, File image) async {
                 SizedBox(height: 30),
                 Text(
                   "New ✨",
-                  style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold),
+                  style: GoogleFonts.poppins(
+                      fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 10),
                 SizedBox(

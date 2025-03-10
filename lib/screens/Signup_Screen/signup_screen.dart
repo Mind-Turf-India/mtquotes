@@ -102,8 +102,9 @@ class _SignupScreenState extends State<SignupScreen> {
 
 
 Future<void> _saveUserToFirestore(User? user) async {
-  if (user != null) {
-    final userRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+  if (user != null && user.email != null) {
+    final String userEmail = user.email!.replaceAll(".", "_"); // Firestore doesn't allow '.' in document IDs
+    final userRef = FirebaseFirestore.instance.collection('users').doc(userEmail);
     final String referralCode = _generateReferralCode(user.uid);
 
     Map<String, dynamic> userData = {
@@ -111,19 +112,19 @@ Future<void> _saveUserToFirestore(User? user) async {
       'email': user.email,
       'name': null,
       'bio': null,
-      'profilePicture': null, 
-      'createdAt': FieldValue.serverTimestamp(),
+      'createdAt': FieldValue.serverTimestamp(), // Latest login time
       'referralCode': referralCode,
-      'referrerUid': null, // Will be set if a referral code is used
-      'rewardPoints': 0,  // Initial reward points
-      'previousRewardPoints' : 0,
+      'referrerUid': null, 
+      'rewardPoints': 0,
+      'previousRewardPoints': 0,
       'isSubscribed': false,
     };
 
+    // Handling referral codes
     if (_referralController.text.trim().isNotEmpty) {
       String usedReferralCode = _referralController.text.trim();
 
-      // Check if the referral code exists in Firestore
+      // Find the referrer in Firestore
       QuerySnapshot querySnapshot = await FirebaseFirestore.instance
           .collection('users')
           .where('referralCode', isEqualTo: usedReferralCode)
@@ -133,20 +134,22 @@ Future<void> _saveUserToFirestore(User? user) async {
         DocumentSnapshot referrerDoc = querySnapshot.docs.first;
         String referrerUid = referrerDoc.id;
 
-        // Update user1 data
+        // Update user data with referrer info
         userData['referrerUid'] = referrerUid;
         userData['rewardPoints'] = 50; // Reward for using a referral
 
-        // Grant reward points to referrer (user2)
+        // Grant reward points to referrer
         await FirebaseFirestore.instance.collection('users').doc(referrerUid).update({
           'rewardPoints': FieldValue.increment(50),
         });
       }
     }
 
+    // Save user data
     await userRef.set(userData, SetOptions(merge: true));
   }
 }
+
 
 // Function to generate a unique referral code
 String _generateReferralCode(String uid) {
