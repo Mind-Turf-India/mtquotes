@@ -59,6 +59,12 @@
   "theme": "Theme",
   "language": "Language",
   "textsize": "Text Size",
+  "sharing_options": "Sharing Options",
+  "share_with_attribution" : "Share With Attribution",
+  "customize": "Customize",
+  "upgrade_to_premium": "Upgrade To Premium",
+  "premium_sharing_features": "Premium Sharing Features",
+  "upgrade_now": "Upgrade Now",
   "@languageChanged": {
     "placeholders": {
       "language": {}

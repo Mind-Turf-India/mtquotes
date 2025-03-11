@@ -59,6 +59,13 @@
   "theme": "থিম",
   "language": "ভাষা",
   "textsize": "পাঠের আকার",
+  "sharing_options": "শেয়ারিং বিকল্পগুলি",
+  "share_with_attribution": "স্বীকৃতির সাথে শেয়ার করুন",
+  "customize": "স্বনির্ধারিত করুন",
+  "upgrade_to_premium": "প্রিমিয়ামে আপগ্রেড করুন",
+  "premium_sharing_features": "প্রিমিয়াম শেয়ারিং বৈশিষ্ট্য",
+  "upgrade_now": "এখনই আপগ্রেড করুন",
+
   "@languageChanged": {
     "placeholders": {
       "language": {}

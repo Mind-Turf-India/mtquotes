@@ -459,7 +459,7 @@ class TemplateSharingPage extends StatelessWidget {
                   TextButton(
                     onPressed: () {
                       Navigator.of(dialogContext).pop(rating); // Close the dialog
-                      Navigator.of(context).pushReplacementNamed('/home');
+                      Navigator.of(context).pushReplacementNamed('/nav_bar');
                     },
                     child: Text('Submit'),
                   ),

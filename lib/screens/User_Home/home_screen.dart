@@ -21,6 +21,9 @@ import '../../providers/text_size_provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:mtquotes/screens/Templates/components/festivals/festival_post.dart';
+import 'package:mtquotes/screens/Templates/components/festivals/festival_service.dart';
+import 'package:mtquotes/screens/Templates/components/festivals/festival_handler.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -33,6 +36,9 @@ class _HomeScreenState extends State<HomeScreen> {
   String? qotdImageUrl;
   String? profileImageUrl;
   final TemplateService _templateService = TemplateService();
+  final FestivalService _festivalService = FestivalService();
+  List<FestivalPost> _festivalPosts = [];
+  bool _loadingFestivals = false;
 
   @override
   void initState() {
@@ -41,7 +47,63 @@ class _HomeScreenState extends State<HomeScreen> {
     _fetchUserDisplayName();
     _fetchQOTDImage();
     _checkUserProfile();
+    _fetchFestivalPosts();
   }
+
+  // New method to fetch festival posts
+  Future<void> _fetchFestivalPosts() async {
+  setState(() {
+    _loadingFestivals = true;
+  });
+
+  try {
+    final festivals = await _festivalService.fetchRecentFestivalPosts();
+
+    if (mounted) {
+      setState(() {
+        // Use the new method to create multiple FestivalPosts from each Festival
+        _festivalPosts = [];
+        for (var festival in festivals) {
+          _festivalPosts.addAll(FestivalPost.multipleFromFestival(festival));
+        }
+        
+        // Debug prints
+        for (var post in _festivalPosts) {
+          print("Post: ${post.name}, Image URL: ${post.imageUrl}");
+        }
+
+        _loadingFestivals = false;
+      });
+    }
+  } catch (e) {
+    print("Error loading festival posts: $e");
+    if (mounted) {
+      setState(() {
+        _loadingFestivals = false;
+      });
+    }
+  }
+}
+
+void _handleFestivalPostSelection(FestivalPost festival) {
+  FestivalHandler.handleFestivalSelection(
+    context,
+    festival,
+    (selectedFestival) {
+      // This is what happens when the user gets access to the festival
+      // For example, you could navigate to an edit screen:
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => EditScreen(
+            title: 'Edit Festival Post',
+            templateImageUrl: selectedFestival.imageUrl,
+          ),
+        ),
+      );
+    },
+  );
+}
 
   void _checkUserProfile() async {
     User? user = FirebaseAuth.instance.currentUser;
@@ -60,148 +122,153 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _fetchUserData() async {
-  User? user = FirebaseAuth.instance.currentUser;
-  if (user == null || user.email == null) return;
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user == null || user.email == null) return;
 
-  String emailIdWithUnderscores = user.email!.replaceAll('.', '_');
+    String emailIdWithUnderscores = user.email!.replaceAll('.', '_');
 
-  DocumentSnapshot userDoc = await FirebaseFirestore.instance
-      .collection('users')
-      .doc(emailIdWithUnderscores)
-      .get();
+    DocumentSnapshot userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(emailIdWithUnderscores)
+        .get();
 
-  if (userDoc.exists && mounted) {  // Add mounted check here
-    final data = userDoc.data() as Map<String, dynamic>;
-    
-    setState(() {
-      userName = data['name'] ?? '';
-      profileImageUrl = data.containsKey('profileImage') ? data['profileImage'] : null;
-    });
+    if (userDoc.exists && mounted) {
+      // Add mounted check here
+      final data = userDoc.data() as Map<String, dynamic>;
+
+      setState(() {
+        userName = data['name'] ?? '';
+        profileImageUrl =
+            data.containsKey('profileImage') ? data['profileImage'] : null;
+      });
+    }
   }
-}
 
   // Update your _showUserProfileDialog method with fixes
   void _showUserProfileDialog() {
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (dialogContext) {  // Use dialogContext instead of context for the dialog
-      TextEditingController nameController = TextEditingController();
-      TextEditingController bioController = TextEditingController();
-      File? _selectedImage;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        // Use dialogContext instead of context for the dialog
+        TextEditingController nameController = TextEditingController();
+        TextEditingController bioController = TextEditingController();
+        File? _selectedImage;
 
-      return StatefulBuilder(
-        builder: (dialogContext, setDialogState) {  // Rename setState to setDialogState to avoid confusion
-          return AlertDialog(
-            title: Text("Complete Your Profile"),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                GestureDetector(
-                  onTap: () async {
-                    final pickedImage = await _pickImage();
-                    if (pickedImage != null) {
-                      setDialogState(() {
-                        _selectedImage = pickedImage;
-                      });
-                    }
-                  },
-                  child: CircleAvatar(
-                    radius: 40,
-                    backgroundImage: _selectedImage != null
-                        ? FileImage(_selectedImage!)
-                        : (profileImageUrl != null &&
-                                profileImageUrl!.isNotEmpty
-                            ? NetworkImage(profileImageUrl!) as ImageProvider
-                            : null),
-                    child: (_selectedImage == null &&
-                            (profileImageUrl == null ||
-                                profileImageUrl!.isEmpty))
-                        ? Icon(Icons.camera_alt, size: 40)
-                        : null,
+        return StatefulBuilder(
+          builder: (dialogContext, setDialogState) {
+            // Rename setState to setDialogState to avoid confusion
+            return AlertDialog(
+              title: Text("Complete Your Profile"),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  GestureDetector(
+                    onTap: () async {
+                      final pickedImage = await _pickImage();
+                      if (pickedImage != null) {
+                        setDialogState(() {
+                          _selectedImage = pickedImage;
+                        });
+                      }
+                    },
+                    child: CircleAvatar(
+                      radius: 40,
+                      backgroundImage: _selectedImage != null
+                          ? FileImage(_selectedImage!)
+                          : (profileImageUrl != null &&
+                                  profileImageUrl!.isNotEmpty
+                              ? NetworkImage(profileImageUrl!) as ImageProvider
+                              : null),
+                      child: (_selectedImage == null &&
+                              (profileImageUrl == null ||
+                                  profileImageUrl!.isEmpty))
+                          ? Icon(Icons.camera_alt, size: 40)
+                          : null,
+                    ),
                   ),
-                ),
-                TextField(
-                  controller: nameController,
-                  decoration: InputDecoration(labelText: "Name"),
-                ),
-                TextField(
-                  controller: bioController,
-                  decoration: InputDecoration(labelText: "Bio"),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(dialogContext);
-                },
-                child: Text("Cancel"),
+                  TextField(
+                    controller: nameController,
+                    decoration: InputDecoration(labelText: "Name"),
+                  ),
+                  TextField(
+                    controller: bioController,
+                    decoration: InputDecoration(labelText: "Bio"),
+                  ),
+                ],
               ),
-              ElevatedButton(
-                onPressed: () async {
-                  try {
-                    // Validate input before proceeding
-                    if (nameController.text.isEmpty) {
-                      ScaffoldMessenger.of(dialogContext).showSnackBar(
-                        const SnackBar(content: Text("Name cannot be empty")),
-                      );
-                      return;
-                    }
-
-                    // Store values before closing dialog
-                    final String newName = nameController.text;
-                    final String newBio = bioController.text;
-                    final File? imageToUpload = _selectedImage;
-
-                    // First close the dialog to prevent context issues
+              actions: [
+                TextButton(
+                  onPressed: () {
                     Navigator.pop(dialogContext);
-
-                    // Use a flag to check if we can proceed with UI updates
-                    bool canUpdateUI = true;
-                    
+                  },
+                  child: Text("Cancel"),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
                     try {
-                      await _updateUserProfile(
-                        newName,
-                        newBio,
-                        imageToUpload,
-                      );
+                      // Validate input before proceeding
+                      if (nameController.text.isEmpty) {
+                        ScaffoldMessenger.of(dialogContext).showSnackBar(
+                          const SnackBar(content: Text("Name cannot be empty")),
+                        );
+                        return;
+                      }
+
+                      // Store values before closing dialog
+                      final String newName = nameController.text;
+                      final String newBio = bioController.text;
+                      final File? imageToUpload = _selectedImage;
+
+                      // First close the dialog to prevent context issues
+                      Navigator.pop(dialogContext);
+
+                      // Use a flag to check if we can proceed with UI updates
+                      bool canUpdateUI = true;
+
+                      try {
+                        await _updateUserProfile(
+                          newName,
+                          newBio,
+                          imageToUpload,
+                        );
+                      } catch (e) {
+                        canUpdateUI = false;
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                                content: Text("Error updating profile: $e")),
+                          );
+                        }
+                      }
+
+                      // Only fetch data and show success if the main widget is still mounted
+                      // and the update completed successfully
+                      if (canUpdateUI && mounted) {
+                        _fetchUserData();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text("Profile updated successfully")),
+                        );
+                      }
                     } catch (e) {
-                      canUpdateUI = false;
+                      print("Error in profile update flow: $e");
                       if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text("Error updating profile: $e")),
                         );
                       }
                     }
-
-                    // Only fetch data and show success if the main widget is still mounted
-                    // and the update completed successfully
-                    if (canUpdateUI && mounted) {
-                      _fetchUserData();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text("Profile updated successfully")),
-                      );
-                    }
-                  } catch (e) {
-                    print("Error in profile update flow: $e");
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text("Error updating profile: $e")),
-                      );
-                    }
-                  }
-                },
-                child: Text("Save"),
-              ),
-            ],
-          );
-        },
-      );
-    },
-  );
-}
+                  },
+                  child: Text("Save"),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
 
   Future<File?> _pickImage() async {
     final picker = ImagePicker();
@@ -560,16 +627,26 @@ class _HomeScreenState extends State<HomeScreen> {
                 SizedBox(height: 10),
                 SizedBox(
                   height: 120,
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    children: [
-                      quoteCard("Everything requires hard work.", fontSize),
-                      quoteCard("Success comes from daily efforts.", fontSize),
-                      quoteCard("Believe in yourself.", fontSize),
-                      quoteCard("Believe in yourself.", fontSize),
-                      quoteCard("Believe in yourself.", fontSize),
-                    ],
-                  ),
+                  child: _loadingFestivals
+                      ? Center(child: CircularProgressIndicator())
+                      : _festivalPosts.isEmpty
+                          ? Center(
+                              child: Text(
+                                "No festival posts available",
+                                style:
+                                    GoogleFonts.poppins(fontSize: fontSize - 2),
+                              ),
+                            )
+                          : ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: _festivalPosts.length,
+                              itemBuilder: (context, index) {
+                                return festivalPostCard(
+                                  _festivalPosts[index],
+                                  fontSize,
+                                );
+                              },
+                            ),
                 ),
               ],
             ),
@@ -596,6 +673,90 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+
+    Widget festivalPostCard(FestivalPost festival, double fontSize) {
+      return GestureDetector(
+        onTap: () => _handleFestivalPostSelection(festival),
+        child: Container(
+          width: 120,
+          margin: EdgeInsets.only(right: 10),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: [BoxShadow(color: Colors.grey.shade300, blurRadius: 5)],
+          ),
+          child: Column(
+            children: [
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+                  child: festival.imageUrl.isNotEmpty
+                      ? CachedNetworkImage(
+                          imageUrl: festival.imageUrl,
+                          placeholder: (context, url) => Center(
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                          errorWidget: (context, url, error) {
+                            print("Image loading error: $error for URL: $url");
+                            return Container(
+                              color: Colors.grey[300],
+                              child: Icon(Icons.error),
+                            );
+                          },
+                          fit: BoxFit.cover,
+                          width: 100,
+                          height: 80,
+                          // Ensure caching works properly
+                          cacheKey: festival.id + "_image",
+                          maxHeightDiskCache: 500,
+                          maxWidthDiskCache: 500,
+                        )
+                      : Container(
+                          color: Colors.grey[200],
+                          child: Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.image_not_supported,
+                                    color: Colors.grey),
+                                SizedBox(height: 4),
+                                Text(
+                                  "No Image",
+                                  style:
+                                      TextStyle(fontSize: 10, color: Colors.grey),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                ),
+              ),
+              // Padding(
+              //   padding: EdgeInsets.all(6),
+              //   child: Row(
+              //     children: [
+              //       // Expanded(
+              //       //   child: Text(
+              //       //     festival.name,
+              //       //     textAlign: TextAlign.center,
+              //       //     style: GoogleFonts.poppins(
+              //       //       fontSize: fontSize - 4,
+              //       //       fontWeight: FontWeight.w500,
+              //       //     ),
+              //       //     maxLines: 1,
+              //       //     overflow: TextOverflow.ellipsis,
+              //       //   ),
+              //       // ),
+              //       if (festival.isPaid)
+              //         Icon(Icons.lock, size: 14, color: Colors.orange),
+              //     ],
+              //   ),
+              // ),
+            ],
+          ),
+        ),
+      );
+    }
 
   Widget categoryCard(
       IconData icon, String title, Color color, double fontSize) {

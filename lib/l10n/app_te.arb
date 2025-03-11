@@ -59,6 +59,13 @@
   "theme": "థీమ్",
   "language": "భాష",
   "textsize": "పాఠ్యం పరిమాణం",
+  "sharing_options": "పంచుకునే ఎంపికలు",
+  "share_with_attribution": "కృతజ్ఞతతో పంచుకోండి",
+  "customize": "అనుకూలీకరించండి",
+  "upgrade_to_premium": "ప్రీమియం కి అప్‌గ్రేడ్ చేయండి",
+  "premium_sharing_features": "ప్రీమియం పంచుకునే ఫీచర్లు",
+  "upgrade_now": "ఇప్పుడే అప్‌గ్రేడ్ చేయండి",
+
   "@languageChanged": {
     "placeholders": {
       "language": {}

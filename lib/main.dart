@@ -91,6 +91,7 @@ class MyAppState extends State<MyApp> {
             'main': (context) => MainScreen(),
             '/subscription': (context) => SubscriptionScreen(),
             '/home': (context) => HomeScreen(),
+            '/nav_bar':(context) => MainScreen()
           },
         );
       },
