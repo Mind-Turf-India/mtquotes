@@ -19,7 +19,7 @@ import '../Create_Screen/edit_screen_create.dart';
 class TemplateHandler {
   static final GlobalKey templateImageKey = GlobalKey();
 
-  // Handle template selection with subscription check and directly navigate to edit screen
+  // Handle template selection with subscription check
   static Future<void> handleTemplateSelection(
       BuildContext context,
       QuoteTemplate template,
@@ -53,18 +53,12 @@ class TemplateHandler {
         ),
       );
     } else {
-      // Directly navigate to edit screen or call the callback
-      onAccessGranted(template);
-
-      // Optional: If you want to directly navigate to edit screen instead of using callback
-      // Navigator.of(context).push(
-      //   MaterialPageRoute(
-      //     builder: (context) => EditScreen(
-      //       title: 'Edit Template',
-      //       templateImageUrl: template.imageUrl,
-      //     ),
-      //   ),
-      // );
+      // Show confirmation dialog with preview
+      showTemplateConfirmationDialog(
+        context,
+        template,
+            () => onAccessGranted(template),
+      );
     }
   }
 
@@ -227,6 +221,7 @@ class TemplateHandler {
     }
   }
 
+
   // Method to share template
   static Future<void> shareTemplate(
       BuildContext context,
@@ -335,6 +330,311 @@ class TemplateHandler {
         ),
       );
     }
+  }
+
+
+  // Method to show the template confirmation dialog
+  static void showTemplateConfirmationDialog(
+      BuildContext context,
+      QuoteTemplate template,
+      VoidCallback onCreatePressed,
+      ) async {
+    final templateService = TemplateService();
+    bool isPaidUser = await templateService.isUserSubscribed();
+
+    User? currentUser = FirebaseAuth.instance.currentUser;
+    String userName = currentUser?.displayName ?? context.loc.user;
+    String userProfileImageUrl = currentUser?.photoURL ?? '';
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+          child: Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: EdgeInsets.symmetric(horizontal: 20),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Padding(
+                              padding: EdgeInsets.all(16),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  RepaintBoundary(
+                                    key: templateImageKey,
+                                    child: Container(
+                                      width: double.infinity,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(color: Colors.grey.shade300),
+                                      ),
+                                      child: Column(
+                                        children: [
+                                          Stack(
+                                            children: [
+                                              Container(
+                                                height: 400,
+                                                decoration: BoxDecoration(
+                                                  borderRadius: BorderRadius.circular(8),
+                                                  image: DecorationImage(
+                                                    image: NetworkImage(template.imageUrl),
+                                                    fit: BoxFit.cover,
+                                                  ),
+                                                ),
+                                                child: isPaidUser
+                                                    ? Stack(
+                                                  children: [
+                                                    // Branded corner mark for paid users
+                                                    Positioned(
+                                                      bottom: 10,
+                                                      right: 10,
+                                                      child: Container(
+                                                        padding: EdgeInsets.symmetric(
+                                                            horizontal: 8,
+                                                            vertical: 4
+                                                        ),
+                                                        decoration: BoxDecoration(
+                                                          color: Colors.black.withOpacity(0.6),
+                                                          borderRadius: BorderRadius.circular(12),
+                                                        ),
+                                                        child: Row(
+                                                          mainAxisSize: MainAxisSize.min,
+                                                          children: [
+                                                            CircleAvatar(
+                                                              radius: 10,
+                                                              backgroundImage: userProfileImageUrl.isNotEmpty
+                                                                  ? NetworkImage(userProfileImageUrl)
+                                                                  : AssetImage('assets/images/profile_placeholder.png') as ImageProvider,
+                                                            ),
+                                                            SizedBox(width: 4),
+                                                            Text(
+                                                              userName,
+                                                              style: TextStyle(
+                                                                fontSize: 10,
+                                                                color: Colors.white,
+                                                                fontWeight: FontWeight.bold,
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                )
+                                                    : null,
+                                              ),
+                                            ],
+                                          ),
+                                          /* Commented out the user information box below template that appears for free users
+                                        if (!isPaidUser)
+                                          Container(
+                                            padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                                            child: Row(
+                                              children: [
+                                                CircleAvatar(
+                                                  radius: 15,
+                                                  backgroundImage: userProfileImageUrl.isNotEmpty
+                                                      ? NetworkImage(userProfileImageUrl)
+                                                      : AssetImage('assets/profile_placeholder.png') as ImageProvider,
+                                                ),
+                                                SizedBox(width: 8),
+                                                Expanded(
+                                                  child: Container(
+                                                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                    decoration: BoxDecoration(
+                                                      border: Border.all(color: Colors.grey.shade300),
+                                                      borderRadius: BorderRadius.circular(20),
+                                                    ),
+                                                    child: Row(
+                                                      mainAxisAlignment: MainAxisAlignment.center,
+                                                      children: [
+                                                        Text(
+                                                          userName.isEmpty ? 'User' : userName,
+                                                          style: TextStyle(
+                                                            fontSize: 14,
+                                                            color: Colors.black87,
+                                                          ),
+                                                        ),
+                                                        if (!isPaidUser) SizedBox(width: 4),
+                                                        if (!isPaidUser)
+                                                          Tooltip(
+                                                            message: 'Upgrade to share with your name',
+                                                            child: Icon(Icons.lock, size: 14, color: Colors.grey),
+                                                          ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        */
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(height: 24),
+                                  Text(
+                                    'Do you wish to continue?',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  SizedBox(height: 16),
+                                  Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          SizedBox(
+                                            width: 100,
+                                            child: ElevatedButton(
+                                              onPressed: () {
+                                                Navigator.of(context).pop();
+                                                Navigator.of(context).push(
+                                                  MaterialPageRoute(
+                                                    builder: (context) => EditScreen(
+                                                      title: 'Edit Template',
+                                                      templateImageUrl: template.imageUrl,
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: Colors.blue,
+                                                foregroundColor: Colors.white,
+                                                elevation: 0,
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius: BorderRadius.circular(24),
+                                                ),
+                                              ),
+                                              child: Text('Create'),
+                                            ),
+                                          ),
+                                          SizedBox(width: 40),
+                                          SizedBox(
+                                            width: 100,
+                                            child: ElevatedButton(
+                                              onPressed: () => Navigator.of(context).pop(),
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: Colors.white,
+                                                foregroundColor: Colors.black87,
+                                                elevation: 0,
+                                                side: BorderSide(color: Colors.grey.shade300),
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius: BorderRadius.circular(24),
+                                                ),
+                                                padding: EdgeInsets.symmetric(vertical: 12),
+                                              ),
+                                              child: Text('Cancel'),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      SizedBox(height: 12),
+                                      // Modified Share Button - now navigates to share page
+                                      Center(
+                                        child: SizedBox(
+                                          width: 140,
+                                          child: ElevatedButton.icon(
+                                            onPressed: () {
+                                              Navigator.of(context).pop();
+                                              Navigator.of(context).push(
+                                                MaterialPageRoute(
+                                                  builder: (context) => TemplateSharingPage(
+                                                    template: template,
+                                                    userName: userName,
+                                                    userProfileImageUrl: userProfileImageUrl,
+                                                    isPaidUser: isPaidUser,
+                                                  ),
+                                                ),
+                                              );
+                                            },
+                                            icon: Icon(Icons.share),
+                                            label: Text('Share'),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.blue,
+                                              foregroundColor: Colors.white,
+                                              elevation: 0,
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.circular(24),
+                                              ),
+                                              padding: EdgeInsets.symmetric(vertical: 12),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      /* Commented out old Share Button implementation
+                                    Center(
+                                      child: SizedBox(
+                                        width: 140,
+                                        child: ElevatedButton.icon(
+                                          onPressed: () => shareTemplate(
+                                            context,
+                                            template,
+                                            userName: userName,
+                                            userProfileImageUrl: userProfileImageUrl,
+                                            isPaidUser: isPaidUser,
+                                          ),
+                                          icon: Icon(isPaidUser ? Icons.share : Icons.lock),
+                                          label: Text(isPaidUser ? 'Share' : 'Share (Upgrade)'),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: isPaidUser
+                                                ? Colors.blue
+                                                : Colors.grey.shade300,
+                                            foregroundColor: isPaidUser
+                                                ? Colors.white
+                                                : Colors.grey.shade700,
+                                            elevation: 0,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(24),
+                                            ),
+                                            padding: EdgeInsets.symmetric(vertical: 12),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    */
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
+                        ],
+                      ),
+                    ),
+                  )
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   // Method to initialize templates if none exist
