@@ -35,6 +35,8 @@
   "changeimage": "Change Image",
   "editimage": "Edit Image",
   "aboutus": "About Us",
+  "support": "Support",
+  "subscriptions": "Subscription",
   "shareapplication": "Share application",
   "settings": "Settings",
   "logout": "Log out",
@@ -54,6 +56,9 @@
   "sizeUltraWide":"Size Ultra Wide",
   "sizePortrait": "Size Portrait",
   "sizePanoramic": "Size Panoramic",
+  "theme": "Theme",
+  "language": "Language",
+  "textsize": "Text Size",
   "@languageChanged": {
     "placeholders": {
       "language": {}

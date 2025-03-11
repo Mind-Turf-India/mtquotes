@@ -21,7 +21,7 @@ class TextSizeScreen extends StatelessWidget {
             children: [
               Text(
                 "Text Size",
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.blue),
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black),
               ),
               SizedBox(height: 5),
               Text(
@@ -47,7 +47,7 @@ class TextSizeScreen extends StatelessWidget {
                           max: 50,
                           divisions: 8,
                           activeColor: Colors.blue,
-                          inactiveColor: Colors.blue,
+                          inactiveColor: Colors.black,
                           onChanged: (value) {
                             textSizeProvider.setFontSize(value);
                           },

@@ -90,6 +90,7 @@ class MyAppState extends State<MyApp> {
             'login': (context) => LoginScreen(),
             'main': (context) => MainScreen(),
             '/subscription': (context) => SubscriptionScreen(),
+            '/home': (context) => HomeScreen(),
           },
         );
       },

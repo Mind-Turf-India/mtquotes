@@ -35,6 +35,8 @@
   "changeimage": "ছবি পরিবর্তন করুন",
   "editimage": "ছবি সম্পাদনা করুন",
   "aboutus": "আমাদের সম্পর্কে",
+  "support": "সমর্থন",
+  "subscriptions": "সাবস্ক্রিপশন",
   "shareapplication": "অ্যাপ্লিকেশন শেয়ার করুন",
   "settings": "সেটিংস",
   "logout": "লগ আউট",
@@ -54,6 +56,9 @@
   "sizeUltraWide": "অত্যন্ত প্রশস্ত আকার",
   "sizePortrait": "প্রতিকৃতি আকার",
   "sizePanoramic": "প্যানোরামিক আকার",
+  "theme": "থিম",
+  "language": "ভাষা",
+  "textsize": "পাঠের আকার",
   "@languageChanged": {
     "placeholders": {
       "language": {}

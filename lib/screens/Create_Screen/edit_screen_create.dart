@@ -10,8 +10,9 @@ import 'package:http/http.dart' as http;
 import 'package:share_plus/share_plus.dart';
 
 class EditScreen extends StatefulWidget {
-  EditScreen({Key? key, required this.title}) : super(key: key);
+  EditScreen({Key? key, required this.title,this.templateImageUrl}) : super(key: key);
   final String title;
+  final String? templateImageUrl;
 
   @override
   State<EditScreen> createState() => _EditScreenState();
@@ -21,10 +22,45 @@ class _EditScreenState extends State<EditScreen> {
   Uint8List? imageData;
   final ImagePicker _picker = ImagePicker();
   bool defaultImageLoaded = true;
+  bool isLoading = false;
 
   @override
   void initState() {
     super.initState();
+    if (widget.templateImageUrl != null) {
+      loadTemplateImage(widget.templateImageUrl!);
+    }
+  }
+
+  Future<void> loadTemplateImage(String imageUrl) async {
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      final http.Response response = await http.get(Uri.parse(imageUrl));
+      if (response.statusCode == 200) {
+        setState(() {
+          imageData = response.bodyBytes;
+          defaultImageLoaded = false;
+          isLoading = false;
+        });
+      } else {
+        throw Exception('Failed to load image');
+      }
+    } catch (e) {
+      print('Error loading template image: $e');
+      setState(() {
+        isLoading = false;
+      });
+
+      // Show error dialog
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error loading template image")),
+        );
+      }
+    }
   }
 
   Future<void> pickImageFromGallery() async {
@@ -174,52 +210,64 @@ class _EditScreenState extends State<EditScreen> {
         ),
       ),
       body: SingleChildScrollView(
-        // Fixes overflow issue
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             children: [
-              imageData == null
-                  ? GestureDetector(
-                      onTap: pickImageFromGallery,
-                      child: Container(
-                        height: 400,
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                              color: Colors.grey.shade400,
-                              style: BorderStyle.solid),
-                          borderRadius: BorderRadius.circular(12),
+              if (isLoading)
+                Container(
+                  height: 400,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade400),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                )
+              else
+                imageData == null
+                    ? GestureDetector(
+                  onTap: pickImageFromGallery,
+                  child: Container(
+                    height: 400,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                          color: Colors.grey.shade400,
+                          style: BorderStyle.solid),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.grey,
+                          ),
+                          child: Icon(
+                            Icons.add,
+                            size: 40,
+                            color: Colors.grey.shade400,
+                          ),
                         ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              width: 80,
-                              height: 80,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.grey,
-                              ),
-                              child: Icon(
-                                Icons.add,
-                                size: 40,
-                                color: Colors.grey.shade400,
-                              ),
-                            ),
-                            SizedBox(height: 16),
-                            Text(
-                              'Tap to upload from gallery',
-                              style: TextStyle(
-                                color: Colors.grey.shade400,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ],
+                        SizedBox(height: 16),
+                        Text(
+                          'Tap to upload from gallery',
+                          style: TextStyle(
+                            color: Colors.grey.shade400,
+                            fontSize: 16,
+                          ),
                         ),
-                      ),
-                    )
-                  : Image.memory(imageData!),
+                      ],
+                    ),
+                  ),
+                )
+                    : Image.memory(imageData!),
               SizedBox(height: 100),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -230,7 +278,7 @@ class _EditScreenState extends State<EditScreen> {
                     label: Text('Change Image'),
                     style: ElevatedButton.styleFrom(
                       padding:
-                          EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                     ),
                   ),
                   ElevatedButton.icon(
@@ -255,7 +303,7 @@ class _EditScreenState extends State<EditScreen> {
                     label: Text('Edit Image'),
                     style: ElevatedButton.styleFrom(
                       padding:
-                          EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                     ),
                   ),
                 ],
