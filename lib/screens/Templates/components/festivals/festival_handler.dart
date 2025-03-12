@@ -30,8 +30,29 @@ class FestivalHandler {
     bool isSubscribed = await _festivalService.isUserSubscribed();
 
     if (festival.isPaid && !isSubscribed) {
-      // Show subscription popup
-      SubscriptionPopup.show(context);
+      // Show subscription dialog/prompt
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Premium Template'),
+          content: Text(
+              'This template requires a subscription. Subscribe to access all premium templates.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                // Navigate to subscription page
+                Navigator.pushNamed(context, '/subscription');
+              },
+              child: Text('Subscribe'),
+            ),
+          ],
+        ),
+      );
     } else {
       // Show confirmation dialog with preview
       showFestivalConfirmationDialog(
@@ -39,72 +60,69 @@ class FestivalHandler {
         festival,
         () => onFestivalSelected(festival),
       );
-      
-      // Increment view count
-      // _festivalService.incrementFestivalViewCount(festival.id);
     }
   }
 
   // Function to capture the festival image with user details
-static Future<Uint8List?> captureFestivalImage() async {
-  return captureFestivalImageFromContext(festivalImageKey.currentContext!);
-}
+  static Future<Uint8List?> captureFestivalImage() async {
+    return captureFestivalImageFromContext(festivalImageKey.currentContext!);
+  }
 
   // Show rating dialog for festivals
-  static Future<void> _showRatingDialog(BuildContext context, FestivalPost festival) async {
+  static Future<void> _showRatingDialog(
+      BuildContext context, FestivalPost festival) async {
     double rating = 0;
 
     return showDialog<double>(
       context: context,
       builder: (BuildContext dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: Text('Rate This Festival Post'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text('How would you rate your experience with this festival post?'),
-                  SizedBox(height: 20),
-                  FittedBox(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: List.generate(5, (index) {
-                        return IconButton(
-                          icon: Icon(
-                            index < rating ? Icons.star : Icons.star_border,
-                            color: index < rating ? Colors.amber : Colors.grey,
-                            size: 36,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              rating = index + 1;
-                            });
-                          },
-                        );
-                      }),
-                    ),
-                  )
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(dialogContext).pop(null);
-                  },
-                  child: Text('Skip'),
-                ),
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(dialogContext).pop(rating); // Close the dialog
-                    Navigator.of(context).pushReplacementNamed('/home');
-                  },
-                  child: Text('Submit'),
-                ),
+        return StatefulBuilder(builder: (context, setState) {
+          return AlertDialog(
+            title: Text('Rate This Festival Post'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                    'How would you rate your experience with this festival post?'),
+                SizedBox(height: 20),
+                FittedBox(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: List.generate(5, (index) {
+                      return IconButton(
+                        icon: Icon(
+                          index < rating ? Icons.star : Icons.star_border,
+                          color: index < rating ? Colors.amber : Colors.grey,
+                          size: 36,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            rating = index + 1;
+                          });
+                        },
+                      );
+                    }),
+                  ),
+                )
               ],
-            );
-          }
-        );
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(dialogContext).pop(null);
+                },
+                child: Text('Skip'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.of(dialogContext).pop(rating); // Close the dialog
+                  Navigator.of(context).pushReplacementNamed('/home');
+                },
+                child: Text('Submit'),
+              ),
+            ],
+          );
+        });
       },
     ).then((value) {
       if (value != null && value > 0) {
@@ -125,7 +143,8 @@ static Future<Uint8List?> captureFestivalImage() async {
   }
 
   // Submit rating to Firestore
-  static Future<void> _submitRating(double rating, FestivalPost festival) async {
+  static Future<void> _submitRating(
+      double rating, FestivalPost festival) async {
     try {
       final DateTime now = DateTime.now();
 
@@ -149,17 +168,18 @@ static Future<Uint8List?> captureFestivalImage() async {
 
       // Update the festival's average rating
       await _updateFestivalAverageRating(festival.id, rating);
-
     } catch (e) {
       print('Error submitting festival rating: $e');
     }
   }
 
   // Update average rating in Firestore
-  static Future<void> _updateFestivalAverageRating(String festivalId, double newRating) async {
+  static Future<void> _updateFestivalAverageRating(
+      String festivalId, double newRating) async {
     try {
       // Get reference to the festival document
-      final festivalRef = FirebaseFirestore.instance.collection('festivals').doc(festivalId);
+      final festivalRef =
+          FirebaseFirestore.instance.collection('festivals').doc(festivalId);
 
       // Run this as a transaction to ensure data consistency
       await FirebaseFirestore.instance.runTransaction((transaction) async {
@@ -174,7 +194,8 @@ static Future<Uint8List?> captureFestivalImage() async {
           int ratingCount = data['ratingCount'] ?? 0;
 
           int newRatingCount = ratingCount + 1;
-          double newAvgRating = ((currentAvgRating * ratingCount) + newRating) / newRatingCount;
+          double newAvgRating =
+              ((currentAvgRating * ratingCount) + newRating) / newRatingCount;
 
           // Update the festival with the new average rating
           transaction.update(festivalRef, {
@@ -192,14 +213,14 @@ static Future<Uint8List?> captureFestivalImage() async {
   }
 
   // Method to share festival post
-static Future<void> shareFestival(
-  BuildContext context,
-  FestivalPost festival, {
-  String? userName,
-  String? userProfileImageUrl,
-  bool isPaidUser = false,
-}) async {
-  try {
+  static Future<void> shareFestival(
+    BuildContext context,
+    FestivalPost festival, {
+    String? userName,
+    String? userProfileImageUrl,
+    bool isPaidUser = false,
+  }) async {
+    try {
       // If userName or userProfileImageUrl are null, get them from Firebase
       if (userName == null || userProfileImageUrl == null) {
         User? currentUser = FirebaseAuth.instance.currentUser;
@@ -236,19 +257,19 @@ static Future<void> shareFestival(
 
       Uint8List? imageBytes;
 
-    if (isPaidUser) {
-      // For paid users, capture the whole festival including profile details
-      // Use a different method that determines which key to use based on context
-      imageBytes = await captureFestivalImageFromContext(context);
-    } else {
-      // For free users, just download the original festival image
-      final response = await http.get(Uri.parse(festival.imageUrl));
+      if (isPaidUser) {
+        // For paid users, capture the whole festival including profile details
+        // Use a different method that determines which key to use based on context
+        imageBytes = await captureFestivalImageFromContext(context);
+      } else {
+        // For free users, just download the original festival image
+        final response = await http.get(Uri.parse(festival.imageUrl));
 
-      if (response.statusCode != 200) {
-        throw Exception('Failed to load image');
+        if (response.statusCode != 200) {
+          throw Exception('Failed to load image');
+        }
+        imageBytes = response.bodyBytes;
       }
-      imageBytes = response.bodyBytes;
-    }
 
       // Close loading dialog
       Navigator.of(context, rootNavigator: true).pop();
@@ -284,7 +305,6 @@ static Future<void> shareFestival(
       if (context.mounted) {
         await _showRatingDialog(context, festival);
       }
-
     } catch (e) {
       // Close loading dialog if open
       if (Navigator.of(context).canPop()) {
@@ -302,28 +322,29 @@ static Future<void> shareFestival(
     }
   }
 
-  static Future<Uint8List?> captureFestivalImageFromContext(BuildContext context) async {
-  try {
-    // Determine if we're on the sharing page or dialog
-    GlobalKey keyToUse = Navigator.of(context).widget is FestivalSharingPage 
-      ? festivalSharingImageKey 
-      : festivalImageKey;
-      
-    final RenderRepaintBoundary boundary = keyToUse.currentContext!
-        .findRenderObject() as RenderRepaintBoundary;
-    final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
-    final ByteData? byteData =
-        await image.toByteData(format: ui.ImageByteFormat.png);
+  static Future<Uint8List?> captureFestivalImageFromContext(
+      BuildContext context) async {
+    try {
+      // Determine if we're on the sharing page or dialog
+      GlobalKey keyToUse = Navigator.of(context).widget is FestivalSharingPage
+          ? festivalSharingImageKey
+          : festivalImageKey;
 
-    if (byteData != null) {
-      return byteData.buffer.asUint8List();
+      final RenderRepaintBoundary boundary =
+          keyToUse.currentContext!.findRenderObject() as RenderRepaintBoundary;
+      final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
+      final ByteData? byteData =
+          await image.toByteData(format: ui.ImageByteFormat.png);
+
+      if (byteData != null) {
+        return byteData.buffer.asUint8List();
+      }
+      return null;
+    } catch (e) {
+      print('Error capturing festival image: $e');
+      return null;
     }
-    return null;
-  } catch (e) {
-    print('Error capturing festival image: $e');
-    return null;
   }
-}
 
   // Method to show the festival confirmation dialog
   static void showFestivalConfirmationDialog(
@@ -376,9 +397,11 @@ static Future<void> shareFestival(
                                       Container(
                                         height: 400,
                                         decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(8),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
                                           image: DecorationImage(
-                                            image: NetworkImage(festival.imageUrl),
+                                            image:
+                                                NetworkImage(festival.imageUrl),
                                             fit: BoxFit.cover,
                                           ),
                                         ),
@@ -390,30 +413,41 @@ static Future<void> shareFestival(
                                                     bottom: 10,
                                                     right: 10,
                                                     child: Container(
-                                                      padding: EdgeInsets.symmetric(
-                                                          horizontal: 8,
-                                                          vertical: 4
-                                                      ),
+                                                      padding:
+                                                          EdgeInsets.symmetric(
+                                                              horizontal: 8,
+                                                              vertical: 4),
                                                       decoration: BoxDecoration(
-                                                        color: Colors.black.withOpacity(0.6),
-                                                        borderRadius: BorderRadius.circular(12),
+                                                        color: Colors.black
+                                                            .withOpacity(0.6),
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(12),
                                                       ),
                                                       child: Row(
-                                                        mainAxisSize: MainAxisSize.min,
+                                                        mainAxisSize:
+                                                            MainAxisSize.min,
                                                         children: [
                                                           CircleAvatar(
                                                             radius: 10,
-                                                            backgroundImage: userProfileImageUrl.isNotEmpty
-                                                                ? NetworkImage(userProfileImageUrl)
-                                                                : AssetImage('assets/profile_placeholder.png') as ImageProvider,
+                                                            backgroundImage: userProfileImageUrl
+                                                                    .isNotEmpty
+                                                                ? NetworkImage(
+                                                                    userProfileImageUrl)
+                                                                : AssetImage(
+                                                                        'assets/profile_placeholder.png')
+                                                                    as ImageProvider,
                                                           ),
                                                           SizedBox(width: 4),
                                                           Text(
                                                             userName,
                                                             style: TextStyle(
                                                               fontSize: 10,
-                                                              color: Colors.white,
-                                                              fontWeight: FontWeight.bold,
+                                                              color:
+                                                                  Colors.white,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
                                                             ),
                                                           ),
                                                         ],
@@ -454,7 +488,8 @@ static Future<void> shareFestival(
                                           MaterialPageRoute(
                                             builder: (context) => EditScreen(
                                               title: 'Edit Festival Post',
-                                              templateImageUrl: festival.imageUrl,
+                                              templateImageUrl:
+                                                  festival.imageUrl,
                                             ),
                                           ),
                                         );
@@ -464,7 +499,8 @@ static Future<void> shareFestival(
                                         foregroundColor: Colors.white,
                                         elevation: 0,
                                         shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(24),
+                                          borderRadius:
+                                              BorderRadius.circular(24),
                                         ),
                                       ),
                                       child: Text('Create'),
@@ -474,16 +510,20 @@ static Future<void> shareFestival(
                                   SizedBox(
                                     width: 100,
                                     child: ElevatedButton(
-                                      onPressed: () => Navigator.of(context).pop(),
+                                      onPressed: () =>
+                                          Navigator.of(context).pop(),
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: Colors.white,
                                         foregroundColor: Colors.black87,
                                         elevation: 0,
-                                        side: BorderSide(color: Colors.grey.shade300),
+                                        side: BorderSide(
+                                            color: Colors.grey.shade300),
                                         shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(24),
+                                          borderRadius:
+                                              BorderRadius.circular(24),
                                         ),
-                                        padding: EdgeInsets.symmetric(vertical: 12),
+                                        padding:
+                                            EdgeInsets.symmetric(vertical: 12),
                                       ),
                                       child: Text('Cancel'),
                                     ),
@@ -500,10 +540,12 @@ static Future<void> shareFestival(
                                       Navigator.of(context).pop();
                                       Navigator.of(context).push(
                                         MaterialPageRoute(
-                                          builder: (context) => FestivalSharingPage(
+                                          builder: (context) =>
+                                              FestivalSharingPage(
                                             festival: festival,
                                             userName: userName,
-                                            userProfileImageUrl: userProfileImageUrl,
+                                            userProfileImageUrl:
+                                                userProfileImageUrl,
                                             isPaidUser: isPaidUser,
                                           ),
                                         ),
@@ -518,7 +560,8 @@ static Future<void> shareFestival(
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(24),
                                       ),
-                                      padding: EdgeInsets.symmetric(vertical: 12),
+                                      padding:
+                                          EdgeInsets.symmetric(vertical: 12),
                                     ),
                                   ),
                                 ),
@@ -540,7 +583,8 @@ static Future<void> shareFestival(
 
   // Method to initialize festivals if none exist
   static Future<void> initializeFestivalsIfNeeded() async {
-    final festivals = await _festivalService.getActiveFestivals(); // if there is no festival new should have some other general templates.
+    final festivals = await _festivalService
+        .getActiveFestivals(); // if there is no festival new should have some other general templates.
     // Add any initialization logic here
   }
 }

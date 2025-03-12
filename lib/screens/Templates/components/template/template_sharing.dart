@@ -121,8 +121,8 @@ class TemplateSharingPage extends StatelessWidget {
                           icon: Icon(Icons.share),
                           label: Text('Share Basic'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.grey.shade200,
-                            foregroundColor: Colors.black87,
+                            backgroundColor: Colors.blue,
+                            foregroundColor: Colors.white,
                             padding: EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(24),
@@ -280,7 +280,7 @@ class TemplateSharingPage extends StatelessWidget {
                           icon: Icon(isPaidUser ? Icons.share : Icons.lock),
                           label: Text(isPaidUser ? 'Share Now' : 'Upgrade to Pro'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: isPaidUser ? Colors.blue : Colors.grey.shade400,
+                            backgroundColor: isPaidUser ? Colors.blue : Colors.blue,
                             foregroundColor: Colors.white,
                             padding: EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(

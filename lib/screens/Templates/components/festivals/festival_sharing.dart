@@ -125,8 +125,8 @@ class FestivalSharingPage extends StatelessWidget {
                           icon: Icon(Icons.share),
                           label: Text('Share Basic'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.grey.shade200,
-                            foregroundColor: Colors.black87,
+                            backgroundColor: Colors.blue,
+                            foregroundColor: Colors.white,
                             padding: EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(24),
@@ -284,7 +284,7 @@ class FestivalSharingPage extends StatelessWidget {
                           icon: Icon(isPaidUser ? Icons.share : Icons.lock),
                           label: Text(isPaidUser ? 'Share Now' : 'Upgrade to Pro'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: isPaidUser ? Colors.blue : Colors.grey.shade400,
+                            backgroundColor: isPaidUser ? Colors.blue : Colors.blue,
                             foregroundColor: Colors.white,
                             padding: EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
@@ -298,38 +298,6 @@ class FestivalSharingPage extends StatelessWidget {
                 ),
               ),
 
-              // Customize option
-              SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => EditScreen(
-                          title: 'Edit Festival Post',
-                          templateImageUrl: festival.imageUrl,
-                        ),
-                      ),
-                    );
-                  },
-                  icon: Icon(Icons.edit),
-                  label: Text(
-                    context.loc.customize,
-                    style: GoogleFonts.poppins(),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.blue,
-                    side: BorderSide(color: Colors.blue),
-                    padding: EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-              ),
             ],
           ),
         ),
