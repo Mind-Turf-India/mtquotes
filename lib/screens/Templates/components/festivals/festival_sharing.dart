@@ -252,7 +252,7 @@ class FestivalSharingPage extends StatelessWidget {
                                       radius: 10,
                                       backgroundImage: userProfileImageUrl.isNotEmpty
                                           ? NetworkImage(userProfileImageUrl)
-                                          : AssetImage('assets/images/profile_placeholder.png') as ImageProvider,
+                                          : AssetImage('assets/profile_placeholder.png') as ImageProvider,
                                     ),
                                     SizedBox(width: 4),
                                     Text(

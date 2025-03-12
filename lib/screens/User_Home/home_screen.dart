@@ -7,6 +7,9 @@ import 'package:intl/intl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mtquotes/screens/Create_Screen/edit_screen_create.dart';
 import 'package:mtquotes/screens/Templates/components/template/quote_template.dart';
+import 'package:mtquotes/screens/Templates/components/totd/totd_card.dart';
+import 'package:mtquotes/screens/Templates/components/totd/totd_handler.dart';
+import 'package:mtquotes/screens/Templates/components/totd/totd_service.dart';
 import 'package:mtquotes/screens/Templates/subscription_popup.dart';
 import 'package:mtquotes/screens/Templates/components/template/template_section.dart';
 import 'package:mtquotes/screens/User_Home/components/notifications.dart';
@@ -40,6 +43,11 @@ class _HomeScreenState extends State<HomeScreen> {
   final FestivalService _festivalService = FestivalService();
   List<FestivalPost> _festivalPosts = [];
   bool _loadingFestivals = false;
+  //totd
+  final TimeOfDayService _timeOfDayService = TimeOfDayService();
+  List<TimeOfDayPost> _timeOfDayPosts = [];
+  bool _loadingTimeOfDay = false;
+  String _currentTimeOfDay = '';
 
   @override
   void initState() {
@@ -49,62 +57,104 @@ class _HomeScreenState extends State<HomeScreen> {
     _fetchQOTDImage();
     _checkUserProfile();
     _fetchFestivalPosts();
+    _fetchTimeOfDayPosts();
+  }
+
+  //totd
+  Future<void> _fetchTimeOfDayPosts() async {
+    setState(() {
+      _loadingTimeOfDay = true;
+      _currentTimeOfDay = _timeOfDayService.getCurrentTimeOfDay();
+    });
+
+    try {
+      final posts = await _timeOfDayService.fetchTimeOfDayPosts();
+
+      if (mounted) {
+        setState(() {
+          _timeOfDayPosts = posts;
+          _loadingTimeOfDay = false;
+        });
+      }
+    } catch (e) {
+      print("Error loading time of day posts: $e");
+      if (mounted) {
+        setState(() {
+          _loadingTimeOfDay = false;
+        });
+      }
+    }
+  }
+
+  // finish totd
+
+  // Add this method to handle time of day post selection
+  void _handleTimeOfDayPostSelection(TimeOfDayPost post) {
+    TimeOfDayHandler.handleTimeOfDayPostSelection(
+      context,
+      post,
+      (selectedPost) {
+        // This is the callback that will be executed when access is granted
+        print('Access granted to post: ${selectedPost.title}');
+        // You can add additional logic here if needed
+      },
+    );
   }
 
   // New method to fetch festival posts
   Future<void> _fetchFestivalPosts() async {
-  setState(() {
-    _loadingFestivals = true;
-  });
+    setState(() {
+      _loadingFestivals = true;
+    });
 
-  try {
-    final festivals = await _festivalService.fetchRecentFestivalPosts();
+    try {
+      final festivals = await _festivalService.fetchRecentFestivalPosts();
 
-    if (mounted) {
-      setState(() {
-        // Use the new method to create multiple FestivalPosts from each Festival
-        _festivalPosts = [];
-        for (var festival in festivals) {
-          _festivalPosts.addAll(FestivalPost.multipleFromFestival(festival));
-        }
-        
-        // Debug prints
-        for (var post in _festivalPosts) {
-          print("Post: ${post.name}, Image URL: ${post.imageUrl}");
-        }
+      if (mounted) {
+        setState(() {
+          // Use the new method to create multiple FestivalPosts from each Festival
+          _festivalPosts = [];
+          for (var festival in festivals) {
+            _festivalPosts.addAll(FestivalPost.multipleFromFestival(festival));
+          }
 
-        _loadingFestivals = false;
-      });
-    }
-  } catch (e) {
-    print("Error loading festival posts: $e");
-    if (mounted) {
-      setState(() {
-        _loadingFestivals = false;
-      });
+          // Debug prints
+          for (var post in _festivalPosts) {
+            print("Post: ${post.name}, Image URL: ${post.imageUrl}");
+          }
+
+          _loadingFestivals = false;
+        });
+      }
+    } catch (e) {
+      print("Error loading festival posts: $e");
+      if (mounted) {
+        setState(() {
+          _loadingFestivals = false;
+        });
+      }
     }
   }
-}
 
-void _handleFestivalPostSelection(FestivalPost festival) {
-  FestivalHandler.handleFestivalSelection(
-    context,
-    festival,
-    (selectedFestival) {
-      // This is what happens when the user gets access to the festival
-      // For example, you could navigate to an edit screen:
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => EditScreen(
-            title: 'Edit Festival Post',
-            templateImageUrl: selectedFestival.imageUrl,
+  void _handleFestivalPostSelection(FestivalPost festival) {
+    FestivalHandler.handleFestivalSelection(
+      context,
+      festival,
+      (selectedFestival) {
+        // This is what happens when the user gets access to the festival
+        // For example, you could navigate to an edit screen:
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => EditScreen(
+              title: 'Edit Festival Post',
+              templateImageUrl: selectedFestival.imageUrl,
+            ),
           ),
-        ),
-      );
-    },
-  );
-}
+        );
+      },
+    );
+  }
 
   void _checkUserProfile() async {
     User? user = FirebaseAuth.instance.currentUser;
@@ -649,6 +699,54 @@ void _handleFestivalPostSelection(FestivalPost festival) {
                               },
                             ),
                 ),
+                SizedBox(height: 30),
+                Row(
+                  children: [
+                    Text(
+                      "For You",
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    Text(
+                      "• ${_currentTimeOfDay.capitalize()}",
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 10),
+                SizedBox(
+                  height: 150,
+                  // width: 0,
+                  child: _loadingTimeOfDay
+                      ? Center(child: CircularProgressIndicator())
+                      : _timeOfDayPosts.isEmpty
+                          ? Center(
+                              child: Text(
+                                "No templates available for ${_currentTimeOfDay}",
+                                style:
+                                    GoogleFonts.poppins(fontSize: fontSize - 2),
+                              ),
+                            )
+                          : ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: _timeOfDayPosts.length,
+                              itemBuilder: (context, index) {
+                                return TimeOfDayPostComponent(
+                                  post: _timeOfDayPosts[index],
+                                  fontSize: fontSize,
+                                  onTap: () => _handleTimeOfDayPostSelection(
+                                      _timeOfDayPosts[index]),
+                                );
+                              },
+                            ),
+                ),
               ],
             ),
           ),
@@ -696,41 +794,43 @@ void _handleFestivalPostSelection(FestivalPost festival) {
                 borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
                 child: festival.imageUrl.isNotEmpty
                     ? CachedNetworkImage(
-                  imageUrl: festival.imageUrl,
-                  placeholder: (context, url) => Center(
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                  errorWidget: (context, url, error) {
-                    print("Image loading error: $error for URL: $url");
-                    return Container(
-                      color: Colors.grey[300],
-                      child: Icon(Icons.error),
-                    );
-                  },
-                  fit: BoxFit.cover,
-                  width: 120, // Match the container width
-                  height: 80, // Fixed height
-                  cacheKey: festival.id + "_image",
-                  maxHeightDiskCache: 500,
-                  maxWidthDiskCache: 500,
-                )
-                    : Container(
-                  height: 80, // Match the image height
-                  color: Colors.grey[200],
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.image_not_supported, color: Colors.grey),
-                        SizedBox(height: 4),
-                        Text(
-                          "No Image",
-                          style: TextStyle(fontSize: 10, color: Colors.grey),
+                        imageUrl: festival.imageUrl,
+                        placeholder: (context, url) => Center(
+                          child: CircularProgressIndicator(strokeWidth: 2),
                         ),
-                      ],
-                    ),
-                  ),
-                ),
+                        errorWidget: (context, url, error) {
+                          print("Image loading error: $error for URL: $url");
+                          return Container(
+                            color: Colors.grey[300],
+                            child: Icon(Icons.error),
+                          );
+                        },
+                        fit: BoxFit.cover,
+                        width: 120, // Match the container width
+                        height: 80, // Fixed height
+                        cacheKey: festival.id + "_image",
+                        maxHeightDiskCache: 500,
+                        maxWidthDiskCache: 500,
+                      )
+                    : Container(
+                        height: 80, // Match the image height
+                        color: Colors.grey[200],
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.image_not_supported,
+                                  color: Colors.grey),
+                              SizedBox(height: 4),
+                              Text(
+                                "No Image",
+                                style:
+                                    TextStyle(fontSize: 10, color: Colors.grey),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
               ),
             ),
             // Uncomment and adjust this section if you want to show the festival name
@@ -794,5 +894,11 @@ class FontSizeProvider with ChangeNotifier {
   void setFontSize(double newSize) {
     _fontSize = newSize;
     notifyListeners();
+  }
+}
+
+extension StringExtension on String {
+  String capitalize() {
+    return "${this[0].toUpperCase()}${this.substring(1)}";
   }
 }

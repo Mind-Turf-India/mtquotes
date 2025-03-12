@@ -1,3 +1,4 @@
+
 import 'dart:typed_data';
 import 'dart:io';
 import 'dart:ui' as ui;
@@ -9,33 +10,32 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:http/http.dart' as http;
 import 'package:mtquotes/l10n/app_localization.dart';
-import 'package:mtquotes/screens/Templates/components/template/template_service.dart';
-import 'package:mtquotes/screens/Templates/components/template/template_sharing.dart';
+import 'package:mtquotes/screens/Templates/components/totd/totd_service.dart';
+import 'package:mtquotes/screens/Templates/components/totd/totd_sharing.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:mtquotes/screens/Templates/components/template/quote_template.dart';
 import '../../../Create_Screen/edit_screen_create.dart';
 
-class TemplateHandler {
-  static final GlobalKey templateImageKey = GlobalKey();
+class TimeOfDayHandler {
+  static final GlobalKey totdImageKey = GlobalKey();
 
-  // Handle template selection with subscription check
-  static Future<void> handleTemplateSelection(
+  // Handle TOTD post selection with subscription check
+  static Future<void> handleTimeOfDayPostSelection(
       BuildContext context,
-      QuoteTemplate template,
-      Function(QuoteTemplate) onAccessGranted,
+      TimeOfDayPost post,
+      Function(TimeOfDayPost) onAccessGranted,
       ) async {
-    final templateService = TemplateService();
-    bool isSubscribed = await templateService.isUserSubscribed();
+    final timeOfDayService = TimeOfDayService();
+    bool isSubscribed = await _isUserSubscribed();
 
-    if (template.isPaid && !isSubscribed) {
+    if (post.isPaid && !isSubscribed) {
       // Show subscription dialog/prompt
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: Text('Premium Template'),
+          title: Text('Premium Content'),
           content: Text(
-              'This template requires a subscription. Subscribe to access all premium templates.'),
+              'This content requires a subscription. Subscribe to access all premium time of day posts.'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -54,18 +54,36 @@ class TemplateHandler {
       );
     } else {
       // Show confirmation dialog with preview
-      showTemplateConfirmationDialog(
+      showTOTDConfirmationDialog(
         context,
-        template,
-            () => onAccessGranted(template),
+        post,
+        () => onAccessGranted(post),
       );
     }
   }
 
-  // Function to capture the template with user details as an image
-  static Future<Uint8List?> captureTemplateImage() async {
+  // Helper method to check if user is subscribed
+  static Future<bool> _isUserSubscribed() async {
     try {
-      final RenderRepaintBoundary boundary = templateImageKey.currentContext!
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return false;
+
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+
+      return userDoc.data()?['isSubscribed'] == true;
+    } catch (e) {
+      print('Error checking subscription: $e');
+      return false;
+    }
+  }
+
+  // Function to capture the TOTD post with user details as an image
+  static Future<Uint8List?> captureTOTDImage() async {
+    try {
+      final RenderRepaintBoundary boundary = totdImageKey.currentContext!
           .findRenderObject() as RenderRepaintBoundary;
       final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
       final ByteData? byteData =
@@ -76,13 +94,13 @@ class TemplateHandler {
       }
       return null;
     } catch (e) {
-      print('Error capturing template image: $e');
+      print('Error capturing TOTD image: $e');
       return null;
     }
   }
 
-  // Add this function to your TemplateConfirmationDialog class
-  static Future<void> _showRatingDialog(BuildContext context,QuoteTemplate template) async {
+  // Add rating dialog for TOTD
+  static Future<void> _showRatingDialog(BuildContext context, TimeOfDayPost post) async {
     double rating = 0;
 
     return showDialog<double>(
@@ -91,11 +109,11 @@ class TemplateHandler {
         return StatefulBuilder(
             builder: (context, setState) {
               return AlertDialog(
-                title: Text('Rate This Template'),
+                title: Text('Rate This Content'),
                 content: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text('How would you rate your experience with this template?'),
+                    Text('How would you rate your experience with this content?'),
                     SizedBox(height: 20),
                     FittedBox(
                       child: Row(
@@ -138,8 +156,8 @@ class TemplateHandler {
       },
     ).then((value) {
       if (value != null && value > 0) {
-        // TODO: Send rating to your backend
-        _submitRating(value, template);
+        // Send rating to backend
+        _submitRating(value, post);
 
         // Show thank you message
         if (context.mounted) {
@@ -154,78 +172,91 @@ class TemplateHandler {
     });
   }
 
-// Add this function to submit the rating to your backend
-  static Future<void> _submitRating(double rating, QuoteTemplate template) async {
+  // Add this function to submit the rating to your backend
+  static Future<void> _submitRating(double rating, TimeOfDayPost post) async {
     try {
       final DateTime now = DateTime.now();
 
-      // Create a rating object using your QuoteTemplate model
+      // Create a rating object
       final Map<String, dynamic> ratingData = {
-        'templateId': template.id,
+        'postId': post.id,
         'rating': rating,
-        'category': template.category,
+        'timeOfDay': post.id.split('_')[0], // Extract time of day from ID
         'createdAt': now,  // Firestore will convert this to Timestamp
-        'imageUrl': template.imageUrl,
-        'isPaid': template.isPaid,
-        'title': template.title,
+        'imageUrl': post.imageUrl,
+        'isPaid': post.isPaid,
+        'title': post.title,
         'userId': FirebaseAuth.instance.currentUser?.uid ?? 'anonymous', // Get user ID if logged in
       };
 
       await FirebaseFirestore.instance
-          .collection('ratings')
+          .collection('totd_ratings')
           .add(ratingData);
 
-      // print('Rating submitted: $rating for template ${template.imageUrl}');
-      print('Rating submitted: $rating for template ${template.title}');
+      print('Rating submitted: $rating for TOTD post ${post.title}');
 
-      // Update the template's average rating
-      await _updateTemplateAverageRating(template.id, rating);
+      // Update the post's average rating
+      await _updateTOTDPostAverageRating(post.id, rating);
 
     } catch (e) {
       print('Error submitting rating: $e');
     }
   }
 
-  static Future<void> _updateTemplateAverageRating(String templateId, double newRating) async {
+  static Future<void> _updateTOTDPostAverageRating(String postId, double newRating) async {
     try {
-      // Get reference to the template document
-      final templateRef = FirebaseFirestore.instance.collection('templates').doc(templateId);
+      // Parse time of day from post ID (assuming format like "morning_post1")
+      final parts = postId.split('_');
+      if (parts.length < 2) {
+        print('Invalid post ID format: $postId');
+        return;
+      }
+      
+      final timeOfDay = parts[0];
+      
+      // Get reference to the TOTD document
+      final totdRef = FirebaseFirestore.instance.collection('totd').doc(timeOfDay);
 
       // Run this as a transaction to ensure data consistency
       await FirebaseFirestore.instance.runTransaction((transaction) async {
-        // Get the current template data
-        final templateSnapshot = await transaction.get(templateRef);
+        // Get the current TOTD document
+        final totdSnapshot = await transaction.get(totdRef);
 
-        if (templateSnapshot.exists) {
-          final data = templateSnapshot.data() as Map<String, dynamic>;
+        if (totdSnapshot.exists) {
+          final data = totdSnapshot.data() as Map<String, dynamic>;
+          
+          // Get the specific post data from the document
+          if (data.containsKey(postId)) {
+            final postData = data[postId] as Map<String, dynamic>;
+            
+            // Calculate the new average rating
+            double currentAvgRating = postData['avgRating']?.toDouble() ?? 0.0;
+            int ratingCount = postData['ratingCount'] ?? 0;
 
-          // Calculate the new average rating
-          double currentAvgRating = data['averageRating']?.toDouble() ?? 0.0;
-          int ratingCount = data['ratingCount'] ?? 0;
+            int newRatingCount = ratingCount + 1;
+            double newAvgRating = ((currentAvgRating * ratingCount) + newRating) / newRatingCount;
 
-          int newRatingCount = ratingCount + 1;
-          double newAvgRating = ((currentAvgRating * ratingCount) + newRating) / newRatingCount;
-
-          // Update the template with the new average rating
-          transaction.update(templateRef, {
-            'averageRating': newAvgRating,
-            'ratingCount': newRatingCount,
-            'lastRated': FieldValue.serverTimestamp(),
-          });
+            // Update only the specific post field within the document
+            Map<String, dynamic> updateData = {};
+            updateData['$postId.avgRating'] = newAvgRating;
+            updateData['$postId.ratingCount'] = newRatingCount;
+            updateData['$postId.lastRated'] = FieldValue.serverTimestamp();
+            
+            transaction.update(totdRef, updateData);
+          }
         }
       });
 
-      print('Updated template average rating successfully');
+      print('Updated TOTD post average rating successfully');
     } catch (e) {
-      print('Error updating template average rating: $e');
+      print('Error updating TOTD post average rating: $e');
     }
   }
 
-
-  // Method to share template
-  static Future<void> shareTemplate(
+  // Method to share TOTD post
+  static Future<void> shareTOTDPost(
       BuildContext context,
-      QuoteTemplate template, {
+      TimeOfDayPost post, {
         String? userName,
         String? userProfileImageUrl,
         bool isPaidUser = false,
@@ -239,11 +270,11 @@ class TemplateHandler {
       }
 
       // Check if we're coming from the sharing page - if not, navigate to it
-      if (!(Navigator.of(context).widget is TemplateSharingPage)) {
+      if (!(Navigator.of(context).widget is TOTDSharingPage)) {
         Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (context) => TemplateSharingPage(
-              template: template,
+            builder: (context) => TOTDSharingPage(
+              post: post,
               userName: userName ?? context.loc.user,  // Default value if null
               userProfileImageUrl: userProfileImageUrl ?? '',
               isPaidUser: isPaidUser,
@@ -268,11 +299,11 @@ class TemplateHandler {
       Uint8List? imageBytes;
 
       if (isPaidUser) {
-        // For paid users, capture the whole template including profile details
-        imageBytes = await captureTemplateImage();
+        // For paid users, capture the whole post including profile details
+        imageBytes = await captureTOTDImage();
       } else {
-        // For free users, just download the original template image
-        final response = await http.get(Uri.parse(template.imageUrl));
+        // For free users, just download the original post image
+        final response = await http.get(Uri.parse(post.imageUrl));
 
         if (response.statusCode != 200) {
           throw Exception('Failed to load image');
@@ -289,7 +320,7 @@ class TemplateHandler {
 
       // Get temp directory
       final tempDir = await getTemporaryDirectory();
-      final tempFile = File('${tempDir.path}/shared_template.png');
+      final tempFile = File('${tempDir.path}/shared_totd.png');
 
       // Save image as file
       await tempFile.writeAsBytes(imageBytes);
@@ -299,20 +330,20 @@ class TemplateHandler {
         // For paid users, share with full branding
         await Share.shareXFiles(
           [XFile(tempFile.path)],
-          text: 'Check out this amazing quote template by $userName!',
+          text: 'Check out this amazing time of day content by $userName!',
         );
       } else {
         // For free users, share without branding
         await Share.shareXFiles(
           [XFile(tempFile.path)],
-          text: 'Check out this amazing quote template!',
+          text: 'Check out this amazing time of day content!',
         );
       }
 
       // Show rating dialog after sharing
       await Future.delayed(Duration(milliseconds: 500));
       if (context.mounted) {
-        await _showRatingDialog(context, template);
+        await _showRatingDialog(context, post);
       }
 
     } catch (e) {
@@ -320,7 +351,7 @@ class TemplateHandler {
       if (Navigator.of(context).canPop()) {
         Navigator.of(context, rootNavigator: true).pop();
       }
-      print('Error sharing template: $e');
+      print('Error sharing TOTD post: $e');
 
       // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
@@ -332,15 +363,13 @@ class TemplateHandler {
     }
   }
 
-
-  // Method to show the template confirmation dialog
-  static void showTemplateConfirmationDialog(
+  // Method to show the TOTD confirmation dialog
+  static void showTOTDConfirmationDialog(
       BuildContext context,
-      QuoteTemplate template,
+      TimeOfDayPost post,
       VoidCallback onCreatePressed,
       ) async {
-    final templateService = TemplateService();
-    bool isPaidUser = await templateService.isUserSubscribed();
+    bool isPaidUser = await _isUserSubscribed();
 
     User? currentUser = FirebaseAuth.instance.currentUser;
     String userName = currentUser?.displayName ?? context.loc.user;
@@ -382,7 +411,7 @@ class TemplateHandler {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   RepaintBoundary(
-                                    key: templateImageKey,
+                                    key: totdImageKey,
                                     child: Container(
                                       width: double.infinity,
                                       decoration: BoxDecoration(
@@ -398,7 +427,7 @@ class TemplateHandler {
                                                 decoration: BoxDecoration(
                                                   borderRadius: BorderRadius.circular(8),
                                                   image: DecorationImage(
-                                                    image: NetworkImage(template.imageUrl),
+                                                    image: NetworkImage(post.imageUrl),
                                                     fit: BoxFit.cover,
                                                   ),
                                                 ),
@@ -425,7 +454,7 @@ class TemplateHandler {
                                                               radius: 10,
                                                               backgroundImage: userProfileImageUrl.isNotEmpty
                                                                   ? NetworkImage(userProfileImageUrl)
-                                                                  : AssetImage('assets/profile_placeholder.png') as ImageProvider,
+                                                                  : AssetImage('assets/images/profile_placeholder.png') as ImageProvider,
                                                             ),
                                                             SizedBox(width: 4),
                                                             Text(
@@ -446,55 +475,19 @@ class TemplateHandler {
                                               ),
                                             ],
                                           ),
-                                          /* Commented out the user information box below template that appears for free users
-                                        if (!isPaidUser)
-                                          Container(
-                                            padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                                            child: Row(
-                                              children: [
-                                                CircleAvatar(
-                                                  radius: 15,
-                                                  backgroundImage: userProfileImageUrl.isNotEmpty
-                                                      ? NetworkImage(userProfileImageUrl)
-                                                      : AssetImage('assets/profile_placeholder.png') as ImageProvider,
-                                                ),
-                                                SizedBox(width: 8),
-                                                Expanded(
-                                                  child: Container(
-                                                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                                    decoration: BoxDecoration(
-                                                      border: Border.all(color: Colors.grey.shade300),
-                                                      borderRadius: BorderRadius.circular(20),
-                                                    ),
-                                                    child: Row(
-                                                      mainAxisAlignment: MainAxisAlignment.center,
-                                                      children: [
-                                                        Text(
-                                                          userName.isEmpty ? 'User' : userName,
-                                                          style: TextStyle(
-                                                            fontSize: 14,
-                                                            color: Colors.black87,
-                                                          ),
-                                                        ),
-                                                        if (!isPaidUser) SizedBox(width: 4),
-                                                        if (!isPaidUser)
-                                                          Tooltip(
-                                                            message: 'Upgrade to share with your name',
-                                                            child: Icon(Icons.lock, size: 14, color: Colors.grey),
-                                                          ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        */
                                         ],
                                       ),
                                     ),
                                   ),
                                   SizedBox(height: 24),
+                                  Text(
+                                    post.title,
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  SizedBox(height: 8),
                                   Text(
                                     'Do you wish to continue?',
                                     style: TextStyle(
@@ -517,8 +510,8 @@ class TemplateHandler {
                                                 Navigator.of(context).push(
                                                   MaterialPageRoute(
                                                     builder: (context) => EditScreen(
-                                                      title: 'Edit Template',
-                                                      templateImageUrl: template.imageUrl,
+                                                      title: 'Edit Content',
+                                                      templateImageUrl: post.imageUrl,
                                                     ),
                                                   ),
                                                 );
@@ -555,7 +548,6 @@ class TemplateHandler {
                                         ],
                                       ),
                                       SizedBox(height: 12),
-                                      // Modified Share Button - now navigates to share page
                                       Center(
                                         child: SizedBox(
                                           width: 140,
@@ -564,8 +556,8 @@ class TemplateHandler {
                                               Navigator.of(context).pop();
                                               Navigator.of(context).push(
                                                 MaterialPageRoute(
-                                                  builder: (context) => TemplateSharingPage(
-                                                    template: template,
+                                                  builder: (context) => TOTDSharingPage(
+                                                    post: post,
                                                     userName: userName,
                                                     userProfileImageUrl: userProfileImageUrl,
                                                     isPaidUser: isPaidUser,
@@ -587,37 +579,6 @@ class TemplateHandler {
                                           ),
                                         ),
                                       ),
-                                      /* Commented out old Share Button implementation
-                                    Center(
-                                      child: SizedBox(
-                                        width: 140,
-                                        child: ElevatedButton.icon(
-                                          onPressed: () => shareTemplate(
-                                            context,
-                                            template,
-                                            userName: userName,
-                                            userProfileImageUrl: userProfileImageUrl,
-                                            isPaidUser: isPaidUser,
-                                          ),
-                                          icon: Icon(isPaidUser ? Icons.share : Icons.lock),
-                                          label: Text(isPaidUser ? 'Share' : 'Share (Upgrade)'),
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: isPaidUser
-                                                ? Colors.blue
-                                                : Colors.grey.shade300,
-                                            foregroundColor: isPaidUser
-                                                ? Colors.white
-                                                : Colors.grey.shade700,
-                                            elevation: 0,
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(24),
-                                            ),
-                                            padding: EdgeInsets.symmetric(vertical: 12),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    */
                                     ],
                                   ),
                                 ],
@@ -637,10 +598,10 @@ class TemplateHandler {
     );
   }
 
-  // Method to initialize templates if none exist
-  static Future<void> initializeTemplatesIfNeeded() async {
-    final templateService = TemplateService();
-    final templates = await templateService.fetchRecentTemplates();
+  // Method to initialize TOTD posts if none exist
+  static Future<void> initializeTOTDPostsIfNeeded() async {
+    final timeOfDayService = TimeOfDayService();
+    final posts = await timeOfDayService.fetchTimeOfDayPosts();
     // Add any initialization logic here
   }
 }
