@@ -255,126 +255,207 @@ class TimeOfDayHandler {
 
   // Method to share TOTD post
   static Future<void> shareTOTDPost(
-      BuildContext context,
-      TimeOfDayPost post, {
-        String? userName,
-        String? userProfileImageUrl,
-        bool isPaidUser = false,
-      }) async {
-    try {
-      // If userName or userProfileImageUrl are null, get them from Firebase
-      if (userName == null || userProfileImageUrl == null) {
-        User? currentUser = FirebaseAuth.instance.currentUser;
-        userName = currentUser?.displayName ?? context.loc.user;
-        userProfileImageUrl = currentUser?.photoURL ?? '';
-      }
-
-      // Check if we're coming from the sharing page - if not, navigate to it
-      if (!(Navigator.of(context).widget is TOTDSharingPage)) {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => TOTDSharingPage(
-              post: post,
-              userName: userName ?? context.loc.user,  // Default value if null
-              userProfileImageUrl: userProfileImageUrl ?? '',
-              isPaidUser: isPaidUser,
-            ),
-          ),
-        );
-        return;
-      }
-
-      // If we're already on the sharing page, perform the actual sharing
-      // Show loading indicator
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) {
-          return Center(
-            child: CircularProgressIndicator(),
-          );
-        },
-      );
-
-      Uint8List? imageBytes;
-
-      if (isPaidUser) {
-        // For paid users, capture the whole post including profile details
-        imageBytes = await captureTOTDImage();
-      } else {
-        // For free users, just download the original post image
-        final response = await http.get(Uri.parse(post.imageUrl));
-
-        if (response.statusCode != 200) {
-          throw Exception('Failed to load image');
+    BuildContext context,
+    TimeOfDayPost post, {
+      String? userName,
+      String? userProfileImageUrl,
+      bool isPaidUser = false,
+    }) async {
+  try {
+    // If userName or userProfileImageUrl are null, get them from Firebase
+    if (userName == null || userProfileImageUrl == null) {
+      User? currentUser = FirebaseAuth.instance.currentUser;
+      String defaultUserName = currentUser?.displayName ?? context.loc.user;
+      String defaultProfileImageUrl = currentUser?.photoURL ?? '';
+      
+      // Fetch user data from users collection if available
+      if (currentUser?.email != null) {
+        try {
+          // Convert email to document ID format (replace . with _)
+          String docId = currentUser!.email!.replaceAll('.', '_');
+          
+          // Fetch user document from Firestore
+          DocumentSnapshot userDoc = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(docId)
+              .get();
+          
+          // Check if document exists and has required fields
+          if (userDoc.exists && userDoc.data() is Map<String, dynamic>) {
+            Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+            
+            // Get name from Firestore with fallback
+            if (userData.containsKey('name') && userData['name'] != null && userData['name'].toString().isNotEmpty) {
+              userName = userData['name'];
+            } else {
+              userName = defaultUserName;
+            }
+            
+            // Get profile image from Firestore with fallback
+            if (userData.containsKey('profileImage') && userData['profileImage'] != null && userData['profileImage'].toString().isNotEmpty) {
+              userProfileImageUrl = userData['profileImage'];
+            } else {
+              userProfileImageUrl = defaultProfileImageUrl;
+            }
+          } else {
+            userName = defaultUserName;
+            userProfileImageUrl = defaultProfileImageUrl;
+          }
+        } catch (e) {
+          print('Error fetching user data: $e');
+          userName = defaultUserName;
+          userProfileImageUrl = defaultProfileImageUrl;
         }
-        imageBytes = response.bodyBytes;
-      }
-
-      // Close loading dialog
-      Navigator.of(context, rootNavigator: true).pop();
-
-      if (imageBytes == null) {
-        throw Exception('Failed to process image');
-      }
-
-      // Get temp directory
-      final tempDir = await getTemporaryDirectory();
-      final tempFile = File('${tempDir.path}/shared_totd.png');
-
-      // Save image as file
-      await tempFile.writeAsBytes(imageBytes);
-
-      // Share directly based on user type
-      if (isPaidUser) {
-        // For paid users, share with full branding
-        await Share.shareXFiles(
-          [XFile(tempFile.path)],
-          text: 'Check out this amazing time of day content by $userName!',
-        );
       } else {
-        // For free users, share without branding
-        await Share.shareXFiles(
-          [XFile(tempFile.path)],
-          text: 'Check out this amazing time of day content!',
-        );
+        userName = defaultUserName;
+        userProfileImageUrl = defaultProfileImageUrl;
       }
+    }
 
-      // Show rating dialog after sharing
-      await Future.delayed(Duration(milliseconds: 500));
-      if (context.mounted) {
-        await _showRatingDialog(context, post);
-      }
-
-    } catch (e) {
-      // Close loading dialog if open
-      if (Navigator.of(context).canPop()) {
-        Navigator.of(context, rootNavigator: true).pop();
-      }
-      print('Error sharing TOTD post: $e');
-
-      // Show error message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to share image: ${e.toString()}'),
-          backgroundColor: Colors.red,
+    // Check if we're coming from the sharing page - if not, navigate to it
+    if (!(Navigator.of(context).widget is TOTDSharingPage)) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => TOTDSharingPage(
+            post: post,
+            userName: userName ?? context.loc.user,  // Default value if null
+            userProfileImageUrl: userProfileImageUrl ?? '',
+            isPaidUser: isPaidUser,
+          ),
         ),
       );
+      return;
+    }
+
+    // If we're already on the sharing page, perform the actual sharing
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Center(
+          child: CircularProgressIndicator(),
+        );
+      },
+    );
+
+    Uint8List? imageBytes;
+
+    if (isPaidUser) {
+      // For paid users, capture the whole post including profile details
+      imageBytes = await captureTOTDImage();
+    } else {
+      // For free users, just download the original post image
+      final response = await http.get(Uri.parse(post.imageUrl));
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to load image');
+      }
+      imageBytes = response.bodyBytes;
+    }
+
+    // Close loading dialog
+    Navigator.of(context, rootNavigator: true).pop();
+
+    if (imageBytes == null) {
+      throw Exception('Failed to process image');
+    }
+
+    // Get temp directory
+    final tempDir = await getTemporaryDirectory();
+    final tempFile = File('${tempDir.path}/shared_totd.png');
+
+    // Save image as file
+    await tempFile.writeAsBytes(imageBytes);
+
+    // Share directly based on user type
+    if (isPaidUser) {
+      // For paid users, share with full branding
+      await Share.shareXFiles(
+        [XFile(tempFile.path)],
+        text: 'Check out this amazing time of day content by $userName!',
+      );
+    } else {
+      // For free users, share without branding
+      await Share.shareXFiles(
+        [XFile(tempFile.path)],
+        text: 'Check out this amazing time of day content!',
+      );
+    }
+
+    // Show rating dialog after sharing
+    await Future.delayed(Duration(milliseconds: 500));
+    if (context.mounted) {
+      await _showRatingDialog(context, post);
+    }
+
+  } catch (e) {
+    // Close loading dialog if open
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context, rootNavigator: true).pop();
+    }
+    print('Error sharing TOTD post: $e');
+
+    // Show error message
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Failed to share image: ${e.toString()}'),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+}
+
+// Method to show the TOTD confirmation dialog
+static void showTOTDConfirmationDialog(
+    BuildContext context,
+    TimeOfDayPost post,
+    VoidCallback onCreatePressed,
+    ) async {
+  bool isPaidUser = await _isUserSubscribed();
+
+  User? currentUser = FirebaseAuth.instance.currentUser;
+  
+  // Default values from Firebase Auth
+  String defaultUserName = currentUser?.displayName ?? context.loc.user;
+  String defaultProfileImageUrl = currentUser?.photoURL ?? '';
+  
+  String userName = defaultUserName;
+  String userProfileImageUrl = defaultProfileImageUrl;
+  
+  // Fetch user data from users collection if available
+  if (currentUser?.email != null) {
+    try {
+      // Convert email to document ID format (replace . with _)
+      String docId = currentUser!.email!.replaceAll('.', '_');
+      
+      // Fetch user document from Firestore
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(docId)
+          .get();
+
+      
+      // Check if document exists and has required fields
+      if (userDoc.exists && userDoc.data() is Map<String, dynamic>) {
+        Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+        
+        // Get name from Firestore with fallback
+        if (userData.containsKey('name') && userData['name'] != null && userData['name'].toString().isNotEmpty) {
+          userName = userData['name'];
+        }
+        
+        // Get profile image from Firestore with fallback
+        if (userData.containsKey('profileImage') && userData['profileImage'] != null && userData['profileImage'].toString().isNotEmpty) {
+          userProfileImageUrl = userData['profileImage'];
+        }
+      }
+    } catch (e) {
+      print('Error fetching user data: $e');
     }
   }
-
-  // Method to show the TOTD confirmation dialog
-  static void showTOTDConfirmationDialog(
-      BuildContext context,
-      TimeOfDayPost post,
-      VoidCallback onCreatePressed,
-      ) async {
-    bool isPaidUser = await _isUserSubscribed();
-
-    User? currentUser = FirebaseAuth.instance.currentUser;
-    String userName = currentUser?.displayName ?? context.loc.user;
-    String userProfileImageUrl = currentUser?.photoURL ?? '';
-
+  
+  // Continue with the rest of your method using userName and userProfileImageUrl
     showDialog(
       context: context,
       barrierDismissible: false,

@@ -224,8 +224,51 @@ class FestivalHandler {
       // If userName or userProfileImageUrl are null, get them from Firebase
       if (userName == null || userProfileImageUrl == null) {
         User? currentUser = FirebaseAuth.instance.currentUser;
-        userName = currentUser?.displayName ?? context.loc.user;
-        userProfileImageUrl = currentUser?.photoURL ?? '';
+        String defaultUserName = currentUser?.displayName ?? context.loc.user;
+        String defaultProfileImageUrl = currentUser?.photoURL ?? '';
+        
+        // Fetch user data from users collection if available
+        if (currentUser?.email != null) {
+          try {
+            // Convert email to document ID format (replace . with _)
+            String docId = currentUser!.email!.replaceAll('.', '_');
+            
+            // Fetch user document from Firestore
+            DocumentSnapshot userDoc = await FirebaseFirestore.instance
+                .collection('users')
+                .doc(docId)
+                .get();
+            
+            // Check if document exists and has required fields
+            if (userDoc.exists && userDoc.data() is Map<String, dynamic>) {
+              Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+              
+              // Get name from Firestore with fallback
+              if (userData.containsKey('name') && userData['name'] != null && userData['name'].toString().isNotEmpty) {
+                userName = userData['name'];
+              } else {
+                userName = defaultUserName;
+              }
+              
+              // Get profile image from Firestore with fallback
+              if (userData.containsKey('profileImage') && userData['profileImage'] != null && userData['profileImage'].toString().isNotEmpty) {
+                userProfileImageUrl = userData['profileImage'];
+              } else {
+                userProfileImageUrl = defaultProfileImageUrl;
+              }
+            } else {
+              userName = defaultUserName;
+              userProfileImageUrl = defaultProfileImageUrl;
+            }
+          } catch (e) {
+            print('Error fetching user data: $e');
+            userName = defaultUserName;
+            userProfileImageUrl = defaultProfileImageUrl;
+          }
+        } else {
+          userName = defaultUserName;
+          userProfileImageUrl = defaultProfileImageUrl;
+        }
       }
 
       // Check if we're coming from the sharing page - if not, navigate to it
@@ -355,9 +398,46 @@ class FestivalHandler {
     bool isPaidUser = await _festivalService.isUserSubscribed();
 
     User? currentUser = FirebaseAuth.instance.currentUser;
-    String userName = currentUser?.displayName ?? context.loc.user;
-    String userProfileImageUrl = currentUser?.photoURL ?? '';
-
+    
+    // Default values from Firebase Auth
+    String defaultUserName = currentUser?.displayName ?? context.loc.user;
+    String defaultProfileImageUrl = currentUser?.photoURL ?? '';
+    
+    String userName = defaultUserName;
+    String userProfileImageUrl = defaultProfileImageUrl;
+    
+    // Fetch user data from users collection if available
+    if (currentUser?.email != null) {
+      try {
+        // Convert email to document ID format (replace . with _)
+        String docId = currentUser!.email!.replaceAll('.', '_');
+        
+        // Fetch user document from Firestore
+        DocumentSnapshot userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(docId)
+            .get();
+        
+        // Check if document exists and has required fields
+        if (userDoc.exists && userDoc.data() is Map<String, dynamic>) {
+          Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+          
+          // Get name from Firestore with fallback
+          if (userData.containsKey('name') && userData['name'] != null && userData['name'].toString().isNotEmpty) {
+            userName = userData['name'];
+          }
+          
+          // Get profile image from Firestore with fallback
+          if (userData.containsKey('profileImage') && userData['profileImage'] != null && userData['profileImage'].toString().isNotEmpty) {
+            userProfileImageUrl = userData['profileImage'];
+          }
+        }
+      } catch (e) {
+        print('Error fetching user data: $e');
+      }
+    }
+    
+    // Continue with the rest of your method using userName and userProfileImageUrl
     showDialog(
       context: context,
       barrierDismissible: false,
