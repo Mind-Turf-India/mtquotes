@@ -7,9 +7,9 @@ import 'package:provider/provider.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import '../../l10n/app_localization.dart';
 import '../../providers/text_size_provider.dart';
-import '../Templates/quote_template.dart';
+import '../Templates/components/template/quote_template.dart';
+import '../Templates/components/template/template_service.dart';
 import '../Templates/subscription_popup.dart';
-import '../Templates/template_service.dart';
 import 'edit_screen_create.dart';
 
 class TemplatePage extends StatefulWidget {

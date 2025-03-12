@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:mtquotes/screens/Templates/quote_template.dart';
+import 'package:mtquotes/screens/Templates/components/template/quote_template.dart';
 import 'dart:async';
 
 class QuoteService {

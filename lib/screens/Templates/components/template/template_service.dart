@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:mtquotes/screens/Templates/quote_template.dart';
+import 'package:mtquotes/screens/Templates/components/template/quote_template.dart';
 
 class TemplateService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;

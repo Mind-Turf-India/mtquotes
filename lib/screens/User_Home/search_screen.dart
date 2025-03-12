@@ -2,14 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:speech_to_text/speech_to_text.dart';
-
 import '../../l10n/app_localization.dart';
 import '../../providers/text_size_provider.dart';
 import '../Create_Screen/edit_screen_create.dart';
-import '../Templates/quote_template.dart';
+import '../Templates/components/template/quote_template.dart';
+import '../Templates/components/template/template_service.dart';
 import '../Templates/subscription_popup.dart';
-import '../Templates/template_section.dart';
-import '../Templates/template_service.dart';
+import '../Templates/components/template/template_section.dart';
 
 class SearchScreen extends StatefulWidget {
   @override

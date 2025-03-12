@@ -9,12 +9,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:http/http.dart' as http;
 import 'package:mtquotes/l10n/app_localization.dart';
-import 'package:mtquotes/screens/Templates/template_sharing.dart';
+import 'package:mtquotes/screens/Templates/components/template/template_service.dart';
+import 'package:mtquotes/screens/Templates/components/template/template_sharing.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:mtquotes/screens/Templates/quote_template.dart';
-import 'package:mtquotes/screens/Templates/template_service.dart';
-import '../Create_Screen/edit_screen_create.dart';
+import 'package:mtquotes/screens/Templates/components/template/quote_template.dart';
+import '../../../Create_Screen/edit_screen_create.dart';
 
 class TemplateHandler {
   static final GlobalKey templateImageKey = GlobalKey();

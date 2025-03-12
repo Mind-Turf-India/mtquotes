@@ -19,8 +19,8 @@ class FestivalCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 100,
-        height: 80,
+        width: 100, // Same as TemplateCard
+        height: 80, // Same as TemplateCard
         margin: EdgeInsets.only(right: 10),
         decoration: BoxDecoration(
           color: Colors.white,
@@ -51,37 +51,8 @@ class FestivalCard extends StatelessWidget {
                   );
                 },
               ),
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: Container(
-                  padding: EdgeInsets.symmetric(vertical: 5, horizontal: 8),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.bottomCenter,
-                      end: Alignment.topCenter,
-                      colors: [
-                        Colors.black.withOpacity(0.7),
-                        Colors.transparent,
-                      ],
-                    ),
-                  ),
-                  child: Text(
-                    festival.name,
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.poppins(
-                      fontSize: fontSize - 2,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ),
               if (festival.isPaid)
-                 Positioned(
+                Positioned(
                   top: 5,
                   right: 5,
                   child: Container(

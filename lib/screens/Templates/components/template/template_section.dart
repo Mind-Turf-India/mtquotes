@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:mtquotes/screens/Templates/quote_template.dart';
-import 'package:mtquotes/screens/Templates/template_card.dart';
-import 'package:mtquotes/screens/Templates/template_handler.dart';
+import 'package:mtquotes/screens/Templates/components/template/quote_template.dart';
+import 'package:mtquotes/screens/Templates/components/template/template_card.dart';
+import 'package:mtquotes/screens/Templates/components/template/template_handler.dart';
 
 class TemplateSection extends StatelessWidget {
   final String title;

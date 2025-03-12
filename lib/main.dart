@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mtquotes/providers/text_size_provider.dart';
 import 'package:mtquotes/screens/Templates/subscription_screen.dart';
-import 'package:mtquotes/screens/Templates/template_handler.dart';
+import 'package:mtquotes/screens/Templates/components/template/template_handler.dart';
 import 'package:mtquotes/screens/User_Home/home_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_core/firebase_core.dart';

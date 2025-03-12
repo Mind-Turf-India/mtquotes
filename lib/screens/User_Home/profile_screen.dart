@@ -96,7 +96,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       barrierDismissible: false, // Prevent closing without completing
       builder: (dialogContext) {
-        TextEditingController nameController = TextEditingController(text: _userDisplayName);
+        TextEditingController nameController =
+            TextEditingController(text: _userDisplayName);
         TextEditingController bioController = TextEditingController();
         File? _selectedImage;
 
@@ -106,10 +107,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             .doc(_userName!.email!.replaceAll('.', '_'))
             .get()
             .then((doc) {
-              if (doc.exists && doc.data()?['bio'] != null) {
-                bioController.text = doc.data()?['bio'];
-              }
-            });
+          if (doc.exists && doc.data()?['bio'] != null) {
+            bioController.text = doc.data()?['bio'];
+          }
+        });
 
         return StatefulBuilder(
           builder: (context, setState) {
@@ -131,11 +132,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       radius: 40,
                       backgroundImage: _selectedImage != null
                           ? FileImage(_selectedImage!)
-                          : (_profileImageUrl != null && _profileImageUrl!.isNotEmpty
+                          : (_profileImageUrl != null &&
+                                  _profileImageUrl!.isNotEmpty
                               ? NetworkImage(_profileImageUrl!) as ImageProvider
                               : null),
-                      child: (_selectedImage == null && 
-                             (_profileImageUrl == null || _profileImageUrl!.isEmpty))
+                      child: (_selectedImage == null &&
+                              (_profileImageUrl == null ||
+                                  _profileImageUrl!.isEmpty))
                           ? Icon(Icons.camera_alt, size: 40)
                           : null,
                     ),
@@ -171,12 +174,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     final User? currentUser = FirebaseAuth.instance.currentUser;
                     if (currentUser == null) {
                       ScaffoldMessenger.of(dialogContext).showSnackBar(
-                        const SnackBar(content: Text("Error: User not logged in")),
+                        const SnackBar(
+                            content: Text("Error: User not logged in")),
                       );
                       return;
                     }
 
-                    final String userDocId = currentUser.email!.replaceAll('.', '_');
+                    final String userDocId =
+                        currentUser.email!.replaceAll('.', '_');
                     final String newName = nameController.text;
                     final String newBio = bioController.text;
                     final File? imageToUpload = _selectedImage;
@@ -225,10 +230,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  Future<void> _saveProfileData(String userDocId, String name, String bio, File? image) async {
+  Future<void> _saveProfileData(
+      String userDocId, String name, String bio, File? image) async {
     try {
       String? imageUrl;
-      
+
       if (image != null) {
         imageUrl = await _uploadImage(image);
       }
@@ -251,10 +257,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _profileImageUrl = imageUrl;
           }
         });
-        
+
         // Refresh data
         await _fetchUserData();
-        
+
         // Show success message using the main context, not the dialog context
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Profile updated successfully")),
@@ -269,7 +275,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     final textSizeProvider = Provider.of<TextSizeProvider>(context);
@@ -316,11 +322,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: CircleAvatar(
                     radius: 40,
                     backgroundColor: Colors.grey.shade300,
-                    backgroundImage: _profileImageUrl != null && _profileImageUrl!.isNotEmpty
-                        ? NetworkImage(_profileImageUrl!)
-                        : null,
+                    backgroundImage:
+                        _profileImageUrl != null && _profileImageUrl!.isNotEmpty
+                            ? NetworkImage(_profileImageUrl!)
+                            : null,
                     child: _profileImageUrl == null || _profileImageUrl!.isEmpty
-                        ? const Icon(Icons.person, size: 50, color: Colors.black54)
+                        ? const Icon(Icons.person,
+                            size: 50, color: Colors.black54)
                         : null,
                   ),
                 ),
@@ -390,17 +398,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: ListView(
                     padding: EdgeInsets.zero,
                     children: [
-                      _buildMenuItem(context.loc.aboutus, fontSize, () {}),
                       _buildMenuItem(
+                        Icons.settings,
+                        context.loc.settings,
+                        fontSize,
+                        () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => SettingsPage()),
+                          );
+                        },
+                      ),
+                      _buildMenuItem(Icons.question_mark, context.loc.aboutus,
+                          fontSize, () {}),
+                      _buildMenuItem(Icons.support_agent_outlined,
+                          context.loc.support, fontSize, () {}),
+                      _buildMenuItem(Icons.share_rounded,
                           context.loc.shareapplication, fontSize, () {}),
-                      _buildMenuItem(context.loc.drafts, fontSize, () {}),
-                      _buildMenuItem(context.loc.settings, fontSize, () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => SettingsPage()),
-                        );
-                      }),
+                      _buildMenuItem(
+                          Icons.drafts_outlined, context.loc.drafts, fontSize, () {}),
+                      _buildMenuItem(Icons.workspace_premium, context.loc.subscriptions,
+                          fontSize, () {}),
                     ],
                   ),
                 ),
@@ -432,8 +451,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildMenuItem(String title, double textSize, VoidCallback onTap) {
+  Widget _buildMenuItem(
+      IconData icon, String title, double textSize, VoidCallback onTap) {
     return ListTile(
+      leading: Icon(icon, color: Colors.black87),
       title: Text(title, style: TextStyle(fontSize: textSize)),
       trailing:
           const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),

@@ -13,7 +13,6 @@ import 'package:mtquotes/screens/Templates/components/festivals/festival_post.da
 import 'package:mtquotes/screens/Templates/components/festivals/festival_service.dart';
 import 'package:mtquotes/screens/Templates/components/festivals/festival_sharing.dart';
 import 'package:mtquotes/screens/Templates/subscription_popup.dart';
-
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
