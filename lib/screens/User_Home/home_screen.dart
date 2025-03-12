@@ -27,6 +27,7 @@ import 'package:mtquotes/screens/Templates/components/festivals/festival_post.da
 import 'package:mtquotes/screens/Templates/components/festivals/festival_service.dart';
 import 'package:mtquotes/screens/Templates/components/festivals/festival_handler.dart';
 
+import '../Templates/components/festivals/festival_card.dart';
 import '../Templates/components/template/template_service.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -677,27 +678,27 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 SizedBox(height: 10),
                 SizedBox(
-                  height: 200,
+                  height: 150, // Changed from 200 to 100 to match other card sections
                   child: _loadingFestivals
                       ? Center(child: CircularProgressIndicator())
                       : _festivalPosts.isEmpty
-                          ? Center(
-                              child: Text(
-                                "No festival posts available",
-                                style:
-                                    GoogleFonts.poppins(fontSize: fontSize - 2),
-                              ),
-                            )
+                      ? Center(
+                    child: Text(
+                      "No festival posts available",
+                      style: GoogleFonts.poppins(fontSize: fontSize - 2),
+                    ),
+                  )
                           : ListView.builder(
-                              scrollDirection: Axis.horizontal,
-                              itemCount: _festivalPosts.length,
-                              itemBuilder: (context, index) {
-                                return festivalPostCard(
-                                  _festivalPosts[index],
-                                  fontSize,
-                                );
-                              },
-                            ),
+                    scrollDirection: Axis.horizontal,
+                    itemCount: _festivalPosts.length,
+                    itemBuilder: (context, index) {
+                      return FestivalCard(
+                        festival: _festivalPosts[index],
+                        fontSize: fontSize,
+                        onTap: () => _handleFestivalPostSelection(_festivalPosts[index]),
+                      );
+                    },
+                  ),
                 ),
                 SizedBox(height: 30),
                 Row(
@@ -777,85 +778,72 @@ class _HomeScreenState extends State<HomeScreen> {
     return GestureDetector(
       onTap: () => _handleFestivalPostSelection(festival),
       child: Container(
-        width: 120,
-        height: 140, // Ensure enough space for the image + text
+        width: 100, // Match other cards width
+        height: 80, // Match other cards height
         margin: EdgeInsets.only(right: 10),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(8),
           boxShadow: [BoxShadow(color: Colors.grey.shade300, blurRadius: 5)],
         ),
-        child: Column(
-          children: [
-            // Use a fixed height for the image instead of Expanded
-            SizedBox(
-              height: 200, // Adjusted image height
-              child: ClipRRect(
-                borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
-                child: festival.imageUrl.isNotEmpty
-                    ? CachedNetworkImage(
-                        imageUrl: festival.imageUrl,
-                        placeholder: (context, url) => Center(
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                        errorWidget: (context, url, error) {
-                          print("Image loading error: $error for URL: $url");
-                          return Container(
-                            color: Colors.grey[300],
-                            child: Icon(Icons.error),
-                          );
-                        },
-                        fit: BoxFit.cover,
-                        width: 120, // Match the container width
-                        height: 80, // Fixed height
-                        cacheKey: festival.id + "_image",
-                        maxHeightDiskCache: 500,
-                        maxWidthDiskCache: 500,
-                      )
-                    : Container(
-                        height: 80, // Match the image height
-                        color: Colors.grey[200],
-                        child: Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.image_not_supported,
-                                  color: Colors.grey),
-                              SizedBox(height: 4),
-                              Text(
-                                "No Image",
-                                style:
-                                    TextStyle(fontSize: 10, color: Colors.grey),
-                              ),
-                            ],
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              festival.imageUrl.isNotEmpty
+                  ? CachedNetworkImage(
+                imageUrl: festival.imageUrl,
+                placeholder: (context, url) => Center(
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                errorWidget: (context, url, error) {
+                  print("Image loading error: $error for URL: $url");
+                  return Container(
+                    color: Colors.grey[300],
+                    child: Icon(Icons.error),
+                  );
+                },
+                fit: BoxFit.cover,
+                cacheKey: festival.id + "_image",
+                maxHeightDiskCache: 500,
+                maxWidthDiskCache: 500,
+              )
+                  : Container(
+                color: Colors.grey[200],
+                child: Center(
+                  child: Icon(Icons.image_not_supported, color: Colors.grey),
+                ),
+              ),
+              if (festival.isPaid)
+                Positioned(
+                  top: 5,
+                  right: 5,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.7),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.lock, color: Colors.amber, size: 12),
+                        SizedBox(width: 2),
+                        Text(
+                          'PRO',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                      ),
-              ),
-            ),
-            // Uncomment and adjust this section if you want to show the festival name
-            // Padding(
-            //   padding: EdgeInsets.all(6),
-            //   child: Row(
-            //     children: [
-            //       Expanded(
-            //         child: Text(
-            //           festival.name,
-            //           textAlign: TextAlign.center,
-            //           style: GoogleFonts.poppins(
-            //             fontSize: fontSize - 4,
-            //             fontWeight: FontWeight.w500,
-            //           ),
-            //           maxLines: 1,
-            //           overflow: TextOverflow.ellipsis,
-            //         ),
-            //       ),
-            //       if (festival.isPaid)
-            //         Icon(Icons.lock, size: 14, color: Colors.orange),
-            //     ],
-            //   ),
-            // ),
-          ],
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
