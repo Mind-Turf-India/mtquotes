@@ -5,21 +5,24 @@ import 'package:mtquotes/screens/User_Home/components/notification_service.dart'
 import 'package:timeago/timeago.dart' as timeago;
 import 'package:intl/intl.dart';
 
+
 class NotificationsSheet extends StatefulWidget {
   @override
   _NotificationsSheetState createState() => _NotificationsSheetState();
 }
+
 
 class _NotificationsSheetState extends State<NotificationsSheet> {
   int? selectedIndex;
   List<NotificationModel> notifications = [];
   bool isLoading = true;
 
+
   @override
   void initState() {
     super.initState();
     _loadNotifications();
-    
+
     // Listen for new notifications
     NotificationService.instance.notificationsStream.listen((updatedNotifications) {
       if (mounted) {
@@ -31,6 +34,7 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
     });
   }
 
+
   Future<void> _loadNotifications() async {
     setState(() {
       notifications = NotificationService.instance.notifications;
@@ -38,10 +42,11 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
     });
   }
 
+
   String _getFormattedTime(DateTime timestamp) {
     final now = DateTime.now();
     final difference = now.difference(timestamp);
-    
+
     if (difference.inDays > 0) {
       return DateFormat('h:mm a, MMM d, yyyy').format(timestamp);
     } else {
@@ -49,9 +54,10 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
     }
   }
 
+
   String _getInitials(String title) {
     if (title.isEmpty) return "N";
-    
+
     List<String> words = title.split(" ");
     if (words.length == 1) {
       return words[0][0].toUpperCase();
@@ -59,6 +65,7 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
       return (words[0][0] + words[1][0]).toUpperCase();
     }
   }
+
 
   Color _getAvatarColor(String id) {
     // Generate a consistent color based on the notification ID
@@ -71,9 +78,10 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
       Colors.red[300]!,
       Colors.teal[300]!,
     ];
-    
+
     return colors[hashCode.abs() % colors.length];
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -98,6 +106,7 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
               ),
             ),
           ),
+
 
           // Header
           Padding(
@@ -149,165 +158,166 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
             ),
           ),
 
+
           // Notifications List
           Expanded(
             child: isLoading
                 ? Center(child: CircularProgressIndicator())
                 : notifications.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    LucideIcons.bellOff,
+                    size: 48,
+                    color: Colors.grey[400],
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    "No notifications yet",
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+            )
+                : RefreshIndicator(
+              onRefresh: _loadNotifications,
+              child: ListView.builder(
+                itemCount: notifications.length,
+                itemBuilder: (context, index) {
+                  final notification = notifications[index];
+                  return Dismissible(
+                    key: Key(notification.id),
+                    background: Container(
+                      color: Colors.red[400],
+                      alignment: Alignment.centerRight,
+                      padding: EdgeInsets.only(right: 20),
+                      child: Icon(
+                        LucideIcons.trash2,
+                        color: Colors.white,
+                      ),
+                    ),
+                    direction: DismissDirection.endToStart,
+                    onDismissed: (direction) {
+                      NotificationService.instance.deleteNotification(notification.id);
+                    },
+                    child: GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          selectedIndex = index;
+                        });
+
+                        // Handle notification tap
+                        if (notification.data.isNotEmpty) {
+                          // Navigate based on notification data
+                          // For example:
+                          if (notification.data['type'] == 'chat') {
+                            // Navigate to chat screen
+                            // Navigator.push(...);
+                          }
+                        }
+                      },
+                      child: Container(
+                        color: selectedIndex == index ? Colors.grey[100] : Colors.white,
+                        padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(
-                              LucideIcons.bellOff,
-                              size: 48,
-                              color: Colors.grey[400],
+                            // Avatar
+                            CircleAvatar(
+                              radius: 22,
+                              backgroundColor: _getAvatarColor(notification.id),
+                              child: notification.imageUrl != null
+                                  ? ClipRRect(
+                                borderRadius: BorderRadius.circular(22),
+                                child: Image.network(
+                                  notification.imageUrl!,
+                                  width: 44,
+                                  height: 44,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Text(
+                                      _getInitials(notification.title),
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    );
+                                  },
+                                ),
+                              )
+                                  : Text(
+                                _getInitials(notification.title),
+                                style: GoogleFonts.poppins(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
                             ),
-                            SizedBox(height: 16),
-                            Text(
-                              "No notifications yet",
-                              style: GoogleFonts.poppins(
-                                fontSize: 16,
-                                color: Colors.grey[600],
+                            SizedBox(width: 12),
+
+                            // Content
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    notification.title,
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  SizedBox(height: 4),
+                                  Text(
+                                    notification.body,
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 14,
+                                      color: Colors.grey[800],
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  SizedBox(height: 4),
+                                  Text(
+                                    _getFormattedTime(notification.timestamp),
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 12,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            // Delete button
+                            GestureDetector(
+                              onTap: () {
+                                NotificationService.instance.deleteNotification(notification.id);
+                              },
+                              child: Padding(
+                                padding: EdgeInsets.only(left: 8, top: 4),
+                                child: Icon(
+                                  LucideIcons.trash,
+                                  color: Colors.black54,
+                                  size: 18,
+                                ),
                               ),
                             ),
                           ],
                         ),
-                      )
-                    : RefreshIndicator(
-                        onRefresh: _loadNotifications,
-                        child: ListView.builder(
-                          itemCount: notifications.length,
-                          itemBuilder: (context, index) {
-                            final notification = notifications[index];
-                            return Dismissible(
-                              key: Key(notification.id),
-                              background: Container(
-                                color: Colors.red[400],
-                                alignment: Alignment.centerRight,
-                                padding: EdgeInsets.only(right: 20),
-                                child: Icon(
-                                  LucideIcons.trash2,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              direction: DismissDirection.endToStart,
-                              onDismissed: (direction) {
-                                NotificationService.instance.deleteNotification(notification.id);
-                              },
-                              child: GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    selectedIndex = index;
-                                  });
-                                  
-                                  // Handle notification tap
-                                  if (notification.data.isNotEmpty) {
-                                    // Navigate based on notification data
-                                    // For example:
-                                    if (notification.data['type'] == 'chat') {
-                                      // Navigate to chat screen
-                                      // Navigator.push(...);
-                                    }
-                                  }
-                                },
-                                child: Container(
-                                  color: selectedIndex == index ? Colors.grey[100] : Colors.white,
-                                  padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                                  child: Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      // Avatar
-                                      CircleAvatar(
-                                        radius: 22,
-                                        backgroundColor: _getAvatarColor(notification.id),
-                                        child: notification.imageUrl != null
-                                            ? ClipRRect(
-                                                borderRadius: BorderRadius.circular(22),
-                                                child: Image.network(
-                                                  notification.imageUrl!,
-                                                  width: 44,
-                                                  height: 44,
-                                                  fit: BoxFit.cover,
-                                                  errorBuilder: (context, error, stackTrace) {
-                                                    return Text(
-                                                      _getInitials(notification.title),
-                                                      style: GoogleFonts.poppins(
-                                                        fontSize: 16,
-                                                        fontWeight: FontWeight.bold,
-                                                        color: Colors.white,
-                                                      ),
-                                                    );
-                                                  },
-                                                ),
-                                              )
-                                            : Text(
-                                                _getInitials(notification.title),
-                                                style: GoogleFonts.poppins(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Colors.white,
-                                                ),
-                                              ),
-                                      ),
-                                      SizedBox(width: 12),
-                                      
-                                      // Content
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              notification.title,
-                                              style: GoogleFonts.poppins(
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.w600,
-                                              ),
-                                            ),
-                                            SizedBox(height: 4),
-                                            Text(
-                                              notification.body,
-                                              style: GoogleFonts.poppins(
-                                                fontSize: 14,
-                                                color: Colors.grey[800],
-                                              ),
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                            SizedBox(height: 4),
-                                            Text(
-                                              _getFormattedTime(notification.timestamp),
-                                              style: GoogleFonts.poppins(
-                                                fontSize: 12,
-                                                color: Colors.grey[600],
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      
-                                      // Delete button
-                                      GestureDetector(
-                                        onTap: () {
-                                          NotificationService.instance.deleteNotification(notification.id);
-                                        },
-                                        child: Padding(
-                                          padding: EdgeInsets.only(left: 8, top: 4),
-                                          child: Icon(
-                                            LucideIcons.trash,
-                                            color: Colors.black54,
-                                            size: 18,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
                       ),
+                    ),
+                  );
+                },
+              ),
+            ),
           ),
         ],
       ),

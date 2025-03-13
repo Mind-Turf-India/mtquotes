@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
 
 class NotificationModel {
   final String id;
@@ -11,7 +13,7 @@ class NotificationModel {
   final String? imageUrl;
   final Map<String, dynamic> data;
   final DateTime timestamp;
-
+  bool isRead;  // New field
 
   NotificationModel({
     required this.id,
@@ -20,6 +22,7 @@ class NotificationModel {
     this.imageUrl,
     required this.data,
     required this.timestamp,
+    this.isRead = false,  // Default to unread
   });
 
   factory NotificationModel.fromRemoteMessage(RemoteMessage message) {
@@ -27,9 +30,11 @@ class NotificationModel {
       id: message.messageId ?? DateTime.now().millisecondsSinceEpoch.toString(),
       title: message.notification?.title ?? 'New Notification',
       body: message.notification?.body ?? '',
-      imageUrl: message.notification?.android?.imageUrl ?? message.notification?.apple?.imageUrl,
+      imageUrl: message.notification?.android?.imageUrl ??
+          message.notification?.apple?.imageUrl,
       data: message.data,
       timestamp: message.sentTime ?? DateTime.now(),
+      isRead: false,
     );
   }
 
@@ -41,6 +46,7 @@ class NotificationModel {
       'imageUrl': imageUrl,
       'data': data,
       'timestamp': timestamp.toIso8601String(),
+      'isRead': isRead,
     };
   }
 
@@ -50,8 +56,9 @@ class NotificationModel {
       title: json['title'],
       body: json['body'],
       imageUrl: json['imageUrl'],
-      data: json['data'],
+      data: json['data'] is Map ? Map<String, dynamic>.from(json['data']) : {},
       timestamp: DateTime.parse(json['timestamp']),
+      isRead: json['isRead'] ?? false,
     );
   }
 }
@@ -60,26 +67,30 @@ class NotificationModel {
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await NotificationService.instance.setupFlutterNotifications();
   await NotificationService.instance.showNotification(message);
-  
+
   // Save the notification even when app is in background
-  await NotificationService.instance.saveNotification(
-    NotificationModel.fromRemoteMessage(message)
-  );
+  await NotificationService.instance
+      .saveNotification(NotificationModel.fromRemoteMessage(message));
 }
 
 class NotificationService {
   NotificationService._();
+
   static final NotificationService instance = NotificationService._();
 
   final _messaging = FirebaseMessaging.instance;
   final _localNotifications = FlutterLocalNotificationsPlugin();
   bool _isFlutterLocalNotificationsInitialized = false;
-  
+
   // Stream controller for notifications
-  final _notificationsStreamController = StreamController<List<NotificationModel>>.broadcast();
-  Stream<List<NotificationModel>> get notificationsStream => _notificationsStreamController.stream;
-  
+  final _notificationsStreamController =
+      StreamController<List<NotificationModel>>.broadcast();
+
+  Stream<List<NotificationModel>> get notificationsStream =>
+      _notificationsStreamController.stream;
+
   List<NotificationModel> _notifications = [];
+
   List<NotificationModel> get notifications => _notifications;
 
   Future<void> initialize() async {
@@ -87,9 +98,9 @@ class NotificationService {
 
     // Request permission
     await _requestPermission();
-    
+
     // Load saved notifications
-    await _loadSavedNotifications();
+    await loadSavedNotifications();
 
     // Setup message handlers
     await _setupMessageHandlers();
@@ -101,18 +112,55 @@ class NotificationService {
   Future<void> refreshAndSaveToken() async {
     final token = await _messaging.getToken();
     print('FCM Token: $token');
-    
+
     // Save the token to shared preferences
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('fcm_token', token ?? '');
-    
-    // Here you would typically send this token to your backend
-    // await _sendTokenToServer(token);
+
+    // Send token to your backend
+    await _sendTokenToServer(token);
   }
 
   Future<String?> getToken() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('fcm_token');
+  }
+
+
+  // Add this to your NotificationService class
+  Future<void> _sendTokenToServer(String? token) async {
+    if (token == null) return;
+
+    // Get the current user ID from your auth service
+    final userId = await _getCurrentUserId(); // Implement this method
+    if (userId == null) return;
+
+    try {
+      // Replace with your actual API endpoint
+      final response = await http.post(
+        Uri.parse('https://your-api-endpoint/register-token'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'userId': userId,
+          'token': token,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        print('Token successfully registered on server');
+      } else {
+        print('Failed to register token: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error sending token to server: $e');
+    }
+  }
+
+// Helper method to get current user ID
+  Future<String?> _getCurrentUserId() async {
+    // Implement based on your authentication system
+    // For example, if using Firebase Auth:
+    return FirebaseAuth.instance.currentUser?.uid;
   }
 
   Future<void> _requestPermission() async {
@@ -195,7 +243,9 @@ class NotificationService {
             importance: Importance.high,
             priority: Priority.high,
             icon: '@mipmap/ic_launcher',
-            largeIcon: android?.imageUrl != null ? FilePathAndroidBitmap(android!.imageUrl!) : null,
+            largeIcon: android?.imageUrl != null
+                ? FilePathAndroidBitmap(android!.imageUrl!)
+                : null,
           ),
           iOS: const DarwinNotificationDetails(
             presentAlert: true,
@@ -212,7 +262,7 @@ class NotificationService {
     // Foreground message
     FirebaseMessaging.onMessage.listen((message) {
       showNotification(message);
-      
+
       // Save the notification
       saveNotification(NotificationModel.fromRemoteMessage(message));
     });
@@ -233,82 +283,86 @@ class NotificationService {
     if (message.data['type'] == 'chat') {
       // open chat screen
     }
-    
+
     // Additional handling based on notification type
     _handleNotificationTap(message.data);
   }
-  
+
   void _handleNotificationTap(Map<String, dynamic> data) {
     // Handle notification tap based on data
     // For example, navigate to specific screen
     // This would typically involve a NavigationService or similar
   }
-  
+
   // Methods to manage notifications
   Future<void> saveNotification(NotificationModel notification) async {
     _notifications.insert(0, notification);
     _notificationsStreamController.add(_notifications);
-    
+
     // Save to persistent storage
     await _saveNotificationsToStorage();
   }
-  
+
   Future<void> deleteNotification(String id) async {
     _notifications.removeWhere((notification) => notification.id == id);
     _notificationsStreamController.add(_notifications);
-    
+
     // Update persistent storage
     await _saveNotificationsToStorage();
   }
-  
+
   Future<void> clearAllNotifications() async {
     _notifications.clear();
     _notificationsStreamController.add(_notifications);
-    
+
     // Clear from persistent storage
     await _saveNotificationsToStorage();
   }
-  
-  Future<void> _loadSavedNotifications() async {
+
+
+  Future<void> loadSavedNotifications() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final savedNotifications = prefs.getStringList('notifications') ?? [];
-      
+
       _notifications = savedNotifications
-          .map((notificationJson) => NotificationModel.fromJson(json.decode(notificationJson)))
+          .map((notificationJson) =>
+              NotificationModel.fromJson(json.decode(notificationJson)))
           .toList();
-      
+
       // Sort by timestamp (newest first)
       _notifications.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-      
+
       _notificationsStreamController.add(_notifications);
     } catch (e) {
       print('Error loading notifications: $e');
     }
   }
-  
+
+
+
   Future<void> _saveNotificationsToStorage() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final notificationsJson = _notifications
           .map((notification) => json.encode(notification.toJson()))
           .toList();
-      
+
       await prefs.setStringList('notifications', notificationsJson);
     } catch (e) {
       print('Error saving notifications: $e');
     }
   }
-  
+
   // Method to handle FCM token refresh
   void setupTokenRefresh() {
     _messaging.onTokenRefresh.listen((String token) async {
       print('FCM Token refreshed: $token');
-      
+
       // Save the new token
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('fcm_token', token);
-      
+
       // Here you would typically send this token to your backend
       // await _sendTokenToServer(token);
     });

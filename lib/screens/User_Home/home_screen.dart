@@ -437,9 +437,10 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  void _showNotificationsSheet() {
+  void showNotificationsSheet() {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true, // Add this to make it more flexible in height
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -538,7 +539,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               Spacer(),
               GestureDetector(
-                onTap: _showNotificationsSheet,
+                onTap: showNotificationsSheet,
                 child: Icon(
                   LucideIcons.bellRing,
                   color: Colors.black,

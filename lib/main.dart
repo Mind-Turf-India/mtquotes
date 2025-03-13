@@ -13,9 +13,13 @@ import 'package:mtquotes/screens/User_Home/components/navbar_mainscreen.dart';
 import 'package:mtquotes/screens/Onboarding_Screen/onboarding_screen.dart';
 import 'package:mtquotes/l10n/app_localization.dart';
 
+import 'firebase_options.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   await TemplateHandler.initializeTemplatesIfNeeded();
 
   final prefs = await SharedPreferences.getInstance();
