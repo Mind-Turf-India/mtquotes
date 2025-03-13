@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mtquotes/providers/text_size_provider.dart';
 import 'package:mtquotes/screens/Templates/subscription_screen.dart';
 import 'package:mtquotes/screens/Templates/components/template/template_handler.dart';
+import 'package:mtquotes/screens/User_Home/components/notification_service.dart';
 import 'package:mtquotes/screens/User_Home/home_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -22,6 +23,12 @@ void main() async {
   String? savedLocale = prefs.getString('languageCode') ?? 'en';
 
   User? currentUser = FirebaseAuth.instance.currentUser;
+
+   // Initialize notification service
+  await NotificationService.instance.initialize();
+  
+  // Setup token refresh listener
+  NotificationService.instance.setupTokenRefresh();
 
   runApp(
     MultiProvider(
@@ -73,16 +80,19 @@ class MyAppState extends State<MyApp> {
       builder: (context, fontSizeProvider, child) {
         return MaterialApp(
           title: 'Vaky',
+          
           debugShowCheckedModeBanner: false,
           home: widget.startScreen,
           locale: _locale,
           supportedLocales: supportedLocales,
           localizationsDelegates: localizationDelegates,
           theme: ThemeData(
+              visualDensity: VisualDensity.adaptivePlatformDensity,
             textTheme: TextTheme(
               bodyLarge: TextStyle(fontSize: fontSizeProvider.fontSize),
               bodyMedium: TextStyle(fontSize: fontSizeProvider.fontSize * 0.9),
               bodySmall: TextStyle(fontSize: fontSizeProvider.fontSize * 0.8),
+              
             ),
           ),
           routes: {

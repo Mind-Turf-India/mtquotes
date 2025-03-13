@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:mtquotes/screens/User_Home/components/notification_service.dart';
+import 'package:timeago/timeago.dart' as timeago;
+import 'package:intl/intl.dart';
 
 class NotificationsSheet extends StatefulWidget {
   @override
@@ -8,8 +11,69 @@ class NotificationsSheet extends StatefulWidget {
 }
 
 class _NotificationsSheetState extends State<NotificationsSheet> {
-  List<String> notifications = ["R", "A", "S"];
-  int? selectedIndex; 
+  int? selectedIndex;
+  List<NotificationModel> notifications = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadNotifications();
+    
+    // Listen for new notifications
+    NotificationService.instance.notificationsStream.listen((updatedNotifications) {
+      if (mounted) {
+        setState(() {
+          notifications = updatedNotifications;
+          isLoading = false;
+        });
+      }
+    });
+  }
+
+  Future<void> _loadNotifications() async {
+    setState(() {
+      notifications = NotificationService.instance.notifications;
+      isLoading = false;
+    });
+  }
+
+  String _getFormattedTime(DateTime timestamp) {
+    final now = DateTime.now();
+    final difference = now.difference(timestamp);
+    
+    if (difference.inDays > 0) {
+      return DateFormat('h:mm a, MMM d, yyyy').format(timestamp);
+    } else {
+      return timeago.format(timestamp);
+    }
+  }
+
+  String _getInitials(String title) {
+    if (title.isEmpty) return "N";
+    
+    List<String> words = title.split(" ");
+    if (words.length == 1) {
+      return words[0][0].toUpperCase();
+    } else {
+      return (words[0][0] + words[1][0]).toUpperCase();
+    }
+  }
+
+  Color _getAvatarColor(String id) {
+    // Generate a consistent color based on the notification ID
+    final int hashCode = id.hashCode;
+    final List<Color> colors = [
+      Colors.purple[300]!,
+      Colors.blue[300]!,
+      Colors.green[300]!,
+      Colors.orange[300]!,
+      Colors.red[300]!,
+      Colors.teal[300]!,
+    ];
+    
+    return colors[hashCode.abs() % colors.length];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +86,7 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // **Drag Handle**
+          // Drag Handle
           Center(
             child: Container(
               margin: EdgeInsets.only(top: 8),
@@ -35,7 +99,7 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
             ),
           ),
 
-          
+          // Header
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             child: Row(
@@ -48,82 +112,202 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                Icon(Icons.more_vert, color: Colors.black),
+                PopupMenuButton<String>(
+                  icon: Icon(Icons.more_vert, color: Colors.black),
+                  onSelected: (value) {
+                    if (value == 'clear') {
+                      showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: Text("Clear All Notifications"),
+                          content: Text("Are you sure you want to clear all notifications?"),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: Text("CANCEL"),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                NotificationService.instance.clearAllNotifications();
+                                Navigator.pop(context);
+                              },
+                              child: Text("CLEAR"),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    PopupMenuItem(
+                      value: 'clear',
+                      child: Text("Clear All"),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
 
           // Notifications List
           Expanded(
-            child: ListView.builder(
-              itemCount: notifications.length,
-              itemBuilder: (context, index) {
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      selectedIndex = index;
-                    });
-                  },
-                  child: Container(
-                    color: selectedIndex == index ? Colors.grey[200] : Colors.white,
-                    padding: EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 20,
-                          backgroundColor: Colors.purple[300],
-                          child: Text(
-                            notifications[index],
-                            style: GoogleFonts.poppins(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
+            child: isLoading
+                ? Center(child: CircularProgressIndicator())
+                : notifications.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              LucideIcons.bellOff,
+                              size: 48,
+                              color: Colors.grey[400],
                             ),
-                          ),
+                            SizedBox(height: 16),
+                            Text(
+                              "No notifications yet",
+                              style: GoogleFonts.poppins(
+                                fontSize: 16,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
                         ),
-                        SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                "Someone has invited you to follow.",
-                                style: GoogleFonts.poppins(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
+                      )
+                    : RefreshIndicator(
+                        onRefresh: _loadNotifications,
+                        child: ListView.builder(
+                          itemCount: notifications.length,
+                          itemBuilder: (context, index) {
+                            final notification = notifications[index];
+                            return Dismissible(
+                              key: Key(notification.id),
+                              background: Container(
+                                color: Colors.red[400],
+                                alignment: Alignment.centerRight,
+                                padding: EdgeInsets.only(right: 20),
+                                child: Icon(
+                                  LucideIcons.trash2,
+                                  color: Colors.white,
                                 ),
                               ),
-                              SizedBox(height: 4),
-                              Text(
-                                "2:00 PM, Feb 22, 2025",
-                                style: GoogleFonts.poppins(
-                                  fontSize: 12,
-                                  color: Colors.grey[600],
+                              direction: DismissDirection.endToStart,
+                              onDismissed: (direction) {
+                                NotificationService.instance.deleteNotification(notification.id);
+                              },
+                              child: GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    selectedIndex = index;
+                                  });
+                                  
+                                  // Handle notification tap
+                                  if (notification.data.isNotEmpty) {
+                                    // Navigate based on notification data
+                                    // For example:
+                                    if (notification.data['type'] == 'chat') {
+                                      // Navigate to chat screen
+                                      // Navigator.push(...);
+                                    }
+                                  }
+                                },
+                                child: Container(
+                                  color: selectedIndex == index ? Colors.grey[100] : Colors.white,
+                                  padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      // Avatar
+                                      CircleAvatar(
+                                        radius: 22,
+                                        backgroundColor: _getAvatarColor(notification.id),
+                                        child: notification.imageUrl != null
+                                            ? ClipRRect(
+                                                borderRadius: BorderRadius.circular(22),
+                                                child: Image.network(
+                                                  notification.imageUrl!,
+                                                  width: 44,
+                                                  height: 44,
+                                                  fit: BoxFit.cover,
+                                                  errorBuilder: (context, error, stackTrace) {
+                                                    return Text(
+                                                      _getInitials(notification.title),
+                                                      style: GoogleFonts.poppins(
+                                                        fontSize: 16,
+                                                        fontWeight: FontWeight.bold,
+                                                        color: Colors.white,
+                                                      ),
+                                                    );
+                                                  },
+                                                ),
+                                              )
+                                            : Text(
+                                                _getInitials(notification.title),
+                                                style: GoogleFonts.poppins(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                      ),
+                                      SizedBox(width: 12),
+                                      
+                                      // Content
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              notification.title,
+                                              style: GoogleFonts.poppins(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                            SizedBox(height: 4),
+                                            Text(
+                                              notification.body,
+                                              style: GoogleFonts.poppins(
+                                                fontSize: 14,
+                                                color: Colors.grey[800],
+                                              ),
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            SizedBox(height: 4),
+                                            Text(
+                                              _getFormattedTime(notification.timestamp),
+                                              style: GoogleFonts.poppins(
+                                                fontSize: 12,
+                                                color: Colors.grey[600],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      
+                                      // Delete button
+                                      GestureDetector(
+                                        onTap: () {
+                                          NotificationService.instance.deleteNotification(notification.id);
+                                        },
+                                        child: Padding(
+                                          padding: EdgeInsets.only(left: 8, top: 4),
+                                          child: Icon(
+                                            LucideIcons.trash,
+                                            color: Colors.black54,
+                                            size: 18,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
-                            ],
-                          ),
-                        ),
-
-                        //delete button
-                        GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              notifications.removeAt(index);
-                            });
+                            );
                           },
-                          child: Icon(
-                            LucideIcons.trash,
-                            color: Colors.black54,
-                            size: 20,
-                          ),
                         ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
+                      ),
           ),
         ],
       ),
