@@ -13,7 +13,8 @@ class NotificationModel {
   final String? imageUrl;
   final Map<String, dynamic> data;
   final DateTime timestamp;
-  bool isRead;  // New field
+  final String notificationType; // Add notification type field
+  bool isRead;
 
   NotificationModel({
     required this.id,
@@ -22,10 +23,23 @@ class NotificationModel {
     this.imageUrl,
     required this.data,
     required this.timestamp,
-    this.isRead = false,  // Default to unread
+    required this.notificationType, // Required field
+    this.isRead = false,
   });
 
   factory NotificationModel.fromRemoteMessage(RemoteMessage message) {
+    // Determine notification type from message
+    String notificationType = 'general';
+    // if (message.topic != null) {
+    //   notificationType = message.topic;
+    // } else if (message.data.containsKey('type')) {
+    //   notificationType = message.data['type'];
+    // }
+
+    if (message.data.containsKey('type')) {
+      notificationType = message.data['type'];
+    }
+
     return NotificationModel(
       id: message.messageId ?? DateTime.now().millisecondsSinceEpoch.toString(),
       title: message.notification?.title ?? 'New Notification',
@@ -34,6 +48,7 @@ class NotificationModel {
           message.notification?.apple?.imageUrl,
       data: message.data,
       timestamp: message.sentTime ?? DateTime.now(),
+      notificationType: notificationType,
       isRead: false,
     );
   }
@@ -46,6 +61,7 @@ class NotificationModel {
       'imageUrl': imageUrl,
       'data': data,
       'timestamp': timestamp.toIso8601String(),
+      'notificationType': notificationType,
       'isRead': isRead,
     };
   }
@@ -58,6 +74,7 @@ class NotificationModel {
       imageUrl: json['imageUrl'],
       data: json['data'] is Map ? Map<String, dynamic>.from(json['data']) : {},
       timestamp: DateTime.parse(json['timestamp']),
+      notificationType: json['notificationType'] ?? 'general',
       isRead: json['isRead'] ?? false,
     );
   }
@@ -86,12 +103,19 @@ class NotificationService {
   final _notificationsStreamController =
       StreamController<List<NotificationModel>>.broadcast();
 
+  // Stream for unread notifications count
+  final _unreadCountStreamController = StreamController<int>.broadcast();
+
   Stream<List<NotificationModel>> get notificationsStream =>
       _notificationsStreamController.stream;
+
+  Stream<int> get unreadCountStream => _unreadCountStreamController.stream;
 
   List<NotificationModel> _notifications = [];
 
   List<NotificationModel> get notifications => _notifications;
+
+  int get unreadCount => _notifications.where((n) => !n.isRead).length;
 
   Future<void> initialize() async {
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
@@ -107,6 +131,18 @@ class NotificationService {
 
     // Get FCM token and save it
     await refreshAndSaveToken();
+
+    // Subscribe to topics
+    await _subscribeToTopics();
+  }
+
+  Future<void> _subscribeToTopics() async {
+    // Subscribe to all topics from your Firebase Cloud Functions
+    await _messaging.subscribeToTopic('qotd');
+    await _messaging.subscribeToTopic('totd');
+    await _messaging.subscribeToTopic('festivals');
+
+    print('Subscribed to notification topics');
   }
 
   Future<void> refreshAndSaveToken() async {
@@ -126,13 +162,11 @@ class NotificationService {
     return prefs.getString('fcm_token');
   }
 
-
-  // Add this to your NotificationService class
   Future<void> _sendTokenToServer(String? token) async {
     if (token == null) return;
 
     // Get the current user ID from your auth service
-    final userId = await _getCurrentUserId(); // Implement this method
+    final userId = await _getCurrentUserId();
     if (userId == null) return;
 
     try {
@@ -156,10 +190,7 @@ class NotificationService {
     }
   }
 
-// Helper method to get current user ID
   Future<String?> _getCurrentUserId() async {
-    // Implement based on your authentication system
-    // For example, if using Firebase Auth:
     return FirebaseAuth.instance.currentUser?.uid;
   }
 
@@ -183,11 +214,14 @@ class NotificationService {
     }
 
     // android setup
-    const channel = AndroidNotificationChannel(
-      'high_importance_channel',
+    const AndroidNotificationChannel channel = AndroidNotificationChannel(
+      'high_importance_channel', // same as in the Cloud Function
       'High Importance Notifications',
       description: 'This channel is used for important notifications.',
       importance: Importance.high,
+      playSound: true,
+      enableVibration: true,
+      showBadge: true,
     );
 
     await _localNotifications
@@ -227,9 +261,25 @@ class NotificationService {
   }
 
   Future<void> showNotification(RemoteMessage message) async {
+   
     RemoteNotification? notification = message.notification;
     AndroidNotification? android = message.notification?.android;
+    String? imageUrl =
+        notification?.android?.imageUrl ?? notification?.apple?.imageUrl;
+
     if (notification != null) {
+      BigPictureStyleInformation? bigPictureStyle;
+      if (imageUrl != null && imageUrl.isNotEmpty) {
+         print('image url fectched');
+        bigPictureStyle = BigPictureStyleInformation(
+          FilePathAndroidBitmap(
+              imageUrl), // This may need a proper image loader
+          largeIcon: FilePathAndroidBitmap(imageUrl),
+          contentTitle: notification.title,
+          summaryText: notification.body,
+        );
+      }
+
       await _localNotifications.show(
         notification.hashCode,
         notification.title,
@@ -242,12 +292,10 @@ class NotificationService {
                 'This channel is used for important notifications.',
             importance: Importance.high,
             priority: Priority.high,
+            styleInformation: bigPictureStyle, // Attach the style
             icon: '@mipmap/ic_launcher',
-            largeIcon: android?.imageUrl != null
-                ? FilePathAndroidBitmap(android!.imageUrl!)
-                : null,
           ),
-          iOS: const DarwinNotificationDetails(
+          iOS: DarwinNotificationDetails(
             presentAlert: true,
             presentBadge: true,
             presentSound: true,
@@ -280,9 +328,8 @@ class NotificationService {
   }
 
   void _handleBackgroundMessage(RemoteMessage message) {
-    if (message.data['type'] == 'chat') {
-      // open chat screen
-    }
+    // Save the notification if it's not already saved
+    saveNotification(NotificationModel.fromRemoteMessage(message));
 
     // Additional handling based on notification type
     _handleNotificationTap(message.data);
@@ -290,22 +337,80 @@ class NotificationService {
 
   void _handleNotificationTap(Map<String, dynamic> data) {
     // Handle notification tap based on data
-    // For example, navigate to specific screen
-    // This would typically involve a NavigationService or similar
+    // For example, navigate to specific screen based on notification type
+    if (data['type'] == 'qotd') {
+      // Navigate to QOTD screen
+    } else if (data['type'] == 'totd') {
+      // Navigate to TOTD screen
+    } else if (data['type'] == 'festivals') {
+      // Navigate to Festivals screen
+    }
   }
 
   // Methods to manage notifications
   Future<void> saveNotification(NotificationModel notification) async {
-    _notifications.insert(0, notification);
+    // Check if notification with same ID already exists
+    final existingIndex =
+        _notifications.indexWhere((n) => n.id == notification.id);
+
+    if (existingIndex >= 0) {
+      // Update existing notification
+      _notifications[existingIndex] = notification;
+    } else {
+      // Add new notification
+      _notifications.insert(0, notification);
+    }
+
+    // Sort by timestamp (newest first)
+    _notifications.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+
+    // Notify listeners
     _notificationsStreamController.add(_notifications);
+    _unreadCountStreamController.add(unreadCount);
 
     // Save to persistent storage
     await _saveNotificationsToStorage();
   }
 
+  Future<void> markAsRead(String id) async {
+    final index = _notifications.indexWhere((n) => n.id == id);
+    if (index >= 0) {
+      _notifications[index].isRead = true;
+
+      // Notify listeners
+      _notificationsStreamController.add(_notifications);
+      _unreadCountStreamController.add(unreadCount);
+
+      // Update persistent storage
+      await _saveNotificationsToStorage();
+    }
+  }
+
+  Future<void> markAllAsRead() async {
+    bool changed = false;
+    for (final notification in _notifications) {
+      if (!notification.isRead) {
+        notification.isRead = true;
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      // Notify listeners
+      _notificationsStreamController.add(_notifications);
+      _unreadCountStreamController.add(0);
+
+      // Update persistent storage
+      await _saveNotificationsToStorage();
+    }
+  }
+
   Future<void> deleteNotification(String id) async {
     _notifications.removeWhere((notification) => notification.id == id);
+
+    // Notify listeners
     _notificationsStreamController.add(_notifications);
+    _unreadCountStreamController.add(unreadCount);
 
     // Update persistent storage
     await _saveNotificationsToStorage();
@@ -313,12 +418,14 @@ class NotificationService {
 
   Future<void> clearAllNotifications() async {
     _notifications.clear();
+
+    // Notify listeners
     _notificationsStreamController.add(_notifications);
+    _unreadCountStreamController.add(0);
 
     // Clear from persistent storage
     await _saveNotificationsToStorage();
   }
-
 
   Future<void> loadSavedNotifications() async {
     try {
@@ -333,13 +440,13 @@ class NotificationService {
       // Sort by timestamp (newest first)
       _notifications.sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
+      // Notify listeners
       _notificationsStreamController.add(_notifications);
+      _unreadCountStreamController.add(unreadCount);
     } catch (e) {
       print('Error loading notifications: $e');
     }
   }
-
-
 
   Future<void> _saveNotificationsToStorage() async {
     try {
@@ -363,13 +470,14 @@ class NotificationService {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('fcm_token', token);
 
-      // Here you would typically send this token to your backend
-      // await _sendTokenToServer(token);
+      // Send token to your backend
+      await _sendTokenToServer(token);
     });
   }
 
   // Dispose method to clean up resources
   void dispose() {
     _notificationsStreamController.close();
+    _unreadCountStreamController.close();
   }
 }

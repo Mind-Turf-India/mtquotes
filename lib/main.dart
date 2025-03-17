@@ -1,3 +1,4 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:mtquotes/providers/text_size_provider.dart';
 import 'package:mtquotes/screens/Templates/subscription_screen.dart';
@@ -32,7 +33,8 @@ void main() async {
   await NotificationService.instance.initialize();
   
   // Setup token refresh listener
-  NotificationService.instance.setupTokenRefresh();
+  // NotificationService.instance.setupTokenRefresh();
+  // FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
   runApp(
     MultiProvider(
