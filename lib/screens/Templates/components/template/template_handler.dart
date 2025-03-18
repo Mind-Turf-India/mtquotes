@@ -25,8 +25,12 @@ class TemplateHandler {
       QuoteTemplate template,
       Function(QuoteTemplate) onAccessGranted,
       ) async {
-    final templateService = TemplateService();
-    bool isSubscribed = await templateService.isUserSubscribed();
+    showLoadingIndicator(context);
+    try {
+      final templateService = TemplateService();
+      bool isSubscribed = await templateService.isUserSubscribed();
+
+      hideLoadingIndicator(context);
 
     if (template.isPaid && !isSubscribed) {
       // Show subscription dialog/prompt
@@ -59,6 +63,34 @@ class TemplateHandler {
         template,
             () => onAccessGranted(template),
       );
+    }
+    } catch (e) {
+      hideLoadingIndicator(context);
+      print('Error in handleTemplateSelection: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('An error occurred. Please try again.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  static void showLoadingIndicator(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Center(
+          child: CircularProgressIndicator(),
+        );
+      },
+    );
+  }
+
+  static void hideLoadingIndicator(BuildContext context) {
+    if (Navigator.of(context, rootNavigator: true).canPop()) {
+      Navigator.of(context, rootNavigator: true).pop();
     }
   }
 
@@ -380,17 +412,20 @@ static void showTemplateConfirmationDialog(
     QuoteTemplate template,
     VoidCallback onCreatePressed,
     ) async {
-  final templateService = TemplateService();
-  bool isPaidUser = await templateService.isUserSubscribed();
+  showLoadingIndicator(context);
 
-  User? currentUser = FirebaseAuth.instance.currentUser;
-  
-  // Default values from Firebase Auth
-  String defaultUserName = currentUser?.displayName ?? context.loc.user;
-  String defaultProfileImageUrl = currentUser?.photoURL ?? '';
-  
-  String userName = defaultUserName;
-  String userProfileImageUrl = defaultProfileImageUrl;
+  try {
+    final templateService = TemplateService();
+    bool isPaidUser = await templateService.isUserSubscribed();
+
+    User? currentUser = FirebaseAuth.instance.currentUser;
+
+    // Default values from Firebase Auth
+    String defaultUserName = currentUser?.displayName ?? context.loc.user;
+    String defaultProfileImageUrl = currentUser?.photoURL ?? '';
+
+    String userName = defaultUserName;
+    String userProfileImageUrl = defaultProfileImageUrl;
   
   // Fetch user data from users collection if available
   if (currentUser?.email != null) {
@@ -422,6 +457,8 @@ static void showTemplateConfirmationDialog(
       print('Error fetching user data: $e');
     }
   }
+
+    hideLoadingIndicator(context);
   
   // Continue with the rest of your method using userName and userProfileImageUrl
 
@@ -714,7 +751,17 @@ static void showTemplateConfirmationDialog(
         );
       },
     );
+  } catch (e) {
+    hideLoadingIndicator(context);
+    print('Error in showTemplateConfirmationDialog: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('An error occurred. Please try again.'),
+        backgroundColor: Colors.red,
+      ),
+    );
   }
+}
 
   // Method to initialize templates if none exist
   static Future<void> initializeTemplatesIfNeeded() async {

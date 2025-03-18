@@ -10,7 +10,7 @@ import 'package:http/http.dart' as http;
 import 'package:share_plus/share_plus.dart';
 
 class EditScreen extends StatefulWidget {
-  EditScreen({Key? key, required this.title,this.templateImageUrl}) : super(key: key);
+  EditScreen({Key? key, required this.title, this.templateImageUrl}) : super(key: key);
   final String title;
   final String? templateImageUrl;
 
@@ -30,6 +30,24 @@ class _EditScreenState extends State<EditScreen> {
     if (widget.templateImageUrl != null) {
       loadTemplateImage(widget.templateImageUrl!);
     }
+  }
+
+  // Helper method to show loading indicator
+  void _showLoadingIndicator() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Center(
+          child: CircularProgressIndicator(),
+        );
+      },
+    );
+  }
+
+  // Helper method to hide loading indicator
+  void _hideLoadingIndicator() {
+    Navigator.of(context).pop();
   }
 
   Future<void> loadTemplateImage(String imageUrl) async {
@@ -64,16 +82,39 @@ class _EditScreenState extends State<EditScreen> {
   }
 
   Future<void> pickImageFromGallery() async {
-    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    _showLoadingIndicator();
 
-    if (image != null) {
-      final File file = File(image.path);
-      final Uint8List bytes = await file.readAsBytes();
+    try {
+      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
 
-      setState(() {
-        imageData = bytes;
-        defaultImageLoaded = false;
-      });
+      _hideLoadingIndicator();
+
+      if (image != null) {
+        // Show loading indicator for file reading
+        _showLoadingIndicator();
+
+        try {
+          final File file = File(image.path);
+          final Uint8List bytes = await file.readAsBytes();
+
+          _hideLoadingIndicator();
+
+          setState(() {
+            imageData = bytes;
+            defaultImageLoaded = false;
+          });
+        } catch (e) {
+          _hideLoadingIndicator();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Error reading image: $e")),
+          );
+        }
+      }
+    } catch (e) {
+      _hideLoadingIndicator();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error picking image: $e")),
+      );
     }
   }
 
@@ -82,6 +123,8 @@ class _EditScreenState extends State<EditScreen> {
       showNoImageSelectedDialog();
       return;
     }
+
+    _showLoadingIndicator();
 
     try {
       Directory? baseDir;
@@ -100,18 +143,64 @@ class _EditScreenState extends State<EditScreen> {
       File file = File(filePath);
       await file.writeAsBytes(imageData!);
 
+      _hideLoadingIndicator();
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Image saved to ${baseDir.path}")),
       );
     } catch (e) {
+      _hideLoadingIndicator();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Error saving image: $e")),
       );
     }
   }
 
+  Future<void> shareImage() async {
+    // Check if there's an image to share
+    if (imageData == null) {
+      showNoImageSelectedDialog();
+      return;
+    }
 
+    _showLoadingIndicator();
 
+    try {
+      // Save the edited image to a temporary file
+      final temp = await getTemporaryDirectory();
+      final path = "${temp.path}/edited_image.jpg";
+      File(path).writeAsBytesSync(imageData!);
+
+      _hideLoadingIndicator();
+
+      // Share the image
+      await Share.shareXFiles(
+        [XFile(path)],
+        text: 'here the url of the app will come along with the referral code deets',
+      );
+    } catch (e) {
+      _hideLoadingIndicator();
+
+      // Show error dialog
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('Error'),
+            content: Text('Failed to share image: ${e.toString()}'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text('OK'),
+              ),
+            ],
+          );
+        },
+      );
+    }
+  }
 
   void showNoImageSelectedDialog() {
     showDialog(
@@ -162,45 +251,7 @@ class _EditScreenState extends State<EditScreen> {
             Spacer(),
             IconButton(
               icon: Icon(Icons.share, color: Colors.grey),
-              onPressed: () async {
-                // Check if there's an image to share
-                if (imageData == null) {
-                  showNoImageSelectedDialog();
-                  return;
-                }
-
-                try {
-                  // Save the edited image to a temporary file
-                  final temp = await getTemporaryDirectory();
-                  final path = "${temp.path}/edited_image.jpg";
-                  File(path).writeAsBytesSync(imageData!);
-
-                  // Share the image
-                  await Share.shareXFiles(
-                    [XFile(path)],
-                    text: 'here the url of the app will come along with the referral code deets',
-                  );
-                } catch (e) {
-                  // Show error dialog
-                  showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return AlertDialog(
-                        title: Text('Error'),
-                        content: Text('Failed to share image: ${e.toString()}'),
-                        actions: [
-                          TextButton(
-                            onPressed: () {
-                              Navigator.of(context).pop();
-                            },
-                            child: Text('OK'),
-                          ),
-                        ],
-                      );
-                    },
-                  );
-                }
-              },
+              onPressed: shareImage,
             ),
             TextButton(
               onPressed: downloadImage,
@@ -286,16 +337,28 @@ class _EditScreenState extends State<EditScreen> {
                       if (imageData == null) {
                         showNoImageSelectedDialog();
                       } else {
-                        var editedImage = await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ImageEditor(image: imageData),
-                          ),
-                        );
-                        if (editedImage != null) {
-                          setState(() {
-                            imageData = editedImage;
-                          });
+                        _showLoadingIndicator();
+
+                        try {
+                          var editedImage = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ImageEditor(image: imageData),
+                            ),
+                          );
+
+                          _hideLoadingIndicator();
+
+                          if (editedImage != null) {
+                            setState(() {
+                              imageData = editedImage;
+                            });
+                          }
+                        } catch (e) {
+                          _hideLoadingIndicator();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text("Error editing image: $e")),
+                          );
                         }
                       }
                     },

@@ -10,8 +10,6 @@ import 'package:mtquotes/screens/User_Home/components/navbar_mainscreen.dart';
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
 
-  
-
   @override
   State<SignupScreen> createState() => _SignupScreenState();
 }
@@ -20,10 +18,11 @@ class _SignupScreenState extends State<SignupScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  final _referralController = TextEditingController(); 
+  final _referralController = TextEditingController();
   bool _rememberMe = false;
   bool _isObscure1 = true;
   bool _isObscure2 = true;
+  bool _isLoading = true; // Add loading state for initial check
 
   @override
   void initState() {
@@ -31,27 +30,59 @@ class _SignupScreenState extends State<SignupScreen> {
     _checkUserLoginStatus();
   }
 
-  Future<void> _checkUserLoginStatus() async {
-    User? user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => MainScreen()),
+  // Show loading dialog
+  void _showLoadingDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Center(
+          child: CircularProgressIndicator(),
         );
+      },
+    );
+  }
+
+  // Hide loading dialog
+  void _hideLoadingDialog() {
+    Navigator.of(context, rootNavigator: true).pop();
+  }
+
+  Future<void> _checkUserLoginStatus() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => MainScreen()),
+          );
+        });
+      }
+    } catch (e) {
+      // Handle any errors silently
+    } finally {
+      setState(() {
+        _isLoading = false;
       });
     }
   }
 
   Future<void> _signInWithEmailAndPassword() async {
-    try {
-      if (!passwordConfirmed()) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Passwords do not match!")),
-        );
-        return;
-      }
+    if (!passwordConfirmed()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Passwords do not match!")),
+      );
+      return;
+    }
 
+    _showLoadingDialog();
+
+    try {
       UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
@@ -60,11 +91,15 @@ class _SignupScreenState extends State<SignupScreen> {
       // Store user info in Firestore
       await _saveUserToFirestore(userCredential.user);
 
+      _hideLoadingDialog();
+
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => MainScreen()),
       );
     } catch (e) {
+      _hideLoadingDialog();
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Signup Failed: $e")),
       );
@@ -72,11 +107,16 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   Future<void> _signInWithGoogle() async {
+    _showLoadingDialog();
+
     try {
       await GoogleSignIn().signOut();
 
       final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-      if (googleUser == null) return;
+      if (googleUser == null) {
+        _hideLoadingDialog();
+        return;
+      }
 
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
 
@@ -90,75 +130,76 @@ class _SignupScreenState extends State<SignupScreen> {
       // Store user info in Firestore
       await _saveUserToFirestore(userCredential.user);
 
+      _hideLoadingDialog();
+
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (context) => MainScreen()),
-        (Route<dynamic> route) => false, 
+            (Route<dynamic> route) => false,
       );
     } catch (e) {
+      _hideLoadingDialog();
+
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text("Google Sign-In Failed: $e")));
     }
   }
 
+  Future<void> _saveUserToFirestore(User? user) async {
+    if (user != null && user.email != null) {
+      final String userEmail = user.email!.replaceAll(".", "_"); // Firestore doesn't allow '.' in document IDs
+      final userRef = FirebaseFirestore.instance.collection('users').doc(userEmail);
+      final String referralCode = _generateReferralCode(user.uid);
 
-Future<void> _saveUserToFirestore(User? user) async {
-  if (user != null && user.email != null) {
-    final String userEmail = user.email!.replaceAll(".", "_"); // Firestore doesn't allow '.' in document IDs
-    final userRef = FirebaseFirestore.instance.collection('users').doc(userEmail);
-    final String referralCode = _generateReferralCode(user.uid);
+      Map<String, dynamic> userData = {
+        'uid': user.uid,
+        'email': user.email,
+        'name': null,
+        'bio': null,
+        'createdAt': FieldValue.serverTimestamp(), // Latest login time
+        'referralCode': referralCode,
+        'referrerUid': null,
+        'rewardPoints': 0,
+        'previousRewardPoints': 0,
+        'isSubscribed': false,
+      };
 
-    Map<String, dynamic> userData = {
-      'uid': user.uid,
-      'email': user.email,
-      'name': null,
-      'bio': null,
-      'createdAt': FieldValue.serverTimestamp(), // Latest login time
-      'referralCode': referralCode,
-      'referrerUid': null, 
-      'rewardPoints': 0,
-      'previousRewardPoints': 0,
-      'isSubscribed': false,
-    };
+      // Handling referral codes
+      if (_referralController.text.trim().isNotEmpty) {
+        String usedReferralCode = _referralController.text.trim();
 
-    // Handling referral codes
-    if (_referralController.text.trim().isNotEmpty) {
-      String usedReferralCode = _referralController.text.trim();
+        // Find the referrer in Firestore
+        QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .where('referralCode', isEqualTo: usedReferralCode)
+            .get();
 
-      // Find the referrer in Firestore
-      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .where('referralCode', isEqualTo: usedReferralCode)
-          .get();
+        if (querySnapshot.docs.isNotEmpty) {
+          DocumentSnapshot referrerDoc = querySnapshot.docs.first;
+          String referrerUid = referrerDoc.id;
 
-      if (querySnapshot.docs.isNotEmpty) {
-        DocumentSnapshot referrerDoc = querySnapshot.docs.first;
-        String referrerUid = referrerDoc.id;
+          // Update user data with referrer info
+          userData['referrerUid'] = referrerUid;
+          userData['rewardPoints'] = 50; // Reward for using a referral
 
-        // Update user data with referrer info
-        userData['referrerUid'] = referrerUid;
-        userData['rewardPoints'] = 50; // Reward for using a referral
-
-        // Grant reward points to referrer
-        await FirebaseFirestore.instance.collection('users').doc(referrerUid).update({
-          'rewardPoints': FieldValue.increment(50),
-        });
+          // Grant reward points to referrer
+          await FirebaseFirestore.instance.collection('users').doc(referrerUid).update({
+            'rewardPoints': FieldValue.increment(50),
+          });
+        }
       }
+
+      // Save user data
+      await userRef.set(userData, SetOptions(merge: true));
     }
-
-    // Save user data
-    await userRef.set(userData, SetOptions(merge: true));
   }
-}
 
-
-// Function to generate a unique referral code
-String _generateReferralCode(String uid) {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  final random = Random();
-  String randomString = String.fromCharCodes(Iterable.generate(5, (_) => chars.codeUnitAt(random.nextInt(chars.length))));
-  return '${uid.substring(0, 6)}$randomString'; // Example: "AB1234XYZ89"
-}
-
+  // Function to generate a unique referral code
+  String _generateReferralCode(String uid) {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    final random = Random();
+    String randomString = String.fromCharCodes(Iterable.generate(5, (_) => chars.codeUnitAt(random.nextInt(chars.length))));
+    return '${uid.substring(0, 6)}$randomString'; // Example: "AB1234XYZ89"
+  }
 
   bool passwordConfirmed() {
     return _passwordController.text.trim() == _confirmPasswordController.text.trim();
@@ -177,7 +218,9 @@ String _generateReferralCode(String uid) {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SingleChildScrollView(
+      body: _isLoading
+          ? Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Center(
           child: Column(

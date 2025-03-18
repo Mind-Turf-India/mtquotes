@@ -20,44 +20,53 @@ class TimeOfDayHandler {
   static final GlobalKey totdImageKey = GlobalKey();
 
   // Handle TOTD post selection with subscription check
-  static Future<void> handleTimeOfDayPostSelection(
-      BuildContext context,
+  static Future<void> handleTimeOfDayPostSelection(BuildContext context,
       TimeOfDayPost post,
-      Function(TimeOfDayPost) onAccessGranted,
-      ) async {
+      Function(TimeOfDayPost) onAccessGranted,) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Center(
+          child: CircularProgressIndicator(),
+        );
+      },
+    );
     final timeOfDayService = TimeOfDayService();
     bool isSubscribed = await _isUserSubscribed();
+    Navigator.of(context, rootNavigator: true).pop();
 
     if (post.isPaid && !isSubscribed) {
       // Show subscription dialog/prompt
       showDialog(
         context: context,
-        builder: (context) => AlertDialog(
-          title: Text('Premium Content'),
-          content: Text(
-              'This content requires a subscription. Subscribe to access all premium time of day posts.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text('Cancel'),
+        builder: (context) =>
+            AlertDialog(
+              title: Text('Premium Content'),
+              content: Text(
+                  'This content requires a subscription. Subscribe to access all premium time of day posts.'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    // Navigate to subscription page
+                    Navigator.pushNamed(context, '/subscription');
+                  },
+                  child: Text('Subscribe'),
+                ),
+              ],
             ),
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                // Navigate to subscription page
-                Navigator.pushNamed(context, '/subscription');
-              },
-              child: Text('Subscribe'),
-            ),
-          ],
-        ),
       );
     } else {
       // Show confirmation dialog with preview
       showTOTDConfirmationDialog(
         context,
         post,
-        () => onAccessGranted(post),
+            () => onAccessGranted(post),
       );
     }
   }
@@ -100,7 +109,8 @@ class TimeOfDayHandler {
   }
 
   // Add rating dialog for TOTD
-  static Future<void> _showRatingDialog(BuildContext context, TimeOfDayPost post) async {
+  static Future<void> _showRatingDialog(BuildContext context,
+      TimeOfDayPost post) async {
     double rating = 0;
 
     return showDialog<double>(
@@ -113,7 +123,8 @@ class TimeOfDayHandler {
                 content: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text('How would you rate your experience with this content?'),
+                    Text(
+                        'How would you rate your experience with this content?'),
                     SizedBox(height: 20),
                     FittedBox(
                       child: Row(
@@ -122,7 +133,8 @@ class TimeOfDayHandler {
                           return IconButton(
                             icon: Icon(
                               index < rating ? Icons.star : Icons.star_border,
-                              color: index < rating ? Colors.amber : Colors.grey,
+                              color: index < rating ? Colors.amber : Colors
+                                  .grey,
                               size: 36,
                             ),
                             onPressed: () {
@@ -133,7 +145,8 @@ class TimeOfDayHandler {
                           );
                         }),
                       ),
-                    )],
+                    )
+                  ],
                 ),
                 actions: [
                   TextButton(
@@ -144,7 +157,8 @@ class TimeOfDayHandler {
                   ),
                   TextButton(
                     onPressed: () {
-                      Navigator.of(dialogContext).pop(rating); // Close the dialog
+                      Navigator.of(dialogContext).pop(
+                          rating); // Close the dialog
                       Navigator.of(context).pushReplacementNamed('/home');
                     },
                     child: Text('Submit'),
@@ -181,12 +195,15 @@ class TimeOfDayHandler {
       final Map<String, dynamic> ratingData = {
         'postId': post.id,
         'rating': rating,
-        'timeOfDay': post.id.split('_')[0], // Extract time of day from ID
-        'createdAt': now,  // Firestore will convert this to Timestamp
+        'timeOfDay': post.id.split('_')[0],
+        // Extract time of day from ID
+        'createdAt': now,
+        // Firestore will convert this to Timestamp
         'imageUrl': post.imageUrl,
         'isPaid': post.isPaid,
         'title': post.title,
-        'userId': FirebaseAuth.instance.currentUser?.uid ?? 'anonymous', // Get user ID if logged in
+        'userId': FirebaseAuth.instance.currentUser?.uid ?? 'anonymous',
+        // Get user ID if logged in
       };
 
       await FirebaseFirestore.instance
@@ -197,13 +214,13 @@ class TimeOfDayHandler {
 
       // Update the post's average rating
       await _updateTOTDPostAverageRating(post.id, rating);
-
     } catch (e) {
       print('Error submitting rating: $e');
     }
   }
 
-  static Future<void> _updateTOTDPostAverageRating(String postId, double newRating) async {
+  static Future<void> _updateTOTDPostAverageRating(String postId,
+      double newRating) async {
     try {
       // Parse time of day from post ID (assuming format like "morning_post1")
       final parts = postId.split('_');
@@ -211,11 +228,12 @@ class TimeOfDayHandler {
         print('Invalid post ID format: $postId');
         return;
       }
-      
+
       final timeOfDay = parts[0];
-      
+
       // Get reference to the TOTD document
-      final totdRef = FirebaseFirestore.instance.collection('totd').doc(timeOfDay);
+      final totdRef = FirebaseFirestore.instance.collection('totd').doc(
+          timeOfDay);
 
       // Run this as a transaction to ensure data consistency
       await FirebaseFirestore.instance.runTransaction((transaction) async {
@@ -224,24 +242,25 @@ class TimeOfDayHandler {
 
         if (totdSnapshot.exists) {
           final data = totdSnapshot.data() as Map<String, dynamic>;
-          
+
           // Get the specific post data from the document
           if (data.containsKey(postId)) {
             final postData = data[postId] as Map<String, dynamic>;
-            
+
             // Calculate the new average rating
             double currentAvgRating = postData['avgRating']?.toDouble() ?? 0.0;
             int ratingCount = postData['ratingCount'] ?? 0;
 
             int newRatingCount = ratingCount + 1;
-            double newAvgRating = ((currentAvgRating * ratingCount) + newRating) / newRatingCount;
+            double newAvgRating = ((currentAvgRating * ratingCount) +
+                newRating) / newRatingCount;
 
             // Update only the specific post field within the document
             Map<String, dynamic> updateData = {};
             updateData['$postId.avgRating'] = newAvgRating;
             updateData['$postId.ratingCount'] = newRatingCount;
             updateData['$postId.lastRated'] = FieldValue.serverTimestamp();
-            
+
             transaction.update(totdRef, updateData);
           }
         }
@@ -254,81 +273,172 @@ class TimeOfDayHandler {
   }
 
   // Method to share TOTD post
-  static Future<void> shareTOTDPost(
-    BuildContext context,
-    TimeOfDayPost post, {
-      String? userName,
-      String? userProfileImageUrl,
-      bool isPaidUser = false,
-    }) async {
-  try {
-    // If userName or userProfileImageUrl are null, get them from Firebase
-    if (userName == null || userProfileImageUrl == null) {
-      User? currentUser = FirebaseAuth.instance.currentUser;
-      String defaultUserName = currentUser?.displayName ?? context.loc.user;
-      String defaultProfileImageUrl = currentUser?.photoURL ?? '';
-      
-      // Fetch user data from users collection if available
-      if (currentUser?.email != null) {
-        try {
-          // Convert email to document ID format (replace . with _)
-          String docId = currentUser!.email!.replaceAll('.', '_');
-          
-          // Fetch user document from Firestore
-          DocumentSnapshot userDoc = await FirebaseFirestore.instance
-              .collection('users')
-              .doc(docId)
-              .get();
-          
-          // Check if document exists and has required fields
-          if (userDoc.exists && userDoc.data() is Map<String, dynamic>) {
-            Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
-            
-            // Get name from Firestore with fallback
-            if (userData.containsKey('name') && userData['name'] != null && userData['name'].toString().isNotEmpty) {
-              userName = userData['name'];
+  static Future<void> shareTOTDPost(BuildContext context,
+      TimeOfDayPost post, {
+        String? userName,
+        String? userProfileImageUrl,
+        bool isPaidUser = false,
+      }) async {
+    try {
+      // If userName or userProfileImageUrl are null, get them from Firebase
+      if (userName == null || userProfileImageUrl == null) {
+        User? currentUser = FirebaseAuth.instance.currentUser;
+        String defaultUserName = currentUser?.displayName ?? context.loc.user;
+        String defaultProfileImageUrl = currentUser?.photoURL ?? '';
+
+        // Fetch user data from users collection if available
+        if (currentUser?.email != null) {
+          try {
+            // Convert email to document ID format (replace . with _)
+            String docId = currentUser!.email!.replaceAll('.', '_');
+
+            // Fetch user document from Firestore
+            DocumentSnapshot userDoc = await FirebaseFirestore.instance
+                .collection('users')
+                .doc(docId)
+                .get();
+
+            // Check if document exists and has required fields
+            if (userDoc.exists && userDoc.data() is Map<String, dynamic>) {
+              Map<String, dynamic> userData = userDoc.data() as Map<
+                  String,
+                  dynamic>;
+
+              // Get name from Firestore with fallback
+              if (userData.containsKey('name') && userData['name'] != null &&
+                  userData['name']
+                      .toString()
+                      .isNotEmpty) {
+                userName = userData['name'];
+              } else {
+                userName = defaultUserName;
+              }
+
+              // Get profile image from Firestore with fallback
+              if (userData.containsKey('profileImage') &&
+                  userData['profileImage'] != null && userData['profileImage']
+                  .toString()
+                  .isNotEmpty) {
+                userProfileImageUrl = userData['profileImage'];
+              } else {
+                userProfileImageUrl = defaultProfileImageUrl;
+              }
             } else {
               userName = defaultUserName;
-            }
-            
-            // Get profile image from Firestore with fallback
-            if (userData.containsKey('profileImage') && userData['profileImage'] != null && userData['profileImage'].toString().isNotEmpty) {
-              userProfileImageUrl = userData['profileImage'];
-            } else {
               userProfileImageUrl = defaultProfileImageUrl;
             }
-          } else {
+          } catch (e) {
+            print('Error fetching user data: $e');
             userName = defaultUserName;
             userProfileImageUrl = defaultProfileImageUrl;
           }
-        } catch (e) {
-          print('Error fetching user data: $e');
+        } else {
           userName = defaultUserName;
           userProfileImageUrl = defaultProfileImageUrl;
         }
-      } else {
-        userName = defaultUserName;
-        userProfileImageUrl = defaultProfileImageUrl;
       }
-    }
 
-    // Check if we're coming from the sharing page - if not, navigate to it
-    if (!(Navigator.of(context).widget is TOTDSharingPage)) {
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => TOTDSharingPage(
-            post: post,
-            userName: userName ?? context.loc.user,  // Default value if null
-            userProfileImageUrl: userProfileImageUrl ?? '',
-            isPaidUser: isPaidUser,
+      // Check if we're coming from the sharing page - if not, navigate to it
+      if (!(Navigator
+          .of(context)
+          .widget is TOTDSharingPage)) {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) =>
+                TOTDSharingPage(
+                  post: post,
+                  userName: userName ?? context.loc.user,
+                  // Default value if null
+                  userProfileImageUrl: userProfileImageUrl ?? '',
+                  isPaidUser: isPaidUser,
+                ),
           ),
+        );
+        return;
+      }
+
+      // If we're already on the sharing page, perform the actual sharing
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return Center(
+            child: CircularProgressIndicator(),
+          );
+        },
+      );
+
+      Uint8List? imageBytes;
+
+      if (isPaidUser) {
+        // For paid users, capture the whole post including profile details
+        imageBytes = await captureTOTDImage();
+      } else {
+        // For free users, just download the original post image
+        final response = await http.get(Uri.parse(post.imageUrl));
+
+        if (response.statusCode != 200) {
+          throw Exception('Failed to load image');
+        }
+        imageBytes = response.bodyBytes;
+      }
+
+      // Close loading dialog
+      Navigator.of(context, rootNavigator: true).pop();
+
+      if (imageBytes == null) {
+        throw Exception('Failed to process image');
+      }
+
+      // Get temp directory
+      final tempDir = await getTemporaryDirectory();
+      final tempFile = File('${tempDir.path}/shared_totd.png');
+
+      // Save image as file
+      await tempFile.writeAsBytes(imageBytes);
+
+      // Share directly based on user type
+      if (isPaidUser) {
+        // For paid users, share with full branding
+        await Share.shareXFiles(
+          [XFile(tempFile.path)],
+          text: 'Check out this amazing time of day content by $userName!',
+        );
+      } else {
+        // For free users, share without branding
+        await Share.shareXFiles(
+          [XFile(tempFile.path)],
+          text: 'Check out this amazing time of day content!',
+        );
+      }
+
+      // Show rating dialog after sharing
+      await Future.delayed(Duration(milliseconds: 500));
+      if (context.mounted) {
+        await _showRatingDialog(context, post);
+      }
+    } catch (e) {
+      // Close loading dialog if open
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+      print('Error sharing TOTD post: $e');
+
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to share image: ${e.toString()}'),
+          backgroundColor: Colors.red,
         ),
       );
-      return;
     }
+  }
 
-    // If we're already on the sharing page, perform the actual sharing
-    // Show loading indicator
+// Method to show the TOTD confirmation dialog
+  static void showTOTDConfirmationDialog(BuildContext context,
+      TimeOfDayPost post,
+      VoidCallback onCreatePressed,) async {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -338,124 +448,58 @@ class TimeOfDayHandler {
         );
       },
     );
+    bool isPaidUser = await _isUserSubscribed();
 
-    Uint8List? imageBytes;
+    User? currentUser = FirebaseAuth.instance.currentUser;
 
-    if (isPaidUser) {
-      // For paid users, capture the whole post including profile details
-      imageBytes = await captureTOTDImage();
-    } else {
-      // For free users, just download the original post image
-      final response = await http.get(Uri.parse(post.imageUrl));
+    // Default values from Firebase Auth
+    String defaultUserName = currentUser?.displayName ?? context.loc.user;
+    String defaultProfileImageUrl = currentUser?.photoURL ?? '';
 
-      if (response.statusCode != 200) {
-        throw Exception('Failed to load image');
+    String userName = defaultUserName;
+    String userProfileImageUrl = defaultProfileImageUrl;
+
+    // Fetch user data from users collection if available
+    if (currentUser?.email != null) {
+      try {
+        // Convert email to document ID format (replace . with _)
+        String docId = currentUser!.email!.replaceAll('.', '_');
+
+        // Fetch user document from Firestore
+        DocumentSnapshot userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(docId)
+            .get();
+
+
+        // Check if document exists and has required fields
+        if (userDoc.exists && userDoc.data() is Map<String, dynamic>) {
+          Map<String, dynamic> userData = userDoc.data() as Map<String,
+              dynamic>;
+
+          // Get name from Firestore with fallback
+          if (userData.containsKey('name') && userData['name'] != null &&
+              userData['name']
+                  .toString()
+                  .isNotEmpty) {
+            userName = userData['name'];
+          }
+
+          // Get profile image from Firestore with fallback
+          if (userData.containsKey('profileImage') &&
+              userData['profileImage'] != null && userData['profileImage']
+              .toString()
+              .isNotEmpty) {
+            userProfileImageUrl = userData['profileImage'];
+          }
+        }
+      } catch (e) {
+        print('Error fetching user data: $e');
       }
-      imageBytes = response.bodyBytes;
     }
-
-    // Close loading dialog
     Navigator.of(context, rootNavigator: true).pop();
 
-    if (imageBytes == null) {
-      throw Exception('Failed to process image');
-    }
-
-    // Get temp directory
-    final tempDir = await getTemporaryDirectory();
-    final tempFile = File('${tempDir.path}/shared_totd.png');
-
-    // Save image as file
-    await tempFile.writeAsBytes(imageBytes);
-
-    // Share directly based on user type
-    if (isPaidUser) {
-      // For paid users, share with full branding
-      await Share.shareXFiles(
-        [XFile(tempFile.path)],
-        text: 'Check out this amazing time of day content by $userName!',
-      );
-    } else {
-      // For free users, share without branding
-      await Share.shareXFiles(
-        [XFile(tempFile.path)],
-        text: 'Check out this amazing time of day content!',
-      );
-    }
-
-    // Show rating dialog after sharing
-    await Future.delayed(Duration(milliseconds: 500));
-    if (context.mounted) {
-      await _showRatingDialog(context, post);
-    }
-
-  } catch (e) {
-    // Close loading dialog if open
-    if (Navigator.of(context).canPop()) {
-      Navigator.of(context, rootNavigator: true).pop();
-    }
-    print('Error sharing TOTD post: $e');
-
-    // Show error message
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Failed to share image: ${e.toString()}'),
-        backgroundColor: Colors.red,
-      ),
-    );
-  }
-}
-
-// Method to show the TOTD confirmation dialog
-static void showTOTDConfirmationDialog(
-    BuildContext context,
-    TimeOfDayPost post,
-    VoidCallback onCreatePressed,
-    ) async {
-  bool isPaidUser = await _isUserSubscribed();
-
-  User? currentUser = FirebaseAuth.instance.currentUser;
-  
-  // Default values from Firebase Auth
-  String defaultUserName = currentUser?.displayName ?? context.loc.user;
-  String defaultProfileImageUrl = currentUser?.photoURL ?? '';
-  
-  String userName = defaultUserName;
-  String userProfileImageUrl = defaultProfileImageUrl;
-  
-  // Fetch user data from users collection if available
-  if (currentUser?.email != null) {
-    try {
-      // Convert email to document ID format (replace . with _)
-      String docId = currentUser!.email!.replaceAll('.', '_');
-      
-      // Fetch user document from Firestore
-      DocumentSnapshot userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(docId)
-          .get();
-
-      
-      // Check if document exists and has required fields
-      if (userDoc.exists && userDoc.data() is Map<String, dynamic>) {
-        Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
-        
-        // Get name from Firestore with fallback
-        if (userData.containsKey('name') && userData['name'] != null && userData['name'].toString().isNotEmpty) {
-          userName = userData['name'];
-        }
-        
-        // Get profile image from Firestore with fallback
-        if (userData.containsKey('profileImage') && userData['profileImage'] != null && userData['profileImage'].toString().isNotEmpty) {
-          userProfileImageUrl = userData['profileImage'];
-        }
-      }
-    } catch (e) {
-      print('Error fetching user data: $e');
-    }
-  }
-  
-  // Continue with the rest of your method using userName and userProfileImageUrl
+    // Continue with the rest of your method using userName and userProfileImageUrl
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -497,7 +541,8 @@ static void showTOTDConfirmationDialog(
                                       width: double.infinity,
                                       decoration: BoxDecoration(
                                         borderRadius: BorderRadius.circular(8),
-                                        border: Border.all(color: Colors.grey.shade300),
+                                        border: Border.all(
+                                            color: Colors.grey.shade300),
                                       ),
                                       child: Column(
                                         children: [
@@ -506,9 +551,11 @@ static void showTOTDConfirmationDialog(
                                               Container(
                                                 height: 400,
                                                 decoration: BoxDecoration(
-                                                  borderRadius: BorderRadius.circular(8),
+                                                  borderRadius: BorderRadius
+                                                      .circular(8),
                                                   image: DecorationImage(
-                                                    image: NetworkImage(post.imageUrl),
+                                                    image: NetworkImage(
+                                                        post.imageUrl),
                                                     fit: BoxFit.cover,
                                                   ),
                                                 ),
@@ -520,30 +567,39 @@ static void showTOTDConfirmationDialog(
                                                       bottom: 10,
                                                       right: 10,
                                                       child: Container(
-                                                        padding: EdgeInsets.symmetric(
+                                                        padding: EdgeInsets
+                                                            .symmetric(
                                                             horizontal: 8,
                                                             vertical: 4
                                                         ),
                                                         decoration: BoxDecoration(
-                                                          color: Colors.black.withOpacity(0.6),
-                                                          borderRadius: BorderRadius.circular(12),
+                                                          color: Colors.black
+                                                              .withOpacity(0.6),
+                                                          borderRadius: BorderRadius
+                                                              .circular(12),
                                                         ),
                                                         child: Row(
-                                                          mainAxisSize: MainAxisSize.min,
+                                                          mainAxisSize: MainAxisSize
+                                                              .min,
                                                           children: [
                                                             CircleAvatar(
                                                               radius: 10,
-                                                              backgroundImage: userProfileImageUrl.isNotEmpty
-                                                                  ? NetworkImage(userProfileImageUrl)
-                                                                  : AssetImage('assets/images/profile_placeholder.png') as ImageProvider,
+                                                              backgroundImage: userProfileImageUrl
+                                                                  .isNotEmpty
+                                                                  ? NetworkImage(
+                                                                  userProfileImageUrl)
+                                                                  : AssetImage(
+                                                                  'assets/images/profile_placeholder.png') as ImageProvider,
                                                             ),
                                                             SizedBox(width: 4),
                                                             Text(
                                                               userName,
                                                               style: TextStyle(
                                                                 fontSize: 10,
-                                                                color: Colors.white,
-                                                                fontWeight: FontWeight.bold,
+                                                                color: Colors
+                                                                    .white,
+                                                                fontWeight: FontWeight
+                                                                    .bold,
                                                               ),
                                                             ),
                                                           ],
@@ -581,7 +637,8 @@ static void showTOTDConfirmationDialog(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        mainAxisAlignment: MainAxisAlignment
+                                            .center,
                                         children: [
                                           SizedBox(
                                             width: 100,
@@ -590,10 +647,12 @@ static void showTOTDConfirmationDialog(
                                                 Navigator.of(context).pop();
                                                 Navigator.of(context).push(
                                                   MaterialPageRoute(
-                                                    builder: (context) => EditScreen(
-                                                      title: 'Edit Content',
-                                                      templateImageUrl: post.imageUrl,
-                                                    ),
+                                                    builder: (context) =>
+                                                        EditScreen(
+                                                          title: 'Edit Content',
+                                                          templateImageUrl: post
+                                                              .imageUrl,
+                                                        ),
                                                   ),
                                                 );
                                               },
@@ -602,7 +661,8 @@ static void showTOTDConfirmationDialog(
                                                 foregroundColor: Colors.white,
                                                 elevation: 0,
                                                 shape: RoundedRectangleBorder(
-                                                  borderRadius: BorderRadius.circular(24),
+                                                  borderRadius: BorderRadius
+                                                      .circular(24),
                                                 ),
                                               ),
                                               child: Text('Create'),
@@ -612,16 +672,21 @@ static void showTOTDConfirmationDialog(
                                           SizedBox(
                                             width: 100,
                                             child: ElevatedButton(
-                                              onPressed: () => Navigator.of(context).pop(),
+                                              onPressed: () =>
+                                                  Navigator.of(context).pop(),
                                               style: ElevatedButton.styleFrom(
                                                 backgroundColor: Colors.white,
                                                 foregroundColor: Colors.black87,
                                                 elevation: 0,
-                                                side: BorderSide(color: Colors.grey.shade300),
+                                                side: BorderSide(
+                                                    color: Colors.grey
+                                                        .shade300),
                                                 shape: RoundedRectangleBorder(
-                                                  borderRadius: BorderRadius.circular(24),
+                                                  borderRadius: BorderRadius
+                                                      .circular(24),
                                                 ),
-                                                padding: EdgeInsets.symmetric(vertical: 12),
+                                                padding: EdgeInsets.symmetric(
+                                                    vertical: 12),
                                               ),
                                               child: Text('Cancel'),
                                             ),
@@ -637,12 +702,13 @@ static void showTOTDConfirmationDialog(
                                               Navigator.of(context).pop();
                                               Navigator.of(context).push(
                                                 MaterialPageRoute(
-                                                  builder: (context) => TOTDSharingPage(
-                                                    post: post,
-                                                    userName: userName,
-                                                    userProfileImageUrl: userProfileImageUrl,
-                                                    isPaidUser: isPaidUser,
-                                                  ),
+                                                  builder: (context) =>
+                                                      TOTDSharingPage(
+                                                        post: post,
+                                                        userName: userName,
+                                                        userProfileImageUrl: userProfileImageUrl,
+                                                        isPaidUser: isPaidUser,
+                                                      ),
                                                 ),
                                               );
                                             },
@@ -653,9 +719,11 @@ static void showTOTDConfirmationDialog(
                                               foregroundColor: Colors.white,
                                               elevation: 0,
                                               shape: RoundedRectangleBorder(
-                                                borderRadius: BorderRadius.circular(24),
+                                                borderRadius: BorderRadius
+                                                    .circular(24),
                                               ),
-                                              padding: EdgeInsets.symmetric(vertical: 12),
+                                              padding: EdgeInsets.symmetric(
+                                                  vertical: 12),
                                             ),
                                           ),
                                         ),
@@ -680,9 +748,23 @@ static void showTOTDConfirmationDialog(
   }
 
   // Method to initialize TOTD posts if none exist
-  static Future<void> initializeTOTDPostsIfNeeded() async {
+  static Future<void> initializeTOTDPostsIfNeeded(BuildContext context) async {
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Center(
+          child: CircularProgressIndicator(),
+        );
+      },
+    );
+
     final timeOfDayService = TimeOfDayService();
     final posts = await timeOfDayService.fetchTimeOfDayPosts();
     // Add any initialization logic here
+
+    // Close loading indicator
+    Navigator.of(context, rootNavigator: true).pop();
   }
 }

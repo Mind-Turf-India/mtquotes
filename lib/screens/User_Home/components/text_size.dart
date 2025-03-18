@@ -11,7 +11,7 @@ class TextSizeScreen extends StatelessWidget {
       backgroundColor: Colors.white,
       appBar: AppBar(
         title: Text("Text Size Adjuster", style: TextStyle(fontSize: fontSize)),
-        backgroundColor: Colors.blue,
+        backgroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
         child: Padding(

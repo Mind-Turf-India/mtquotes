@@ -21,44 +21,83 @@ class FestivalHandler {
   static final GlobalKey festivalSharingImageKey = GlobalKey();
   static final FestivalService _festivalService = FestivalService();
 
+  // Helper method to show loading indicator
+  static void showLoadingIndicator(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Center(
+          child: CircularProgressIndicator(),
+        );
+      },
+    );
+  }
+
+  // Helper method to hide loading indicator
+  static void hideLoadingIndicator(BuildContext context) {
+    if (Navigator.of(context, rootNavigator: true).canPop()) {
+      Navigator.of(context, rootNavigator: true).pop();
+    }
+  }
+
   // Handle festival selection with subscription check
   static Future<void> handleFestivalSelection(
-    BuildContext context,
-    FestivalPost festival,
-    Function(FestivalPost) onFestivalSelected,
-  ) async {
-    bool isSubscribed = await _festivalService.isUserSubscribed();
+      BuildContext context,
+      FestivalPost festival,
+      Function(FestivalPost) onFestivalSelected,
+      ) async {
+    // Show loading indicator
+    showLoadingIndicator(context);
 
-    if (festival.isPaid && !isSubscribed) {
-      // Show subscription dialog/prompt
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text('Premium Template'),
-          content: Text(
-              'This template requires a subscription. Subscribe to access all premium templates.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                // Navigate to subscription page
-                Navigator.pushNamed(context, '/subscription');
-              },
-              child: Text('Subscribe'),
-            ),
-          ],
+    try {
+      bool isSubscribed = await _festivalService.isUserSubscribed();
+
+      // Hide loading indicator
+      hideLoadingIndicator(context);
+
+      if (festival.isPaid && !isSubscribed) {
+        // Show subscription dialog/prompt
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text('Premium Template'),
+            content: Text(
+                'This template requires a subscription. Subscribe to access all premium templates.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  // Navigate to subscription page
+                  Navigator.pushNamed(context, '/subscription');
+                },
+                child: Text('Subscribe'),
+              ),
+            ],
+          ),
+        );
+      } else {
+        // Show confirmation dialog with preview
+        showFestivalConfirmationDialog(
+          context,
+          festival,
+              () => onFestivalSelected(festival),
+        );
+      }
+    } catch (e) {
+      // Hide loading indicator in case of error
+      hideLoadingIndicator(context);
+
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error loading festival data: ${e.toString()}'),
+          backgroundColor: Colors.red,
         ),
-      );
-    } else {
-      // Show confirmation dialog with preview
-      showFestivalConfirmationDialog(
-        context,
-        festival,
-        () => onFestivalSelected(festival),
       );
     }
   }
@@ -126,18 +165,37 @@ class FestivalHandler {
       },
     ).then((value) {
       if (value != null && value > 0) {
-        // Submit rating
-        _submitRating(value, festival);
+        // Show loading indicator when submitting rating
+        showLoadingIndicator(context);
 
-        // Show thank you message
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Thanks for your rating!'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
+        // Submit rating
+        _submitRating(value, festival).then((_) {
+          // Hide loading indicator
+          hideLoadingIndicator(context);
+
+          // Show thank you message
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Thanks for your rating!'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          }
+        }).catchError((error) {
+          // Hide loading indicator in case of error
+          hideLoadingIndicator(context);
+
+          // Show error message
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Failed to submit rating: ${error.toString()}'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        });
       }
     });
   }
@@ -170,6 +228,7 @@ class FestivalHandler {
       await _updateFestivalAverageRating(festival.id, rating);
     } catch (e) {
       print('Error submitting festival rating: $e');
+      throw e; // Rethrow to handle in calling method
     }
   }
 
@@ -179,7 +238,7 @@ class FestivalHandler {
     try {
       // Get reference to the festival document
       final festivalRef =
-          FirebaseFirestore.instance.collection('festivals').doc(festivalId);
+      FirebaseFirestore.instance.collection('festivals').doc(festivalId);
 
       // Run this as a transaction to ensure data consistency
       await FirebaseFirestore.instance.runTransaction((transaction) async {
@@ -209,47 +268,51 @@ class FestivalHandler {
       print('Updated festival average rating successfully');
     } catch (e) {
       print('Error updating festival average rating: $e');
+      throw e; // Rethrow to handle in calling method
     }
   }
 
   // Method to share festival post
   static Future<void> shareFestival(
-    BuildContext context,
-    FestivalPost festival, {
-    String? userName,
-    String? userProfileImageUrl,
-    bool isPaidUser = false,
-  }) async {
+      BuildContext context,
+      FestivalPost festival, {
+        String? userName,
+        String? userProfileImageUrl,
+        bool isPaidUser = false,
+      }) async {
     try {
+      // Show loading indicator
+      showLoadingIndicator(context);
+
       // If userName or userProfileImageUrl are null, get them from Firebase
       if (userName == null || userProfileImageUrl == null) {
         User? currentUser = FirebaseAuth.instance.currentUser;
         String defaultUserName = currentUser?.displayName ?? context.loc.user;
         String defaultProfileImageUrl = currentUser?.photoURL ?? '';
-        
+
         // Fetch user data from users collection if available
         if (currentUser?.email != null) {
           try {
             // Convert email to document ID format (replace . with _)
             String docId = currentUser!.email!.replaceAll('.', '_');
-            
+
             // Fetch user document from Firestore
             DocumentSnapshot userDoc = await FirebaseFirestore.instance
                 .collection('users')
                 .doc(docId)
                 .get();
-            
+
             // Check if document exists and has required fields
             if (userDoc.exists && userDoc.data() is Map<String, dynamic>) {
               Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
-              
+
               // Get name from Firestore with fallback
               if (userData.containsKey('name') && userData['name'] != null && userData['name'].toString().isNotEmpty) {
                 userName = userData['name'];
               } else {
                 userName = defaultUserName;
               }
-              
+
               // Get profile image from Firestore with fallback
               if (userData.containsKey('profileImage') && userData['profileImage'] != null && userData['profileImage'].toString().isNotEmpty) {
                 userProfileImageUrl = userData['profileImage'];
@@ -273,6 +336,9 @@ class FestivalHandler {
 
       // Check if we're coming from the sharing page - if not, navigate to it
       if (!(Navigator.of(context).widget is FestivalSharingPage)) {
+        // Hide loading indicator before navigation
+        hideLoadingIndicator(context);
+
         Navigator.of(context).push(
           MaterialPageRoute(
             builder: (context) => FestivalSharingPage(
@@ -287,17 +353,6 @@ class FestivalHandler {
       }
 
       // If we're already on the sharing page, perform the actual sharing
-      // Show loading indicator
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) {
-          return Center(
-            child: CircularProgressIndicator(),
-          );
-        },
-      );
-
       Uint8List? imageBytes;
 
       if (isPaidUser) {
@@ -315,7 +370,7 @@ class FestivalHandler {
       }
 
       // Close loading dialog
-      Navigator.of(context, rootNavigator: true).pop();
+      hideLoadingIndicator(context);
 
       if (imageBytes == null) {
         throw Exception('Failed to process image');
@@ -350,9 +405,8 @@ class FestivalHandler {
       }
     } catch (e) {
       // Close loading dialog if open
-      if (Navigator.of(context).canPop()) {
-        Navigator.of(context, rootNavigator: true).pop();
-      }
+      hideLoadingIndicator(context);
+
       print('Error sharing festival: $e');
 
       // Show error message
@@ -374,10 +428,10 @@ class FestivalHandler {
           : festivalImageKey;
 
       final RenderRepaintBoundary boundary =
-          keyToUse.currentContext!.findRenderObject() as RenderRepaintBoundary;
+      keyToUse.currentContext!.findRenderObject() as RenderRepaintBoundary;
       final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
       final ByteData? byteData =
-          await image.toByteData(format: ui.ImageByteFormat.png);
+      await image.toByteData(format: ui.ImageByteFormat.png);
 
       if (byteData != null) {
         return byteData.buffer.asUint8List();
@@ -391,280 +445,317 @@ class FestivalHandler {
 
   // Method to show the festival confirmation dialog
   static void showFestivalConfirmationDialog(
-    BuildContext context,
-    FestivalPost festival,
-    VoidCallback onCreatePressed,
-  ) async {
-    bool isPaidUser = await _festivalService.isUserSubscribed();
+      BuildContext context,
+      FestivalPost festival,
+      VoidCallback onCreatePressed,
+      ) async {
+    // Show loading indicator
+    showLoadingIndicator(context);
 
-    User? currentUser = FirebaseAuth.instance.currentUser;
-    
-    // Default values from Firebase Auth
-    String defaultUserName = currentUser?.displayName ?? context.loc.user;
-    String defaultProfileImageUrl = currentUser?.photoURL ?? '';
-    
-    String userName = defaultUserName;
-    String userProfileImageUrl = defaultProfileImageUrl;
-    
-    // Fetch user data from users collection if available
-    if (currentUser?.email != null) {
-      try {
-        // Convert email to document ID format (replace . with _)
-        String docId = currentUser!.email!.replaceAll('.', '_');
-        
-        // Fetch user document from Firestore
-        DocumentSnapshot userDoc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(docId)
-            .get();
-        
-        // Check if document exists and has required fields
-        if (userDoc.exists && userDoc.data() is Map<String, dynamic>) {
-          Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
-          
-          // Get name from Firestore with fallback
-          if (userData.containsKey('name') && userData['name'] != null && userData['name'].toString().isNotEmpty) {
-            userName = userData['name'];
+    try {
+      bool isPaidUser = await _festivalService.isUserSubscribed();
+
+      User? currentUser = FirebaseAuth.instance.currentUser;
+
+      // Default values from Firebase Auth
+      String defaultUserName = currentUser?.displayName ?? context.loc.user;
+      String defaultProfileImageUrl = currentUser?.photoURL ?? '';
+
+      String userName = defaultUserName;
+      String userProfileImageUrl = defaultProfileImageUrl;
+
+      // Fetch user data from users collection if available
+      if (currentUser?.email != null) {
+        try {
+          // Convert email to document ID format (replace . with _)
+          String docId = currentUser!.email!.replaceAll('.', '_');
+
+          // Fetch user document from Firestore
+          DocumentSnapshot userDoc = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(docId)
+              .get();
+
+          // Check if document exists and has required fields
+          if (userDoc.exists && userDoc.data() is Map<String, dynamic>) {
+            Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+
+            // Get name from Firestore with fallback
+            if (userData.containsKey('name') && userData['name'] != null && userData['name'].toString().isNotEmpty) {
+              userName = userData['name'];
+            }
+
+            // Get profile image from Firestore with fallback
+            if (userData.containsKey('profileImage') && userData['profileImage'] != null && userData['profileImage'].toString().isNotEmpty) {
+              userProfileImageUrl = userData['profileImage'];
+            }
           }
-          
-          // Get profile image from Firestore with fallback
-          if (userData.containsKey('profileImage') && userData['profileImage'] != null && userData['profileImage'].toString().isNotEmpty) {
-            userProfileImageUrl = userData['profileImage'];
-          }
+        } catch (e) {
+          print('Error fetching user data: $e');
         }
-      } catch (e) {
-        print('Error fetching user data: $e');
       }
-    }
-    
-    // Continue with the rest of your method using userName and userProfileImageUrl
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-          child: Dialog(
-            backgroundColor: Colors.transparent,
-            insetPadding: EdgeInsets.symmetric(horizontal: 20),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Padding(
-                      padding: EdgeInsets.all(16),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          RepaintBoundary(
-                            key: festivalImageKey,
-                            child: Container(
-                              width: double.infinity,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: Colors.grey.shade300),
+
+      // Hide loading indicator before showing dialog
+      hideLoadingIndicator(context);
+
+      // Continue with the rest of your method using userName and userProfileImageUrl
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+            child: Dialog(
+              backgroundColor: Colors.transparent,
+              insetPadding: EdgeInsets.symmetric(horizontal: 20),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Padding(
+                        padding: EdgeInsets.all(16),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            RepaintBoundary(
+                              key: festivalImageKey,
+                              child: Container(
+                                width: double.infinity,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: Colors.grey.shade300),
+                                ),
+                                child: Column(
+                                  children: [
+                                    Stack(
+                                      children: [
+                                        Container(
+                                          height: 400,
+                                          decoration: BoxDecoration(
+                                            borderRadius:
+                                            BorderRadius.circular(8),
+                                            image: DecorationImage(
+                                              image:
+                                              NetworkImage(festival.imageUrl),
+                                              fit: BoxFit.cover,
+                                            ),
+                                          ),
+                                          child: isPaidUser
+                                              ? Stack(
+                                            children: [
+                                              // Branded corner mark for paid users
+                                              Positioned(
+                                                bottom: 10,
+                                                right: 10,
+                                                child: Container(
+                                                  padding:
+                                                  EdgeInsets.symmetric(
+                                                      horizontal: 8,
+                                                      vertical: 4),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.black
+                                                        .withOpacity(0.6),
+                                                    borderRadius:
+                                                    BorderRadius
+                                                        .circular(12),
+                                                  ),
+                                                  child: Row(
+                                                    mainAxisSize:
+                                                    MainAxisSize.min,
+                                                    children: [
+                                                      CircleAvatar(
+                                                        radius: 10,
+                                                        backgroundImage: userProfileImageUrl
+                                                            .isNotEmpty
+                                                            ? NetworkImage(
+                                                            userProfileImageUrl)
+                                                            : AssetImage(
+                                                            'assets/profile_placeholder.png')
+                                                        as ImageProvider,
+                                                      ),
+                                                      SizedBox(width: 4),
+                                                      Text(
+                                                        userName,
+                                                        style: TextStyle(
+                                                          fontSize: 10,
+                                                          color:
+                                                          Colors.white,
+                                                          fontWeight:
+                                                          FontWeight
+                                                              .bold,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          )
+                                              : null,
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
                               ),
-                              child: Column(
-                                children: [
-                                  Stack(
-                                    children: [
-                                      Container(
-                                        height: 400,
-                                        decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                          image: DecorationImage(
-                                            image:
-                                                NetworkImage(festival.imageUrl),
-                                            fit: BoxFit.cover,
+                            ),
+                            SizedBox(height: 24),
+                            Text(
+                              'Do you wish to continue?',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            SizedBox(height: 16),
+                            Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    SizedBox(
+                                      width: 100,
+                                      child: ElevatedButton(
+                                        onPressed: () {
+                                          Navigator.of(context).pop();
+                                          Navigator.of(context).push(
+                                            MaterialPageRoute(
+                                              builder: (context) => EditScreen(
+                                                title: 'Edit Festival Post',
+                                                templateImageUrl:
+                                                festival.imageUrl,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.blue,
+                                          foregroundColor: Colors.white,
+                                          elevation: 0,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                            BorderRadius.circular(24),
                                           ),
                                         ),
-                                        child: isPaidUser
-                                            ? Stack(
-                                                children: [
-                                                  // Branded corner mark for paid users
-                                                  Positioned(
-                                                    bottom: 10,
-                                                    right: 10,
-                                                    child: Container(
-                                                      padding:
-                                                          EdgeInsets.symmetric(
-                                                              horizontal: 8,
-                                                              vertical: 4),
-                                                      decoration: BoxDecoration(
-                                                        color: Colors.black
-                                                            .withOpacity(0.6),
-                                                        borderRadius:
-                                                            BorderRadius
-                                                                .circular(12),
-                                                      ),
-                                                      child: Row(
-                                                        mainAxisSize:
-                                                            MainAxisSize.min,
-                                                        children: [
-                                                          CircleAvatar(
-                                                            radius: 10,
-                                                            backgroundImage: userProfileImageUrl
-                                                                    .isNotEmpty
-                                                                ? NetworkImage(
-                                                                    userProfileImageUrl)
-                                                                : AssetImage(
-                                                                        'assets/profile_placeholder.png')
-                                                                    as ImageProvider,
-                                                          ),
-                                                          SizedBox(width: 4),
-                                                          Text(
-                                                            userName,
-                                                            style: TextStyle(
-                                                              fontSize: 10,
-                                                              color:
-                                                                  Colors.white,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold,
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
-                                              )
-                                            : null,
+                                        child: Text('Create'),
                                       ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: 24),
-                          Text(
-                            'Do you wish to continue?',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          SizedBox(height: 16),
-                          Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  SizedBox(
-                                    width: 100,
-                                    child: ElevatedButton(
+                                    ),
+                                    SizedBox(width: 40),
+                                    SizedBox(
+                                      width: 100,
+                                      child: ElevatedButton(
+                                        onPressed: () =>
+                                            Navigator.of(context).pop(),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.white,
+                                          foregroundColor: Colors.black87,
+                                          elevation: 0,
+                                          side: BorderSide(
+                                              color: Colors.grey.shade300),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                            BorderRadius.circular(24),
+                                          ),
+                                          padding:
+                                          EdgeInsets.symmetric(vertical: 12),
+                                        ),
+                                        child: Text('Cancel'),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 12),
+                                // Share Button - navigates to share page
+                                Center(
+                                  child: SizedBox(
+                                    width: 140,
+                                    child: ElevatedButton.icon(
                                       onPressed: () {
                                         Navigator.of(context).pop();
                                         Navigator.of(context).push(
                                           MaterialPageRoute(
-                                            builder: (context) => EditScreen(
-                                              title: 'Edit Festival Post',
-                                              templateImageUrl:
-                                                  festival.imageUrl,
-                                            ),
+                                            builder: (context) =>
+                                                FestivalSharingPage(
+                                                  festival: festival,
+                                                  userName: userName,
+                                                  userProfileImageUrl:
+                                                  userProfileImageUrl,
+                                                  isPaidUser: isPaidUser,
+                                                ),
                                           ),
                                         );
                                       },
+                                      icon: Icon(Icons.share),
+                                      label: Text('Share'),
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: Colors.blue,
                                         foregroundColor: Colors.white,
                                         elevation: 0,
                                         shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(24),
-                                        ),
-                                      ),
-                                      child: Text('Create'),
-                                    ),
-                                  ),
-                                  SizedBox(width: 40),
-                                  SizedBox(
-                                    width: 100,
-                                    child: ElevatedButton(
-                                      onPressed: () =>
-                                          Navigator.of(context).pop(),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.white,
-                                        foregroundColor: Colors.black87,
-                                        elevation: 0,
-                                        side: BorderSide(
-                                            color: Colors.grey.shade300),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(24),
+                                          borderRadius: BorderRadius.circular(24),
                                         ),
                                         padding:
-                                            EdgeInsets.symmetric(vertical: 12),
+                                        EdgeInsets.symmetric(vertical: 12),
                                       ),
-                                      child: Text('Cancel'),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: 12),
-                              // Share Button - navigates to share page
-                              Center(
-                                child: SizedBox(
-                                  width: 140,
-                                  child: ElevatedButton.icon(
-                                    onPressed: () {
-                                      Navigator.of(context).pop();
-                                      Navigator.of(context).push(
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              FestivalSharingPage(
-                                            festival: festival,
-                                            userName: userName,
-                                            userProfileImageUrl:
-                                                userProfileImageUrl,
-                                            isPaidUser: isPaidUser,
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                    icon: Icon(Icons.share),
-                                    label: Text('Share'),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.blue,
-                                      foregroundColor: Colors.white,
-                                      elevation: 0,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(24),
-                                      ),
-                                      padding:
-                                          EdgeInsets.symmetric(vertical: 12),
                                     ),
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        ],
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  )
-                ],
+                    )
+                  ],
+                ),
               ),
             ),
-          ),
-        );
-      },
-    );
+          );
+        },
+      );
+    } catch (e) {
+      // Hide loading indicator in case of error
+      hideLoadingIndicator(context);
+
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error loading festival data: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   // Method to initialize festivals if none exist
-  static Future<void> initializeFestivalsIfNeeded() async {
-    final festivals = await _festivalService
-        .getActiveFestivals(); // if there is no festival new should have some other general templates.
-    // Add any initialization logic here
+  static Future<void> initializeFestivalsIfNeeded(BuildContext context) async {
+    try {
+      // Show loading indicator
+      showLoadingIndicator(context);
+
+      final festivals = await _festivalService.getActiveFestivals();
+      // Add any initialization logic here
+
+      // Hide loading indicator
+      hideLoadingIndicator(context);
+    } catch (e) {
+      // Hide loading indicator in case of error
+      hideLoadingIndicator(context);
+
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error initializing festivals: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 }

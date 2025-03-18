@@ -76,30 +76,75 @@ class _TemplatePageState extends State<TemplatePage> {
   }
 
   void _handleTemplateSelection(QuoteTemplate template) async {
-    bool isSubscribed = await _templateService.isUserSubscribed();
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Center(
+          child: CircularProgressIndicator(),
+        );
+      },
+    );
 
-    if (!template.isPaid || isSubscribed) {
-      // Navigate to template editor
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => EditScreen(title: 'image',),
-        ),
+    try {
+      bool isSubscribed = await _templateService.isUserSubscribed();
+
+      // Hide loading indicator
+      Navigator.pop(context);
+
+      if (!template.isPaid || isSubscribed) {
+        // Navigate to template editor
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => EditScreen(title: 'image'),
+          ),
+        );
+      } else {
+        // Show subscription popup
+        SubscriptionPopup.show(context);
+      }
+    } catch (e) {
+      // Hide loading indicator in case of error
+      Navigator.pop(context);
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error checking subscription: $e')),
       );
-    } else {
-      // Show subscription popup
-      SubscriptionPopup.show(context);
     }
   }
 
   Future<void> _pickImage() async {
-    final pickedFile =
-    await ImagePicker().pickImage(source: ImageSource.gallery);
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Center(
+          child: CircularProgressIndicator(),
+        );
+      },
+    );
 
-    if (pickedFile != null) {
-      setState(() {
-        _image = File(pickedFile.path);
-      });
+    try {
+      final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
+
+      // Hide loading indicator
+      Navigator.pop(context);
+
+      if (pickedFile != null) {
+        setState(() {
+          _image = File(pickedFile.path);
+        });
+      }
+    } catch (e) {
+      // Hide loading indicator in case of error
+      Navigator.pop(context);
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error picking image: $e')),
+      );
     }
   }
 

@@ -1,8 +1,10 @@
 import 'dart:io';
 import 'dart:typed_data';
-import 'dart:ui';
+import 'dart:ui' as ui;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:mtquotes/screens/Templates/components/totd/totd_service.dart';
 import 'package:mtquotes/screens/Templates/components/totd/totd_handler.dart';
 import 'package:path_provider/path_provider.dart';
@@ -15,14 +17,17 @@ class TOTDSharingPage extends StatelessWidget {
   final String userName;
   final String userProfileImageUrl;
   final bool isPaidUser;
+  final GlobalKey _brandedImageKey;
 
-  const TOTDSharingPage({
+  TOTDSharingPage({
     Key? key,
     required this.post,
     required this.userName,
     required this.userProfileImageUrl,
     required this.isPaidUser,
-  }) : super(key: key);
+    GlobalKey? brandedImageKey,
+  }) : _brandedImageKey = brandedImageKey ?? GlobalKey(),
+        super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -97,16 +102,34 @@ class TOTDSharingPage extends StatelessWidget {
                         ],
                       ),
                       SizedBox(height: 16),
-                      // Preview of content without branding
-                      Container(
-                        height: 200,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(8),
-                          image: DecorationImage(
-                            image: NetworkImage(post.imageUrl),
-                            fit: BoxFit.cover,
+                      // Preview of content without branding but with watermark
+                      Stack(
+                        children: [
+                          Container(
+                            height: 200,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8),
+                              image: DecorationImage(
+                                image: NetworkImage(post.imageUrl),
+                                fit: BoxFit.cover,
+                              ),
+                            ),
                           ),
-                        ),
+                          // Preview of watermark
+                          Positioned.fill(
+                            child: Opacity(
+                              opacity: 0.2,
+                              child: Center(
+                                child: Image.asset(
+                                  'assets/logo.png',
+                                  width: 100,
+                                  height: 100,
+                                  fit: BoxFit.contain,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                       SizedBox(height: 16),
                       // Free share button
@@ -211,58 +234,76 @@ class TOTDSharingPage extends StatelessWidget {
                           Icon(Icons.check_circle, color: Colors.green),
                           SizedBox(width: 8),
                           Expanded(
+                            child: Text('No watermark - clean professional look'),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Icon(Icons.check_circle, color: Colors.green),
+                          SizedBox(width: 8),
+                          Expanded(
                             child: Text('High quality image export'),
                           ),
                         ],
                       ),
                       SizedBox(height: 16),
-                      // Preview of content with branding
-                      Container(
-                        height: 200,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(8),
-                          image: DecorationImage(
-                            image: NetworkImage(post.imageUrl),
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                        child: Stack(
-                          children: [
-                            Positioned(
-                              bottom: 10,
-                              right: 10,
-                              child: Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.black.withOpacity(0.6),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    CircleAvatar(
-                                      radius: 10,
-                                      backgroundImage: userProfileImageUrl.isNotEmpty
-                                          ? NetworkImage(userProfileImageUrl)
-                                          : AssetImage('assets/images/profile_placeholder.png') as ImageProvider,
-                                    ),
-                                    SizedBox(width: 4),
-                                    Text(
-                                      userName,
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                      // Premium post preview with branding (used for capturing)
+                      // Replace the RepaintBoundary widget in your build method with this:
+
+// Premium post preview with branding (used for capturing)
+                      RepaintBoundary(
+                        key: _brandedImageKey,
+                        child: AspectRatio(
+                          aspectRatio: 16 / 9, // Use a standard aspect ratio or one that matches your post images
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8),
+                              image: DecorationImage(
+                                image: NetworkImage(post.imageUrl),
+                                fit: BoxFit.cover,
                               ),
                             ),
-                          ],
+                            child: Stack(
+                              children: [
+                                Positioned(
+                                  bottom: 10,
+                                  right: 10,
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withOpacity(0.6),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        CircleAvatar(
+                                          radius: 10,
+                                          backgroundImage: userProfileImageUrl.isNotEmpty
+                                              ? NetworkImage(userProfileImageUrl)
+                                              : AssetImage('assets/images/profile_placeholder.png') as ImageProvider,
+                                        ),
+                                        SizedBox(width: 4),
+                                        Text(
+                                          userName,
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
                       SizedBox(height: 16),
@@ -299,7 +340,203 @@ class TOTDSharingPage extends StatelessWidget {
     );
   }
 
-  // Integrated sharing functionality directly in the page
+  // Method to capture widget as image with branding
+  Future<Uint8List?> _captureBrandedImage() async {
+    try {
+      final RenderRepaintBoundary boundary = _brandedImageKey.currentContext!
+          .findRenderObject() as RenderRepaintBoundary;
+      final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
+      final ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      return byteData?.buffer.asUint8List();
+    } catch (e) {
+      print('Error capturing branded image: $e');
+      return null;
+    }
+  }
+
+  // Method to add branding to image programmatically for paid users
+  Future<Uint8List?> _addBrandingToImage(Uint8List originalImageBytes) async {
+    try {
+      // Decode the original image
+      final ui.Image originalImage = await decodeImageFromList(originalImageBytes);
+
+      // Create a recorder and canvas
+      final ui.PictureRecorder recorder = ui.PictureRecorder();
+      final Canvas canvas = Canvas(recorder);
+
+      // Draw the original image - use the full size
+      final Rect originalRect = Rect.fromLTWH(
+          0,
+          0,
+          originalImage.width.toDouble(),
+          originalImage.height.toDouble()
+      );
+      canvas.drawImageRect(
+        originalImage,
+        originalRect,
+        originalRect,
+        Paint(),
+      );
+
+      // Download profile image if available
+      ui.Image? profileImage;
+      if (userProfileImageUrl.isNotEmpty) {
+        try {
+          final http.Response response = await http.get(Uri.parse(userProfileImageUrl));
+          if (response.statusCode == 200) {
+            profileImage = await decodeImageFromList(response.bodyBytes);
+          }
+        } catch (e) {
+          print('Error loading profile image: $e');
+        }
+      }
+
+      // Create branding container background - scale appropriately to the original image
+      final double width = originalImage.width.toDouble();
+      final double height = originalImage.height.toDouble();
+
+      // Make branding proportional to image size
+      final double brandingWidth = width * 0.4;
+      final double brandingHeight = height * 0.06;
+      final double brandingX = width - brandingWidth - width * 0.025; // 2.5% padding
+      final double brandingY = height - brandingHeight - height * 0.025; // 2.5% padding
+
+      // Draw branding background
+      final Paint bgPaint = Paint()
+        ..color = Colors.black.withOpacity(0.6);
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(brandingX, brandingY, brandingWidth, brandingHeight),
+          Radius.circular(12),
+        ),
+        bgPaint,
+      );
+
+      // Draw profile image if available
+      if (profileImage != null) {
+        final double profileSize = brandingHeight * 0.8;
+        final double profileX = brandingX + 8;
+        final double profileY = brandingY + (brandingHeight - profileSize) / 2;
+
+        // Draw circle for profile image
+        final Paint circlePaint = Paint()
+          ..color = Colors.white;
+        canvas.drawCircle(
+          Offset(profileX + profileSize / 2, profileY + profileSize / 2),
+          profileSize / 2,
+          circlePaint,
+        );
+
+        // Save canvas state before clipping
+        canvas.save();
+
+        // Draw the profile image in a circle
+        final Path clipPath = Path()
+          ..addOval(Rect.fromLTWH(profileX, profileY, profileSize, profileSize));
+        canvas.clipPath(clipPath);
+
+        canvas.drawImageRect(
+          profileImage,
+          Rect.fromLTWH(0, 0, profileImage.width.toDouble(), profileImage.height.toDouble()),
+          Rect.fromLTWH(profileX, profileY, profileSize, profileSize),
+          Paint(),
+        );
+
+        // Restore canvas state after clipping
+        canvas.restore();
+      }
+
+      // Draw username text
+      final double textX = profileImage != null
+          ? brandingX + 8 + brandingHeight * 0.8 + 4
+          : brandingX + 8;
+      final double textY = brandingY + brandingHeight / 2;
+
+      // Calculate font size based on image dimensions
+      final double fontSize = brandingHeight * 0.4;
+
+      final ui.ParagraphBuilder paragraphBuilder = ui.ParagraphBuilder(
+        ui.ParagraphStyle(
+          textAlign: TextAlign.left,
+          fontSize: fontSize,
+        ),
+      )
+        ..pushStyle(ui.TextStyle(color: Colors.white))
+        ..addText(userName);
+
+      final ui.Paragraph paragraph = paragraphBuilder.build()
+        ..layout(ui.ParagraphConstraints(width: brandingWidth - (profileImage != null ? brandingHeight * 0.8 + 12 : 8)));
+
+      canvas.drawParagraph(paragraph, Offset(textX, textY - paragraph.height / 2));
+
+      // Convert canvas to image - use the original dimensions
+      final ui.Picture picture = recorder.endRecording();
+      final ui.Image renderedImage = await picture.toImage(
+        originalImage.width,
+        originalImage.height,
+      );
+
+      // Convert image to bytes
+      final ByteData? byteData = await renderedImage.toByteData(format: ui.ImageByteFormat.png);
+      return byteData?.buffer.asUint8List();
+    } catch (e) {
+      print('Error adding branding to image: $e');
+      return null;
+    }
+  }
+  // Method to add watermark to image for free users
+  Future<Uint8List?> _addWatermarkToImage(Uint8List originalImageBytes) async {
+    try {
+      // Decode the original image
+      final ui.Image originalImage = await decodeImageFromList(originalImageBytes);
+
+      // Create a recorder and canvas
+      final ui.PictureRecorder recorder = ui.PictureRecorder();
+      final Canvas canvas = Canvas(recorder);
+
+      // Draw the original image
+      canvas.drawImage(originalImage, Offset.zero, Paint());
+
+      // Load the logo watermark
+      final ByteData logoData = await rootBundle.load('assets/logo.png');
+      final ui.Image logo = await decodeImageFromList(logoData.buffer.asUint8List());
+
+      // Calculate size and position for the watermark in top right corner
+      final double width = originalImage.width.toDouble();
+      final double height = originalImage.height.toDouble();
+      final double watermarkSize = width * 0.15; // 15% of the image width
+      final double watermarkX = width - watermarkSize - 16;  // Position from right edge with padding
+      final double watermarkY = 16; // Position from top with padding
+
+      // Apply semi-transparent effect to the watermark
+      final Paint watermarkPaint = Paint();
+      // Draw the watermark
+      canvas.drawImageRect(
+        logo,
+        Rect.fromLTWH(0, 0, logo.width.toDouble(), logo.height.toDouble()),
+        Rect.fromLTWH(watermarkX, watermarkY, watermarkSize, watermarkSize),
+        watermarkPaint,
+      );
+
+      // Convert canvas to image
+      final ui.Picture picture = recorder.endRecording();
+      final ui.Image renderedImage = await picture.toImage(
+        originalImage.width,
+        originalImage.height,
+      );
+
+      // Convert image to bytes
+      final ByteData? byteData = await renderedImage.toByteData(format: ui.ImageByteFormat.png);
+      return byteData?.buffer.asUint8List();
+    } catch (e) {
+      print('Error adding watermark to image: $e');
+      return null;
+    }
+  }
+
+  // Integrated sharing functionality
+  // Replace just your _sharePost method with this version
+
   Future<void> _sharePost(BuildContext context, {required bool isPaid}) async {
     try {
       // Show loading indicator
@@ -315,39 +552,31 @@ class TOTDSharingPage extends StatelessWidget {
 
       Uint8List? imageBytes;
 
+      // Download the original image first
+      final response = await http.get(Uri.parse(post.imageUrl));
+      if (response.statusCode != 200) {
+        throw Exception('Failed to load image');
+      }
+
+      final originalImageBytes = response.bodyBytes;
+
       if (isPaid) {
-        try {
-          // For paid users, first try to capture the whole content including profile details
-          imageBytes = await TimeOfDayHandler.captureTOTDImage();
+        // For premium users, we'll directly use the _addBrandingToImage instead of _captureBrandedImage
+        // This preserves the full image dimensions while adding the branding
+        imageBytes = await _addBrandingToImage(originalImageBytes);
 
-          // If imageBytes is null, fall back to the original image
-          if (imageBytes == null) {
-            print('TOTD capture returned null, falling back to direct download');
-            final response = await http.get(Uri.parse(post.imageUrl));
-
-            if (response.statusCode == 200) {
-              imageBytes = response.bodyBytes;
-            }
-          }
-        } catch (e) {
-          print('Error in premium capture: $e, falling back to direct download');
-          // If content capture fails, fall back to direct download
-          final response = await http.get(Uri.parse(post.imageUrl));
-
-          if (response.statusCode == 200) {
-            imageBytes = response.bodyBytes;
-          } else {
-            throw Exception('Failed to load image after content capture failed');
-          }
+        if (imageBytes == null) {
+          print('Branding failed, falling back to original image');
+          imageBytes = originalImageBytes;
         }
       } else {
-        // For free users, just download the original content image
-        final response = await http.get(Uri.parse(post.imageUrl));
+        // For free users, add the watermark to the post image
+        imageBytes = await _addWatermarkToImage(originalImageBytes);
 
-        if (response.statusCode != 200) {
-          throw Exception('Failed to load image');
+        if (imageBytes == null) {
+          print('Watermark failed, falling back to original image');
+          imageBytes = originalImageBytes;
         }
-        imageBytes = response.bodyBytes;
       }
 
       // Close loading dialog
@@ -386,7 +615,6 @@ class TOTDSharingPage extends StatelessWidget {
       if (context.mounted) {
         await _showRatingDialog(context);
       }
-
     } catch (e) {
       // Close loading dialog if open
       if (Navigator.of(context, rootNavigator: true).canPop()) {
@@ -406,6 +634,7 @@ class TOTDSharingPage extends StatelessWidget {
       }
     }
   }
+
 
   // Rating dialog implementation
   Future<void> _showRatingDialog(BuildContext context) async {

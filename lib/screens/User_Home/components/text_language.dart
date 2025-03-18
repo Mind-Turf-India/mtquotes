@@ -170,7 +170,7 @@ class _SettingsLanguageState extends State<SettingsLanguage> {
                   style: TextStyle(
                     fontSize: 56,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black,
+                    color: Colors.blue,
                   ),
                 ),
                 Positioned(

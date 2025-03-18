@@ -1,8 +1,10 @@
 import 'dart:io';
 import 'dart:typed_data';
-import 'dart:ui';
+import 'dart:ui' as ui;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:mtquotes/l10n/app_localization.dart';
 import 'package:mtquotes/screens/Templates/components/template/quote_template.dart';
 import 'package:mtquotes/screens/Templates/components/template/template_handler.dart';
@@ -11,19 +13,52 @@ import 'package:share_plus/share_plus.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
 
-class TemplateSharingPage extends StatelessWidget {
+class TemplateSharingPage extends StatefulWidget {
   final QuoteTemplate template;
   final String userName;
   final String userProfileImageUrl;
   final bool isPaidUser;
 
-  const TemplateSharingPage({
+  TemplateSharingPage({
     Key? key,
     required this.template,
     required this.userName,
     required this.userProfileImageUrl,
     required this.isPaidUser,
   }) : super(key: key);
+
+  @override
+  _TemplateSharingPageState createState() => _TemplateSharingPageState();
+}
+
+class _TemplateSharingPageState extends State<TemplateSharingPage> {
+  final GlobalKey _brandedImageKey = GlobalKey();
+  ui.Image? _originalImage;
+  double _aspectRatio = 16 / 9; // Default aspect ratio until image loads
+  bool _imageLoaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadOriginalImage();
+  }
+
+  // Load the original image to get its dimensions
+  Future<void> _loadOriginalImage() async {
+    try {
+      final http.Response response = await http.get(Uri.parse(widget.template.imageUrl));
+      if (response.statusCode == 200) {
+        final decodedImage = await decodeImageFromList(response.bodyBytes);
+        setState(() {
+          _originalImage = decodedImage;
+          _aspectRatio = decodedImage.width / decodedImage.height;
+          _imageLoaded = true;
+        });
+      }
+    } catch (e) {
+      print('Error loading original image: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -98,19 +133,39 @@ class TemplateSharingPage extends StatelessWidget {
                         ],
                       ),
                       SizedBox(height: 16),
-                      // Preview of template without branding
-                      Container(
-                        height: 200,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(8),
-                          image: DecorationImage(
-                            image: NetworkImage(template.imageUrl),
-                            fit: BoxFit.cover,
+                      // Preview of template without branding but with watermark
+                      AspectRatio(
+                        aspectRatio: _aspectRatio,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                            image: DecorationImage(
+                              image: NetworkImage(widget.template.imageUrl),
+                              fit: BoxFit.contain, // Changed to contain to avoid cropping
+                            ),
+                          ),
+                          child: Stack(
+                            children: [
+                              // Preview of watermark
+                              Positioned.fill(
+                                child: Opacity(
+                                  opacity: 0.2,
+                                  child: Center(
+                                    child: Image.asset(
+                                      'assets/logo.png',
+                                      width: 100,
+                                      height: 100,
+                                      fit: BoxFit.contain,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
                       SizedBox(height: 16),
-                      // Free share button only (removed the View Plans button)
+                      // Free share button only
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton.icon(
@@ -170,7 +225,7 @@ class TemplateSharingPage extends StatelessWidget {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                   side: BorderSide(
-                    color: isPaidUser ? Colors.blue : Colors.grey.shade300,
+                    color: widget.isPaidUser ? Colors.blue : Colors.grey.shade300,
                     width: 2,
                   ),
                 ),
@@ -212,58 +267,74 @@ class TemplateSharingPage extends StatelessWidget {
                           Icon(Icons.check_circle, color: Colors.green),
                           SizedBox(width: 8),
                           Expanded(
+                            child: Text('No watermark - clean professional look'),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Icon(Icons.check_circle, color: Colors.green),
+                          SizedBox(width: 8),
+                          Expanded(
                             child: Text('High quality image export'),
                           ),
                         ],
                       ),
                       SizedBox(height: 16),
-                      // Preview of template with branding
-                      Container(
-                        height: 200,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(8),
-                          image: DecorationImage(
-                            image: NetworkImage(template.imageUrl),
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                        child: Stack(
-                          children: [
-                            Positioned(
-                              bottom: 10,
-                              right: 10,
-                              child: Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.black.withOpacity(0.6),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    CircleAvatar(
-                                      radius: 10,
-                                      backgroundImage: userProfileImageUrl.isNotEmpty
-                                          ? NetworkImage(userProfileImageUrl)
-                                          : AssetImage('assets/images/profile_placeholder.png') as ImageProvider,
-                                    ),
-                                    SizedBox(width: 4),
-                                    Text(
-                                      userName,
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                      // Premium template preview with branding (used for capturing)
+                      // This is where we fix the cropping issue
+                      RepaintBoundary(
+                        key: _brandedImageKey,
+                        child: AspectRatio(
+                          aspectRatio: _aspectRatio,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8),
+                              image: DecorationImage(
+                                image: NetworkImage(widget.template.imageUrl),
+                                fit: BoxFit.contain, // Changed to contain to avoid cropping
                               ),
                             ),
-                          ],
+                            child: Stack(
+                              children: [
+                                Positioned(
+                                  bottom: 10,
+                                  right: 10,
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withOpacity(0.6),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        CircleAvatar(
+                                          radius: 10,
+                                          backgroundImage: widget.userProfileImageUrl.isNotEmpty
+                                              ? NetworkImage(widget.userProfileImageUrl)
+                                              : AssetImage('assets/images/profile_placeholder.png') as ImageProvider,
+                                        ),
+                                        SizedBox(width: 4),
+                                        Text(
+                                          widget.userName,
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
                       SizedBox(height: 16),
@@ -271,16 +342,16 @@ class TemplateSharingPage extends StatelessWidget {
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton.icon(
-                          onPressed: isPaidUser
+                          onPressed: widget.isPaidUser
                               ? () => _shareTemplate(
                             context,
                             isPaid: true,
                           )
                               : () => Navigator.pushNamed(context, '/subscription'),
-                          icon: Icon(isPaidUser ? Icons.share : Icons.lock),
-                          label: Text(isPaidUser ? 'Share Now' : 'Upgrade to Pro'),
+                          icon: Icon(widget.isPaidUser ? Icons.share : Icons.lock),
+                          label: Text(widget.isPaidUser ? 'Share Now' : 'Upgrade to Pro'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: isPaidUser ? Colors.blue : Colors.blue,
+                            backgroundColor: widget.isPaidUser ? Colors.blue : Colors.blue,
                             foregroundColor: Colors.white,
                             padding: EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
@@ -300,7 +371,184 @@ class TemplateSharingPage extends StatelessWidget {
     );
   }
 
-  // Integrated sharing functionality directly in the page
+  // Method to capture widget as image with branding
+  Future<Uint8List?> _captureBrandedImage() async {
+    try {
+      final RenderRepaintBoundary boundary = _brandedImageKey.currentContext!
+          .findRenderObject() as RenderRepaintBoundary;
+
+      // Use a higher pixel ratio for better quality
+      final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
+      final ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      return byteData?.buffer.asUint8List();
+    } catch (e) {
+      print('Error capturing branded image: $e');
+      return null;
+    }
+  }
+
+  // Method to add branding to image programmatically for paid users
+  Future<Uint8List?> _addBrandingToImage(Uint8List originalImageBytes) async {
+    try {
+      // Decode the original image
+      final ui.Image originalImage = await decodeImageFromList(originalImageBytes);
+
+      // Create a recorder and canvas with the ORIGINAL image dimensions
+      final ui.PictureRecorder recorder = ui.PictureRecorder();
+      final Canvas canvas = Canvas(recorder);
+
+      // Draw the original image with its full dimensions
+      canvas.drawImage(originalImage, Offset.zero, Paint());
+
+      // Download profile image if available
+      ui.Image? profileImage;
+      if (widget.userProfileImageUrl.isNotEmpty) {
+        try {
+          final http.Response response = await http.get(Uri.parse(widget.userProfileImageUrl));
+          if (response.statusCode == 200) {
+            profileImage = await decodeImageFromList(response.bodyBytes);
+          }
+        } catch (e) {
+          print('Error loading profile image: $e');
+        }
+      }
+
+      // Create branding container background
+      final double width = originalImage.width.toDouble();
+      final double height = originalImage.height.toDouble();
+      final double brandingWidth = width * 0.4;
+      final double brandingHeight = height * 0.06;
+      final double brandingX = width - brandingWidth - 10;
+      final double brandingY = height - brandingHeight - 10;
+
+      // Draw branding background
+      final Paint bgPaint = Paint()
+        ..color = Colors.black.withOpacity(0.6);
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(brandingX, brandingY, brandingWidth, brandingHeight),
+          Radius.circular(12),
+        ),
+        bgPaint,
+      );
+
+      // Draw profile image if available
+      if (profileImage != null) {
+        final double profileSize = brandingHeight * 0.8;
+        final double profileX = brandingX + 8;
+        final double profileY = brandingY + (brandingHeight - profileSize) / 2;
+
+        // Draw circle for profile image
+        final Paint circlePaint = Paint()
+          ..color = Colors.white;
+        canvas.drawCircle(
+          Offset(profileX + profileSize / 2, profileY + profileSize / 2),
+          profileSize / 2,
+          circlePaint,
+        );
+
+        // Draw the profile image in a circle
+        canvas.save(); // Save the canvas state before clipping
+        final Path clipPath = Path()
+          ..addOval(Rect.fromLTWH(profileX, profileY, profileSize, profileSize));
+        canvas.clipPath(clipPath);
+        canvas.drawImageRect(
+          profileImage,
+          Rect.fromLTWH(0, 0, profileImage.width.toDouble(), profileImage.height.toDouble()),
+          Rect.fromLTWH(profileX, profileY, profileSize, profileSize),
+          Paint(),
+        );
+        canvas.restore(); // Restore canvas state after clipping
+      }
+
+      // Draw username text
+      final double textX = profileImage != null
+          ? brandingX + 8 + brandingHeight * 0.8 + 4
+          : brandingX + 8;
+      final double textY = brandingY + brandingHeight / 2;
+
+      final ui.ParagraphBuilder paragraphBuilder = ui.ParagraphBuilder(
+        ui.ParagraphStyle(
+          textAlign: TextAlign.left,
+          fontSize: brandingHeight * 0.4,
+        ),
+      )
+        ..pushStyle(ui.TextStyle(color: Colors.white))
+        ..addText(widget.userName);
+
+      final ui.Paragraph paragraph = paragraphBuilder.build()
+        ..layout(ui.ParagraphConstraints(width: brandingWidth - (profileImage != null ? brandingHeight * 0.8 + 12 : 8)));
+
+      canvas.drawParagraph(paragraph, Offset(textX, textY - paragraph.height / 2));
+
+      // Convert canvas to image
+      final ui.Picture picture = recorder.endRecording();
+      final ui.Image renderedImage = await picture.toImage(
+        originalImage.width,
+        originalImage.height,
+      );
+
+      // Convert image to bytes
+      final ByteData? byteData = await renderedImage.toByteData(format: ui.ImageByteFormat.png);
+      return byteData?.buffer.asUint8List();
+    } catch (e) {
+      print('Error adding branding to image: $e');
+      return null;
+    }
+  }
+
+  // Method to add watermark to image for free users
+  Future<Uint8List?> _addWatermarkToImage(Uint8List originalImageBytes) async {
+    try {
+      // Decode the original image
+      final ui.Image originalImage = await decodeImageFromList(originalImageBytes);
+
+      // Create a recorder and canvas
+      final ui.PictureRecorder recorder = ui.PictureRecorder();
+      final Canvas canvas = Canvas(recorder);
+
+      // Draw the original image
+      canvas.drawImage(originalImage, Offset.zero, Paint());
+
+      // Load the logo watermark
+      final ByteData logoData = await rootBundle.load('assets/logo.png');
+      final ui.Image logo = await decodeImageFromList(logoData.buffer.asUint8List());
+
+      // Calculate size and position for the watermark in top right corner
+      final double width = originalImage.width.toDouble();
+      final double height = originalImage.height.toDouble();
+      final double watermarkSize = width * 0.2; // 20% of the image width (smaller than before)
+      final double watermarkX = width - watermarkSize - 16;  // Position from right edge with padding
+      final double watermarkY = 16; // Position from top with padding
+
+      // Apply semi-transparent effect to the watermark
+      final Paint watermarkPaint = Paint();
+
+      // Draw the watermark
+      canvas.drawImageRect(
+        logo,
+        Rect.fromLTWH(0, 0, logo.width.toDouble(), logo.height.toDouble()),
+        Rect.fromLTWH(watermarkX, watermarkY, watermarkSize, watermarkSize),
+        watermarkPaint,
+      );
+
+      // Convert canvas to image
+      final ui.Picture picture = recorder.endRecording();
+      final ui.Image renderedImage = await picture.toImage(
+        originalImage.width,
+        originalImage.height,
+      );
+
+      // Convert image to bytes
+      final ByteData? byteData = await renderedImage.toByteData(format: ui.ImageByteFormat.png);
+      return byteData?.buffer.asUint8List();
+    } catch (e) {
+      print('Error adding watermark to image: $e');
+      return null;
+    }
+  }
+
+  // Integrated sharing functionality with proper branding for paid users and watermark for free users
   Future<void> _shareTemplate(BuildContext context, {required bool isPaid}) async {
     try {
       // Show loading indicator
@@ -316,43 +564,51 @@ class TemplateSharingPage extends StatelessWidget {
 
       Uint8List? imageBytes;
 
+      // Download the original template image first
+      final response = await http.get(Uri.parse(widget.template.imageUrl));
+      if (response.statusCode != 200) {
+        throw Exception('Failed to load image');
+      }
+
+      final originalImageBytes = response.bodyBytes;
+
       if (isPaid) {
         try {
-          // For paid users, first try to capture the whole template including profile details
-          imageBytes = await TemplateHandler.captureTemplateImage();
+          // Make sure UI is fully rendered before capture
+          await Future.delayed(Duration(milliseconds: 100));
 
-          // If imageBytes is null, fall back to the original image
+          // First try to capture the branded template widget directly
+          imageBytes = await _captureBrandedImage();
+
+          // If direct widget capture fails, try programmatic branding approach
           if (imageBytes == null) {
-            print('Template capture returned null, falling back to direct download');
-            final response = await http.get(Uri.parse(template.imageUrl));
+            print('Direct capture returned null, trying programmatic branding');
+            imageBytes = await _addBrandingToImage(originalImageBytes);
+          }
 
-            if (response.statusCode == 200) {
-              imageBytes = response.bodyBytes;
-
-              // Add watermark to the image if possible
-              // This is a fallback, so we'll use a simpler method
-              // Ideally, you'd implement a method to add the watermark programmatically
-            }
+          // If both approaches fail, fall back to the original image
+          if (imageBytes == null) {
+            print('Both branding approaches failed, falling back to direct download');
+            imageBytes = originalImageBytes;
           }
         } catch (e) {
           print('Error in premium capture: $e, falling back to direct download');
-          // If template capture fails, fall back to direct download
-          final response = await http.get(Uri.parse(template.imageUrl));
-
-          if (response.statusCode == 200) {
-            imageBytes = response.bodyBytes;
-          } else {
-            throw Exception('Failed to load image after template capture failed');
-          }
+          imageBytes = originalImageBytes;
         }
       } else {
-        // For free users, just download the original template image
-        final response = await http.get(Uri.parse(template.imageUrl));
+        // For free users, add the watermark to the template image
+        try {
+          imageBytes = await _addWatermarkToImage(originalImageBytes);
 
-        if (response.statusCode != 200) {
-          throw Exception('Failed to load image');
+          // If watermarking fails, fall back to the original image
+          if (imageBytes == null) {
+            print('Watermark failed, falling back to direct download');
+            imageBytes = originalImageBytes;
+          }
+        } catch (e) {
+          print('Error adding watermark: $e, falling back to direct download');
+          imageBytes = originalImageBytes;
         }
-        imageBytes = response.bodyBytes;
       }
 
       // Close loading dialog
@@ -376,10 +632,10 @@ class TemplateSharingPage extends StatelessWidget {
         // For paid users, share with full branding
         await Share.shareXFiles(
           [XFile(tempFile.path)],
-          text: 'Check out this amazing quote template by $userName!',
+          text: 'Check out this amazing quote template by ${widget.userName}!',
         );
       } else {
-        // For free users, share without branding
+        // For free users, share with watermark
         await Share.shareXFiles(
           [XFile(tempFile.path)],
           text: 'Check out this amazing quote template!',
@@ -471,7 +727,7 @@ class TemplateSharingPage extends StatelessWidget {
     ).then((value) {
       if (value != null && value > 0) {
         // Submit rating
-        _submitRating(value, template);
+        _submitRating(value, widget.template);
 
         // Show thank you message
         if (context.mounted) {

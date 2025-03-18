@@ -21,6 +21,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool _rememberMe = false;
   bool _isObscure = true;
+  bool _isLoading = true; // Add loading state for initial check
 
   @override
   void initState() {
@@ -28,15 +29,44 @@ class _LoginScreenState extends State<LoginScreen> {
     _checkSavedCredentials();
   }
 
+  // Show loading dialog
+  void _showLoadingDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Center(
+          child: CircularProgressIndicator(),
+        );
+      },
+    );
+  }
+
+  // Hide loading dialog
+  void _hideLoadingDialog() {
+    Navigator.of(context, rootNavigator: true).pop();
+  }
 
   /// Check if credentials exist and prompt user
   Future<void> _checkSavedCredentials() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? savedEmail = prefs.getString('saved_email');
-    String? savedPassword = prefs.getString('saved_password');
+    setState(() {
+      _isLoading = true;
+    });
 
-    if (savedEmail != null && savedPassword != null) {
-      _showLoginPopup(savedEmail, savedPassword);
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? savedEmail = prefs.getString('saved_email');
+      String? savedPassword = prefs.getString('saved_password');
+
+      if (savedEmail != null && savedPassword != null) {
+        _showLoginPopup(savedEmail, savedPassword);
+      }
+    } catch (e) {
+      // Handle error silently
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
@@ -68,16 +98,23 @@ class _LoginScreenState extends State<LoginScreen> {
 
   /// Login automatically with saved credentials
   Future<void> _signInWithSavedCredentials(String email, String password) async {
+    _showLoadingDialog();
+
     try {
       await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
+
+      _hideLoadingDialog();
+
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => MainScreen()),
       );
     } catch (e) {
+      _hideLoadingDialog();
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Login Failed: $e")),
       );
@@ -95,17 +132,25 @@ class _LoginScreenState extends State<LoginScreen> {
 
   /// Sign in with email & password
   Future<void> _signInWithEmailAndPassword() async {
+    _showLoadingDialog();
+
     try {
       await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
+
       await _saveCredentials();
+
+      _hideLoadingDialog();
+
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => MainScreen()),
       );
     } catch (e) {
+      _hideLoadingDialog();
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Login Failed: $e")),
       );
@@ -113,14 +158,19 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _signInWithGoogle() async {
+    _showLoadingDialog();
+
     try {
       await GoogleSignIn().signOut();
 
       final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-      if (googleUser == null) return;
+      if (googleUser == null) {
+        _hideLoadingDialog();
+        return;
+      }
 
       final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
+      await googleUser.authentication;
 
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
@@ -128,11 +178,16 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       await FirebaseAuth.instance.signInWithCredential(credential);
+
+      _hideLoadingDialog();
+
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (context) => MainScreen()),
-        (Route<dynamic> route) => false, // Remove all previous screens
+            (Route<dynamic> route) => false, // Remove all previous screens
       );
     } catch (e) {
+      _hideLoadingDialog();
+
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text("Google Sign-In Failed: $e")));
     }
@@ -150,7 +205,9 @@ class _LoginScreenState extends State<LoginScreen> {
       },
       child: Scaffold(
         backgroundColor: Colors.white,
-        body: SingleChildScrollView(
+        body: _isLoading
+            ? Center(child: CircularProgressIndicator())
+            : SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Center(
@@ -165,8 +222,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 30),
                   const Text('Welcome back!',
-                      style:
-                          TextStyle(fontSize: 24, fontWeight: FontWeight.w500)),
+                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.w500)),
                   const Text('Login to your account',
                       style: TextStyle(color: Colors.grey)),
                   const SizedBox(height: 50),

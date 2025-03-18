@@ -1,8 +1,9 @@
 import 'dart:io';
 import 'dart:typed_data';
-import 'dart:ui';
+import 'dart:ui' as ui;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mtquotes/l10n/app_localization.dart';
@@ -19,14 +20,17 @@ class FestivalSharingPage extends StatelessWidget {
   final String userName;
   final String userProfileImageUrl;
   final bool isPaidUser;
+  final GlobalKey _brandedImageKey;
 
-  const FestivalSharingPage({
+  FestivalSharingPage({
     Key? key,
     required this.festival,
     required this.userName,
     required this.userProfileImageUrl,
     required this.isPaidUser,
-  }) : super(key: key);
+    GlobalKey? brandedImageKey,
+  }) : _brandedImageKey = brandedImageKey ?? GlobalKey(),
+        super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -102,16 +106,34 @@ class FestivalSharingPage extends StatelessWidget {
                         ],
                       ),
                       SizedBox(height: 16),
-                      // Preview of festival without branding
-                      Container(
-                        height: 200,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(8),
-                          image: DecorationImage(
-                            image: NetworkImage(festival.imageUrl),
-                            fit: BoxFit.cover,
+                      // Preview of festival with watermark
+                      Stack(
+                        children: [
+                          Container(
+                            height: 200,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8),
+                              image: DecorationImage(
+                                image: NetworkImage(festival.imageUrl),
+                                fit: BoxFit.cover,
+                              ),
+                            ),
                           ),
-                        ),
+                          // Preview of watermark in the top right
+                          Positioned(
+                            top: 10,
+                            right: 10,
+                            child: Opacity(
+                              opacity: 0.3,
+                              child: Image.asset(
+                                'assets/logo.png',
+                                width: 40,
+                                height: 40,
+                                fit: BoxFit.contain,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                       SizedBox(height: 16),
                       // Free share button
@@ -221,53 +243,56 @@ class FestivalSharingPage extends StatelessWidget {
                         ],
                       ),
                       SizedBox(height: 16),
-                      // Preview of festival with branding
-                      Container(
-                        height: 200,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(8),
-                          image: DecorationImage(
-                            image: NetworkImage(festival.imageUrl),
-                            fit: BoxFit.cover,
+                      // Premium post preview with branding
+                      RepaintBoundary(
+                        key: _brandedImageKey,
+                        child: Container(
+                          height: 200,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                            image: DecorationImage(
+                              image: NetworkImage(festival.imageUrl),
+                              fit: BoxFit.cover,
+                            ),
                           ),
-                        ),
-                        child: Stack(
-                          children: [
-                            Positioned(
-                              bottom: 10,
-                              right: 10,
-                              child: Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.black.withOpacity(0.6),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    CircleAvatar(
-                                      radius: 10,
-                                      backgroundImage: userProfileImageUrl.isNotEmpty
-                                          ? NetworkImage(userProfileImageUrl)
-                                          : AssetImage('assets/profile_placeholder.png') as ImageProvider,
-                                    ),
-                                    SizedBox(width: 4),
-                                    Text(
-                                      userName,
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
+                          child: Stack(
+                            children: [
+                              Positioned(
+                                bottom: 10,
+                                right: 10,
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withOpacity(0.6),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      CircleAvatar(
+                                        radius: 10,
+                                        backgroundImage: userProfileImageUrl.isNotEmpty
+                                            ? NetworkImage(userProfileImageUrl)
+                                            : AssetImage('assets/profile_placeholder.png') as ImageProvider,
                                       ),
-                                    ),
-                                  ],
+                                      SizedBox(width: 4),
+                                      Text(
+                                        userName,
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                       SizedBox(height: 16),
@@ -297,7 +322,6 @@ class FestivalSharingPage extends StatelessWidget {
                   ),
                 ),
               ),
-
             ],
           ),
         ),
@@ -305,7 +329,203 @@ class FestivalSharingPage extends StatelessWidget {
     );
   }
 
-  // Sharing implementation
+  // Method to capture widget as image with branding
+  Future<Uint8List?> _captureBrandedImage() async {
+    try {
+      final RenderRepaintBoundary boundary = _brandedImageKey.currentContext!
+          .findRenderObject() as RenderRepaintBoundary;
+      final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
+      final ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      return byteData?.buffer.asUint8List();
+    } catch (e) {
+      print('Error capturing branded image: $e');
+      return null;
+    }
+  }
+
+  // Method to add branding to image programmatically for paid users
+  Future<Uint8List?> _addBrandingToImage(Uint8List originalImageBytes) async {
+    try {
+      // Decode the original image
+      final ui.Image originalImage = await decodeImageFromList(originalImageBytes);
+
+      // Create a recorder and canvas
+      final ui.PictureRecorder recorder = ui.PictureRecorder();
+      final Canvas canvas = Canvas(recorder);
+
+      // Draw the original image - use the full size
+      final Rect originalRect = Rect.fromLTWH(
+          0,
+          0,
+          originalImage.width.toDouble(),
+          originalImage.height.toDouble()
+      );
+      canvas.drawImageRect(
+        originalImage,
+        originalRect,
+        originalRect,
+        Paint(),
+      );
+
+      // Download profile image if available
+      ui.Image? profileImage;
+      if (userProfileImageUrl.isNotEmpty) {
+        try {
+          final http.Response response = await http.get(Uri.parse(userProfileImageUrl));
+          if (response.statusCode == 200) {
+            profileImage = await decodeImageFromList(response.bodyBytes);
+          }
+        } catch (e) {
+          print('Error loading profile image: $e');
+        }
+      }
+
+      // Create branding container background - scale appropriately to the original image
+      final double width = originalImage.width.toDouble();
+      final double height = originalImage.height.toDouble();
+
+      // Make branding proportional to image size
+      final double brandingWidth = width * 0.4;
+      final double brandingHeight = height * 0.06;
+      final double brandingX = width - brandingWidth - width * 0.025; // 2.5% padding
+      final double brandingY = height - brandingHeight - height * 0.025; // 2.5% padding
+
+      // Draw branding background
+      final Paint bgPaint = Paint()
+        ..color = Colors.black.withOpacity(0.6);
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(brandingX, brandingY, brandingWidth, brandingHeight),
+          Radius.circular(12),
+        ),
+        bgPaint,
+      );
+
+      // Draw profile image if available
+      if (profileImage != null) {
+        final double profileSize = brandingHeight * 0.8;
+        final double profileX = brandingX + 8;
+        final double profileY = brandingY + (brandingHeight - profileSize) / 2;
+
+        // Draw circle for profile image
+        final Paint circlePaint = Paint()
+          ..color = Colors.white;
+        canvas.drawCircle(
+          Offset(profileX + profileSize / 2, profileY + profileSize / 2),
+          profileSize / 2,
+          circlePaint,
+        );
+
+        // Save canvas state before clipping
+        canvas.save();
+
+        // Draw the profile image in a circle
+        final Path clipPath = Path()
+          ..addOval(Rect.fromLTWH(profileX, profileY, profileSize, profileSize));
+        canvas.clipPath(clipPath);
+
+        canvas.drawImageRect(
+          profileImage,
+          Rect.fromLTWH(0, 0, profileImage.width.toDouble(), profileImage.height.toDouble()),
+          Rect.fromLTWH(profileX, profileY, profileSize, profileSize),
+          Paint(),
+        );
+
+        // Restore canvas state after clipping
+        canvas.restore();
+      }
+
+      // Draw username text
+      final double textX = profileImage != null
+          ? brandingX + 8 + brandingHeight * 0.8 + 4
+          : brandingX + 8;
+      final double textY = brandingY + brandingHeight / 2;
+
+      // Calculate font size based on image dimensions
+      final double fontSize = brandingHeight * 0.4;
+
+      final ui.ParagraphBuilder paragraphBuilder = ui.ParagraphBuilder(
+        ui.ParagraphStyle(
+          textAlign: TextAlign.left,
+          fontSize: fontSize,
+        ),
+      )
+        ..pushStyle(ui.TextStyle(color: Colors.white))
+        ..addText(userName);
+
+      final ui.Paragraph paragraph = paragraphBuilder.build()
+        ..layout(ui.ParagraphConstraints(width: brandingWidth - (profileImage != null ? brandingHeight * 0.8 + 12 : 8)));
+
+      canvas.drawParagraph(paragraph, Offset(textX, textY - paragraph.height / 2));
+
+      // Convert canvas to image - use the original dimensions
+      final ui.Picture picture = recorder.endRecording();
+      final ui.Image renderedImage = await picture.toImage(
+        originalImage.width,
+        originalImage.height,
+      );
+
+      // Convert image to bytes
+      final ByteData? byteData = await renderedImage.toByteData(format: ui.ImageByteFormat.png);
+      return byteData?.buffer.asUint8List();
+    } catch (e) {
+      print('Error adding branding to image: $e');
+      return null;
+    }
+  }
+
+  // Method to add watermark to image for free users
+  Future<Uint8List?> _addWatermarkToImage(Uint8List originalImageBytes) async {
+    try {
+      // Decode the original image
+      final ui.Image originalImage = await decodeImageFromList(originalImageBytes);
+
+      // Create a recorder and canvas
+      final ui.PictureRecorder recorder = ui.PictureRecorder();
+      final Canvas canvas = Canvas(recorder);
+
+      // Draw the original image
+      canvas.drawImage(originalImage, Offset.zero, Paint());
+
+      // Load the logo watermark
+      final ByteData logoData = await rootBundle.load('assets/logo.png');
+      final ui.Image logo = await decodeImageFromList(logoData.buffer.asUint8List());
+
+      // Calculate size and position for the watermark in top right corner
+      final double width = originalImage.width.toDouble();
+      final double height = originalImage.height.toDouble();
+      final double watermarkSize = width * 0.15; // 15% of the image width
+      final double watermarkX = width - watermarkSize - 16;  // Position from right edge with padding
+      final double watermarkY = 16; // Position from top with padding
+
+      // Apply semi-transparent effect to the watermark
+      final Paint watermarkPaint = Paint();
+
+      // Draw the watermark
+      canvas.drawImageRect(
+        logo,
+        Rect.fromLTWH(0, 0, logo.width.toDouble(), logo.height.toDouble()),
+        Rect.fromLTWH(watermarkX, watermarkY, watermarkSize, watermarkSize),
+        watermarkPaint,
+      );
+
+      // Convert canvas to image
+      final ui.Picture picture = recorder.endRecording();
+      final ui.Image renderedImage = await picture.toImage(
+        originalImage.width,
+        originalImage.height,
+      );
+
+      // Convert image to bytes
+      final ByteData? byteData = await renderedImage.toByteData(format: ui.ImageByteFormat.png);
+      return byteData?.buffer.asUint8List();
+    } catch (e) {
+      print('Error adding watermark to image: $e');
+      return null;
+    }
+  }
+
+  // Sharing implementation with fixes
   Future<void> _shareFestival(BuildContext context, {required bool isPaid}) async {
     try {
       // Show loading indicator
@@ -319,41 +539,31 @@ class FestivalSharingPage extends StatelessWidget {
         },
       );
 
+      // Download the original image first
+      final response = await http.get(Uri.parse(festival.imageUrl));
+      if (response.statusCode != 200) {
+        throw Exception('Failed to load image');
+      }
+
+      final originalImageBytes = response.bodyBytes;
       Uint8List? imageBytes;
 
       if (isPaid) {
-        try {
-          // For paid users, first try to capture the whole festival including profile details
-          imageBytes = await FestivalHandler.captureFestivalImage();
+        // For premium users, add branding to the original image
+        imageBytes = await _addBrandingToImage(originalImageBytes);
 
-          // If imageBytes is null, fall back to the original image
-          if (imageBytes == null) {
-            print('Festival capture returned null, falling back to direct download');
-            final response = await http.get(Uri.parse(festival.imageUrl));
-
-            if (response.statusCode == 200) {
-              imageBytes = response.bodyBytes;
-            }
-          }
-        } catch (e) {
-          print('Error in premium capture: $e, falling back to direct download');
-          // If festival capture fails, fall back to direct download
-          final response = await http.get(Uri.parse(festival.imageUrl));
-
-          if (response.statusCode == 200) {
-            imageBytes = response.bodyBytes;
-          } else {
-            throw Exception('Failed to load image after festival capture failed');
-          }
+        if (imageBytes == null) {
+          print('Branding failed, falling back to original image');
+          imageBytes = originalImageBytes;
         }
       } else {
-        // For free users, just download the original festival image
-        final response = await http.get(Uri.parse(festival.imageUrl));
+        // For free users, add the watermark to the image
+        imageBytes = await _addWatermarkToImage(originalImageBytes);
 
-        if (response.statusCode != 200) {
-          throw Exception('Failed to load image');
+        if (imageBytes == null) {
+          print('Watermark failed, falling back to original image');
+          imageBytes = originalImageBytes;
         }
-        imageBytes = response.bodyBytes;
       }
 
       // Close loading dialog
@@ -413,7 +623,7 @@ class FestivalSharingPage extends StatelessWidget {
     }
   }
 
-  // Rating dialog implementation
+  // Rating dialog implementation (unchanged)
   Future<void> _showRatingDialog(BuildContext context) async {
     double rating = 0;
 
@@ -487,7 +697,7 @@ class FestivalSharingPage extends StatelessWidget {
     });
   }
 
-// Submit rating - this calls the FestivalHandler version
+  // Submit rating - this function remains the same
   static Future<void> _submitRating(double rating, FestivalPost festival) async {
     try {
       final DateTime now = DateTime.now();
@@ -548,4 +758,5 @@ class FestivalSharingPage extends StatelessWidget {
     } catch (e) {
       print('Error updating festival average rating: $e');
     }
-  }}
+  }
+}
