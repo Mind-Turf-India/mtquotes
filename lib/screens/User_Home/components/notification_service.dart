@@ -136,6 +136,8 @@ class NotificationService {
     await _subscribeToTopics();
   }
 
+  
+
   Future<void> _subscribeToTopics() async {
     // Subscribe to all topics from your Firebase Cloud Functions
     await _messaging.subscribeToTopic('qotd');
