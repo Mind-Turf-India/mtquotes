@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -8,7 +7,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mtquotes/l10n/app_localization.dart';
 import 'package:mtquotes/providers/text_size_provider.dart';
+import 'package:mtquotes/screens/User_Home/components/about_us.dart';
 import 'package:mtquotes/screens/User_Home/components/notifications.dart';
+import 'package:mtquotes/screens/User_Home/components/refferral_screen.dart';
 import 'package:provider/provider.dart';
 import 'components/settings.dart';
 import 'package:share_plus/share_plus.dart';
@@ -410,16 +411,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           );
                         },
                       ),
-                      _buildMenuItem(Icons.question_mark, context.loc.aboutus,
-                          fontSize, () {}),
+                      _buildMenuItem(
+                          Icons.question_mark, context.loc.aboutus, fontSize,
+                          () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const AboutUsScreen()),
+                        );
+                      }),
                       _buildMenuItem(Icons.support_agent_outlined,
                           context.loc.support, fontSize, () {}),
                       _buildMenuItem(Icons.share_rounded,
-                          context.loc.shareapplication, fontSize, () {}),
-                      _buildMenuItem(
-                          Icons.drafts_outlined, context.loc.drafts, fontSize, () {}),
-                      _buildMenuItem(Icons.workspace_premium, context.loc.subscriptions,
+                          context.loc.shareapplication, fontSize, () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => ReferralPage()),
+                        );
+                      }),
+                      _buildMenuItem(Icons.drafts_outlined, context.loc.drafts,
                           fontSize, () {}),
+                      _buildMenuItem(Icons.workspace_premium,
+                          context.loc.subscriptions, fontSize, () {}),
                     ],
                   ),
                 ),

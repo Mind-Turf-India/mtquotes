@@ -5,6 +5,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:mtquotes/l10n/app_localization.dart';
 import 'package:mtquotes/screens/Templates/components/template/quote_template.dart';
 import 'package:mtquotes/screens/Templates/components/template/template_handler.dart';
@@ -190,26 +192,27 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                 ),
               ),
 
-              // Divider
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 24.0),
-                child: Row(
-                  children: [
-                    Expanded(child: Divider()),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Text(
-                        'OR',
-                        style: TextStyle(
-                          color: Colors.grey,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    Expanded(child: Divider()),
-                  ],
-                ),
-              ),
+             // Divider
+             Padding(
+               padding: const EdgeInsets.symmetric(vertical: 24.0),
+               child: Row(
+                 children: [
+                   Expanded(child: Divider()),
+                   Padding(
+                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                     child: Text(
+                       'OR',
+                       style: TextStyle(
+                         color: Colors.grey,
+                         fontWeight: FontWeight.bold,
+                       ),
+                     ),
+                   ),
+                   Expanded(child: Divider()),
+                 ],
+               ),
+             ),
+
 
               // Premium sharing option (moved to the bottom)
               Text(
@@ -611,21 +614,25 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
         }
       }
 
-      // Close loading dialog
-      if (Navigator.of(context, rootNavigator: true).canPop()) {
-        Navigator.of(context, rootNavigator: true).pop();
-      }
+     // Close loading dialog
+     if (Navigator.of(context, rootNavigator: true).canPop()) {
+       Navigator.of(context, rootNavigator: true).pop();
+     }
 
-      if (imageBytes == null) {
-        throw Exception('Failed to process image');
-      }
 
-      // Get temp directory
-      final tempDir = await getTemporaryDirectory();
-      final tempFile = File('${tempDir.path}/shared_template.png');
+     if (imageBytes == null) {
+       throw Exception('Failed to process image');
+     }
 
-      // Save image as file
-      await tempFile.writeAsBytes(imageBytes);
+
+     // Get temp directory
+     final tempDir = await getTemporaryDirectory();
+     final tempFile = File('${tempDir.path}/shared_template.png');
+
+
+     // Save image as file
+     await tempFile.writeAsBytes(imageBytes);
+
 
       // Share directly based on user type
       if (isPaid) {
@@ -642,35 +649,40 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
         );
       }
 
-      // Show rating dialog after sharing
-      await Future.delayed(Duration(milliseconds: 500));
-      if (context.mounted) {
-        await _showRatingDialog(context);
-      }
+     // Show rating dialog after sharing
+     await Future.delayed(Duration(milliseconds: 500));
+     if (context.mounted) {
+       await _showRatingDialog(context);
+     }
 
-    } catch (e) {
-      // Close loading dialog if open
-      if (Navigator.of(context, rootNavigator: true).canPop()) {
-        Navigator.of(context, rootNavigator: true).pop();
-      }
 
-      print('Error sharing template: $e');
+   } catch (e) {
+     // Close loading dialog if open
+     if (Navigator.of(context, rootNavigator: true).canPop()) {
+       Navigator.of(context, rootNavigator: true).pop();
+     }
 
-      // Show error message
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to share image: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
 
-  // Rating dialog implementation
-  Future<void> _showRatingDialog(BuildContext context) async {
-    double rating = 0;
+     print('Error sharing template: $e');
+
+
+     // Show error message
+     if (context.mounted) {
+       ScaffoldMessenger.of(context).showSnackBar(
+         SnackBar(
+           content: Text('Failed to share image: ${e.toString()}'),
+           backgroundColor: Colors.red,
+         ),
+       );
+     }
+   }
+ }
+
+
+ // Rating dialog implementation
+ Future<void> _showRatingDialog(BuildContext context) async {
+   double rating = 0;
+
 
     return showDialog<double>(
       context: context,
@@ -729,82 +741,97 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
         // Submit rating
         _submitRating(value, widget.template);
 
-        // Show thank you message
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Thanks for your rating!'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
-      }
-    });
-  }
+       // Show thank you message
+       if (context.mounted) {
+         ScaffoldMessenger.of(context).showSnackBar(
+           SnackBar(
+             content: Text('Thanks for your rating!'),
+             backgroundColor: Colors.green,
+           ),
+         );
+       }
+     }
+   });
+ }
 
-  // Submit rating - this calls the TemplateHandler version
-  static Future<void> _submitRating(double rating, QuoteTemplate template) async {
-    try {
-      final DateTime now = DateTime.now();
 
-      // Create a rating object using your QuoteTemplate model
-      final Map<String, dynamic> ratingData = {
-        'templateId': template.id,
-        'rating': rating,
-        'category': template.category,
-        'createdAt': now,  // Firestore will convert this to Timestamp
-        'imageUrl': template.imageUrl,
-        'isPaid': template.isPaid,
-        'title': template.title,
-        'userId': FirebaseAuth.instance.currentUser?.uid ?? 'anonymous', // Get user ID if logged in
-      };
+ // Submit rating - this calls the TemplateHandler version
+ static Future<void> _submitRating(double rating, QuoteTemplate template) async {
+   try {
+     final DateTime now = DateTime.now();
 
-      await FirebaseFirestore.instance
-          .collection('ratings')
-          .add(ratingData);
 
-      print('Rating submitted: $rating for template ${template.title}');
+     // Create a rating object using your QuoteTemplate model
+     final Map<String, dynamic> ratingData = {
+       'templateId': template.id,
+       'rating': rating,
+       'category': template.category,
+       'createdAt': now,  // Firestore will convert this to Timestamp
+       'imageUrl': template.imageUrl,
+       'isPaid': template.isPaid,
+       'title': template.title,
+       'userId': FirebaseAuth.instance.currentUser?.uid ?? 'anonymous', // Get user ID if logged in
+     };
 
-      // Update the template's average rating
-      await _updateTemplateAverageRating(template.id, rating);
 
-    } catch (e) {
-      print('Error submitting rating: $e');
-    }
-  }
+     await FirebaseFirestore.instance
+         .collection('ratings')
+         .add(ratingData);
 
-  static Future<void> _updateTemplateAverageRating(String templateId, double newRating) async {
-    try {
-      // Get reference to the template document
-      final templateRef = FirebaseFirestore.instance.collection('templates').doc(templateId);
 
-      // Run this as a transaction to ensure data consistency
-      await FirebaseFirestore.instance.runTransaction((transaction) async {
-        // Get the current template data
-        final templateSnapshot = await transaction.get(templateRef);
+     print('Rating submitted: $rating for template ${template.title}');
 
-        if (templateSnapshot.exists) {
-          final data = templateSnapshot.data() as Map<String, dynamic>;
 
-          // Calculate the new average rating
-          double currentAvgRating = data['averageRating']?.toDouble() ?? 0.0;
-          int ratingCount = data['ratingCount'] ?? 0;
+     // Update the template's average rating
+     await _updateTemplateAverageRating(template.id, rating);
 
-          int newRatingCount = ratingCount + 1;
-          double newAvgRating = ((currentAvgRating * ratingCount) + newRating) / newRatingCount;
 
-          // Update the template with the new average rating
-          transaction.update(templateRef, {
-            'averageRating': newAvgRating,
-            'ratingCount': newRatingCount,
-            'lastRated': FieldValue.serverTimestamp(),
-          });
-        }
-      });
+   } catch (e) {
+     print('Error submitting rating: $e');
+   }
+ }
 
-      print('Updated template average rating successfully');
-    } catch (e) {
-      print('Error updating template average rating: $e');
-    }
-  }
+
+ static Future<void> _updateTemplateAverageRating(String templateId, double newRating) async {
+   try {
+     // Get reference to the template document
+     final templateRef = FirebaseFirestore.instance.collection('templates').doc(templateId);
+
+
+     // Run this as a transaction to ensure data consistency
+     await FirebaseFirestore.instance.runTransaction((transaction) async {
+       // Get the current template data
+       final templateSnapshot = await transaction.get(templateRef);
+
+
+       if (templateSnapshot.exists) {
+         final data = templateSnapshot.data() as Map<String, dynamic>;
+
+
+         // Calculate the new average rating
+         double currentAvgRating = data['averageRating']?.toDouble() ?? 0.0;
+         int ratingCount = data['ratingCount'] ?? 0;
+
+
+         int newRatingCount = ratingCount + 1;
+         double newAvgRating = ((currentAvgRating * ratingCount) + newRating) / newRatingCount;
+
+
+         // Update the template with the new average rating
+         transaction.update(templateRef, {
+           'averageRating': newAvgRating,
+           'ratingCount': newRatingCount,
+           'lastRated': FieldValue.serverTimestamp(),
+         });
+       }
+     });
+
+
+     print('Updated template average rating successfully');
+   } catch (e) {
+     print('Error updating template average rating: $e');
+   }
+ }
 }
+
+
