@@ -22,7 +22,7 @@
 
 
     <application
-        android:label="mtquotes"
+        android:label="Vaky"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
 

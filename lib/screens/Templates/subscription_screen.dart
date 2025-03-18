@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-
+import 'payment_screen.dart';
 import 'components/template/template_service.dart';
 
 class SubscriptionScreen extends StatefulWidget {
@@ -11,16 +11,25 @@ class SubscriptionScreen extends StatefulWidget {
 class _SubscriptionScreenState extends State<SubscriptionScreen> {
   final TemplateService _templateService = TemplateService();
   bool _isLoading = false;
-  String _selectedPlan = 'monthly';
+  String _selectedPlan = 'free'; // Default to free plan
+  final String _userName = "John Doe"; // This would come from your user profile
 
   @override
   Widget build(BuildContext context) {
-    double fontSize = 16.0;
-
     return Scaffold(
       appBar: AppBar(
-        title: Text('Premium Subscription'),
+        title: Text('Subscription'),
         centerTitle: true,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.notifications_outlined),
+            onPressed: () {},
+          ),
+        ],
       ),
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
@@ -29,105 +38,162 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Header
-            Text(
-              'Upgrade to Pro',
-              style: GoogleFonts.poppins(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-              textAlign: TextAlign.center,
+            // Free Plan
+            _buildPlanCard(
+              planTitle: 'FREE',
+              planColor: Colors.blue.shade100,
+              features: [
+                'Free 200 points',
+                'First 10 free shares / downloads',
+              ],
+              price: null,
+              currency: null,
+              buttonTitle: 'Existing Plan',
+              isPro: false,
+              isCurrentPlan: _selectedPlan == 'free',
+              onPressed: () {
+                setState(() {
+                  _selectedPlan = 'free';
+                });
+              },
+              buttonAction: null,
+              amount: '0',
+              trialDays: 0,
             ),
-            SizedBox(height: 10),
-            Text(
-              'Get unlimited access to all premium templates',
-              style: GoogleFonts.poppins(fontSize: fontSize),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: 30),
+            SizedBox(height: 16),
 
-            // Features
-            _buildFeatureItem(
-              icon: Icons.check_circle,
-              text: 'Access all premium templates',
-              fontSize: fontSize,
+            // Per Template Plan
+            _buildPlanCard(
+              planTitle: 'Per Template',
+              planColor: Color(0xFFFFF3E0), // Light peach color
+              features: [
+                '20 points credited',
+                'Single template share',
+                'No editing allowed',
+              ],
+              price: '19',
+              currency: '₹',
+              buttonTitle: 'Buy Now',
+              isPro: false,
+              isCurrentPlan: _selectedPlan == 'perTemplate',
+              onPressed: () {
+                setState(() {
+                  _selectedPlan = 'perTemplate';
+                });
+              },
+              buttonAction: () => _navigateToPayment(
+                'Per Template',
+                '19',
+                false,
+                0,
+                null,
+              ),
+              amount: '19',
+              trialDays: 0,
             ),
-            _buildFeatureItem(
-              icon: Icons.check_circle,
-              text: 'No watermarks on exported quotes',
-              fontSize: fontSize,
-            ),
-            _buildFeatureItem(
-              icon: Icons.check_circle,
-              text: 'Priority access to new designs',
-              fontSize: fontSize,
-            ),
-            _buildFeatureItem(
-              icon: Icons.check_circle,
-              text: 'Premium customer support',
-              fontSize: fontSize,
-            ),
-            SizedBox(height: 30),
+            SizedBox(height: 16),
 
-            // Plan selection
-            Container(
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.shade300),
-                borderRadius: BorderRadius.circular(12),
+            // Monthly Plan
+            _buildPlanCard(
+              planTitle: 'Monthly Plan',
+              planColor: Colors.green.shade50,
+              features: [
+                'No points required',
+                '10 templates per day to share/download',
+                'Editing allowed',
+                'Limited features',
+                'Auto-pay monthly',
+              ],
+              price: '99',
+              currency: '₹',
+              buttonTitle: 'Buy Now',
+              isPro: true,
+              isCurrentPlan: _selectedPlan == 'monthly',
+              onPressed: () {
+                setState(() {
+                  _selectedPlan = 'monthly';
+                });
+              },
+              buttonAction: () => _navigateToPayment(
+                'Monthly Plan',
+                '99',
+                true,
+                0,
+                'monthly',
               ),
-              child: Column(
-                children: [
-                  _buildPlanOption(
-                    title: 'Monthly Plan',
-                    price: '\$4.99',
-                    period: 'per month',
-                    value: 'monthly',
-                    fontSize: fontSize,
-                  ),
-                  Divider(height: 1),
-                  _buildPlanOption(
-                    title: 'Annual Plan',
-                    price: '\$39.99',
-                    period: 'per year',
-                    value: 'annual',
-                    fontSize: fontSize,
-                    badge: 'Save 33%',
-                  ),
-                ],
-              ),
+              amount: '99',
+              trialDays: 0,
             ),
-            SizedBox(height: 30),
+            SizedBox(height: 16),
 
-            // Subscribe button
-            ElevatedButton(
-              onPressed: () => _handleSubscription(),
-              style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
+            // Quarterly Plan with Trial
+            _buildPlanCard(
+              planTitle: 'Quarterly Plan',
+              planColor: Colors.purple.shade50,
+              features: [
+                'No points required',
+                '3-day trial for ₹9 only',
+                'Unlimited templates',
+                'Full editing capabilities',
+                'Premium features',
+                'Auto-pay quarterly (₹290 after trial)',
+                'Cancel anytime',
+              ],
+              price: '299',
+              currency: '₹',
+              buttonTitle: 'Start Trial',
+              isPro: true,
+              isCurrentPlan: _selectedPlan == 'quarterly',
+              onPressed: () {
+                setState(() {
+                  _selectedPlan = 'quarterly';
+                });
+              },
+              buttonAction: () => _navigateToPayment(
+                'Quarterly Plan',
+                '9',
+                true,
+                3,
+                'quarterly',
               ),
-              child: Text(
-                'Subscribe Now',
-                style: TextStyle(fontSize: fontSize),
-              ),
+              amount: '299',
+              trialDays: 3,
+              trialAmount: '9',
             ),
-            SizedBox(height: 10),
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(
-                'Maybe Later',
-                style: TextStyle(fontSize: fontSize - 2),
+            SizedBox(height: 16),
+
+            // Annual Plan
+            _buildPlanCard(
+              planTitle: 'Annual Plan',
+              planColor: Colors.amber.shade50,
+              features: [
+                'Best value',
+                'No points required',
+                'Unlimited templates',
+                'Full editing capabilities',
+                'Premium features',
+                'Auto-pay annually',
+              ],
+              price: '499',
+              currency: '₹',
+              buttonTitle: 'Buy Now',
+              isPro: true,
+              isCurrentPlan: _selectedPlan == 'annual',
+              onPressed: () {
+                setState(() {
+                  _selectedPlan = 'annual';
+                });
+              },
+              buttonAction: () => _navigateToPayment(
+                'Annual Plan',
+                '499',
+                true,
+                0,
+                'annual',
               ),
-            ),
-            SizedBox(height: 20),
-            Text(
-              'You can cancel your subscription anytime from your account settings',
-              style: TextStyle(
-                fontSize: fontSize - 4,
-                color: Colors.grey,
-              ),
-              textAlign: TextAlign.center,
+              amount: '499',
+              trialDays: 0,
+              bestValue: true,
             ),
           ],
         ),
@@ -135,143 +201,214 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     );
   }
 
-  Widget _buildFeatureItem({
-    required IconData icon,
-    required String text,
-    required double fontSize,
-  }) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          Icon(
-            icon,
-            color: Colors.green,
-            size: fontSize + 4,
-          ),
-          SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              text,
-              style: GoogleFonts.poppins(fontSize: fontSize),
-            ),
-          ),
-        ],
+  void _navigateToPayment(
+      String planType,
+      String amount,
+      bool isSubscription,
+      int trialDays,
+      String? recurringType,
+      ) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PaymentScreen(
+          planType: planType,
+          amount: amount,
+          userName: _userName,
+          isSubscription: isSubscription,
+          trialDays: trialDays,
+          recurringType: recurringType,
+          fullAmount: trialDays > 0 ? '290' : amount,
+        ),
       ),
     );
   }
 
-  Widget _buildPlanOption({
-    required String title,
-    required String price,
-    required String period,
-    required String value,
-    required double fontSize,
-    String? badge,
+  Widget _buildPlanCard({
+    required String planTitle,
+    required Color planColor,
+    required List<String> features,
+    required String? price,
+    required String? currency,
+    required String buttonTitle,
+    required bool isPro,
+    required bool isCurrentPlan,
+    required VoidCallback onPressed,
+    required VoidCallback? buttonAction,
+    required String amount,
+    required int trialDays,
+    String? trialAmount,
+    bool bestValue = false,
   }) {
-    return RadioListTile<String>(
-      title: Row(
-        children: [
-          Expanded(
-            child: Column(
+    return GestureDetector(
+      onTap: onPressed,
+      child: Container(
+        decoration: BoxDecoration(
+          color: planColor,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isCurrentPlan ? Colors.blue : Colors.transparent,
+            width: isCurrentPlan ? 2 : 0,
+          ),
+        ),
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: GoogleFonts.poppins(
-                    fontSize: fontSize,
-                    fontWeight: FontWeight.w500,
+                // Left side - Plan details
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        planTitle,
+                        style: GoogleFonts.poppins(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      if (price != null && currency != null) ...[
+                        SizedBox(height: 4),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              currency,
+                              style: GoogleFonts.poppins(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            SizedBox(width: 2),
+                            Text(
+                              price,
+                              style: GoogleFonts.poppins(
+                                fontSize: 28,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                      if (trialDays > 0) ...[
+                        SizedBox(height: 4),
+                        Text(
+                          '₹$trialAmount for first $trialDays days',
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            color: Colors.deepPurple,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
-                Row(
+                // Right side - PRO badge if applicable
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text(
-                      price,
-                      style: GoogleFonts.poppins(
-                        fontSize: fontSize + 2,
-                        fontWeight: FontWeight.bold,
+                    if (isPro)
+                      Container(
+                        padding:
+                        EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.amber,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          'PRO',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
-                    ),
-                    SizedBox(width: 4),
-                    Text(
-                      period,
-                      style: TextStyle(
-                        fontSize: fontSize - 2,
-                        color: Colors.grey,
+                    if (bestValue) ...[
+                      SizedBox(height: 4),
+                      Container(
+                        padding:
+                        EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.green,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          'BEST VALUE',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ],
             ),
-          ),
-          if (badge != null)
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.amber,
-                borderRadius: BorderRadius.circular(12),
+            SizedBox(height: 16),
+            // Features list
+            ...features.map((feature) => Padding(
+              padding: EdgeInsets.only(bottom: 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.check_circle,
+                    color: Colors.green,
+                    size: 18,
+                  ),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      feature,
+                      style: GoogleFonts.poppins(fontSize: 14),
+                    ),
+                  ),
+                ],
               ),
-              child: Text(
-                badge,
-                style: TextStyle(
-                  fontSize: fontSize - 4,
-                  fontWeight: FontWeight.bold,
+            )),
+            SizedBox(height: 16),
+            // Action button
+            if (buttonAction != null)
+              Align(
+                alignment: Alignment.centerRight,
+                child: ElevatedButton(
+                  onPressed: buttonAction,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  ),
+                  child: Text(
+                    buttonTitle,
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+              )
+            else
+              Align(
+                alignment: Alignment.centerRight,
+                child: OutlinedButton(
+                  onPressed: () {},
+                  style: OutlinedButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  ),
+                  child: Text(buttonTitle),
                 ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
-      value: value,
-      groupValue: _selectedPlan,
-      onChanged: (String? newValue) {
-        if (newValue != null) {
-          setState(() {
-            _selectedPlan = newValue;
-          });
-        }
-      },
     );
-  }
-
-  Future<void> _handleSubscription() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      // Here you would implement your payment processing logic
-      // For this example, we'll just simulate a successful subscription
-      await Future.delayed(Duration(seconds: 2));
-
-      // Update user subscription status
-      await _templateService.updateSubscriptionStatus(true);
-
-      // Show success message and return to previous screen
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Subscription successful!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        Navigator.pop(context);
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error processing subscription: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
   }
 }
