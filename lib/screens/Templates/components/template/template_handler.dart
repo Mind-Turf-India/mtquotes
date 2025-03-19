@@ -186,32 +186,81 @@ class TemplateHandler {
     });
   }
 
+  static Future<void> _updateCategoryTemplateRating(String templateId, String category, double newRating) async {
+    try {
+      // Path to the category template document
+      final templateRef = FirebaseFirestore.instance
+          .collection('categories')
+          .doc(category.toLowerCase())
+          .collection('templates')
+          .doc(templateId);
+
+      // Run this as a transaction to ensure data consistency
+      await FirebaseFirestore.instance.runTransaction((transaction) async {
+        // Get the current template data
+        final templateSnapshot = await transaction.get(templateRef);
+
+        if (templateSnapshot.exists) {
+          final data = templateSnapshot.data() as Map<String, dynamic>;
+
+          // Calculate the new average rating
+          double currentAvgRating = data['avgRatings']?.toDouble() ?? 0.0;
+          int ratingCount = data['ratingCount'] ?? 0;
+
+          int newRatingCount = ratingCount + 1;
+          double newAvgRating = ((currentAvgRating * ratingCount) + newRating) / newRatingCount;
+
+          // Update the template with the new average rating
+          transaction.update(templateRef, {
+            'avgRatings': newAvgRating,
+            'ratingCount': newRatingCount,
+            'lastRated': FieldValue.serverTimestamp(),
+          });
+
+          print('Updated category template average rating successfully');
+        } else {
+          print('Template not found in category collection');
+        }
+      });
+    } catch (e) {
+      print('Error updating category template average rating: $e');
+    }
+  }
+
 // Add this function to submit the rating to your backend
   static Future<void> _submitRating(double rating, QuoteTemplate template) async {
     try {
       final DateTime now = DateTime.now();
+      final User? currentUser = FirebaseAuth.instance.currentUser;
 
-      // Create a rating object using your QuoteTemplate model
+      // Create a rating object
       final Map<String, dynamic> ratingData = {
         'templateId': template.id,
         'rating': rating,
         'category': template.category,
-        'createdAt': now,  // Firestore will convert this to Timestamp
+        'createdAt': now,
         'imageUrl': template.imageUrl,
         'isPaid': template.isPaid,
         'title': template.title,
-        'userId': FirebaseAuth.instance.currentUser?.uid ?? 'anonymous', // Get user ID if logged in
+        'userId': currentUser?.uid ?? 'anonymous',
+        'userEmail': currentUser?.email ?? 'anonymous',
       };
 
-      await FirebaseFirestore.instance
+      // Add to ratings collection
+      DocumentReference ratingRef = await FirebaseFirestore.instance
           .collection('ratings')
           .add(ratingData);
 
-      // print('Rating submitted: $rating for template ${template.imageUrl}');
-      print('Rating submitted: $rating for template ${template.title}');
+      print('Rating submitted: $rating for template ${template.title} (ID: ${template.id})');
 
-      // Update the template's average rating
-      await _updateTemplateAverageRating(template.id, rating);
+      // Determine if this is a category template based on non-empty category field
+      if (template.category.isNotEmpty) {
+        // Update the category template's rating
+        await _updateCategoryTemplateRating(template.id, template.category, rating);
+      } else {
+        // Use the original method for regular templates
+        await _updateTemplateAverageRating(template.id, rating);
+      }
 
     } catch (e) {
       print('Error submitting rating: $e');

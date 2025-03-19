@@ -62,7 +62,8 @@
   "upgrade_to_premium": "Upgrade To Premium",
   "premium_sharing_features": "Premium Sharing Features",
   "upgrade_now": "Upgrade Now",
-  "@languageChanged": {
+  "foryou": "For you",
+  "@languageChanged":{
     "placeholders": {
       "language": {}
     }

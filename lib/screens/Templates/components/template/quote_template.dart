@@ -6,10 +6,13 @@ class QuoteTemplate {
   final String title;
   final String category;
   final bool isPaid;
-  final DateTime createdAt;
+  final DateTime? createdAt;
   // New fields for festival functionality
   final String? festivalId;
   final String? festivalName;
+  // Add rating fields
+  final double avgRating;
+  final int ratingCount;
 
   QuoteTemplate({
     required this.id,
@@ -20,6 +23,8 @@ class QuoteTemplate {
     required this.createdAt,
     this.festivalId,
     this.festivalName,
+    this.avgRating = 0.0,
+    this.ratingCount = 0,
   });
 
   factory QuoteTemplate.fromFirestore(DocumentSnapshot doc) {
@@ -30,9 +35,13 @@ class QuoteTemplate {
       title: data['title'] ?? '',
       category: data['category'] ?? '',
       isPaid: data['isPaid'] ?? false,
-      createdAt: (data['createdAt'] as Timestamp).toDate(),
+      createdAt: data['createdAt'] != null
+          ? (data['createdAt'] as Timestamp).toDate()
+          : null,
       festivalId: data['festivalId'],
       festivalName: data['festivalName'],
+      avgRating: (data['avgRating'] ?? 0.0).toDouble(),
+      ratingCount: data['ratingCount'] ?? 0,
     );
   }
 
@@ -42,9 +51,11 @@ class QuoteTemplate {
       'title': title,
       'category': category,
       'isPaid': isPaid,
-      'createdAt': Timestamp.fromDate(createdAt),
+      'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : null,
       'festivalId': festivalId,
       'festivalName': festivalName,
+      'avgRating': avgRating,
+      'ratingCount': ratingCount,
     };
   }
 }

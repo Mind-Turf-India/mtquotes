@@ -62,7 +62,7 @@
   "upgrade_to_premium": "প্রিমিয়ামে আপগ্রেড করুন",
   "premium_sharing_features": "প্রিমিয়াম শেয়ারিং বৈশিষ্ট্য",
   "upgrade_now": "এখনই আপগ্রেড করুন",
-
+  "foryou": "তোমার জন্য",
   "@languageChanged": {
     "placeholders": {
       "language": {}

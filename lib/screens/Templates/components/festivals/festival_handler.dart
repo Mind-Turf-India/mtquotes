@@ -351,6 +351,15 @@ class FestivalHandler {
         );
         return;
       }
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return Center(
+            child: CircularProgressIndicator(),
+          );
+        },
+      );
 
       // If we're already on the sharing page, perform the actual sharing
       Uint8List? imageBytes;

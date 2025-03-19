@@ -48,6 +48,7 @@ class TimeOfDayService {
     }
   }
 
+
   // Fetch posts for the current time of day
   Future<List<TimeOfDayPost>> fetchTimeOfDayPosts() async {
     final String timeOfDay = getCurrentTimeOfDay();

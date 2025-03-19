@@ -26,9 +26,10 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:mtquotes/screens/Templates/components/festivals/festival_post.dart';
 import 'package:mtquotes/screens/Templates/components/festivals/festival_service.dart';
 import 'package:mtquotes/screens/Templates/components/festivals/festival_handler.dart';
-
 import '../Templates/components/festivals/festival_card.dart';
 import '../Templates/components/template/template_service.dart';
+import 'components/Categories/category_screen.dart';
+import 'components/templates_list.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -636,48 +637,131 @@ class _HomeScreenState extends State<HomeScreen> {
                 SizedBox(height: 20),
 
                 SizedBox(height: 20),
+// Categories section with View All button
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          context.loc.categories,
+                          style: GoogleFonts.poppins(
+                              fontSize: fontSize,
+                              fontWeight: FontWeight.bold
+                          ),
+                        ),
+                      ],
+                    ),
 
-                // Categories
-                Text(context.loc.categories,
-                    style: GoogleFonts.poppins(
-                        fontSize: fontSize, fontWeight: FontWeight.bold)),
-                SizedBox(height: 10),
-                SizedBox(
-                  height: 100,
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    children: [
-                      categoryCard(Icons.lightbulb, context.loc.motivational,
-                          Colors.green, fontSize),
-                      categoryCard(Icons.favorite, context.loc.love, Colors.red,
-                          fontSize),
-                      categoryCard(Icons.emoji_emotions, context.loc.funny,
-                          Colors.orange, fontSize),
-                      categoryCard(Icons.people, context.loc.friendship,
-                          Colors.blue, fontSize),
-                      categoryCard(Icons.self_improvement, context.loc.life,
-                          Colors.purple, fontSize),
-                    ],
-                  ),
+                    SizedBox(height: 10),
+                    SizedBox(
+                      height: 100,
+                      child: ListView(
+                        scrollDirection: Axis.horizontal,
+                        children: [
+                          categoryCard(Icons.lightbulb, context.loc.motivational,
+                              Colors.green, fontSize),
+                          categoryCard(Icons.favorite, context.loc.love, Colors.red,
+                              fontSize),
+                          categoryCard(Icons.emoji_emotions, context.loc.funny,
+                              Colors.orange, fontSize),
+                          categoryCard(Icons.people, context.loc.friendship,
+                              Colors.blue, fontSize),
+                          categoryCard(Icons.self_improvement, context.loc.life,
+                              Colors.purple, fontSize),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
                 SizedBox(
                   height: 20,
                 ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      context.loc.trendingQuotes,
+                      style: GoogleFonts.poppins(
+                          fontSize: fontSize,
+                          fontWeight: FontWeight.bold
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => TemplatesListScreen(
+                              title: context.loc.trendingQuotes,
+                              listType: TemplateListType.trending,
+                            ),
+                          ),
+                        );
+                      },
+                      child: Text(
+                        'View All',
+                        style: GoogleFonts.poppins(
+                          fontSize: fontSize - 2,
+                          color: Colors.blue,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+
+                  ],
+                ),
 
                 TemplateSection(
-                  title: context.loc.trendingQuotes,
+                  title: '',
                   fetchTemplates: _templateService.fetchRecentTemplates,
                   fontSize: fontSize,
                   onTemplateSelected: _handleTemplateSelection,
                 ),
 
-                SizedBox(height: 30),
-                Text(
-                  "New ✨",
-                  style: GoogleFonts.poppins(
-                      fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-                SizedBox(height: 10),
+                SizedBox(height: 20),
+
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          context.loc.newtemplate,
+                          style: GoogleFonts.poppins(
+                              fontSize: fontSize,
+                              fontWeight: FontWeight.bold
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => TemplatesListScreen(
+                                  title: context.loc.newtemplate,
+                                  listType: TemplateListType.festival,
+                                ),
+                              ),
+                            );
+                          },
+                          child: Text(
+                            'View All',
+                            style: GoogleFonts.poppins(
+                              fontSize: fontSize - 2,
+                              color: Colors.blue,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                SizedBox(height: 20),
                 SizedBox(
                   height: 150, // Changed from 200 to 100 to match other card sections
                   child: _loadingFestivals
@@ -702,26 +786,62 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 SizedBox(height: 30),
-                Row(
-                  children: [
-                    Text(
-                      "For You",
-                      style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(width: 8),
-                    Text(
-                      "• ${_currentTimeOfDay.capitalize()}",
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                  ],
-                ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            // Left side with title and time
+                            Expanded(
+                              child: Row(
+                                children: [
+                                  Text(
+                                    context.loc.foryou,
+                                    style: GoogleFonts.poppins(
+                                        fontSize: fontSize,
+                                        fontWeight: FontWeight.bold
+                                    ),
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    "• ${_currentTimeOfDay.capitalize()}",
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 14,
+                                      color: Colors.grey[600],
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            // Right side with View All
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => TemplatesListScreen(
+                                      title: "${context.loc.foryou} • ${_currentTimeOfDay.capitalize()}",
+                                      listType: TemplateListType.timeOfDay,
+                                      timeOfDay: _currentTimeOfDay,
+                                    ),
+                                  ),
+                                );
+                              },
+                              child: Text(
+                                'View All',
+                                style: GoogleFonts.poppins(
+                                  fontSize: fontSize - 2,
+                                  color: Colors.blue,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+
                 SizedBox(height: 10),
                 SizedBox(
                   height: 150,
@@ -751,9 +871,43 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ],
             ),
+          ]),
+        ]),
+      ]),
+    ))));
+  }
+
+  Widget buildCategoriesSection(BuildContext context, double fontSize) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              context.loc.categories,
+              style: GoogleFonts.poppins(
+                  fontSize: fontSize,
+                  fontWeight: FontWeight.bold
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: 10),
+        SizedBox(
+          height: 100,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            children: [
+              categoryCard(Icons.lightbulb, context.loc.motivational, Colors.green, fontSize),
+              categoryCard(Icons.favorite, context.loc.love, Colors.red, fontSize),
+              categoryCard(Icons.emoji_emotions, context.loc.funny, Colors.orange, fontSize),
+              categoryCard(Icons.people, context.loc.friendship, Colors.blue, fontSize),
+              categoryCard(Icons.self_improvement, context.loc.life, Colors.purple, fontSize),
+            ],
           ),
         ),
-      ),
+      ],
     );
   }
 
@@ -850,26 +1004,41 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // Update the categoryCard function in your HomeScreen class
   Widget categoryCard(
       IconData icon, String title, Color color, double fontSize) {
-    return Padding(
-      padding: EdgeInsets.only(right: 12),
-      child: Column(
-        children: [
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12),
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => CategoryScreen(
+              categoryName: title,
+              categoryColor: color,
+              categoryIcon: icon,
             ),
-            child: Icon(icon, color: color, size: 30),
           ),
-          SizedBox(height: 5),
-          Text(title,
-              style: GoogleFonts.poppins(
-                  fontSize: fontSize - 2, fontWeight: FontWeight.w500)),
-        ],
+        );
+      },
+      child: Padding(
+        padding: EdgeInsets.only(right: 12),
+        child: Column(
+          children: [
+            Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: color, size: 30),
+            ),
+            SizedBox(height: 5),
+            Text(title,
+                style: GoogleFonts.poppins(
+                    fontSize: fontSize - 2, fontWeight: FontWeight.w500)),
+          ],
+        ),
       ),
     );
   }
