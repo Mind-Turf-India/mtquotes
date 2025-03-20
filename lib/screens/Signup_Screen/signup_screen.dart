@@ -158,7 +158,7 @@ class _SignupScreenState extends State<SignupScreen> {
         'createdAt': FieldValue.serverTimestamp(), // Latest login time
         'referralCode': referralCode,
         'referrerUid': null,
-        'rewardPoints': 0,
+        'rewardPoints': 100,
         'previousRewardPoints': 0,
         'isSubscribed': false,
       };
@@ -179,7 +179,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
           // Update user data with referrer info
           userData['referrerUid'] = referrerUid;
-          userData['rewardPoints'] = 50; // Reward for using a referral
+          userData['rewardPoints'] += 100; // Reward for using a referral
 
           // Grant reward points to referrer
           await FirebaseFirestore.instance.collection('users').doc(referrerUid).update({

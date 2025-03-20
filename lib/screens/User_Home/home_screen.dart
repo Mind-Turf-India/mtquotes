@@ -12,6 +12,7 @@ import 'package:mtquotes/screens/Templates/components/totd/totd_handler.dart';
 import 'package:mtquotes/screens/Templates/components/totd/totd_service.dart';
 import 'package:mtquotes/screens/Templates/subscription_popup.dart';
 import 'package:mtquotes/screens/Templates/components/template/template_section.dart';
+import 'package:mtquotes/screens/User_Home/components/daily_check_in.dart';
 import 'package:mtquotes/screens/User_Home/components/notifications.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mtquotes/screens/User_Home/profile_screen.dart';
@@ -50,6 +51,13 @@ class _HomeScreenState extends State<HomeScreen> {
   List<TimeOfDayPost> _timeOfDayPosts = [];
   bool _loadingTimeOfDay = false;
   String _currentTimeOfDay = '';
+  //daily check in impl
+  bool isCheckingReward = false;
+ bool isLoadingPoints = false;
+  bool isLoadingStreak = false;
+  int userRewardPoints = 0;
+  int checkInStreak = 0;
+
 
   @override
   void initState() {
@@ -60,7 +68,138 @@ class _HomeScreenState extends State<HomeScreen> {
     _checkUserProfile();
     _fetchFestivalPosts();
     _fetchTimeOfDayPosts();
+    // Delay the check slightly to ensure UI is fully rendered
+  Future.delayed(const Duration(milliseconds: 1000), () {
+    checkDailyReward();
+  });
+  
+  // Load initial points
+  fetchUserRewardPoints();
+  fetchCheckInStreak();
   }
+
+  //daily check in
+ void checkDailyReward() async {
+  try {
+    // Ensure the widget is still mounted
+    if (!mounted) {
+      print("HomeScreen not mounted, can't process daily check-in");
+      return;
+    }
+
+    print("Checking daily reward eligibility...");
+    
+    // Show loading indicator
+    setState(() {
+      isCheckingReward = true;
+    });
+    
+    // Check eligibility
+    bool isEligible = await DailyCheckInService.isEligibleForDailyReward();
+    
+    print("User is eligible for daily reward: $isEligible");
+    
+    if (isEligible && mounted) {
+      // Process the check-in with the current context
+      bool processed = await DailyCheckInService.processDailyCheckIn(context);
+      
+      print("Daily check-in processed: $processed");
+      
+      if (processed && mounted) {
+        // Wait a short moment to ensure Firebase has updated
+        await Future.delayed(const Duration(milliseconds: 500));
+        
+        // Refresh user data to show updated points
+        await fetchUserRewardPoints();
+        
+        // Optionally fetch streak
+        await fetchCheckInStreak();
+      }
+    } else {
+      print("User not eligible for daily reward");
+    }
+    
+    // Hide loading indicator if still mounted
+    if (mounted) {
+      setState(() {
+        isCheckingReward = false;
+      });
+    }
+  } catch (e) {
+    print("Error in checkDailyReward: $e");
+    
+    // Hide loading indicator in case of error
+    if (mounted) {
+      setState(() {
+        isCheckingReward = false;
+      });
+    }
+  }
+}
+
+// Function to fetch and update user reward points
+Future<void> fetchUserRewardPoints() async {
+  try {
+    print("Fetching user reward points...");
+    
+    // Show loading indicator
+    if (mounted) {
+      setState(() {
+        isLoadingPoints = true;
+      });
+    }
+    
+    // Get points from service
+    int points = await DailyCheckInService.getUserRewardPoints();
+    
+    print("Fetched user reward points: $points");
+    
+    // Update UI if widget is still mounted
+    if (mounted) {
+      setState(() {
+        userRewardPoints = points;
+        isLoadingPoints = false;
+      });
+    }
+  } catch (e) {
+    print("Error fetching reward points: $e");
+    
+    // Hide loading indicator in case of error
+    if (mounted) {
+      setState(() {
+        isLoadingPoints = false;
+      });
+    }
+  }
+}
+
+// Function to fetch check-in streak
+Future<void> fetchCheckInStreak() async {
+  try {
+    if (!mounted) return;
+    
+    setState(() {
+      isLoadingStreak = true;
+    });
+    
+    int streak = await DailyCheckInService.getCheckInStreak();
+    
+    if (mounted) {
+      setState(() {
+        checkInStreak = streak;
+        isLoadingStreak = false;
+      });
+    }
+  } catch (e) {
+    print("Error fetching check-in streak: $e");
+    
+    if (mounted) {
+      setState(() {
+        isLoadingStreak = false;
+      });
+    }
+  }
+}
 
   //totd
   Future<void> _fetchTimeOfDayPosts() async {
@@ -193,6 +332,7 @@ class _HomeScreenState extends State<HomeScreen> {
         userName = data['name'] ?? '';
         profileImageUrl =
             data.containsKey('profileImage') ? data['profileImage'] : null;
+        userRewardPoints = data['rewardPoints'] ?? 0;
       });
     }
   }
