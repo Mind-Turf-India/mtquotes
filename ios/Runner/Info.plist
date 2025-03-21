@@ -18,6 +18,14 @@
 	</dict>
 </array>
 <!-- End of the Google Sign-in Section -->
+<!-- Start of payment -->
+<key>LSApplicationQueriesSchemes</key>
+<array>
+  <string>upi</string>
+  <string>gpay</string>
+  <string>phonepe</string>
+  <string>paytm</string>
+</array>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>

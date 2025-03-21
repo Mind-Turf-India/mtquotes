@@ -19,17 +19,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Subscription'),
-        centerTitle: true,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back),
+          icon: Icon(Icons.arrow_back_ios),
           onPressed: () => Navigator.pop(context),
         ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.notifications_outlined),
-            onPressed: () {},
-          ),
-        ],
       ),
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
@@ -87,6 +80,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 false,
                 0,
                 null,
+                null,
               ),
               amount: '19',
               trialDays: 0,
@@ -120,6 +114,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 true,
                 0,
                 'monthly',
+                null,
               ),
               amount: '99',
               trialDays: 0,
@@ -155,6 +150,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 true,
                 3,
                 'quarterly',
+                '290',
               ),
               amount: '299',
               trialDays: 3,
@@ -190,6 +186,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 true,
                 0,
                 'annual',
+                null,
               ),
               amount: '499',
               trialDays: 0,
@@ -207,7 +204,15 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       bool isSubscription,
       int trialDays,
       String? recurringType,
+      String? fullAmount,
       ) {
+    setState(() {
+      _isLoading = true;
+    });
+
+    // Create an entry in Firebase to track this payment initiation
+    // This can be done here or within the PaymentScreen
+
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -218,10 +223,15 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           isSubscription: isSubscription,
           trialDays: trialDays,
           recurringType: recurringType,
-          fullAmount: trialDays > 0 ? '290' : amount,
+          fullAmount: fullAmount ?? amount,
         ),
       ),
-    );
+    ).then((_) {
+      // When returning from payment screen
+      setState(() {
+        _isLoading = false;
+      });
+    });
   }
 
   Widget _buildPlanCard({
@@ -293,7 +303,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                           ],
                         ),
                       ],
-                      if (trialDays > 0) ...[
+                      if (trialDays > 0 && trialAmount != null) ...[
                         SizedBox(height: 4),
                         Text(
                           '₹$trialAmount for first $trialDays days',

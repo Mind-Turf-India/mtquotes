@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'subscription_service.dart';
+import 'subscription_service.dart'; // Make sure this points to your SubscriptionService class, not SubscriptionScreen
 
 class SubscriptionManager {
   static final SubscriptionManager _instance = SubscriptionManager._internal();
@@ -14,7 +14,7 @@ class SubscriptionManager {
 
   SubscriptionManager._internal();
 
-  final SubscriptionService _subscriptionService = SubscriptionService();
+  final SubscriptionService _subscriptionService = SubscriptionService(); // Changed from SubscriptionScreen to SubscriptionService
   Timer? _checkSubscriptionTimer;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -70,7 +70,8 @@ class SubscriptionManager {
           await _subscriptionService.processSubscriptionRenewal();
         } else {
           // If auto-renew is off, mark subscription as inactive
-          await _firestore.collection('users').doc(user.uid).update({
+          final String docId = user.email!.replaceAll('.', '_');
+          await _firestore.collection('users').doc(docId).update({
             'isActive': false,
           });
         }
@@ -86,7 +87,8 @@ class SubscriptionManager {
           // If trial has ended, process the full payment
           if (now.isAfter(trialEndDate)) {
             // Update trial status
-            await _firestore.collection('users').doc(user.uid).update({
+            final String docId = user.email!.replaceAll('.', '_');
+            await _firestore.collection('users').doc(docId).update({
               'inTrial': false,
             });
 

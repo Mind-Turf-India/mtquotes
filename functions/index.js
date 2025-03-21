@@ -2,256 +2,545 @@ const functions = require("firebase-functions");
 const functionsV2 = require("firebase-functions/v2");
 const admin = require("firebase-admin");
 const { DateTime } = require("luxon");
+const { onDocumentUpdated } = require('firebase-functions/v2/firestore');
 
 admin.initializeApp();
 
 // ================ SUBSCRIPTION MANAGEMENT FUNCTIONS ================
 
-// Scheduled function to check for subscriptions that need renewal
-exports.checkSubscriptionRenewals = functionsV2.scheduler
-  .onSchedule({
-    schedule: "every 24 hours",
-    timeZone: "Asia/Kolkata", // Add your preferred timezone
-  }, async (context) => {
-    const db = admin.firestore();
-    const now = admin.firestore.Timestamp.now();
+const db = admin.firestore();
 
-    try {
-      // Get all active subscriptions
-      const subscriptionsQuery = await db.collection("users")
-        .where("isActive", "==", true)
-        .where("autoRenew", "==", true)
-        .get();
-
-      let renewalCount = 0;
-
-      for (const doc of subscriptionsQuery.docs) {
-        const userData = doc.data();
-
-        // Check if subscription is due for renewal (within 24 hours)
-        if (userData.subscriptionEndDate && userData.subscriptionEndDate.toDate() <= new Date(Date.now() + 24 * 60 * 60 * 1000)) {
-          await processRenewal(doc.id, userData);
-          renewalCount++;
-        }
-
-        // Check if trial period is ending
-        if (userData.inTrial && userData.trialEndDate && userData.trialEndDate.toDate() <= new Date(Date.now() + 24 * 60 * 60 * 1000)) {
-          await processTrialEnd(doc.id, userData);
-        }
-      }
-
-      functions.logger.info(`Processed ${renewalCount} subscription renewals`);
-      return null;
-    } catch (error) {
-      functions.logger.error("Error checking subscription renewals:", error);
-      return null;
-    }
-  });
-
-// Function to process a subscription renewal
-async function processRenewal(userId, userData) {
-  const db = admin.firestore();
-
+exports.migrateUserSubscriptionFields = functions.https.onRequest(async (req, res) => {
   try {
-    const subscriptionType = userData.subscriptionType || "monthly";
-    const now = new Date();
-    let newEndDate;
+    const usersSnapshot = await admin.firestore().collection('users').get();
+    const batch = admin.firestore().batch();
 
-    // Calculate new end date based on subscription type
-    switch (subscriptionType) {
-      case "monthly":
-        newEndDate = new Date(now.getFullYear(), now.getMonth() + 1, now.getDate());
-        break;
-      case "quarterly":
-        newEndDate = new Date(now.getFullYear(), now.getMonth() + 3, now.getDate());
-        break;
-      case "annual":
-        newEndDate = new Date(now.getFullYear() + 1, now.getMonth(), now.getDate());
-        break;
-      default:
-        newEndDate = new Date(now.getFullYear(), now.getMonth() + 1, now.getDate());
-    }
+    usersSnapshot.forEach(doc => {
+      const userData = doc.data();
 
-    // Update subscription end date
-    await db.collection("users").doc(userId).update({
-      subscriptionEndDate: admin.firestore.Timestamp.fromDate(newEndDate),
-      lastRenewalDate: admin.firestore.Timestamp.now()
+      // Set subscription fields based on current user data
+      batch.update(doc.ref, {
+        subscriptionStatus: userData.isSubscribed ? "active" : "none",
+        currentPlan: userData.isSubscribed ? "Monthly Plan" : "free", // Assumption - change as needed
+        points: userData.rewardPoints || 0,
+        subscriptionEndDate: null, // Will be populated when they subscribe
+        isTrial: false,
+        recurringType: null,
+        dailyTemplateLimit: userData.isSubscribed ? 10 : 0, // Assumption
+        availableTemplates: 0,
+        canEdit: userData.isSubscribed
+      });
     });
 
-    // Log the renewal
-    await db.collection("subscription_events").add({
-      userId: userId,
-      event: "renewal",
-      subscriptionType: subscriptionType,
-      amount: getSubscriptionAmount(subscriptionType),
-      timestamp: admin.firestore.Timestamp.now()
-    });
-
-    functions.logger.info(`Renewed subscription for user ${userId}`);
+    await batch.commit();
+    res.status(200).send(`Migrated ${usersSnapshot.size} users`);
   } catch (error) {
-    functions.logger.error(`Error processing renewal for user ${userId}:`, error);
+    console.error('Migration error:', error);
+    res.status(500).send(`Error: ${error.message}`);
   }
-}
+});
 
-// Function to process the end of a trial period
-async function processTrialEnd(userId, userData) {
-  const db = admin.firestore();
-
+// Webhook endpoint to receive payment status updates from your payment gateway
+exports.upiWebhook = functions.https.onRequest(async (req, res) => {
   try {
-    const subscriptionType = userData.subscriptionType || "monthly";
-    const fullAmount = userData.nextBillingAmount || getSubscriptionAmount(subscriptionType);
-
-    // Mark trial as ended
-    await db.collection("users").doc(userId).update({
-      inTrial: false,
-      lastPaymentDate: admin.firestore.Timestamp.now(),
-      lastPaymentAmount: fullAmount
-    });
-
-    // Log the trial end
-    await db.collection("subscription_events").add({
-      userId: userId,
-      event: "trial_ended",
-      subscriptionType: subscriptionType,
-      fullAmount: fullAmount,
-      timestamp: admin.firestore.Timestamp.now()
-    });
-
-    functions.logger.info(`Processed trial end for user ${userId}`);
-  } catch (error) {
-    functions.logger.error(`Error processing trial end for user ${userId}:`, error);
-  }
-}
-
-// Helper function to get subscription amount based on type
-function getSubscriptionAmount(subscriptionType) {
-  switch (subscriptionType) {
-    case "monthly":
-      return 99;
-    case "quarterly":
-      return 299;
-    case "annual":
-      return 499;
-    case "perTemplate":
-      return 19;
-    default:
-      return 99;
-  }
-}
-
-// Function triggered when a payment is recorded
-exports.onPaymentReceived = functionsV2.firestore
-  .onDocumentCreated("transactions/{transactionId}", async (event) => {
-    const snapshot = event.data;
-    if (!snapshot) return null;
-
-    const payment = snapshot.data();
-    const userId = payment.userId;
-
-    if (!userId || payment.status !== "success") {
-      return null;
+    // Verify the request source using a secret key or signature
+    // This is important for security
+    const apiKey = req.headers['x-api-key'];
+    if (apiKey !== functions.config().payment?.webhook_secret) {
+      res.status(401).send('Unauthorized');
+      return;
     }
 
-    try {
-      const db = admin.firestore();
-      const userRef = db.collection("users").doc(userId);
+    const { transactionId, status, referenceId } = req.body;
 
-      // If this is a template purchase, add points
-      if (payment.planType === "Per Template") {
+    // Validate required fields
+    if (!transactionId || !status) {
+      res.status(400).send('Invalid request payload');
+      return;
+    }
+
+    // Check if the transaction exists
+    const paymentRef = db.collection('payments').doc(transactionId);
+    const paymentDoc = await paymentRef.get();
+
+    if (!paymentDoc.exists) {
+      res.status(404).send('Transaction not found');
+      return;
+    }
+
+    const paymentData = paymentDoc.data();
+
+    // Update payment status
+    await paymentRef.update({
+      status: status,
+      referenceId: referenceId || null,
+      lastUpdated: admin.firestore.FieldValue.serverTimestamp(),
+      statusDetails: req.body
+    });
+
+    // If payment is successful, update user subscription
+    if (status === 'success') {
+      const userId = paymentData.userId;
+
+      // Get user document
+      const userRef = db.collection('users').doc(userId);
+      const userDoc = await userRef.get();
+
+      if (userDoc.exists) {
+        // Update user's subscription status
         await userRef.update({
-          points: admin.firestore.FieldValue.increment(20)
+          subscriptionStatus: 'active',
+          lastPaymentDate: admin.firestore.FieldValue.serverTimestamp(),
+          paymentVerified: true
         });
 
-        functions.logger.info(`Added 20 points to user ${userId}`);
-        return null;
-      }
-
-      // If this is a subscription payment, update subscription details
-      if (payment.isSubscription) {
-        const now = new Date();
-        let endDate;
-
-        // Calculate subscription end date
-        switch (payment.recurringType) {
-          case "monthly":
-            endDate = new Date(now.getFullYear(), now.getMonth() + 1, now.getDate());
-            break;
-          case "quarterly":
-            if (payment.trialDays > 0) {
-              // First set trial end date
-              const trialEndDate = new Date(now.getTime() + payment.trialDays * 24 * 60 * 60 * 1000);
-              endDate = new Date(trialEndDate.getFullYear(), trialEndDate.getMonth() + 3, trialEndDate.getDate());
-            } else {
-              endDate = new Date(now.getFullYear(), now.getMonth() + 3, now.getDate());
-            }
-            break;
-          case "annual":
-            endDate = new Date(now.getFullYear() + 1, now.getMonth(), now.getDate());
-            break;
-          default:
-            endDate = new Date(now.getFullYear(), now.getMonth() + 1, now.getDate());
+        // If it's a subscription, check if we need to add points
+        if (paymentData.planType === 'Per Template') {
+          // Add points to user balance
+          const currentPoints = userDoc.data().points || 0;
+          await userRef.update({
+            points: currentPoints + 20 // 20 points for Per Template plan
+          });
         }
-
-        const subscriptionData = {
-          activePlan: payment.planType,
-          subscriptionType: payment.recurringType,
-          subscriptionEndDate: admin.firestore.Timestamp.fromDate(endDate),
-          isActive: true,
-          autoRenew: true,
-          lastPaymentDate: admin.firestore.Timestamp.now(),
-          lastPaymentAmount: payment.amount
-        };
-
-        // Handle trial periods
-        if (payment.trialDays > 0) {
-          const trialEndDate = new Date(now.getTime() + payment.trialDays * 24 * 60 * 60 * 1000);
-          subscriptionData.inTrial = true;
-          subscriptionData.trialEndDate = admin.firestore.Timestamp.fromDate(trialEndDate);
-          subscriptionData.nextBillingDate = admin.firestore.Timestamp.fromDate(trialEndDate);
-          subscriptionData.nextBillingAmount = payment.fullAmount || "290";
-        } else {
-          subscriptionData.inTrial = false;
-        }
-
-        await userRef.update(subscriptionData);
-
-        functions.logger.info(`Updated subscription for user ${userId}`);
       }
-
-      return null;
-    } catch (error) {
-      functions.logger.error(`Error processing payment for user ${userId}:`, error);
-      return null;
-    }
-  });
-
-// Function to handle subscription cancellations
-exports.onSubscriptionCancel = functionsV2.firestore
-  .onDocumentCreated("subscription_events/{eventId}", async (event) => {
-    const snapshot = event.data;
-    if (!snapshot) return null;
-
-    const event_data = snapshot.data();
-
-    if (event_data.event !== "cancel") {
-      return null;
     }
 
-    const userId = event_data.userId;
+    res.status(200).send({ success: true });
+  } catch (error) {
+    console.error('Error in UPI webhook:', error);
+    res.status(500).send({ error: error.message });
+  }
+});
 
-    try {
-      const db = admin.firestore();
-      await db.collection("users").doc(userId).update({
-        autoRenew: false
+// Scheduled function to check for trial period expiration and handle subscription renewals
+// Using Firebase Functions v2 for scheduled functions
+exports.manageSubscriptions = functionsV2.scheduler
+  .onSchedule({
+  schedule: 'every 24 hours',
+  timeZone: 'Asia/Kolkata', // Use the appropriate timezone for your region
+}, async (context) => {
+  const now = admin.firestore.Timestamp.now();
+
+  try {
+    // Find users with active subscriptions that are in trial
+    const trialUsersQuery = await db.collection('users')
+      .where('subscriptionStatus', '==', 'active')
+      .where('isTrial', '==', true)
+      .where('subscriptionEndDate', '<=', now)
+      .get();
+
+    // Process trial expirations
+    const trialExpireBatch = db.batch();
+    trialUsersQuery.forEach(doc => {
+      const userData = doc.data();
+
+      // If it was a trial, create a new payment record for the full amount
+      if (userData.transactionId) {
+        const paymentRef = db.collection('payments').doc(); // New payment doc
+        trialExpireBatch.set(paymentRef, {
+          userId: doc.id,
+          userName: userData.name || userData.userName,
+          planType: userData.currentPlan,
+          amount: userData.fullAmount || userData.amount,
+          transactionId: paymentRef.id,
+          paymentNote: `Renewal after trial for ${userData.currentPlan}`,
+          timestamp: now,
+          status: 'pending',
+          paymentMethod: 'automatic-renewal',
+          isSubscription: true,
+          recurringType: userData.recurringType,
+          startDate: now,
+          endDate: calculateEndDate(now, userData.recurringType),
+          isTrial: false,
+        });
+
+        // Update user record
+        trialExpireBatch.update(doc.ref, {
+          isTrial: false,
+          subscriptionStatus: 'pending_renewal',
+          paymentDue: true,
+          paymentDueDate: now,
+          paymentAmount: userData.fullAmount || userData.amount,
+          transactionId: paymentRef.id
+        });
+      }
+    });
+
+    // Commit all trial expiration updates
+    if (trialUsersQuery.size > 0) {
+      await trialExpireBatch.commit();
+      console.log(`Processed ${trialUsersQuery.size} trial expirations`);
+    }
+
+    // Find subscriptions that need renewal
+    const renewalQuery = await db.collection('users')
+      .where('subscriptionStatus', '==', 'active')
+      .where('isTrial', '==', false)
+      .where('subscriptionEndDate', '<=', now)
+      .get();
+
+    // Process renewals
+    const renewalBatch = db.batch();
+    renewalQuery.forEach(doc => {
+      const userData = doc.data();
+
+      // Create a new payment record for renewal
+      const paymentRef = db.collection('payments').doc(); // New payment doc
+      renewalBatch.set(paymentRef, {
+        userId: doc.id,
+        userName: userData.name || userData.userName,
+        planType: userData.currentPlan,
+        amount: userData.amount,
+        transactionId: paymentRef.id,
+        paymentNote: `Renewal for ${userData.currentPlan}`,
+        timestamp: now,
+        status: 'pending',
+        paymentMethod: 'automatic-renewal',
+        isSubscription: true,
+        recurringType: userData.recurringType,
+        startDate: now,
+        endDate: calculateEndDate(now, userData.recurringType),
+        isTrial: false,
       });
 
-      functions.logger.info(`Marked subscription as cancelled for user ${userId}`);
-      return null;
-    } catch (error) {
-      functions.logger.error(`Error processing subscription cancellation for user ${userId}:`, error);
-      return null;
+      // Update user record
+      renewalBatch.update(doc.ref, {
+        subscriptionStatus: 'pending_renewal',
+        paymentDue: true,
+        paymentDueDate: now,
+        paymentAmount: userData.amount,
+        transactionId: paymentRef.id
+      });
+    });
+
+    // Commit all renewal updates
+    if (renewalQuery.size > 0) {
+      await renewalBatch.commit();
+      console.log(`Processed ${renewalQuery.size} subscription renewals`);
     }
+
+    return null;
+  } catch (error) {
+    console.error('Error managing subscriptions:', error);
+    return null;
+  }
+});
+
+// Helper function to calculate subscription end date
+function calculateEndDate(startDate, recurringType) {
+  const start = startDate.toDate();
+  let end;
+
+  switch (recurringType) {
+    case 'monthly':
+      end = new Date(start);
+      end.setMonth(end.getMonth() + 1);
+      break;
+    case 'quarterly':
+      end = new Date(start);
+      end.setMonth(end.getMonth() + 3);
+      break;
+    case 'annual':
+      end = new Date(start);
+      end.setFullYear(end.getFullYear() + 1);
+      break;
+    default:
+      end = new Date(start);
+      end.setMonth(end.getMonth() + 1); // Default to monthly
+  }
+
+  return admin.firestore.Timestamp.fromDate(end);
+}
+
+// Upgrade user from free to pro when payment is successful
+
+exports.onPaymentStatusChange = onDocumentUpdated('payments/{paymentId}', (event) => {
+  const before = event.data.before.data();
+  const after = event.data.after.data();
+
+    // Only proceed if status changed from pending to success
+    if (before.status !== 'success' && after.status === 'success') {
+      const userId = after.userId;
+
+      return db.collection('users')
+        .doc(userId)
+        .get()
+        .then(userSnapshot => {
+          if (!userSnapshot.exists) {
+            console.error(`User ${userId} not found for successful payment ${context.params.paymentId}`);
+            return null;
+          }
+
+          const userData = userSnapshot.data();
+
+          // Determine plan benefits based on plan type
+          let updateData = {
+            subscriptionStatus: 'active',
+            lastSuccessfulPayment: admin.firestore.FieldValue.serverTimestamp(),
+            currentPlan: after.planType,
+          };
+
+          // If it's a one-time purchase (Per Template)
+          if (after.planType === 'Per Template') {
+            updateData.points = (userData.points || 0) + 20;
+            updateData.availableTemplates = (userData.availableTemplates || 0) + 1;
+          }
+          // If it's a subscription plan
+          else if (after.isSubscription) {
+            const now = admin.firestore.Timestamp.now();
+            updateData.subscriptionStartDate = after.startDate || now;
+            updateData.subscriptionEndDate = after.endDate || calculateEndDate(now, after.recurringType);
+            updateData.isTrial = after.isTrial || false;
+            updateData.recurringType = after.recurringType;
+
+            // Set template limits based on plan
+            if (after.planType === 'Monthly Plan') {
+              updateData.dailyTemplateLimit = 10;
+              updateData.canEdit = true;
+            } else if (after.planType === 'Quarterly Plan' || after.planType === 'Annual Plan') {
+              updateData.dailyTemplateLimit = -1; // Unlimited
+              updateData.canEdit = true;
+            }
+          }
+
+          // Update user document
+          return db.collection('users')
+            .doc(userId)
+            .update(updateData)
+            .then(() => {
+              console.log(`Successfully processed payment ${context.params.paymentId} for user ${userId}`);
+              return null;
+            });
+        })
+        .catch(error => {
+          console.error(`Error processing payment success for ${context.params.paymentId}:`, error);
+          return null;
+        });
+    }
+
+    return null;
   });
+
+// Function to handle UPI callback or simulate payment verification (for testing)
+exports.verifyUpiPayment = functions.https.onCall(async (data, context) => {
+  // Ensure user is authenticated
+  if (!context.auth) {
+    throw new functions.https.HttpsError(
+      'unauthenticated',
+      'User must be authenticated to verify payments'
+    );
+  }
+
+  const { transactionId } = data;
+
+  if (!transactionId) {
+    throw new functions.https.HttpsError(
+      'invalid-argument',
+      'Transaction ID is required'
+    );
+  }
+
+  try {
+    // Check if transaction exists
+    const paymentRef = db.collection('payments').doc(transactionId);
+    const paymentDoc = await paymentRef.get();
+
+    if (!paymentDoc.exists) {
+      throw new functions.https.HttpsError(
+        'not-found',
+        'Transaction not found'
+      );
+    }
+
+    const paymentData = paymentDoc.data();
+
+    // Security check: Only allow users to verify their own payments
+    if (paymentData.userId !== context.auth.uid) {
+      throw new functions.https.HttpsError(
+        'permission-denied',
+        'Users can only verify their own payments'
+      );
+    }
+
+    // For testing/demo purposes - In production, this would connect to your payment gateway API
+    // This function allows manual verification in the app for testing
+    await paymentRef.update({
+      status: 'success',
+      lastUpdated: admin.firestore.FieldValue.serverTimestamp(),
+      manualVerification: true
+    });
+
+    return { success: true, message: 'Payment verified successfully' };
+  } catch (error) {
+    console.error('Error verifying payment:', error);
+    throw new functions.https.HttpsError('internal', error.message);
+  }
+});
+
+// Function to cancel a user's subscription
+exports.cancelSubscription = functions.https.onCall(async (data, context) => {
+  // Ensure user is authenticated
+  if (!context.auth) {
+    throw new functions.https.HttpsError(
+      'unauthenticated',
+      'User must be authenticated to cancel subscription'
+    );
+  }
+
+  try {
+    const userId = context.auth.uid;
+    const userRef = db.collection('users').doc(userId);
+    const userDoc = await userRef.get();
+
+    if (!userDoc.exists) {
+      throw new functions.https.HttpsError('not-found', 'User not found');
+    }
+
+    const userData = userDoc.data();
+
+    // Check if user has an active subscription
+    if (userData.subscriptionStatus !== 'active') {
+      throw new functions.https.HttpsError(
+        'failed-precondition',
+        'No active subscription to cancel'
+      );
+    }
+
+    // Update user document
+    await userRef.update({
+      subscriptionStatus: 'cancelled',
+      cancellationDate: admin.firestore.FieldValue.serverTimestamp(),
+      // The subscription remains active until the end date
+      willExpireOn: userData.subscriptionEndDate
+    });
+
+    // Log the cancellation in a separate collection for record-keeping
+    await db.collection('cancellations').add({
+      userId: userId,
+      userName: userData.name || userData.userName,
+      planType: userData.currentPlan,
+      cancellationDate: admin.firestore.FieldValue.serverTimestamp(),
+      subscriptionEndDate: userData.subscriptionEndDate,
+      reason: data.reason || 'Not specified'
+    });
+
+    return {
+      success: true,
+      message: 'Subscription cancelled successfully',
+      activeUntil: userData.subscriptionEndDate
+    };
+  } catch (error) {
+    console.error('Error cancelling subscription:', error);
+    throw new functions.https.HttpsError('internal', error.message);
+  }
+});
+
+// Add points to a user's account (for admins or system events)
+exports.addPoints = functions.https.onCall(async (data, context) => {
+  // Check if the caller is an admin
+  if (!context.auth?.token?.admin) {
+    throw new functions.https.HttpsError(
+      'permission-denied',
+      'Only admins can add points'
+    );
+  }
+
+  const { userId, points, reason } = data;
+
+  if (!userId || !points || points <= 0) {
+    throw new functions.https.HttpsError(
+      'invalid-argument',
+      'Valid user ID and positive points value required'
+    );
+  }
+
+  try {
+    // Get current points
+    const userRef = db.collection('users').doc(userId);
+    const userDoc = await userRef.get();
+
+    if (!userDoc.exists) {
+      throw new functions.https.HttpsError('not-found', 'User not found');
+    }
+
+    const currentPoints = userDoc.data().points || 0;
+
+    // Update points
+    await userRef.update({
+      points: currentPoints + points
+    });
+
+    // Log the points transaction
+    await db.collection('pointsTransactions').add({
+      userId: userId,
+      points: points,
+      type: 'credit',
+      reason: reason || 'Admin adjustment',
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      adminId: context.auth.uid
+    });
+
+    return {
+      success: true,
+      currentPoints: currentPoints + points
+    };
+  } catch (error) {
+    console.error('Error adding points:', error);
+    throw new functions.https.HttpsError('internal', error.message);
+  }
+});
+
+// Function to check if a payment was successful when UPI app returns to the app
+exports.checkPaymentStatus = functions.https.onCall(async (data, context) => {
+  // Ensure user is authenticated
+  if (!context.auth) {
+    throw new functions.https.HttpsError(
+      'unauthenticated',
+      'User must be authenticated to check payment status'
+    );
+  }
+
+  const { transactionId } = data;
+
+  if (!transactionId) {
+    throw new functions.https.HttpsError(
+      'invalid-argument',
+      'Transaction ID is required'
+    );
+  }
+
+  try {
+    // Get payment document
+    const paymentRef = db.collection('payments').doc(transactionId);
+    const paymentDoc = await paymentRef.get();
+
+    if (!paymentDoc.exists) {
+      throw new functions.https.HttpsError('not-found', 'Transaction not found');
+    }
+
+    const paymentData = paymentDoc.data();
+
+    // Security check: Only allow users to check their own payments
+    if (paymentData.userId !== context.auth.uid) {
+      throw new functions.https.HttpsError(
+        'permission-denied',
+        'Users can only check their own payments'
+      );
+    }
+
+    // In a real-world scenario, you would call your payment gateway's API to check the status
+    // For demo purposes, we'll just return the current status
+    return {
+      status: paymentData.status,
+      timestamp: paymentData.timestamp,
+      amount: paymentData.amount,
+      planType: paymentData.planType
+    };
+  } catch (error) {
+    console.error('Error checking payment status:', error);
+    throw new functions.https.HttpsError('internal', error.message);
+  }
+});
 
 // ================ NOTIFICATION FUNCTIONS ================
 

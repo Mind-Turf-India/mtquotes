@@ -12,8 +12,8 @@ class SubscriptionService {
       if (user == null) {
         throw Exception('User not authenticated');
       }
-
-      DocumentSnapshot doc = await _firestore.collection('users').doc(user.uid).get();
+      final String docId = user.email!.replaceAll('.', '_');
+      DocumentSnapshot doc = await _firestore.collection('users').doc(docId).get();
       if (!doc.exists) {
         return null;
       }
@@ -46,8 +46,9 @@ class SubscriptionService {
       if (user == null) {
         throw Exception('User not authenticated');
       }
+      final String docId = user.email!.replaceAll('.', '_');
 
-      await _firestore.collection('users').doc(user.uid).update({
+      await _firestore.collection('users').doc(docId).update({
         'autoRenew': false,
       });
 
@@ -138,8 +139,8 @@ class SubscriptionService {
         // Default to monthly
         newEndDate = DateTime(endDate.year, endDate.month + 1, endDate.day);
       }
-
-      await _firestore.collection('users').doc(user.uid).update({
+      final String docId = user.email!.replaceAll('.', '_');
+      await _firestore.collection('users').doc(docId).update({
         'subscriptionEndDate': newEndDate,
         'lastRenewalDate': FieldValue.serverTimestamp(),
       });
@@ -193,8 +194,9 @@ class SubscriptionService {
       if (user == null) {
         throw Exception('User not authenticated');
       }
+      final String docId = user.email!.replaceAll('.', '_');
 
-      await _firestore.collection('users').doc(user.uid).update({
+      await _firestore.collection('users').doc(docId).update({
         'points': FieldValue.increment(points),
       });
 
@@ -221,8 +223,9 @@ class SubscriptionService {
         throw Exception('User not authenticated');
       }
 
+      final String docId = user.email!.replaceAll('.', '_');
       // First check if user has enough points
-      DocumentSnapshot doc = await _firestore.collection('users').doc(user.uid).get();
+      DocumentSnapshot doc = await _firestore.collection('users').doc(docId).get();
       if (!doc.exists) {
         return false;
       }
@@ -234,7 +237,7 @@ class SubscriptionService {
         return false; // Not enough points
       }
 
-      await _firestore.collection('users').doc(user.uid).update({
+      await _firestore.collection('users').doc(docId).update({
         'points': FieldValue.increment(-points),
       });
 
@@ -260,8 +263,9 @@ class SubscriptionService {
       if (user == null) {
         throw Exception('User not authenticated');
       }
+      final String docId = user.email!.replaceAll('.', '_');
 
-      DocumentSnapshot doc = await _firestore.collection('users').doc(user.uid).get();
+      DocumentSnapshot doc = await _firestore.collection('users').doc(docId).get();
       if (!doc.exists) {
         return 0;
       }
