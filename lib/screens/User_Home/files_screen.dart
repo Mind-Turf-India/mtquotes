@@ -1,9 +1,13 @@
+import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mtquotes/l10n/app_localization.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:provider/provider.dart';
 import 'package:mtquotes/providers/text_size_provider.dart';
+import 'package:path_provider/path_provider.dart';
+import '../Create_Screen/edit_screen_create.dart';
 
 class FilesPage extends StatefulWidget {
   @override
@@ -17,14 +21,70 @@ class _FilesPageState extends State<FilesPage> {
   final SpeechToText _speechToText = SpeechToText();
   bool _speechEnabled = false;
   bool _isListening = false;
+  bool _isLoading = true;
+  List<FileSystemEntity> _downloadedImages = [];
+  String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
     initSpeech();
+    loadDownloadedImages();
   }
 
-  void initSpeech() async{
+  Future<void> loadDownloadedImages() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      Directory? baseDir;
+
+      if (Platform.isAndroid) {
+        baseDir = Directory('/storage/emulated/0/Pictures/Vaky');
+      } else {
+        baseDir = Directory('${(await getApplicationDocumentsDirectory()).path}/Vaky');
+      }
+
+      // Create directory if it doesn't exist
+      if (!await baseDir.exists()) {
+        await baseDir.create(recursive: true);
+      }
+
+      final List<FileSystemEntity> files = await baseDir.list().toList();
+      // Filter to include only jpg, jpeg, png files
+      final imageFiles = files.where((file) {
+        final path = file.path.toLowerCase();
+        return file is File &&
+            (path.endsWith('.jpg') ||
+                path.endsWith('.jpeg') ||
+                path.endsWith('.png'));
+      }).toList();
+
+      setState(() {
+        _downloadedImages = imageFiles;
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('Error loading downloaded images: $e');
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  List<FileSystemEntity> get filteredImages {
+    if (_searchQuery.isEmpty) {
+      return _downloadedImages;
+    }
+
+    return _downloadedImages.where((file) {
+      final fileName = file.path.split('/').last.toLowerCase();
+      return fileName.contains(_searchQuery.toLowerCase());
+    }).toList();
+  }
+
+  void initSpeech() async {
     _speechEnabled = await _speechToText.initialize();
     setState(() {});
   }
@@ -48,6 +108,7 @@ class _FilesPageState extends State<FilesPage> {
   void _onSpeechResult(result) {
     setState(() {
       _searchController.text = result.recognizedWords;
+      _searchQuery = result.recognizedWords;
     });
   }
 
@@ -56,6 +117,52 @@ class _FilesPageState extends State<FilesPage> {
       _stopListening();
     } else {
       _startListening();
+    }
+  }
+
+  // Method to navigate to template sharing
+  Future<void> _navigateToTemplateSharing(File imageFile) async {
+    try {
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return Center(
+            child: CircularProgressIndicator(),
+          );
+        },
+      );
+
+      // Read the file bytes
+      final Uint8List fileBytes = await imageFile.readAsBytes();
+
+      // Close loading indicator
+      Navigator.of(context).pop();
+
+      // Navigate to EditScreen with the selected image
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => EditScreen(
+            title: 'Edit Template',
+            // Pass null for templateImageUrl since we're directly providing the image data
+            templateImageUrl: null,
+            // Pass the image bytes as a parameter
+            initialImageData: fileBytes,
+          ),
+        ),
+      );
+    } catch (e) {
+      // Close loading indicator if still showing
+      if (Navigator.canPop(context)) {
+        Navigator.of(context).pop();
+      }
+
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error opening image: $e")),
+      );
     }
   }
 
@@ -73,6 +180,13 @@ class _FilesPageState extends State<FilesPage> {
         ),
         backgroundColor: Colors.white,
         elevation: 0,
+        actions: [
+          // Refresh button to reload downloads
+          IconButton(
+            icon: Icon(Icons.refresh, color: Colors.black),
+            onPressed: loadDownloadedImages,
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -100,6 +214,11 @@ class _FilesPageState extends State<FilesPage> {
                   border: InputBorder.none,
                   contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                 ),
+                onChanged: (value) {
+                  setState(() {
+                    _searchQuery = value;
+                  });
+                },
               ),
             ),
             SizedBox(height: 20),
@@ -142,51 +261,102 @@ class _FilesPageState extends State<FilesPage> {
   }
 
   Widget _buildTabContent(int index, double textSize) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (index == 1)
-          SizedBox(height: 300),
-        if (index == 0)
-          SizedBox(
-            height: 900,
-            child: GridView.builder(
-              padding: EdgeInsets.all(10),
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                crossAxisSpacing: 0.6,
-                mainAxisSpacing: 8,
-                childAspectRatio: 0.7,
-              ),
-              itemCount: 9,
-              itemBuilder: (context, index) {
-                return Card(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15),
+    if (index == 0) { // Downloads tab
+      if (_isLoading) {
+        return Center(
+          child: CircularProgressIndicator(),
+        );
+      }
+
+      if (filteredImages.isEmpty) {
+        return Center(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 100.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.image_not_supported, size: 80, color: Colors.grey[400]),
+                SizedBox(height: 16),
+                Text(
+                  'No downloaded images found',
+                  style: GoogleFonts.poppins(
+                    fontSize: textSize + 2,
+                    color: Colors.grey[600],
                   ),
-                  child: Stack(
-                    children: [
-                      Positioned.fill(
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(15),
-                          child: Image.asset(
-                            'assets/sample_image.png',
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        top: 10,
-                        right: 10,
-                        child: Icon(Icons.download, color: Colors.white, size: textSize + 4),
-                      ),
-                    ],
-                  ),
-                );
-              },
+                ),
+              ],
             ),
           ),
-      ],
-    );
+        );
+      }
+
+      return GridView.builder(
+        padding: EdgeInsets.all(10),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 3,
+          crossAxisSpacing: 15,
+          mainAxisSpacing: 10,
+          childAspectRatio: 0.8,
+        ),
+        shrinkWrap: true,
+        physics: NeverScrollableScrollPhysics(),
+        itemCount: filteredImages.length,
+        itemBuilder: (context, index) {
+          final file = filteredImages[index] as File;
+          final fileName = file.path.split('/').last;
+
+          return InkWell(
+            onTap: () {
+              // Navigate to EditScreen with the selected image
+              _navigateToTemplateSharing(file);
+            },
+            child: Padding(
+              padding: EdgeInsets.only(right: 8,bottom: 8),
+              child: Column(
+                children: [
+                  Container(
+                    width: 100,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.file(
+                        file,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 5),
+
+                ],
+              ),
+            ),
+          );
+        },
+      );
+    } else { // Drafts tab
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.only(top: 100.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.edit_document, size: 80, color: Colors.grey[400]),
+              SizedBox(height: 16),
+              Text(
+                'No drafts available',
+                style: GoogleFonts.poppins(
+                  fontSize: textSize + 2,
+                  color: Colors.grey[600],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
   }
 }

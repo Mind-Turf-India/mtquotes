@@ -9,10 +9,13 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:share_plus/share_plus.dart';
 
+import '../User_Home/files_screen.dart';
+
 class EditScreen extends StatefulWidget {
-  EditScreen({Key? key, required this.title, this.templateImageUrl}) : super(key: key);
+  EditScreen({Key? key, required this.title, this.templateImageUrl,this.initialImageData,}) : super(key: key);
   final String title;
   final String? templateImageUrl;
+  final Uint8List? initialImageData;
 
   @override
   State<EditScreen> createState() => _EditScreenState();
@@ -28,6 +31,14 @@ class _EditScreenState extends State<EditScreen> {
   void initState() {
     super.initState();
     if (widget.templateImageUrl != null) {
+      loadTemplateImage(widget.templateImageUrl!);
+    }
+    if (widget.initialImageData != null) {
+      setState(() {
+        imageData = widget.initialImageData;
+        defaultImageLoaded = false;
+      });
+    } else if (widget.templateImageUrl != null) {
       loadTemplateImage(widget.templateImageUrl!);
     }
   }
@@ -139,14 +150,31 @@ class _EditScreenState extends State<EditScreen> {
         await baseDir.create(recursive: true); // Create the folder if it doesn't exist
       }
 
-      String filePath = "${baseDir.path}/edited_image_${DateTime.now().millisecondsSinceEpoch}.jpg";
+      // Use a more descriptive filename with timestamp
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      String filePath = "${baseDir.path}/edited_image_$timestamp.jpg";
       File file = File(filePath);
       await file.writeAsBytes(imageData!);
 
       _hideLoadingIndicator();
 
+      // Show a more informative message
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Image saved to ${baseDir.path}")),
+        SnackBar(
+          content: Text("Image saved to downloads"),
+          action: SnackBarAction(
+            label: 'VIEW',
+            onPressed: () {
+              // Navigate to FilesPage with Downloads tab selected
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => FilesPage(),
+                ),
+              );
+            },
+          ),
+        ),
       );
     } catch (e) {
       _hideLoadingIndicator();
@@ -245,17 +273,17 @@ class _EditScreenState extends State<EditScreen> {
               ),
               child: Text(
                 "Cancel",
-                style: TextStyle(color: Colors.grey, fontSize: 16),
+                style: TextStyle(color: Colors.black, fontSize: 16),
               ),
             ),
             Spacer(),
             IconButton(
-              icon: Icon(Icons.share, color: Colors.grey),
+              icon: Icon(Icons.share, color: Colors.blue),
               onPressed: shareImage,
             ),
             TextButton(
               onPressed: downloadImage,
-              child: Text("Download", style: TextStyle(color: Colors.blue)),
+              child: Text("Download", style: TextStyle(color: Colors.black)),
             ),
           ],
         ),

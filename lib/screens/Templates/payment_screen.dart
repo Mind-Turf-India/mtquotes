@@ -78,13 +78,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
 
   Future<void> _initiatePayment() async {
-    if (_selectedUpiApp == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please select a UPI app')),
-      );
-      return;
-    }
-
     setState(() {
       _isLoading = true;
     });
@@ -105,38 +98,23 @@ class _PaymentScreenState extends State<PaymentScreen> {
       final String upiUrl = _createUpiUrl(docId);
       print("Deeplink: $upiUrl");
 
-      bool launched = false;
+      // Launch the URL without specifying a package, which will
+      // make Android show the app chooser with all compatible apps
+      final Uri uri = Uri.parse(upiUrl);
 
-      if (Platform.isAndroid) {
-        // Use platform channel to launch with specific UPI app
-        try {
-          final Map<String, dynamic> args = {
-            'data': upiUrl,
-            'package': _selectedUpiApp,
-          };
+      if (await canLaunchUrl(uri)) {
+        bool launched = await launchUrl(
+          uri,
+          mode: LaunchMode.externalApplication,
+        );
 
-          launched = await platform.invokeMethod('launchUpiApp', args);
-          print("Launch result: $launched");
-        } catch (e) {
-          print("Method channel error: $e");
-          // If platform channel fails, try direct URL launch
-          final Uri uri = Uri.parse(upiUrl);
-          if (await canLaunchUrl(uri)) {
-            launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
-          }
+        if (launched) {
+          _navigateToSuccessScreen();
+        } else {
+          throw 'Failed to launch UPI apps';
         }
       } else {
-        // For iOS (though UPI is primarily for Android)
-        final Uri uri = Uri.parse(upiUrl);
-        if (await canLaunchUrl(uri)) {
-          launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
-        }
-      }
-
-      if (launched) {
-        _navigateToSuccessScreen();
-      } else {
-        throw 'Could not launch UPI app';
+        throw 'No UPI apps available on this device';
       }
     } catch (e) {
       print("Payment error: ${e.toString()}");
@@ -206,7 +184,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
   String _createUpiUrl(String userId) {
     // Your merchant UPI ID - replace with your actual UPI ID
-    const String merchantUpiId = 'mathuraayush03@okhdfcbank';
+    const String merchantUpiId = '9911002977@okbizaxis';
 
     // Create UPI URL with all necessary parameters
     final String upiUrl = 'upi://pay?pa=$merchantUpiId'
