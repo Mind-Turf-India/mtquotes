@@ -28,6 +28,8 @@ import 'package:mtquotes/screens/Templates/components/festivals/festival_post.da
 import 'package:mtquotes/screens/Templates/components/festivals/festival_service.dart';
 import 'package:mtquotes/screens/Templates/components/festivals/festival_handler.dart';
 import '../Templates/components/festivals/festival_card.dart';
+import '../Templates/components/recent/recent_section.dart';
+import '../Templates/components/recent/recent_service.dart';
 import '../Templates/components/template/template_service.dart';
 import 'components/Categories/category_screen.dart';
 import 'components/templates_list.dart';
@@ -53,10 +55,12 @@ class _HomeScreenState extends State<HomeScreen> {
   String _currentTimeOfDay = '';
   //daily check in impl
   bool isCheckingReward = false;
- bool isLoadingPoints = false;
+  bool isLoadingPoints = false;
   bool isLoadingStreak = false;
   int userRewardPoints = 0;
   int checkInStreak = 0;
+  List<QuoteTemplate> _recentTemplates = [];
+  bool _loadingRecentTemplates = false;
 
 
   @override
@@ -76,6 +80,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // Load initial points
   fetchUserRewardPoints();
   fetchCheckInStreak();
+  _fetchRecentTemplates();
   }
 
   //daily check in
@@ -200,6 +205,90 @@ Future<void> fetchCheckInStreak() async {
     }
   }
 }
+
+//recent
+  Future<void> _fetchRecentTemplates() async {
+    print("FETCHING RECENT TEMPLATES!");
+    setState(() {
+      _loadingRecentTemplates = true;
+    });
+
+    try {
+      final templates = await RecentTemplateService.getRecentTemplates();
+
+      print('RECENT TEMPLATES: Found ${templates.length} templates');
+      for (var template in templates) {
+        print('RECENT: ${template.id} - ${template.title}');
+      }
+
+      if (mounted) {
+        setState(() {
+          _recentTemplates = templates;
+          _loadingRecentTemplates = false;
+        });
+      }
+    } catch (e) {
+      print('Error fetching recent templates: $e');
+      if (mounted) {
+        setState(() {
+          _loadingRecentTemplates = false;
+        });
+      }
+    }
+  }
+
+// Override didChangeDependencies to refresh recent templates when returning to the screen
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _fetchRecentTemplates(); // Refresh recent templates
+  }
+
+// Add a method to manually refresh recent templates
+  void refreshRecentTemplates() {
+    _fetchRecentTemplates();
+  }
+
+// It's also helpful to make sure HomeScreen is listening for navigation events
+  @override
+  void didUpdateWidget(covariant HomeScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _fetchRecentTemplates();
+  }
+
+
+// Add this method to handle template selection
+  void _handleRecentTemplateSelection(QuoteTemplate template) async {
+    try {
+      // Check if premium template and user is premium
+      bool isUserSubscribed = await _templateService.isUserSubscribed();
+
+      if (!template.isPaid || isUserSubscribed) {
+        // Add to recent templates
+        await RecentTemplateService.addRecentTemplate(template);
+
+        // Navigate to template editor
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => EditScreen(
+              title: template.title,
+              templateImageUrl: template.imageUrl,
+            ),
+          ),
+        ).then((_) {
+          // Refresh recent templates when returning to this screen
+          _fetchRecentTemplates();
+        });
+      } else {
+        // Show subscription popup for premium templates
+        SubscriptionPopup.show(context);
+      }
+    } catch (e) {
+      print('Error in _handleRecentTemplateSelection: $e');
+    }
+  }
+
 
   //totd
   Future<void> _fetchTimeOfDayPosts() async {
@@ -549,15 +638,22 @@ Future<void> fetchCheckInStreak() async {
     bool isSubscribed = await _templateService.isUserSubscribed();
 
     if (!template.isPaid || isSubscribed) {
+      // Add to recent templates before navigating
+      await RecentTemplateService.addRecentTemplate(template);
+
       // Navigate to template editor
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => EditScreen(
-            title: 'image',
+            title: template.title,
+            templateImageUrl: template.imageUrl,
           ),
         ),
-      );
+      ).then((_) {
+        // Refresh recent templates when returning to this screen
+        _fetchRecentTemplates();
+      });
     } else {
       // Show subscription popup
       SubscriptionPopup.show(context);
@@ -756,27 +852,143 @@ Future<void> fetchCheckInStreak() async {
                   ],
                 ),
 
-                SizedBox(height: 20),
-                Text(context.loc.recents,
-                    style: GoogleFonts.poppins(
-                        fontSize: fontSize, fontWeight: FontWeight.bold)),
-                SizedBox(height: 10),
-                SizedBox(
-                  height: 120,
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    children: [
-                      quoteCard("Everything requires hard work.", fontSize),
-                      quoteCard("Success comes from daily efforts.", fontSize),
-                      quoteCard("Believe in yourself.", fontSize),
-                      quoteCard("Believe in yourself.", fontSize),
-                      quoteCard("Believe in yourself.", fontSize),
-                    ],
-                  ),
-                ),
-                SizedBox(height: 20),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          context.loc.recents,
+                          style: GoogleFonts.poppins(
+                              fontSize: fontSize, fontWeight: FontWeight.bold),
+                        ),
+                        // Optional: Add a refresh button for testing
+                        IconButton(
+                          icon: Icon(Icons.refresh),
+                          onPressed: refreshRecentTemplates,
+                          tooltip: 'Refresh recent templates',
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 10),
+                    SizedBox(
+                      height: 120,
+                      child: _loadingRecentTemplates
+                          ? Center(child: CircularProgressIndicator())
+                          : _recentTemplates.isEmpty
+                          ? Center(
+                        child: Text(
+                          "No recent templates",
+                          style: GoogleFonts.poppins(fontSize: fontSize - 2),
+                        ),
+                      )
+                          : ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: _recentTemplates.length,
+                        itemBuilder: (context, index) {
+                          final template = _recentTemplates[index];
+                          return GestureDetector(
+                            onTap: () => _handleRecentTemplateSelection(template),
+                            child: Container(
+                              width: 100,
+                              margin: EdgeInsets.only(right: 10),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(8),
+                                boxShadow: [BoxShadow(color: Colors.grey.shade300, blurRadius: 5)],
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Stack(
+                                  fit: StackFit.expand,
+                                  children: [
+                                    // Image background
+                                    template.imageUrl.isNotEmpty
+                                        ? CachedNetworkImage(
+                                      imageUrl: template.imageUrl,
+                                      placeholder: (context, url) => Center(
+                                        child: CircularProgressIndicator(strokeWidth: 2),
+                                      ),
+                                      errorWidget: (context, url, error) {
+                                        print("Image error: $error for URL: $url");
+                                        return Container(
+                                          color: Colors.grey[300],
+                                          child: Icon(Icons.error),
+                                        );
+                                      },
+                                      fit: BoxFit.cover,
+                                    )
+                                        : Container(
+                                      color: Colors.grey[200],
+                                      child: Center(
+                                        child: Icon(Icons.image_not_supported, color: Colors.grey),
+                                      ),
+                                    ),
 
-                SizedBox(height: 20),
+                                    // Premium indicator
+                                    if (template.isPaid)
+                                      Positioned(
+                                        top: 5,
+                                        right: 5,
+                                        child: Container(
+                                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: Colors.black.withOpacity(0.7),
+                                            borderRadius: BorderRadius.circular(10),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(Icons.lock, color: Colors.amber, size: 12),
+                                              SizedBox(width: 2),
+                                              Text(
+                                                'PRO',
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+
+                                    // // Template title
+                                    // Positioned(
+                                    //   bottom: 0,
+                                    //   left: 0,
+                                    //   right: 0,
+                                    //   child: Container(
+                                    //     padding: EdgeInsets.symmetric(vertical: 4, horizontal: 6),
+                                    //     color: Colors.black.withOpacity(0.5),
+                                    //     child: Text(
+                                    //       template.title.isNotEmpty
+                                    //           ? template.title
+                                    //           : "Template",
+                                    //       style: GoogleFonts.poppins(
+                                    //         color: Colors.white,
+                                    //         fontSize: fontSize - 4,
+                                    //         fontWeight: FontWeight.w500,
+                                    //       ),
+                                    //       overflow: TextOverflow.ellipsis,
+                                    //       maxLines: 1,
+                                    //       textAlign: TextAlign.center,
+                                    //     ),
+                                    //   ),
+                                    // ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+SizedBox(height: 20,),
 // Categories section with View All button
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1050,6 +1262,14 @@ Future<void> fetchCheckInStreak() async {
       ],
     );
   }
+  Widget _buildRecentTemplatesSection() {
+    return RecentTemplatesSection(
+      recentTemplates: _recentTemplates,
+      onTemplateSelected: _handleRecentTemplateSelection,
+      isLoading: _loadingRecentTemplates,
+    );
+  }
+
 
   Widget quoteCard(String text, double fontSize) {
     return Container(

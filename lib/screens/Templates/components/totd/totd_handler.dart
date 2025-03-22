@@ -1,4 +1,3 @@
-
 import 'dart:typed_data';
 import 'dart:io';
 import 'dart:ui' as ui;
@@ -15,14 +14,41 @@ import 'package:mtquotes/screens/Templates/components/totd/totd_sharing.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../Create_Screen/edit_screen_create.dart';
+import 'package:mtquotes/screens/Templates/components/template/quote_template.dart';
+import '../recent/recent_service.dart';
 
 class TimeOfDayHandler {
   static final GlobalKey totdImageKey = GlobalKey();
+
+  // Convert TimeOfDayPost to QuoteTemplate for recent templates
+  static QuoteTemplate _convertTOTDToQuoteTemplate(TimeOfDayPost post) {
+    return QuoteTemplate(
+      id: post.id,
+      title: post.title,
+      imageUrl: post.imageUrl,
+      isPaid: post.isPaid,
+      category: "Time of Day", // Use a standard category for TOTD posts
+      createdAt: DateTime.now(),
+    );
+  }
 
   // Handle TOTD post selection with subscription check
   static Future<void> handleTimeOfDayPostSelection(BuildContext context,
       TimeOfDayPost post,
       Function(TimeOfDayPost) onAccessGranted,) async {
+    // Add to recent templates if user is subscribed or post is free
+    try {
+      bool isSubscribed = await _isUserSubscribed();
+      if (!post.isPaid || isSubscribed) {
+        // Convert TOTD post to quote template format for recent templates
+        QuoteTemplate template = _convertTOTDToQuoteTemplate(post);
+        await RecentTemplateService.addRecentTemplate(template);
+        print('Added TOTD to recents on selection: ${post.id}');
+      }
+    } catch (e) {
+      print('Error adding TOTD to recents: $e');
+    }
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -280,6 +306,16 @@ class TimeOfDayHandler {
         bool isPaidUser = false,
       }) async {
     try {
+      // Add to recent templates when sharing
+      try {
+        // Convert TOTD post to quote template format for recent templates
+        QuoteTemplate template = _convertTOTDToQuoteTemplate(post);
+        await RecentTemplateService.addRecentTemplate(template);
+        print('Added TOTD to recents when sharing: ${post.id}');
+      } catch (e) {
+        print('Error adding TOTD to recents when sharing: $e');
+      }
+
       // If userName or userProfileImageUrl are null, get them from Firebase
       if (userName == null || userProfileImageUrl == null) {
         User? currentUser = FirebaseAuth.instance.currentUser;
@@ -439,6 +475,16 @@ class TimeOfDayHandler {
   static void showTOTDConfirmationDialog(BuildContext context,
       TimeOfDayPost post,
       VoidCallback onCreatePressed,) async {
+    // Add to recent templates when showing confirmation dialog
+    try {
+      // Convert TOTD post to quote template format for recent templates
+      QuoteTemplate template = _convertTOTDToQuoteTemplate(post);
+      await RecentTemplateService.addRecentTemplate(template);
+      print('Added TOTD to recents in confirmation dialog: ${post.id}');
+    } catch (e) {
+      print('Error adding TOTD to recents in confirmation dialog: $e');
+    }
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -643,18 +689,35 @@ class TimeOfDayHandler {
                                           SizedBox(
                                             width: 100,
                                             child: ElevatedButton(
-                                              onPressed: () {
+                                              onPressed: () async {
                                                 Navigator.of(context).pop();
-                                                Navigator.of(context).push(
-                                                  MaterialPageRoute(
-                                                    builder: (context) =>
-                                                        EditScreen(
-                                                          title: 'Edit Content',
-                                                          templateImageUrl: post
-                                                              .imageUrl,
-                                                        ),
-                                                  ),
-                                                );
+
+                                                try {
+                                                  // Try to add to recent templates, but don't wait for it to complete
+                                                  // before navigating - this prevents getting stuck if there's an issue
+                                                  QuoteTemplate template = _convertTOTDToQuoteTemplate(post);
+                                                  RecentTemplateService.addRecentTemplate(template).catchError((error) {
+                                                    print('Error adding to recents, but continuing: $error');
+                                                  });
+
+                                                  // Navigate to edit screen immediately
+                                                  Navigator.of(context).push(
+                                                    MaterialPageRoute(
+                                                      builder: (context) =>
+                                                          EditScreen(
+                                                            title: 'Edit Content',
+                                                            templateImageUrl: post
+                                                                .imageUrl,
+                                                          ),
+                                                    ),
+                                                  );
+                                                } catch (e) {
+                                                  print('Error navigating to edit screen: $e');
+                                                  // Show error if needed
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                      SnackBar(content: Text('Error opening content for editing'))
+                                                  );
+                                                }
                                               },
                                               style: ElevatedButton.styleFrom(
                                                 backgroundColor: Colors.blue,

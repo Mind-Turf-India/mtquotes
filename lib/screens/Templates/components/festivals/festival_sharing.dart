@@ -14,8 +14,10 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:mtquotes/screens/Templates/components/template/quote_template.dart';
+import '../recent/recent_service.dart';
 
-class FestivalSharingPage extends StatelessWidget {
+class FestivalSharingPage extends StatefulWidget {
   final FestivalPost festival;
   final String userName;
   final String userProfileImageUrl;
@@ -31,6 +33,59 @@ class FestivalSharingPage extends StatelessWidget {
     GlobalKey? brandedImageKey,
   }) : _brandedImageKey = brandedImageKey ?? GlobalKey(),
         super(key: key);
+
+  @override
+  _FestivalSharingPageState createState() => _FestivalSharingPageState();
+}
+
+class _FestivalSharingPageState extends State<FestivalSharingPage> {
+  ui.Image? _originalImage;
+  double _aspectRatio = 16 / 9; // Default aspect ratio until image loads
+  bool _imageLoaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadOriginalImage();
+    _addToRecentTemplates(); // Add this method to track festivals in recent templates
+  }
+
+  // Add this method to add the festival to recent templates
+  Future<void> _addToRecentTemplates() async {
+    try {
+      // Convert festival to quote template format for recent templates
+      QuoteTemplate template = QuoteTemplate(
+        id: widget.festival.id,
+        title: widget.festival.name,
+        imageUrl: widget.festival.imageUrl,
+        isPaid: widget.festival.isPaid,
+        category: widget.festival.category,
+        createdAt: DateTime.now(),
+      );
+
+      await RecentTemplateService.addRecentTemplate(template);
+      print('Added festival to recents from sharing page: ${widget.festival.id}');
+    } catch (e) {
+      print('Error adding festival to recents from sharing page: $e');
+    }
+  }
+
+  // Load the original image to get its dimensions
+  Future<void> _loadOriginalImage() async {
+    try {
+      final http.Response response = await http.get(Uri.parse(widget.festival.imageUrl));
+      if (response.statusCode == 200) {
+        final decodedImage = await decodeImageFromList(response.bodyBytes);
+        setState(() {
+          _originalImage = decodedImage;
+          _aspectRatio = decodedImage.width / decodedImage.height;
+          _imageLoaded = true;
+        });
+      }
+    } catch (e) {
+      print('Error loading original image: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -107,33 +162,35 @@ class FestivalSharingPage extends StatelessWidget {
                       ),
                       SizedBox(height: 16),
                       // Preview of festival with watermark
-                      Stack(
-                        children: [
-                          Container(
-                            height: 200,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(8),
-                              image: DecorationImage(
-                                image: NetworkImage(festival.imageUrl),
-                                fit: BoxFit.cover,
-                              ),
+                      AspectRatio(
+                        aspectRatio: _aspectRatio,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                            image: DecorationImage(
+                              image: NetworkImage(widget.festival.imageUrl),
+                              fit: BoxFit.contain, // Use contain to avoid cropping
                             ),
                           ),
-                          // Preview of watermark in the top right
-                          Positioned(
-                            top: 10,
-                            right: 10,
-                            child: Opacity(
-                              opacity: 0.3,
-                              child: Image.asset(
-                                'assets/logo.png',
-                                width: 40,
-                                height: 40,
-                                fit: BoxFit.contain,
+                          child: Stack(
+                            children: [
+                              // Preview of watermark in the top right
+                              Positioned(
+                                top: 10,
+                                right: 10,
+                                child: Opacity(
+                                  opacity: 0.3,
+                                  child: Image.asset(
+                                    'assets/logo.png',
+                                    width: 40,
+                                    height: 40,
+                                    fit: BoxFit.contain,
+                                  ),
+                                ),
                               ),
-                            ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
                       SizedBox(height: 16),
                       // Free share button
@@ -196,7 +253,7 @@ class FestivalSharingPage extends StatelessWidget {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                   side: BorderSide(
-                    color: isPaidUser ? Colors.blue : Colors.grey.shade300,
+                    color: widget.isPaidUser ? Colors.blue : Colors.grey.shade300,
                     width: 2,
                   ),
                 ),
@@ -245,53 +302,55 @@ class FestivalSharingPage extends StatelessWidget {
                       SizedBox(height: 16),
                       // Premium post preview with branding
                       RepaintBoundary(
-                        key: _brandedImageKey,
-                        child: Container(
-                          height: 200,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            image: DecorationImage(
-                              image: NetworkImage(festival.imageUrl),
-                              fit: BoxFit.cover,
+                        key: widget._brandedImageKey,
+                        child: AspectRatio(
+                          aspectRatio: _aspectRatio,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8),
+                              image: DecorationImage(
+                                image: NetworkImage(widget.festival.imageUrl),
+                                fit: BoxFit.contain,
+                              ),
                             ),
-                          ),
-                          child: Stack(
-                            children: [
-                              Positioned(
-                                bottom: 10,
-                                right: 10,
-                                child: Container(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.black.withOpacity(0.6),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      CircleAvatar(
-                                        radius: 10,
-                                        backgroundImage: userProfileImageUrl.isNotEmpty
-                                            ? NetworkImage(userProfileImageUrl)
-                                            : AssetImage('assets/profile_placeholder.png') as ImageProvider,
-                                      ),
-                                      SizedBox(width: 4),
-                                      Text(
-                                        userName,
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
+                            child: Stack(
+                              children: [
+                                Positioned(
+                                  bottom: 10,
+                                  right: 10,
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withOpacity(0.6),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        CircleAvatar(
+                                          radius: 10,
+                                          backgroundImage: widget.userProfileImageUrl.isNotEmpty
+                                              ? NetworkImage(widget.userProfileImageUrl)
+                                              : AssetImage('assets/profile_placeholder.png') as ImageProvider,
                                         ),
-                                      ),
-                                    ],
+                                        SizedBox(width: 4),
+                                        Text(
+                                          widget.userName,
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       ),
@@ -300,16 +359,16 @@ class FestivalSharingPage extends StatelessWidget {
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton.icon(
-                          onPressed: isPaidUser
+                          onPressed: widget.isPaidUser
                               ? () => _shareFestival(
                             context,
                             isPaid: true,
                           )
                               : () => Navigator.pushNamed(context, '/subscription'),
-                          icon: Icon(isPaidUser ? Icons.share : Icons.lock),
-                          label: Text(isPaidUser ? 'Share Now' : 'Upgrade to Pro'),
+                          icon: Icon(widget.isPaidUser ? Icons.share : Icons.lock),
+                          label: Text(widget.isPaidUser ? 'Share Now' : 'Upgrade to Pro'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: isPaidUser ? Colors.blue : Colors.blue,
+                            backgroundColor: widget.isPaidUser ? Colors.blue : Colors.blue,
                             foregroundColor: Colors.white,
                             padding: EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
@@ -332,7 +391,7 @@ class FestivalSharingPage extends StatelessWidget {
   // Method to capture widget as image with branding
   Future<Uint8List?> _captureBrandedImage() async {
     try {
-      final RenderRepaintBoundary boundary = _brandedImageKey.currentContext!
+      final RenderRepaintBoundary boundary = widget._brandedImageKey.currentContext!
           .findRenderObject() as RenderRepaintBoundary;
       final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
       final ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
@@ -369,9 +428,9 @@ class FestivalSharingPage extends StatelessWidget {
 
       // Download profile image if available
       ui.Image? profileImage;
-      if (userProfileImageUrl.isNotEmpty) {
+      if (widget.userProfileImageUrl.isNotEmpty) {
         try {
-          final http.Response response = await http.get(Uri.parse(userProfileImageUrl));
+          final http.Response response = await http.get(Uri.parse(widget.userProfileImageUrl));
           if (response.statusCode == 200) {
             profileImage = await decodeImageFromList(response.bodyBytes);
           }
@@ -451,7 +510,7 @@ class FestivalSharingPage extends StatelessWidget {
         ),
       )
         ..pushStyle(ui.TextStyle(color: Colors.white))
-        ..addText(userName);
+        ..addText(widget.userName);
 
       final ui.Paragraph paragraph = paragraphBuilder.build()
         ..layout(ui.ParagraphConstraints(width: brandingWidth - (profileImage != null ? brandingHeight * 0.8 + 12 : 8)));
@@ -528,6 +587,9 @@ class FestivalSharingPage extends StatelessWidget {
   // Sharing implementation with fixes
   Future<void> _shareFestival(BuildContext context, {required bool isPaid}) async {
     try {
+      // Add to recent templates again to ensure it's captured when sharing
+      await _addToRecentTemplates();
+
       // Show loading indicator
       showDialog(
         context: context,
@@ -540,7 +602,7 @@ class FestivalSharingPage extends StatelessWidget {
       );
 
       // Download the original image first
-      final response = await http.get(Uri.parse(festival.imageUrl));
+      final response = await http.get(Uri.parse(widget.festival.imageUrl));
       if (response.statusCode != 200) {
         throw Exception('Failed to load image');
       }
@@ -587,7 +649,7 @@ class FestivalSharingPage extends StatelessWidget {
         // For paid users, share with full branding
         await Share.shareXFiles(
           [XFile(tempFile.path)],
-          text: 'Check out this amazing festival post by $userName!',
+          text: 'Check out this amazing festival post by ${widget.userName}!',
         );
       } else {
         // For free users, share without branding
@@ -633,11 +695,11 @@ class FestivalSharingPage extends StatelessWidget {
         return StatefulBuilder(
             builder: (context, setState) {
               return AlertDialog(
-                title: Text('Rate This Template'),
+                title: Text('Rate This Festival Post'),
                 content: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text('How would you rate your experience with this template?'),
+                    Text('How would you rate your experience with this festival post?'),
                     SizedBox(height: 20),
                     FittedBox(
                       child: Row(
@@ -682,7 +744,7 @@ class FestivalSharingPage extends StatelessWidget {
     ).then((value) {
       if (value != null && value > 0) {
         // Submit rating
-        _submitRating(value, festival);
+        _submitRating(value, widget.festival);
 
         // Show thank you message
         if (context.mounted) {

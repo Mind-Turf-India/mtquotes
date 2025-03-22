@@ -15,6 +15,8 @@ import 'package:share_plus/share_plus.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../recent/recent_service.dart';
+
 class TemplateSharingPage extends StatefulWidget {
   final QuoteTemplate template;
   final String userName;
@@ -43,8 +45,17 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
   void initState() {
     super.initState();
     _loadOriginalImage();
+    _addToRecentTemplates();
   }
 
+  Future<void> _addToRecentTemplates() async {
+    try {
+      await RecentTemplateService.addRecentTemplate(widget.template);
+      print('Added template to recents from sharing page: ${widget.template.id}');
+    } catch (e) {
+      print('Error adding template to recents from sharing page: $e');
+    }
+  }
   // Load the original image to get its dimensions
   Future<void> _loadOriginalImage() async {
     try {

@@ -11,8 +11,10 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:mtquotes/screens/Templates/components/template/quote_template.dart';
+import '../recent/recent_service.dart';
 
-class TOTDSharingPage extends StatelessWidget {
+class TOTDSharingPage extends StatefulWidget {
   final TimeOfDayPost post;
   final String userName;
   final String userProfileImageUrl;
@@ -28,6 +30,59 @@ class TOTDSharingPage extends StatelessWidget {
     GlobalKey? brandedImageKey,
   }) : _brandedImageKey = brandedImageKey ?? GlobalKey(),
         super(key: key);
+
+  @override
+  _TOTDSharingPageState createState() => _TOTDSharingPageState();
+}
+
+class _TOTDSharingPageState extends State<TOTDSharingPage> {
+  ui.Image? _originalImage;
+  double _aspectRatio = 16 / 9; // Default aspect ratio until image loads
+  bool _imageLoaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadOriginalImage();
+    _addToRecentTemplates(); // Add this method to track TOTD posts in recent templates
+  }
+
+  // Add this method to add the TOTD post to recent templates
+  Future<void> _addToRecentTemplates() async {
+    try {
+      // Convert TOTD post to quote template format for recent templates
+      QuoteTemplate template = QuoteTemplate(
+        id: widget.post.id,
+        title: widget.post.title,
+        imageUrl: widget.post.imageUrl,
+        isPaid: widget.post.isPaid,
+        category: "Time of Day", // Use a standard category for TOTD posts
+        createdAt: DateTime.now(),
+      );
+
+      await RecentTemplateService.addRecentTemplate(template);
+      print('Added TOTD post to recents from sharing page: ${widget.post.id}');
+    } catch (e) {
+      print('Error adding TOTD post to recents from sharing page: $e');
+    }
+  }
+
+  // Load the original image to get its dimensions
+  Future<void> _loadOriginalImage() async {
+    try {
+      final http.Response response = await http.get(Uri.parse(widget.post.imageUrl));
+      if (response.statusCode == 200) {
+        final decodedImage = await decodeImageFromList(response.bodyBytes);
+        setState(() {
+          _originalImage = decodedImage;
+          _aspectRatio = decodedImage.width / decodedImage.height;
+          _imageLoaded = true;
+        });
+      }
+    } catch (e) {
+      print('Error loading original image: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -103,33 +158,35 @@ class TOTDSharingPage extends StatelessWidget {
                       ),
                       SizedBox(height: 16),
                       // Preview of content without branding but with watermark
-                      Stack(
-                        children: [
-                          Container(
-                            height: 200,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(8),
-                              image: DecorationImage(
-                                image: NetworkImage(post.imageUrl),
-                                fit: BoxFit.cover,
-                              ),
+                      AspectRatio(
+                        aspectRatio: _aspectRatio,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                            image: DecorationImage(
+                              image: NetworkImage(widget.post.imageUrl),
+                              fit: BoxFit.contain,
                             ),
                           ),
-                          // Preview of watermark
-                          Positioned.fill(
-                            child: Opacity(
-                              opacity: 0.2,
-                              child: Center(
-                                child: Image.asset(
-                                  'assets/logo.png',
-                                  width: 100,
-                                  height: 100,
-                                  fit: BoxFit.contain,
+                          child: Stack(
+                            children: [
+                              // Preview of watermark
+                              Positioned.fill(
+                                child: Opacity(
+                                  opacity: 0.2,
+                                  child: Center(
+                                    child: Image.asset(
+                                      'assets/logo.png',
+                                      width: 100,
+                                      height: 100,
+                                      fit: BoxFit.contain,
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
                       SizedBox(height: 16),
                       // Free share button
@@ -192,7 +249,7 @@ class TOTDSharingPage extends StatelessWidget {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                   side: BorderSide(
-                    color: isPaidUser ? Colors.blue : Colors.grey.shade300,
+                    color: widget.isPaidUser ? Colors.blue : Colors.grey.shade300,
                     width: 2,
                   ),
                 ),
@@ -250,19 +307,16 @@ class TOTDSharingPage extends StatelessWidget {
                       ),
                       SizedBox(height: 16),
                       // Premium post preview with branding (used for capturing)
-                      // Replace the RepaintBoundary widget in your build method with this:
-
-// Premium post preview with branding (used for capturing)
                       RepaintBoundary(
-                        key: _brandedImageKey,
+                        key: widget._brandedImageKey,
                         child: AspectRatio(
-                          aspectRatio: 16 / 9, // Use a standard aspect ratio or one that matches your post images
+                          aspectRatio: _aspectRatio,
                           child: Container(
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(8),
                               image: DecorationImage(
-                                image: NetworkImage(post.imageUrl),
-                                fit: BoxFit.cover,
+                                image: NetworkImage(widget.post.imageUrl),
+                                fit: BoxFit.contain,
                               ),
                             ),
                             child: Stack(
@@ -284,13 +338,13 @@ class TOTDSharingPage extends StatelessWidget {
                                       children: [
                                         CircleAvatar(
                                           radius: 10,
-                                          backgroundImage: userProfileImageUrl.isNotEmpty
-                                              ? NetworkImage(userProfileImageUrl)
+                                          backgroundImage: widget.userProfileImageUrl.isNotEmpty
+                                              ? NetworkImage(widget.userProfileImageUrl)
                                               : AssetImage('assets/images/profile_placeholder.png') as ImageProvider,
                                         ),
                                         SizedBox(width: 4),
                                         Text(
-                                          userName,
+                                          widget.userName,
                                           style: TextStyle(
                                             fontSize: 10,
                                             color: Colors.white,
@@ -311,16 +365,16 @@ class TOTDSharingPage extends StatelessWidget {
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton.icon(
-                          onPressed: isPaidUser
+                          onPressed: widget.isPaidUser
                               ? () => _sharePost(
                             context,
                             isPaid: true,
                           )
                               : () => Navigator.pushNamed(context, '/subscription'),
-                          icon: Icon(isPaidUser ? Icons.share : Icons.lock),
-                          label: Text(isPaidUser ? 'Share Now' : 'Upgrade to Pro'),
+                          icon: Icon(widget.isPaidUser ? Icons.share : Icons.lock),
+                          label: Text(widget.isPaidUser ? 'Share Now' : 'Upgrade to Pro'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: isPaidUser ? Colors.blue : Colors.blue,
+                            backgroundColor: widget.isPaidUser ? Colors.blue : Colors.blue,
                             foregroundColor: Colors.white,
                             padding: EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
@@ -343,7 +397,7 @@ class TOTDSharingPage extends StatelessWidget {
   // Method to capture widget as image with branding
   Future<Uint8List?> _captureBrandedImage() async {
     try {
-      final RenderRepaintBoundary boundary = _brandedImageKey.currentContext!
+      final RenderRepaintBoundary boundary = widget._brandedImageKey.currentContext!
           .findRenderObject() as RenderRepaintBoundary;
       final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
       final ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
@@ -380,9 +434,9 @@ class TOTDSharingPage extends StatelessWidget {
 
       // Download profile image if available
       ui.Image? profileImage;
-      if (userProfileImageUrl.isNotEmpty) {
+      if (widget.userProfileImageUrl.isNotEmpty) {
         try {
-          final http.Response response = await http.get(Uri.parse(userProfileImageUrl));
+          final http.Response response = await http.get(Uri.parse(widget.userProfileImageUrl));
           if (response.statusCode == 200) {
             profileImage = await decodeImageFromList(response.bodyBytes);
           }
@@ -462,7 +516,7 @@ class TOTDSharingPage extends StatelessWidget {
         ),
       )
         ..pushStyle(ui.TextStyle(color: Colors.white))
-        ..addText(userName);
+        ..addText(widget.userName);
 
       final ui.Paragraph paragraph = paragraphBuilder.build()
         ..layout(ui.ParagraphConstraints(width: brandingWidth - (profileImage != null ? brandingHeight * 0.8 + 12 : 8)));
@@ -484,6 +538,7 @@ class TOTDSharingPage extends StatelessWidget {
       return null;
     }
   }
+
   // Method to add watermark to image for free users
   Future<Uint8List?> _addWatermarkToImage(Uint8List originalImageBytes) async {
     try {
@@ -535,10 +590,11 @@ class TOTDSharingPage extends StatelessWidget {
   }
 
   // Integrated sharing functionality
-  // Replace just your _sharePost method with this version
-
   Future<void> _sharePost(BuildContext context, {required bool isPaid}) async {
     try {
+      // Add to recent templates again to ensure it's captured when sharing
+      await _addToRecentTemplates();
+
       // Show loading indicator
       showDialog(
         context: context,
@@ -553,7 +609,7 @@ class TOTDSharingPage extends StatelessWidget {
       Uint8List? imageBytes;
 
       // Download the original image first
-      final response = await http.get(Uri.parse(post.imageUrl));
+      final response = await http.get(Uri.parse(widget.post.imageUrl));
       if (response.statusCode != 200) {
         throw Exception('Failed to load image');
       }
@@ -600,7 +656,7 @@ class TOTDSharingPage extends StatelessWidget {
         // For paid users, share with full branding
         await Share.shareXFiles(
           [XFile(tempFile.path)],
-          text: 'Check out this amazing content by $userName!',
+          text: 'Check out this amazing content by ${widget.userName}!',
         );
       } else {
         // For free users, share without branding
@@ -634,7 +690,6 @@ class TOTDSharingPage extends StatelessWidget {
       }
     }
   }
-
 
   // Rating dialog implementation
   Future<void> _showRatingDialog(BuildContext context) async {
@@ -695,7 +750,7 @@ class TOTDSharingPage extends StatelessWidget {
     ).then((value) {
       if (value != null && value > 0) {
         // Submit rating
-        _submitRating(value, post);
+        _submitRating(value, widget.post);
 
         // Show thank you message
         if (context.mounted) {

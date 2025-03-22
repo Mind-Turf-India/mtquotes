@@ -15,6 +15,8 @@ import 'package:mtquotes/screens/Templates/components/festivals/festival_sharing
 import 'package:mtquotes/screens/Templates/subscription_popup.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:mtquotes/screens/Templates/components/template/quote_template.dart';
+import '../recent/recent_service.dart';
 
 class FestivalHandler {
   static final GlobalKey festivalImageKey = GlobalKey();
@@ -41,6 +43,18 @@ class FestivalHandler {
     }
   }
 
+  // Convert FestivalPost to QuoteTemplate for recent templates
+  static QuoteTemplate _convertFestivalToQuoteTemplate(FestivalPost festival) {
+    return QuoteTemplate(
+      id: festival.id,
+      title: festival.name,
+      imageUrl: festival.imageUrl,
+      isPaid: festival.isPaid,
+      category: festival.category,
+      createdAt: DateTime.now(),
+    );
+  }
+
   // Handle festival selection with subscription check
   static Future<void> handleFestivalSelection(
       BuildContext context,
@@ -52,6 +66,18 @@ class FestivalHandler {
 
     try {
       bool isSubscribed = await _festivalService.isUserSubscribed();
+
+      // Add to recent templates if user is subscribed or festival is free
+      if (!festival.isPaid || isSubscribed) {
+        try {
+          // Convert festival to quote template format for recent templates
+          QuoteTemplate template = _convertFestivalToQuoteTemplate(festival);
+          await RecentTemplateService.addRecentTemplate(template);
+          print('Added festival to recents on selection: ${festival.id}');
+        } catch (e) {
+          print('Error adding festival to recents: $e');
+        }
+      }
 
       // Hide loading indicator
       hideLoadingIndicator(context);
@@ -281,6 +307,16 @@ class FestivalHandler {
         bool isPaidUser = false,
       }) async {
     try {
+      // Add to recent templates when sharing
+      try {
+        // Convert festival to quote template format for recent templates
+        QuoteTemplate template = _convertFestivalToQuoteTemplate(festival);
+        await RecentTemplateService.addRecentTemplate(template);
+        print('Added festival to recents when sharing: ${festival.id}');
+      } catch (e) {
+        print('Error adding festival to recents when sharing: $e');
+      }
+
       // Show loading indicator
       showLoadingIndicator(context);
 
@@ -458,6 +494,16 @@ class FestivalHandler {
       FestivalPost festival,
       VoidCallback onCreatePressed,
       ) async {
+    // Add to recent templates when showing confirmation dialog
+    try {
+      // Convert festival to quote template format for recent templates
+      QuoteTemplate template = _convertFestivalToQuoteTemplate(festival);
+      await RecentTemplateService.addRecentTemplate(template);
+      print('Added festival to recents in confirmation dialog: ${festival.id}');
+    } catch (e) {
+      print('Error adding festival to recents in confirmation dialog: $e');
+    }
+
     // Show loading indicator
     showLoadingIndicator(context);
 
@@ -632,17 +678,33 @@ class FestivalHandler {
                                     SizedBox(
                                       width: 100,
                                       child: ElevatedButton(
-                                        onPressed: () {
+                                        onPressed: () async {
                                           Navigator.of(context).pop();
-                                          Navigator.of(context).push(
-                                            MaterialPageRoute(
-                                              builder: (context) => EditScreen(
-                                                title: 'Edit Festival Post',
-                                                templateImageUrl:
-                                                festival.imageUrl,
+
+                                          try {
+                                            // Try to add to recent templates, but don't wait for it to complete
+                                            // before navigating - this prevents getting stuck if there's an issue
+                                            QuoteTemplate template = _convertFestivalToQuoteTemplate(festival);
+                                            RecentTemplateService.addRecentTemplate(template).catchError((error) {
+                                              print('Error adding to recents, but continuing: $error');
+                                            });
+
+                                            // Navigate to edit screen immediately
+                                            Navigator.of(context).push(
+                                              MaterialPageRoute(
+                                                builder: (context) => EditScreen(
+                                                  title: 'Edit Festival Post',
+                                                  templateImageUrl: festival.imageUrl,
+                                                ),
                                               ),
-                                            ),
-                                          );
+                                            );
+                                          } catch (e) {
+                                            print('Error navigating to edit screen: $e');
+                                            // Show error if needed
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                                SnackBar(content: Text('Error opening template for editing'))
+                                            );
+                                          }
                                         },
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor: Colors.blue,
