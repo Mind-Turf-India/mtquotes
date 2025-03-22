@@ -62,7 +62,6 @@ class _HomeScreenState extends State<HomeScreen> {
   List<QuoteTemplate> _recentTemplates = [];
   bool _loadingRecentTemplates = false;
 
-
   @override
   void initState() {
     super.initState();
@@ -73,138 +72,138 @@ class _HomeScreenState extends State<HomeScreen> {
     _fetchFestivalPosts();
     _fetchTimeOfDayPosts();
     // Delay the check slightly to ensure UI is fully rendered
-  Future.delayed(const Duration(milliseconds: 1000), () {
-    checkDailyReward();
-  });
-  
-  // Load initial points
-  fetchUserRewardPoints();
-  fetchCheckInStreak();
-  _fetchRecentTemplates();
+    Future.delayed(const Duration(milliseconds: 1000), () {
+      checkDailyReward();
+    });
+
+    // Load initial points
+    fetchUserRewardPoints();
+    fetchCheckInStreak();
+    _fetchRecentTemplates();
   }
 
   //daily check in
- void checkDailyReward() async {
-  try {
-    // Ensure the widget is still mounted
-    if (!mounted) {
-      print("HomeScreen not mounted, can't process daily check-in");
-      return;
-    }
-
-    print("Checking daily reward eligibility...");
-    
-    // Show loading indicator
-    setState(() {
-      isCheckingReward = true;
-    });
-    
-    // Check eligibility
-    bool isEligible = await DailyCheckInService.isEligibleForDailyReward();
-    
-    print("User is eligible for daily reward: $isEligible");
-    
-    if (isEligible && mounted) {
-      // Process the check-in with the current context
-      bool processed = await DailyCheckInService.processDailyCheckIn(context);
-      
-      print("Daily check-in processed: $processed");
-      
-      if (processed && mounted) {
-        // Wait a short moment to ensure Firebase has updated
-        await Future.delayed(const Duration(milliseconds: 500));
-        
-        // Refresh user data to show updated points
-        await fetchUserRewardPoints();
-        
-        // Optionally fetch streak
-        await fetchCheckInStreak();
+  void checkDailyReward() async {
+    try {
+      // Ensure the widget is still mounted
+      if (!mounted) {
+        print("HomeScreen not mounted, can't process daily check-in");
+        return;
       }
-    } else {
-      print("User not eligible for daily reward");
-    }
-    
-    // Hide loading indicator if still mounted
-    if (mounted) {
+
+      print("Checking daily reward eligibility...");
+
+      // Show loading indicator
       setState(() {
-        isCheckingReward = false;
+        isCheckingReward = true;
       });
-    }
-  } catch (e) {
-    print("Error in checkDailyReward: $e");
-    
-    // Hide loading indicator in case of error
-    if (mounted) {
-      setState(() {
-        isCheckingReward = false;
-      });
+
+      // Check eligibility
+      bool isEligible = await DailyCheckInService.isEligibleForDailyReward();
+
+      print("User is eligible for daily reward: $isEligible");
+
+      if (isEligible && mounted) {
+        // Process the check-in with the current context
+        bool processed = await DailyCheckInService.processDailyCheckIn(context);
+
+        print("Daily check-in processed: $processed");
+
+        if (processed && mounted) {
+          // Wait a short moment to ensure Firebase has updated
+          await Future.delayed(const Duration(milliseconds: 500));
+
+          // Refresh user data to show updated points
+          await fetchUserRewardPoints();
+
+          // Optionally fetch streak
+          await fetchCheckInStreak();
+        }
+      } else {
+        print("User not eligible for daily reward");
+      }
+
+      // Hide loading indicator if still mounted
+      if (mounted) {
+        setState(() {
+          isCheckingReward = false;
+        });
+      }
+    } catch (e) {
+      print("Error in checkDailyReward: $e");
+
+      // Hide loading indicator in case of error
+      if (mounted) {
+        setState(() {
+          isCheckingReward = false;
+        });
+      }
     }
   }
-}
 
 // Function to fetch and update user reward points
-Future<void> fetchUserRewardPoints() async {
-  try {
-    print("Fetching user reward points...");
-    
-    // Show loading indicator
-    if (mounted) {
-      setState(() {
-        isLoadingPoints = true;
-      });
-    }
-    
-    // Get points from service
-    int points = await DailyCheckInService.getUserRewardPoints();
-    
-    print("Fetched user reward points: $points");
-    
-    // Update UI if widget is still mounted
-    if (mounted) {
-      setState(() {
-        userRewardPoints = points;
-        isLoadingPoints = false;
-      });
-    }
-  } catch (e) {
-    print("Error fetching reward points: $e");
-    
-    // Hide loading indicator in case of error
-    if (mounted) {
-      setState(() {
-        isLoadingPoints = false;
-      });
+  Future<void> fetchUserRewardPoints() async {
+    try {
+      print("Fetching user reward points...");
+
+      // Show loading indicator
+      if (mounted) {
+        setState(() {
+          isLoadingPoints = true;
+        });
+      }
+
+      // Get points from service
+      int points = await DailyCheckInService.getUserRewardPoints();
+
+      print("Fetched user reward points: $points");
+
+      // Update UI if widget is still mounted
+      if (mounted) {
+        setState(() {
+          userRewardPoints = points;
+          isLoadingPoints = false;
+        });
+      }
+    } catch (e) {
+      print("Error fetching reward points: $e");
+
+      // Hide loading indicator in case of error
+      if (mounted) {
+        setState(() {
+          isLoadingPoints = false;
+        });
+      }
     }
   }
-}
 
 // Function to fetch check-in streak
-Future<void> fetchCheckInStreak() async {
-  try {
-    if (!mounted) return;
-    
-    setState(() {
-      isLoadingStreak = true;
-    });
-    
-    int streak = await DailyCheckInService.getCheckInStreak();
-    
-    if (mounted) {
+  Future<void> fetchCheckInStreak() async {
+    try {
+      if (!mounted) return;
+
       setState(() {
-        checkInStreak = streak;
-        isLoadingStreak = false;
+        isLoadingStreak = true;
       });
-    }
-  } catch (e) {
-    print("Error fetching check-in streak: $e");
-    
-    if (mounted) {
-      setState(() {
-        isLoadingStreak = false;
-      });
+
+      int streak = await DailyCheckInService.getCheckInStreak();
+
+      if (mounted) {
+        setState(() {
+          checkInStreak = streak;
+          isLoadingStreak = false;
+        });
+      }
+    } catch (e) {
+      print("Error fetching check-in streak: $e");
+
+      if (mounted) {
+        setState(() {
+          isLoadingStreak = false;
+        });
+      }
     }
   }
-}
 
 //recent
   Future<void> _fetchRecentTemplates() async {
@@ -256,7 +255,6 @@ Future<void> fetchCheckInStreak() async {
     _fetchRecentTemplates();
   }
 
-
 // Add this method to handle template selection
   void _handleRecentTemplateSelection(QuoteTemplate template) async {
     try {
@@ -288,7 +286,6 @@ Future<void> fetchCheckInStreak() async {
       print('Error in _handleRecentTemplateSelection: $e');
     }
   }
-
 
   //totd
   Future<void> _fetchTimeOfDayPosts() async {
@@ -737,496 +734,558 @@ Future<void> fetchCheckInStreak() async {
     double fontSize = textSizeProvider.fontSize; // Get font size
 
     return WillPopScope(
-      onWillPop: () async =>
-          false, // Prevents navigating back to the login screen
-      child: Scaffold(
-        backgroundColor: Colors.white,
-        appBar: AppBar(
-          automaticallyImplyLeading: false,
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          title: Row(
-            children: [
-              GestureDetector(
-                  onTap: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (context) => ProfileScreen()),
-                    );
-                  },
-                  child: CircleAvatar(
-                    backgroundColor: Colors.grey[300],
-                    backgroundImage:
-                        profileImageUrl != null && profileImageUrl!.isNotEmpty
-                            ? NetworkImage(profileImageUrl!)
-                            : null,
-                    child: profileImageUrl == null || profileImageUrl!.isEmpty
-                        ? Icon(LucideIcons.user, color: Colors.black)
-                        : null,
-                  )),
-              SizedBox(width: 20),
-              Text(
-                "Hi, $userName\n$greetings",
-                textAlign: TextAlign.left,
-                style: GoogleFonts.poppins(
-                  fontSize: fontSize,
-                  fontWeight: FontWeight.w500,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
-              Spacer(),
-              GestureDetector(
-                onTap: showNotificationsSheet,
-                child: Icon(
-                  LucideIcons.bellRing,
-                  color: Colors.black,
-                ),
-              ),
-            ],
-          ),
-        ),
-        body: SingleChildScrollView(
-          child: Padding(
-            padding: EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Featured Quote of the Day
-                Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Container(
-                      height: 200,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        color: Colors.transparent,
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: qotdImageUrl != null
-                            ? CachedNetworkImage(
-                                imageUrl: qotdImageUrl!,
-                                placeholder: (context, url) =>
-                                    Center(child: CircularProgressIndicator()),
-                                errorWidget: (context, url, error) =>
-                                    Icon(Icons.error),
-                                fit: BoxFit.cover,
-                                width: double.infinity,
-                                height: double.infinity,
-                              )
-                            : Container(
-                                color: Colors.grey[300], // Fallback background
-                                alignment: Alignment.center,
-                                child: Text(
-                                  "No quote available today",
-                                  textAlign: TextAlign.center,
-                                  style: GoogleFonts.poppins(
-                                      fontSize: fontSize,
-                                      fontWeight: FontWeight.w600),
-                                ),
-                              ),
-                      ),
-                    ),
-                    Positioned(
-                      bottom: 35,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blueAccent,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        onPressed: () => shareImage(qotdImageUrl),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.share, color: Colors.white),
-                            SizedBox(width: 6),
-                            Text("Share",
-                                style: TextStyle(color: Colors.white)),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          context.loc.recents,
-                          style: GoogleFonts.poppins(
-                              fontSize: fontSize, fontWeight: FontWeight.bold),
-                        ),
-                        // Optional: Add a refresh button for testing
-                        IconButton(
-                          icon: Icon(Icons.refresh),
-                          onPressed: refreshRecentTemplates,
-                          tooltip: 'Refresh recent templates',
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 10),
-                    SizedBox(
-                      height: 120,
-                      child: _loadingRecentTemplates
-                          ? Center(child: CircularProgressIndicator())
-                          : _recentTemplates.isEmpty
-                          ? Center(
-                        child: Text(
-                          "No recent templates",
-                          style: GoogleFonts.poppins(fontSize: fontSize - 2),
-                        ),
-                      )
-                          : ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: _recentTemplates.length,
-                        itemBuilder: (context, index) {
-                          final template = _recentTemplates[index];
-                          return GestureDetector(
-                            onTap: () => _handleRecentTemplateSelection(template),
-                            child: Container(
-                              width: 100,
-                              margin: EdgeInsets.only(right: 10),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(8),
-                                boxShadow: [BoxShadow(color: Colors.grey.shade300, blurRadius: 5)],
-                              ),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: Stack(
-                                  fit: StackFit.expand,
-                                  children: [
-                                    // Image background
-                                    template.imageUrl.isNotEmpty
-                                        ? CachedNetworkImage(
-                                      imageUrl: template.imageUrl,
-                                      placeholder: (context, url) => Center(
-                                        child: CircularProgressIndicator(strokeWidth: 2),
-                                      ),
-                                      errorWidget: (context, url, error) {
-                                        print("Image error: $error for URL: $url");
-                                        return Container(
-                                          color: Colors.grey[300],
-                                          child: Icon(Icons.error),
-                                        );
-                                      },
-                                      fit: BoxFit.cover,
-                                    )
-                                        : Container(
-                                      color: Colors.grey[200],
-                                      child: Center(
-                                        child: Icon(Icons.image_not_supported, color: Colors.grey),
-                                      ),
-                                    ),
-
-                                    // Premium indicator
-                                    if (template.isPaid)
-                                      Positioned(
-                                        top: 5,
-                                        right: 5,
-                                        child: Container(
-                                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                          decoration: BoxDecoration(
-                                            color: Colors.black.withOpacity(0.7),
-                                            borderRadius: BorderRadius.circular(10),
-                                          ),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Icon(Icons.lock, color: Colors.amber, size: 12),
-                                              SizedBox(width: 2),
-                                              Text(
-                                                'PRO',
-                                                style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontSize: 10,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-
-                                    // // Template title
-                                    // Positioned(
-                                    //   bottom: 0,
-                                    //   left: 0,
-                                    //   right: 0,
-                                    //   child: Container(
-                                    //     padding: EdgeInsets.symmetric(vertical: 4, horizontal: 6),
-                                    //     color: Colors.black.withOpacity(0.5),
-                                    //     child: Text(
-                                    //       template.title.isNotEmpty
-                                    //           ? template.title
-                                    //           : "Template",
-                                    //       style: GoogleFonts.poppins(
-                                    //         color: Colors.white,
-                                    //         fontSize: fontSize - 4,
-                                    //         fontWeight: FontWeight.w500,
-                                    //       ),
-                                    //       overflow: TextOverflow.ellipsis,
-                                    //       maxLines: 1,
-                                    //       textAlign: TextAlign.center,
-                                    //     ),
-                                    //   ),
-                                    // ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-SizedBox(height: 20,),
-// Categories section with View All button
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          context.loc.categories,
-                          style: GoogleFonts.poppins(
-                              fontSize: fontSize,
-                              fontWeight: FontWeight.bold
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    SizedBox(height: 10),
-                    SizedBox(
-                      height: 100,
-                      child: ListView(
-                        scrollDirection: Axis.horizontal,
-                        children: [
-                          categoryCard(Icons.lightbulb, context.loc.motivational,
-                              Colors.green, fontSize),
-                          categoryCard(Icons.favorite, context.loc.love, Colors.red,
-                              fontSize),
-                          categoryCard(Icons.emoji_emotions, context.loc.funny,
-                              Colors.orange, fontSize),
-                          categoryCard(Icons.people, context.loc.friendship,
-                              Colors.blue, fontSize),
-                          categoryCard(Icons.self_improvement, context.loc.life,
-                              Colors.purple, fontSize),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(
-                  height: 20,
-                ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      context.loc.trendingQuotes,
-                      style: GoogleFonts.poppins(
-                          fontSize: fontSize,
-                          fontWeight: FontWeight.bold
-                      ),
-                    ),
-                    GestureDetector(
+        onWillPop: () async =>
+            false, // Prevents navigating back to the login screen
+        child: Scaffold(
+            backgroundColor: Colors.white,
+            appBar: AppBar(
+              automaticallyImplyLeading: false,
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              title: Row(
+                children: [
+                  GestureDetector(
                       onTap: () {
-                        Navigator.push(
+                        Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => TemplatesListScreen(
-                              title: context.loc.trendingQuotes,
-                              listType: TemplateListType.trending,
-                            ),
-                          ),
+                              builder: (context) => ProfileScreen()),
                         );
                       },
-                      child: Text(
-                        'View All',
-                        style: GoogleFonts.poppins(
-                          fontSize: fontSize - 2,
-                          color: Colors.blue,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
+                      child: CircleAvatar(
+                        backgroundColor: Colors.grey[300],
+                        backgroundImage: profileImageUrl != null &&
+                                profileImageUrl!.isNotEmpty
+                            ? NetworkImage(profileImageUrl!)
+                            : null,
+                        child:
+                            profileImageUrl == null || profileImageUrl!.isEmpty
+                                ? Icon(LucideIcons.user, color: Colors.black)
+                                : null,
+                      )),
+                  SizedBox(width: 20),
+                  Text(
+                    "Hi, $userName\n$greetings",
+                    textAlign: TextAlign.left,
+                    style: GoogleFonts.poppins(
+                      fontSize: fontSize,
+                      fontWeight: FontWeight.w500,
                     ),
-
-                  ],
-                ),
-
-                TemplateSection(
-                  title: '',
-                  fetchTemplates: _templateService.fetchRecentTemplates,
-                  fontSize: fontSize,
-                  onTemplateSelected: _handleTemplateSelection,
-                ),
-
-                SizedBox(height: 20),
-
-                Column(
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Spacer(),
+                  GestureDetector(
+                    onTap: showNotificationsSheet,
+                    child: Icon(
+                      LucideIcons.bellRing,
+                      color: Colors.black,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            body: SingleChildScrollView(
+                child: Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    // Featured Quote of the Day
+                    Stack(
+                      alignment: Alignment.center,
                       children: [
-                        Text(
-                          context.loc.newtemplate,
-                          style: GoogleFonts.poppins(
-                              fontSize: fontSize,
-                              fontWeight: FontWeight.bold
+                        Container(
+                          height: 200,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            color: Colors.transparent,
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: qotdImageUrl != null
+                                ? CachedNetworkImage(
+                                    imageUrl: qotdImageUrl!,
+                                    placeholder: (context, url) => Center(
+                                        child: CircularProgressIndicator()),
+                                    errorWidget: (context, url, error) =>
+                                        Icon(Icons.error),
+                                    fit: BoxFit.cover,
+                                    width: double.infinity,
+                                    height: double.infinity,
+                                  )
+                                : Container(
+                                    color:
+                                        Colors.grey[300], // Fallback background
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      "No quote available today",
+                                      textAlign: TextAlign.center,
+                                      style: GoogleFonts.poppins(
+                                          fontSize: fontSize,
+                                          fontWeight: FontWeight.w600),
+                                    ),
+                                  ),
                           ),
                         ),
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => TemplatesListScreen(
-                                  title: context.loc.newtemplate,
-                                  listType: TemplateListType.festival,
-                                ),
+                        Positioned(
+                          bottom: 35,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blueAccent,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
                               ),
-                            );
-                          },
-                          child: Text(
-                            'View All',
-                            style: GoogleFonts.poppins(
-                              fontSize: fontSize - 2,
-                              color: Colors.blue,
-                              fontWeight: FontWeight.w500,
+                            ),
+                            onPressed: () => shareImage(qotdImageUrl),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.share, color: Colors.white),
+                                SizedBox(width: 6),
+                                Text("Share",
+                                    style: TextStyle(color: Colors.white)),
+                              ],
                             ),
                           ),
                         ),
                       ],
                     ),
-                SizedBox(height: 20),
-                SizedBox(
-                  height: 150, // Changed from 200 to 100 to match other card sections
-                  child: _loadingFestivals
-                      ? Center(child: CircularProgressIndicator())
-                      : _festivalPosts.isEmpty
-                      ? Center(
-                    child: Text(
-                      "No festival posts available",
-                      style: GoogleFonts.poppins(fontSize: fontSize - 2),
-                    ),
-                  )
-                          : ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: _festivalPosts.length,
-                    itemBuilder: (context, index) {
-                      return FestivalCard(
-                        festival: _festivalPosts[index],
-                        fontSize: fontSize,
-                        onTap: () => _handleFestivalPostSelection(_festivalPosts[index]),
-                      );
-                    },
-                  ),
-                ),
-                SizedBox(height: 30),
+
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            // Left side with title and time
-                            Expanded(
-                              child: Row(
-                                children: [
-                                  Text(
-                                    context.loc.foryou,
-                                    style: GoogleFonts.poppins(
-                                        fontSize: fontSize,
-                                        fontWeight: FontWeight.bold
-                                    ),
-                                  ),
-                                  SizedBox(width: 8),
-                                  Text(
-                                    "• ${_currentTimeOfDay.capitalize()}",
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 14,
-                                      color: Colors.grey[600],
-                                      fontStyle: FontStyle.italic,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                            Text(
+                              context.loc.recents,
+                              style: GoogleFonts.poppins(
+                                  fontSize: fontSize,
+                                  fontWeight: FontWeight.bold),
                             ),
-
-                            // Right side with View All
-                            GestureDetector(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => TemplatesListScreen(
-                                      title: "${context.loc.foryou} • ${_currentTimeOfDay.capitalize()}",
-                                      listType: TemplateListType.timeOfDay,
-                                      timeOfDay: _currentTimeOfDay,
-                                    ),
-                                  ),
-                                );
-                              },
-                              child: Text(
-                                'View All',
-                                style: GoogleFonts.poppins(
-                                  fontSize: fontSize - 2,
-                                  color: Colors.blue,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
+                            // Optional: Add a refresh button for testing
+                            IconButton(
+                              icon: Icon(Icons.refresh),
+                              onPressed: refreshRecentTemplates,
+                              tooltip: 'Refresh recent templates',
                             ),
                           ],
                         ),
+                        SizedBox(height: 10),
+                        SizedBox(
+                          height: 120,
+                          child: _loadingRecentTemplates
+                              ? Center(child: CircularProgressIndicator())
+                              : _recentTemplates.isEmpty
+                                  ? Center(
+                                      child: Text(
+                                        "No recent templates",
+                                        style: GoogleFonts.poppins(
+                                            fontSize: fontSize - 2),
+                                      ),
+                                    )
+                                  : ListView.builder(
+                                      scrollDirection: Axis.horizontal,
+                                      itemCount: _recentTemplates.length,
+                                      itemBuilder: (context, index) {
+                                        final template =
+                                            _recentTemplates[index];
+                                        return GestureDetector(
+                                          onTap: () =>
+                                              _handleRecentTemplateSelection(
+                                                  template),
+                                          child: Container(
+                                            width: 100,
+                                            margin: EdgeInsets.only(right: 10),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white,
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                    color: Colors.grey.shade300,
+                                                    blurRadius: 5)
+                                              ],
+                                            ),
+                                            child: ClipRRect(
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              child: Stack(
+                                                fit: StackFit.expand,
+                                                children: [
+                                                  // Image background
+                                                  template.imageUrl.isNotEmpty
+                                                      ? CachedNetworkImage(
+                                                          imageUrl:
+                                                              template.imageUrl,
+                                                          placeholder:
+                                                              (context, url) =>
+                                                                  Center(
+                                                            child:
+                                                                CircularProgressIndicator(
+                                                                    strokeWidth:
+                                                                        2),
+                                                          ),
+                                                          errorWidget: (context,
+                                                              url, error) {
+                                                            print(
+                                                                "Image error: $error for URL: $url");
+                                                            return Container(
+                                                              color: Colors
+                                                                  .grey[300],
+                                                              child: Icon(
+                                                                  Icons.error),
+                                                            );
+                                                          },
+                                                          fit: BoxFit.cover,
+                                                        )
+                                                      : Container(
+                                                          color:
+                                                              Colors.grey[200],
+                                                          child: Center(
+                                                            child: Icon(
+                                                                Icons
+                                                                    .image_not_supported,
+                                                                color: Colors
+                                                                    .grey),
+                                                          ),
+                                                        ),
 
-                SizedBox(height: 10),
-                SizedBox(
-                  height: 150,
-                  // width: 0,
-                  child: _loadingTimeOfDay
-                      ? Center(child: CircularProgressIndicator())
-                      : _timeOfDayPosts.isEmpty
-                          ? Center(
-                              child: Text(
-                                "No templates available for ${_currentTimeOfDay}",
-                                style:
-                                    GoogleFonts.poppins(fontSize: fontSize - 2),
-                              ),
-                            )
-                          : ListView.builder(
-                              scrollDirection: Axis.horizontal,
-                              itemCount: _timeOfDayPosts.length,
-                              itemBuilder: (context, index) {
-                                return TimeOfDayPostComponent(
-                                  post: _timeOfDayPosts[index],
+                                                  // Premium indicator
+                                                  if (template.isPaid)
+                                                    Positioned(
+                                                      top: 5,
+                                                      right: 5,
+                                                      child: Container(
+                                                        padding: EdgeInsets
+                                                            .symmetric(
+                                                                horizontal: 6,
+                                                                vertical: 2),
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          color: Colors.black
+                                                              .withOpacity(0.7),
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(10),
+                                                        ),
+                                                        child: Row(
+                                                          mainAxisSize:
+                                                              MainAxisSize.min,
+                                                          children: [
+                                                            Icon(Icons.lock,
+                                                                color: Colors
+                                                                    .amber,
+                                                                size: 12),
+                                                            SizedBox(width: 2),
+                                                            Text(
+                                                              'PRO',
+                                                              style: TextStyle(
+                                                                color: Colors
+                                                                    .white,
+                                                                fontSize: 10,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    ),
+
+                                                  // // Template title
+                                                  // Positioned(
+                                                  //   bottom: 0,
+                                                  //   left: 0,
+                                                  //   right: 0,
+                                                  //   child: Container(
+                                                  //     padding: EdgeInsets.symmetric(vertical: 4, horizontal: 6),
+                                                  //     color: Colors.black.withOpacity(0.5),
+                                                  //     child: Text(
+                                                  //       template.title.isNotEmpty
+                                                  //           ? template.title
+                                                  //           : "Template",
+                                                  //       style: GoogleFonts.poppins(
+                                                  //         color: Colors.white,
+                                                  //         fontSize: fontSize - 4,
+                                                  //         fontWeight: FontWeight.w500,
+                                                  //       ),
+                                                  //       overflow: TextOverflow.ellipsis,
+                                                  //       maxLines: 1,
+                                                  //       textAlign: TextAlign.center,
+                                                  //     ),
+                                                  //   ),
+                                                  // ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(
+                      height: 20,
+                    ),
+// Categories section with View All button
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              context.loc.categories,
+                              style: GoogleFonts.poppins(
                                   fontSize: fontSize,
-                                  onTap: () => _handleTimeOfDayPostSelection(
-                                      _timeOfDayPosts[index]),
-                                );
-                              },
+                                  fontWeight: FontWeight.bold),
                             ),
-                ),
-              ],
-            ),
-          ]),
-        ]),
-      ]),
-    ))));
+                          ],
+                        ),
+                        SizedBox(height: 10),
+                        SizedBox(
+                          height: 100,
+                          child: ListView(
+                            scrollDirection: Axis.horizontal,
+                            children: [
+                              categoryCard(
+                                  Icons.lightbulb,
+                                  context.loc.motivational,
+                                  Colors.green,
+                                  fontSize),
+                              categoryCard(Icons.favorite, context.loc.love,
+                                  Colors.red, fontSize),
+                              categoryCard(Icons.emoji_emotions,
+                                  context.loc.funny, Colors.orange, fontSize),
+                              categoryCard(Icons.people, context.loc.friendship,
+                                  Colors.blue, fontSize),
+                              categoryCard(Icons.self_improvement,
+                                  context.loc.life, Colors.purple, fontSize),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(
+                      height: 20,
+                    ),
+                    Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                context.loc.trendingQuotes,
+                                style: GoogleFonts.poppins(
+                                    fontSize: fontSize,
+                                    fontWeight: FontWeight.bold),
+                              ),
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => TemplatesListScreen(
+                                        title: context.loc.trendingQuotes,
+                                        listType: TemplateListType.trending,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                child: Text(
+                                  'View All',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: fontSize - 2,
+                                    color: Colors.blue,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          TemplateSection(
+                            title: '',
+                            fetchTemplates:
+                                _templateService.fetchRecentTemplates,
+                            fontSize: fontSize,
+                            onTemplateSelected: _handleTemplateSelection,
+                          ),
+                          SizedBox(height: 20),
+                          Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      context.loc.newtemplate,
+                                      style: GoogleFonts.poppins(
+                                          fontSize: fontSize,
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                    GestureDetector(
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                TemplatesListScreen(
+                                              title: context.loc.newtemplate,
+                                              listType:
+                                                  TemplateListType.festival,
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                      child: Text(
+                                        'View All',
+                                        style: GoogleFonts.poppins(
+                                          fontSize: fontSize - 2,
+                                          color: Colors.blue,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 20),
+                                SizedBox(
+                                  height:
+                                      150, // Changed from 200 to 100 to match other card sections
+                                  child: _loadingFestivals
+                                      ? Center(
+                                          child: CircularProgressIndicator())
+                                      : _festivalPosts.isEmpty
+                                          ? Center(
+                                              child: Text(
+                                                "No festival posts available",
+                                                style: GoogleFonts.poppins(
+                                                    fontSize: fontSize - 2),
+                                              ),
+                                            )
+                                          : ListView.builder(
+                                              scrollDirection: Axis.horizontal,
+                                              itemCount: _festivalPosts.length,
+                                              itemBuilder: (context, index) {
+                                                return FestivalCard(
+                                                  festival:
+                                                      _festivalPosts[index],
+                                                  fontSize: fontSize,
+                                                  onTap: () =>
+                                                      _handleFestivalPostSelection(
+                                                          _festivalPosts[
+                                                              index]),
+                                                );
+                                              },
+                                            ),
+                                ),
+                                SizedBox(height: 30),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        // Left side with title and time
+                                        Expanded(
+                                          child: Row(
+                                            children: [
+                                              Text(
+                                                context.loc.foryou,
+                                                style: GoogleFonts.poppins(
+                                                    fontSize: fontSize,
+                                                    fontWeight:
+                                                        FontWeight.bold),
+                                              ),
+                                              SizedBox(width: 8),
+                                              Text(
+                                                "• ${_currentTimeOfDay.capitalize()}",
+                                                style: GoogleFonts.poppins(
+                                                  fontSize: 14,
+                                                  color: Colors.grey[600],
+                                                  fontStyle: FontStyle.italic,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+
+                                        // Right side with View All
+                                        GestureDetector(
+                                          onTap: () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) =>
+                                                    TemplatesListScreen(
+                                                  title:
+                                                      "${context.loc.foryou} • ${_currentTimeOfDay.capitalize()}",
+                                                  listType: TemplateListType
+                                                      .timeOfDay,
+                                                  timeOfDay: _currentTimeOfDay,
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                          child: Text(
+                                            'View All',
+                                            style: GoogleFonts.poppins(
+                                              fontSize: fontSize - 2,
+                                              color: Colors.blue,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    SizedBox(height: 10),
+                                    SizedBox(
+                                      height: 150,
+                                      // width: 0,
+                                      child: _loadingTimeOfDay
+                                          ? Center(
+                                              child:
+                                                  CircularProgressIndicator())
+                                          : _timeOfDayPosts.isEmpty
+                                              ? Center(
+                                                  child: Text(
+                                                    "No templates available for ${_currentTimeOfDay}",
+                                                    style: GoogleFonts.poppins(
+                                                        fontSize: fontSize - 2),
+                                                  ),
+                                                )
+                                              : ListView.builder(
+                                                  scrollDirection:
+                                                      Axis.horizontal,
+                                                  itemCount:
+                                                      _timeOfDayPosts.length,
+                                                  itemBuilder:
+                                                      (context, index) {
+                                                    return TimeOfDayPostComponent(
+                                                      post: _timeOfDayPosts[
+                                                          index],
+                                                      fontSize: fontSize,
+                                                      onTap: () =>
+                                                          _handleTimeOfDayPostSelection(
+                                                              _timeOfDayPosts[
+                                                                  index]),
+                                                    );
+                                                  },
+                                                ),
+                                    ),
+                                  ],
+                                ),
+                              ]),
+                        ]),
+                  ]),
+            ))));
   }
 
   Widget buildCategoriesSection(BuildContext context, double fontSize) {
@@ -1239,9 +1298,7 @@ SizedBox(height: 20,),
             Text(
               context.loc.categories,
               style: GoogleFonts.poppins(
-                  fontSize: fontSize,
-                  fontWeight: FontWeight.bold
-              ),
+                  fontSize: fontSize, fontWeight: FontWeight.bold),
             ),
           ],
         ),
@@ -1251,17 +1308,23 @@ SizedBox(height: 20,),
           child: ListView(
             scrollDirection: Axis.horizontal,
             children: [
-              categoryCard(Icons.lightbulb, context.loc.motivational, Colors.green, fontSize),
-              categoryCard(Icons.favorite, context.loc.love, Colors.red, fontSize),
-              categoryCard(Icons.emoji_emotions, context.loc.funny, Colors.orange, fontSize),
-              categoryCard(Icons.people, context.loc.friendship, Colors.blue, fontSize),
-              categoryCard(Icons.self_improvement, context.loc.life, Colors.purple, fontSize),
+              categoryCard(Icons.lightbulb, context.loc.motivational,
+                  Colors.green, fontSize),
+              categoryCard(
+                  Icons.favorite, context.loc.love, Colors.red, fontSize),
+              categoryCard(Icons.emoji_emotions, context.loc.funny,
+                  Colors.orange, fontSize),
+              categoryCard(
+                  Icons.people, context.loc.friendship, Colors.blue, fontSize),
+              categoryCard(Icons.self_improvement, context.loc.life,
+                  Colors.purple, fontSize),
             ],
           ),
         ),
       ],
     );
   }
+
   Widget _buildRecentTemplatesSection() {
     return RecentTemplatesSection(
       recentTemplates: _recentTemplates,
@@ -1269,7 +1332,6 @@ SizedBox(height: 20,),
       isLoading: _loadingRecentTemplates,
     );
   }
-
 
   Widget quoteCard(String text, double fontSize) {
     return Container(
@@ -1308,28 +1370,29 @@ SizedBox(height: 20,),
             children: [
               festival.imageUrl.isNotEmpty
                   ? CachedNetworkImage(
-                imageUrl: festival.imageUrl,
-                placeholder: (context, url) => Center(
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-                errorWidget: (context, url, error) {
-                  print("Image loading error: $error for URL: $url");
-                  return Container(
-                    color: Colors.grey[300],
-                    child: Icon(Icons.error),
-                  );
-                },
-                fit: BoxFit.cover,
-                cacheKey: festival.id + "_image",
-                maxHeightDiskCache: 500,
-                maxWidthDiskCache: 500,
-              )
+                      imageUrl: festival.imageUrl,
+                      placeholder: (context, url) => Center(
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                      errorWidget: (context, url, error) {
+                        print("Image loading error: $error for URL: $url");
+                        return Container(
+                          color: Colors.grey[300],
+                          child: Icon(Icons.error),
+                        );
+                      },
+                      fit: BoxFit.cover,
+                      cacheKey: festival.id + "_image",
+                      maxHeightDiskCache: 500,
+                      maxWidthDiskCache: 500,
+                    )
                   : Container(
-                color: Colors.grey[200],
-                child: Center(
-                  child: Icon(Icons.image_not_supported, color: Colors.grey),
-                ),
-              ),
+                      color: Colors.grey[200],
+                      child: Center(
+                        child:
+                            Icon(Icons.image_not_supported, color: Colors.grey),
+                      ),
+                    ),
               if (festival.isPaid)
                 Positioned(
                   top: 5,

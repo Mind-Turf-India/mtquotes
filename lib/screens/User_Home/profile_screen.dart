@@ -399,6 +399,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: ListView(
                     padding: EdgeInsets.zero,
                     children: [
+                      _buildMenuItem(Icons.workspace_premium,
+                          context.loc.subscriptions, fontSize, () {}),
+                      _buildMenuItem(Icons.share_rounded,
+                          context.loc.shareapplication, fontSize, () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => ReferralPage()),
+                        );
+                      }),
+                      _buildMenuItem(Icons.drafts_outlined, context.loc.drafts,
+                          fontSize, () {}),
+                      _buildMenuItem(Icons.support_agent_outlined,
+                          context.loc.support, fontSize, () {}),
+                      _buildMenuItem(
+                          Icons.question_mark, context.loc.aboutus, fontSize,
+                          () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const AboutUsScreen()),
+                        );
+                      }),
                       _buildMenuItem(
                         Icons.settings,
                         context.loc.settings,
@@ -411,29 +434,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           );
                         },
                       ),
-                      _buildMenuItem(
-                          Icons.question_mark, context.loc.aboutus, fontSize,
-                          () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => const AboutUsScreen()),
-                        );
-                      }),
-                      _buildMenuItem(Icons.support_agent_outlined,
-                          context.loc.support, fontSize, () {}),
-                      _buildMenuItem(Icons.share_rounded,
-                          context.loc.shareapplication, fontSize, () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => ReferralPage()),
-                        );
-                      }),
-                      _buildMenuItem(Icons.drafts_outlined, context.loc.drafts,
-                          fontSize, () {}),
-                      _buildMenuItem(Icons.workspace_premium,
-                          context.loc.subscriptions, fontSize, () {}),
                     ],
                   ),
                 ),
