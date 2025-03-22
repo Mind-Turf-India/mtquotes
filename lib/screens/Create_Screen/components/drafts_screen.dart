@@ -9,9 +9,9 @@ import 'package:uuid/uuid.dart';
 class ImageEditorWithDrafts extends StatefulWidget {
   final String? imagePath;
   final String? draftId;
-  
+
   const ImageEditorWithDrafts({Key? key, this.imagePath, this.draftId}) : super(key: key);
-  
+
   @override
   _ImageEditorWithDraftsState createState() => _ImageEditorWithDraftsState();
 }
@@ -21,13 +21,13 @@ class _ImageEditorWithDraftsState extends State<ImageEditorWithDrafts> {
   late File _imageFile;
   bool _isLoading = true;
   final uuid = Uuid();
-  
+
   @override
   void initState() {
     super.initState();
     _initialize();
   }
-  
+
   Future<void> _initialize() async {
     if (widget.draftId != null) {
       await _loadDraft(widget.draftId!);
@@ -37,50 +37,50 @@ class _ImageEditorWithDraftsState extends State<ImageEditorWithDrafts> {
       // Handle the case where neither draft nor image is provided
       throw Exception('Either draftId or imagePath must be provided');
     }
-    
+
     setState(() {
       _isLoading = false;
     });
   }
-  
+
   Future<void> _loadDraft(String draftId) async {
     final draft = await _draftService.getDraft(draftId);
     _imageFile = File(draft!.editedImagePath);
   }
-  
+
   Future<void> _saveDraft() async {
     final tempDir = await getTemporaryDirectory();
     final now = DateTime.now();
     final savedImagePath = '${tempDir.path}/${uuid.v4()}.jpg';
-    
+
     // Save the current state of the image
     await _imageFile.copy(savedImagePath);
-    
+
     String originalPath = widget.imagePath ?? '';
     String draftId = widget.draftId ?? uuid.v4();
-    
+
     if (widget.draftId != null) {
       final existingDraft = await _draftService.getDraft(widget.draftId!);
       originalPath = existingDraft!.originalImagePath;
     }
-    
+
     final draft = ImageEditDraft(
       id: draftId,
       originalImagePath: originalPath,
       editedImagePath: savedImagePath,
-      createdAt: widget.draftId != null 
-          ? (await _draftService.getDraft(widget.draftId!))!.createdAt 
+      createdAt: widget.draftId != null
+          ? (await _draftService.getDraft(widget.draftId!))!.createdAt
           : now,
       updatedAt: now,
     );
-    
+
     await _draftService.saveDraft(draft);
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Draft saved successfully')),
     );
   }
-  
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -88,7 +88,7 @@ class _ImageEditorWithDraftsState extends State<ImageEditorWithDrafts> {
         body: Center(child: CircularProgressIndicator()),
       );
     }
-    
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Edit Image'),
@@ -136,7 +136,7 @@ class _ImageEditorWithDraftsState extends State<ImageEditorWithDrafts> {
       ),
     );
   }
-  
+
   Future<void> _openEditor() async {
     final editedImage = await Navigator.push(
       context,
@@ -146,13 +146,13 @@ class _ImageEditorWithDraftsState extends State<ImageEditorWithDrafts> {
         ),
       ),
     );
-    
+
     if (editedImage != null) {
       // Save edited image to a temporary file
       final tempDir = await getTemporaryDirectory();
       final tempFile = File('${tempDir.path}/${uuid.v4()}.jpg');
       await tempFile.writeAsBytes(editedImage);
-      
+
       setState(() {
         _imageFile = tempFile;
       });

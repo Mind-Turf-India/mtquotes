@@ -7,9 +7,16 @@ import 'package:speech_to_text/speech_to_text.dart';
 import 'package:provider/provider.dart';
 import 'package:mtquotes/providers/text_size_provider.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:intl/intl.dart';
+import 'package:mtquotes/screens/Create_Screen/components/imageEditDraft.dart';
+import 'package:mtquotes/screens/Create_Screen/components/drafts_service.dart';
 import '../Create_Screen/edit_screen_create.dart';
 
 class FilesPage extends StatefulWidget {
+  final int initialTabIndex;
+
+  FilesPage({this.initialTabIndex = 0});
+
   @override
   _FilesPageState createState() => _FilesPageState();
 }
@@ -23,13 +30,18 @@ class _FilesPageState extends State<FilesPage> {
   bool _isListening = false;
   bool _isLoading = true;
   List<FileSystemEntity> _downloadedImages = [];
+  List<ImageEditDraft> _drafts = [];
   String _searchQuery = '';
+  final DraftService _draftService = DraftService();
 
   @override
   void initState() {
     super.initState();
     initSpeech();
+    // Set the selected tab based on initialTabIndex
+    selectedTab = widget.initialTabIndex;
     loadDownloadedImages();
+    loadDrafts();
   }
 
   Future<void> loadDownloadedImages() async {
@@ -43,7 +55,8 @@ class _FilesPageState extends State<FilesPage> {
       if (Platform.isAndroid) {
         baseDir = Directory('/storage/emulated/0/Pictures/Vaky');
       } else {
-        baseDir = Directory('${(await getApplicationDocumentsDirectory()).path}/Vaky');
+        baseDir = Directory(
+            '${(await getApplicationDocumentsDirectory()).path}/Vaky');
       }
 
       // Create directory if it doesn't exist
@@ -73,7 +86,26 @@ class _FilesPageState extends State<FilesPage> {
     }
   }
 
-  List<FileSystemEntity> get filteredImages {
+  Future<void> loadDrafts() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final drafts = await _draftService.getAllDrafts();
+      setState(() {
+        _drafts = drafts;
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('Error loading drafts: $e');
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  List<FileSystemEntity> get filteredDownloadedImages {
     if (_searchQuery.isEmpty) {
       return _downloadedImages;
     }
@@ -81,6 +113,17 @@ class _FilesPageState extends State<FilesPage> {
     return _downloadedImages.where((file) {
       final fileName = file.path.split('/').last.toLowerCase();
       return fileName.contains(_searchQuery.toLowerCase());
+    }).toList();
+  }
+
+  List<ImageEditDraft> get filteredDrafts {
+    if (_searchQuery.isEmpty) {
+      return _drafts;
+    }
+
+    return _drafts.where((draft) {
+      final draftTitle = (draft.title ?? 'Untitled Draft').toLowerCase();
+      return draftTitle.contains(_searchQuery.toLowerCase());
     }).toList();
   }
 
@@ -120,7 +163,7 @@ class _FilesPageState extends State<FilesPage> {
     }
   }
 
-  // Method to navigate to template sharing
+  // Method to navigate to template editing
   Future<void> _navigateToTemplateSharing(File imageFile) async {
     try {
       // Show loading indicator
@@ -152,7 +195,7 @@ class _FilesPageState extends State<FilesPage> {
             initialImageData: fileBytes,
           ),
         ),
-      );
+      ).then((_) => loadDownloadedImages());
     } catch (e) {
       // Close loading indicator if still showing
       if (Navigator.canPop(context)) {
@@ -162,6 +205,66 @@ class _FilesPageState extends State<FilesPage> {
       // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Error opening image: $e")),
+      );
+    }
+  }
+
+  // Method to navigate to draft editing
+  Future<void> _navigateToDraftEditing(ImageEditDraft draft) async {
+    try {
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return Center(
+            child: CircularProgressIndicator(),
+          );
+        },
+      );
+
+      // Read the file bytes
+      final File editedFile = File(draft.editedImagePath);
+      final Uint8List fileBytes = await editedFile.readAsBytes();
+
+      // Close loading indicator
+      Navigator.of(context).pop();
+
+      // Navigate to EditScreen with the draft
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => EditScreen(
+            title: draft.title ?? 'Edit Draft',
+            initialImageData: fileBytes,
+            draftId: draft.id,
+          ),
+        ),
+      ).then((_) => loadDrafts());
+    } catch (e) {
+      // Close loading indicator if still showing
+      if (Navigator.canPop(context)) {
+        Navigator.of(context).pop();
+      }
+
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error opening draft: $e")),
+      );
+    }
+  }
+
+  Future<void> _deleteDraft(String draftId) async {
+    try {
+      await _draftService.deleteDraft(draftId);
+      loadDrafts();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Draft deleted")),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error deleting draft: $e")),
       );
     }
   }
@@ -176,15 +279,21 @@ class _FilesPageState extends State<FilesPage> {
       appBar: AppBar(
         title: Text(
           context.loc.files,
-          style: GoogleFonts.poppins(fontSize: fontSize + 4, fontWeight: FontWeight.w600, color: Colors.black),
+          style: GoogleFonts.poppins(
+              fontSize: fontSize + 4,
+              fontWeight: FontWeight.w600,
+              color: Colors.black),
         ),
         backgroundColor: Colors.white,
         elevation: 0,
         actions: [
-          // Refresh button to reload downloads
+          // Refresh button to reload
           IconButton(
             icon: Icon(Icons.refresh, color: Colors.black),
-            onPressed: loadDownloadedImages,
+            onPressed: () {
+              loadDownloadedImages();
+              loadDrafts();
+            },
           ),
         ],
       ),
@@ -202,7 +311,8 @@ class _FilesPageState extends State<FilesPage> {
                 style: TextStyle(fontSize: fontSize),
                 decoration: InputDecoration(
                   hintText: context.loc.searchfiles,
-                  hintStyle: GoogleFonts.poppins(fontSize: fontSize, color: Colors.grey[500]),
+                  hintStyle: GoogleFonts.poppins(
+                      fontSize: fontSize, color: Colors.grey[500]),
                   prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
                   suffixIcon: IconButton(
                     icon: Icon(
@@ -212,7 +322,8 @@ class _FilesPageState extends State<FilesPage> {
                     onPressed: _toggleListening,
                   ),
                   border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                 ),
                 onChanged: (value) {
                   setState(() {
@@ -232,7 +343,9 @@ class _FilesPageState extends State<FilesPage> {
                       tabs[index],
                       style: GoogleFonts.poppins(
                         fontSize: fontSize,
-                        color: selectedTab == index ? Colors.white : Colors.blueAccent,
+                        color: selectedTab == index
+                            ? Colors.white
+                            : Colors.blueAccent,
                       ),
                     ),
                     selected: selectedTab == index,
@@ -261,21 +374,23 @@ class _FilesPageState extends State<FilesPage> {
   }
 
   Widget _buildTabContent(int index, double textSize) {
-    if (index == 0) { // Downloads tab
+    if (index == 0) {
+      // Downloads tab
       if (_isLoading) {
         return Center(
           child: CircularProgressIndicator(),
         );
       }
 
-      if (filteredImages.isEmpty) {
+      if (filteredDownloadedImages.isEmpty) {
         return Center(
           child: Padding(
             padding: const EdgeInsets.only(top: 100.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.image_not_supported, size: 80, color: Colors.grey[400]),
+                Icon(Icons.image_not_supported,
+                    size: 80, color: Colors.grey[400]),
                 SizedBox(height: 16),
                 Text(
                   'No downloaded images found',
@@ -300,9 +415,9 @@ class _FilesPageState extends State<FilesPage> {
         ),
         shrinkWrap: true,
         physics: NeverScrollableScrollPhysics(),
-        itemCount: filteredImages.length,
+        itemCount: filteredDownloadedImages.length,
         itemBuilder: (context, index) {
-          final file = filteredImages[index] as File;
+          final file = filteredDownloadedImages[index] as File;
           final fileName = file.path.split('/').last;
 
           return InkWell(
@@ -311,7 +426,7 @@ class _FilesPageState extends State<FilesPage> {
               _navigateToTemplateSharing(file);
             },
             child: Padding(
-              padding: EdgeInsets.only(right: 8,bottom: 8),
+              padding: EdgeInsets.only(right: 8, bottom: 8),
               child: Column(
                 children: [
                   Container(
@@ -330,32 +445,188 @@ class _FilesPageState extends State<FilesPage> {
                     ),
                   ),
                   SizedBox(height: 5),
-
                 ],
               ),
             ),
           );
         },
       );
-    } else { // Drafts tab
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.only(top: 100.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.edit_document, size: 80, color: Colors.grey[400]),
-              SizedBox(height: 16),
-              Text(
-                'No drafts available',
-                style: GoogleFonts.poppins(
-                  fontSize: textSize + 2,
-                  color: Colors.grey[600],
+    } else {
+      // Drafts tab
+      if (_isLoading) {
+        return Center(
+          child: CircularProgressIndicator(),
+        );
+      }
+
+      if (filteredDrafts.isEmpty) {
+        return Center(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 100.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.edit_document, size: 80, color: Colors.grey[400]),
+                SizedBox(height: 16),
+                Text(
+                  'No drafts available',
+                  style: GoogleFonts.poppins(
+                    fontSize: textSize + 2,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+
+      return ListView.builder(
+        padding: EdgeInsets.all(10),
+        shrinkWrap: true,
+        physics: NeverScrollableScrollPhysics(),
+        itemCount: filteredDrafts.length,
+        itemBuilder: (context, index) {
+          final draft = filteredDrafts[index];
+          final dateFormat = DateFormat('MMM d, yyyy • h:mm a');
+          final lastEditedDate = dateFormat.format(draft.updatedAt);
+
+          return Card(
+            margin: EdgeInsets.only(bottom: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            elevation: 2,
+            child: InkWell(
+              onTap: () => _navigateToDraftEditing(draft),
+              borderRadius: BorderRadius.circular(12),
+              child: Padding(
+                padding: EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    // Draft thumbnail
+                    Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        color: Colors.grey[200],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: FutureBuilder<Uint8List>(
+                          future: File(draft.editedImagePath).readAsBytes(),
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState ==
+                                    ConnectionState.done &&
+                                snapshot.hasData) {
+                              return Image.memory(
+                                snapshot.data!,
+                                fit: BoxFit.cover,
+                              );
+                            } else {
+                              return Center(
+                                child: snapshot.hasError
+                                    ? Icon(Icons.error, color: Colors.red)
+                                    : CircularProgressIndicator(strokeWidth: 2),
+                              );
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 16),
+                    // Draft info
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            draft.title ?? 'Untitled Draft',
+                            style: GoogleFonts.poppins(
+                              fontSize: textSize,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            'Last edited: $lastEditedDate',
+                            style: GoogleFonts.poppins(
+                              fontSize: textSize - 2,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Options
+                    PopupMenuButton(
+                      icon: Icon(Icons.more_vert),
+                      onSelected: (value) async {
+                        if (value == 'edit') {
+                          _navigateToDraftEditing(draft);
+                        } else if (value == 'delete') {
+                          // Show confirmation dialog
+                          final shouldDelete = await showDialog<bool>(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: Text('Delete Draft'),
+                                  content: Text(
+                                      'Are you sure you want to delete this draft?'),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.of(context).pop(false),
+                                      child: Text('Cancel'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.of(context).pop(true),
+                                      child: Text('Delete',
+                                          style: TextStyle(color: Colors.red)),
+                                    ),
+                                  ],
+                                ),
+                              ) ??
+                              false;
+
+                          if (shouldDelete) {
+                            _deleteDraft(draft.id);
+                          }
+                        }
+                      },
+                      itemBuilder: (context) => [
+                        PopupMenuItem(
+                          value: 'edit',
+                          child: Row(
+                            children: [
+                              Icon(Icons.edit, size: 20),
+                              SizedBox(width: 8),
+                              Text('Edit'),
+                            ],
+                          ),
+                        ),
+                        PopupMenuItem(
+                          value: 'delete',
+                          child: Row(
+                            children: [
+                              Icon(Icons.delete, size: 20, color: Colors.red),
+                              SizedBox(width: 8),
+                              Text('Delete',
+                                  style: TextStyle(color: Colors.red)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       );
     }
   }

@@ -36,7 +36,7 @@ class ImageEditDraft {
     );
   }
 
-  // Convert draft to JSON for storage
+  // Convert draft to JSON for storageg
   Map<String, dynamic> toJson() {
     return {
       'id': id,
