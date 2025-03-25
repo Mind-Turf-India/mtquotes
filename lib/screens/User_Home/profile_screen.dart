@@ -394,7 +394,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 20),     
                 Expanded(
                   child: ListView(
                     padding: EdgeInsets.zero,
@@ -409,7 +409,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               builder: (context) => ReferralPage()),
                         );
                       }),
-                      _buildMenuItem(Icons.drafts_outlined, context.loc.drafts,
+                      _buildMenuItem(Icons.drafts_outlined, context.loc.downloads,
                           fontSize, () {}),
                       _buildMenuItem(Icons.support_agent_outlined,
                           context.loc.support, fontSize, () {}),

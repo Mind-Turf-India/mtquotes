@@ -40,7 +40,7 @@ class _CreateBottomSheetState extends State<CreateBottomSheet> {
                 children: [
                   _buildOptionItem(context, context.loc.gallery, Icons.image, fontSize),
                   _buildOptionItem(context, context.loc.template, Icons.folder, fontSize),
-                  _buildOptionItem(context, context.loc.drafts, Icons.description, fontSize),
+                  _buildOptionItem(context, context.loc.downloads, Icons.description, fontSize),
                 ],
               ),
             ),
@@ -105,7 +105,7 @@ class _CreateBottomSheetState extends State<CreateBottomSheet> {
           _navigateToScreen(context, TemplatePage());
         } else if (label == context.loc.gallery) {
           _navigateToScreen(context, EditScreen(title: context.loc.imageeditor));
-        } else if (label == context.loc.drafts) {
+        } else if (label == context.loc.downloads) {
           _navigateToScreen(context, FilesPage());
         }
       },
