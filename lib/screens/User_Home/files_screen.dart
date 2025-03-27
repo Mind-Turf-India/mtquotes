@@ -7,6 +7,7 @@ import 'package:speech_to_text/speech_to_text.dart';
 import 'package:provider/provider.dart';
 import 'package:mtquotes/providers/text_size_provider.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../Create_Screen/edit_screen_create.dart';
 
 class FilesPage extends StatefulWidget {
@@ -17,6 +18,8 @@ class FilesPage extends StatefulWidget {
 class _FilesPageState extends State<FilesPage> {
   final TextEditingController _searchController = TextEditingController();
   final SpeechToText _speechToText = SpeechToText();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
   bool _speechEnabled = false;
   bool _isListening = false;
   bool _isLoading = true;
@@ -28,29 +31,80 @@ class _FilesPageState extends State<FilesPage> {
     super.initState();
     initSpeech();
     loadDownloadedImages();
+
+    // Listen for auth state changes to reload files when user signs in/out
+    _auth.authStateChanges().listen((User? user) {
+      if (mounted) {
+        loadDownloadedImages();
+      }
+    });
+  }
+
+  // Get the user-specific directory path
+  Future<Directory> getUserSpecificDirectory() async {
+    Directory baseDir;
+
+    // Get current user
+    User? user = _auth.currentUser;
+    String userDir = user != null ? _sanitizeEmail(user.email!) : 'guest';
+
+    if (Platform.isAndroid) {
+      baseDir = Directory('/storage/emulated/0/Pictures/Vaky/$userDir');
+    } else {
+      baseDir = Directory('${(await getApplicationDocumentsDirectory()).path}/Vaky/$userDir');
+    }
+
+    // Create directory if it doesn't exist
+    if (!await baseDir.exists()) {
+      await baseDir.create(recursive: true);
+    }
+
+    return baseDir;
+  }
+
+  // Sanitize email for directory name (replace dots with underscores)
+  String _sanitizeEmail(String email) {
+    return email.replaceAll('.', '_').replaceAll('@', '_at_');
   }
 
   Future<void> loadDownloadedImages() async {
-    setState(() {
-      _isLoading = true;
-    });
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+      });
+    }
 
     try {
-      Directory? baseDir;
-
-      if (Platform.isAndroid) {
-        baseDir = Directory('/storage/emulated/0/Pictures/Vaky');
-      } else {
-        baseDir = Directory(
-            '${(await getApplicationDocumentsDirectory()).path}/Vaky');
+      // Check if user is logged in
+      User? user = _auth.currentUser;
+      if (user == null) {
+        if (mounted) {
+          setState(() {
+            _downloadedImages = [];
+            _isLoading = false;
+          });
+        }
+        return;
       }
 
-      // Create directory if it doesn't exist
+      // Get user-specific directory
+      Directory baseDir = await getUserSpecificDirectory();
+      print('Loading images from directory: ${baseDir.path}');
+
       if (!await baseDir.exists()) {
-        await baseDir.create(recursive: true);
+        print('Directory does not exist: ${baseDir.path}');
+        if (mounted) {
+          setState(() {
+            _downloadedImages = [];
+            _isLoading = false;
+          });
+        }
+        return;
       }
 
       final List<FileSystemEntity> files = await baseDir.list().toList();
+      print('Found ${files.length} files in directory');
+
       // Filter to include only jpg, jpeg, png files
       final imageFiles = files.where((file) {
         final path = file.path.toLowerCase();
@@ -60,15 +114,28 @@ class _FilesPageState extends State<FilesPage> {
                 path.endsWith('.png'));
       }).toList();
 
-      setState(() {
-        _downloadedImages = imageFiles;
-        _isLoading = false;
+      print('Found ${imageFiles.length} image files');
+
+      // Sort by modification time (newest first)
+      imageFiles.sort((a, b) {
+        return File(b.path).lastModifiedSync().compareTo(
+            File(a.path).lastModifiedSync());
       });
+
+      if (mounted) {
+        setState(() {
+          _downloadedImages = imageFiles;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
       print('Error loading downloaded images: $e');
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _downloadedImages = [];
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -167,6 +234,7 @@ class _FilesPageState extends State<FilesPage> {
   Widget build(BuildContext context) {
     final textSizeProvider = Provider.of<TextSizeProvider>(context);
     double fontSize = textSizeProvider.fontSize;
+    //final isUserLoggedIn = _auth.currentUser != null;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -217,7 +285,7 @@ class _FilesPageState extends State<FilesPage> {
                   ),
                   border: InputBorder.none,
                   contentPadding:
-                      EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                 ),
                 onChanged: (value) {
                   setState(() {
@@ -279,13 +347,17 @@ class _FilesPageState extends State<FilesPage> {
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
         crossAxisSpacing: 15,
-        mainAxisSpacing: 10,
+        mainAxisSpacing: 15,
         childAspectRatio: 0.8,
       ),
       itemCount: filteredDownloadedImages.length,
       itemBuilder: (context, index) {
         final file = filteredDownloadedImages[index] as File;
         final fileName = file.path.split('/').last;
+
+        // Get file modification date
+        final DateTime modDate = file.lastModifiedSync();
+        final String dateStr = "${modDate.day}/${modDate.month}/${modDate.year}";
 
         return InkWell(
           onTap: () {
@@ -296,22 +368,35 @@ class _FilesPageState extends State<FilesPage> {
             padding: EdgeInsets.only(right: 8, bottom: 8),
             child: Column(
               children: [
-                Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.file(
-                      file,
-                      fit: BoxFit.cover,
+                Expanded(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [BoxShadow(color: Colors.grey.shade300, blurRadius: 3)],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.file(
+                        file,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          print("Error loading image: $error");
+                          return Container(
+                            color: Colors.grey[300],
+                            child: Icon(Icons.error),
+                          );
+                        },
+                      ),
                     ),
                   ),
                 ),
-                SizedBox(height: 5),
+                // SizedBox(height: 5),
+                // Text(
+                //   dateStr,
+                //   style: TextStyle(fontSize: 12),
+                //   textAlign: TextAlign.center,
+                // ),
               ],
             ),
           ),

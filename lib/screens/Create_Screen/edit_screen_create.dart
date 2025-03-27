@@ -1,17 +1,20 @@
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:image_editor_plus/image_editor_plus.dart';
+import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mtquotes/screens/navbar_mainscreen.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:permission_handler/permission_handler.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:uuid/uuid.dart';
 import 'package:mtquotes/screens/Create_Screen/components/drafts_service.dart';
@@ -46,6 +49,7 @@ class _EditScreenState extends State<EditScreen> {
   bool defaultImageLoaded = true;
   bool isLoading = false;
   final uuid = Uuid();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   // final DraftService _draftService = DraftService();
   // String? currentDraftId; // Track the current draft ID
@@ -109,7 +113,7 @@ class _EditScreenState extends State<EditScreen> {
 
         if (userDoc.exists && userDoc.data() is Map<String, dynamic>) {
           Map<String, dynamic> userData =
-              userDoc.data() as Map<String, dynamic>;
+          userDoc.data() as Map<String, dynamic>;
 
           setState(() {
             showInfoBox = userData['showInfoBox'] ?? true;
@@ -134,158 +138,31 @@ class _EditScreenState extends State<EditScreen> {
     }
   }
 
-  // Load draft from DraftService
-  // Future<void> _loadDraft(String draftId) async {
-  //   setState(() {
-  //     isLoading = true;
-  //   });
+  // Get user-specific directory path for downloads
+  Future<String> _getUserSpecificDirectoryPath() async {
+    // Check if user is logged in
+    User? user = _auth.currentUser;
+    String userDir = user != null ? _sanitizeEmail(user.email!) : 'guest';
 
-  //   try {
-  //     final draft = await _draftService.getDraft(draftId);
-  //     if (draft != null) {
-  //       // Load the edited image from the path
-  //       final File imageFile = File(draft.editedImagePath);
-  //       final bytes = await imageFile.readAsBytes();
+    Directory baseDir;
+    if (Platform.isAndroid) {
+      baseDir = Directory('/storage/emulated/0/Pictures/Vaky/$userDir');
+    } else {
+      baseDir = Directory('${(await getApplicationDocumentsDirectory()).path}/Vaky/$userDir');
+    }
 
-  //       setState(() {
-  //         imageData = bytes;
-  //         defaultImageLoaded = false;
-  //         originalImagePath = draft.originalImagePath;
-  //         isLoading = false;
-  //       });
-  //     } else {
-  //       throw Exception('Draft not found');
-  //     }
-  //   } catch (e) {
-  //     print('Error loading draft: $e');
-  //     setState(() {
-  //       isLoading = false;
-  //     });
+    // Create directory if it doesn't exist
+    if (!await baseDir.exists()) {
+      await baseDir.create(recursive: true);
+    }
 
-  //     if (mounted) {
-  //       ScaffoldMessenger.of(context).showSnackBar(
-  //         SnackBar(content: Text("Error loading draft")),
-  //       );
-  //     }
-  //   }
-  // }
+    return baseDir.path;
+  }
 
-  // // Save to drafts
-  // Future<void> saveToDrafts({String? title}) async {
-  //   if (imageData == null) {
-  //     showNoImageSelectedDialog();
-  //     return;
-  //   }
-
-  //   _showLoadingIndicator();
-
-  //   try {
-  //     // Get a temporary directory to store the edited image
-  //     final tempDir = await getTemporaryDirectory();
-  //     final draftImagePath = '${tempDir.path}/draft_${DateTime.now().millisecondsSinceEpoch}.jpg';
-
-  //     // Save the current image to the path
-  //     final File draftImageFile = File(draftImagePath);
-  //     await draftImageFile.writeAsBytes(imageData!);
-
-  //     // Determine original image path
-  //     String origPath = originalImagePath ?? '';
-  //     if (origPath.isEmpty && widget.templateImageUrl != null) {
-  //       origPath = widget.templateImageUrl!;
-  //     }
-
-  //     // Create or update a draft
-  //     final draftId = currentDraftId ?? uuid.v4();
-  //     final now = DateTime.now();
-
-  //     DateTime createdAt = now;
-  //     if (currentDraftId != null) {
-  //       final existingDraft = await _draftService.getDraft(currentDraftId!);
-  //       if (existingDraft != null) {
-  //         createdAt = existingDraft.createdAt;
-  //       }
-  //     }
-
-  //     // final draft = ImageEditDraft(
-  //     //   id: draftId,
-  //     //   originalImagePath: origPath,
-  //     //   editedImagePath: draftImagePath,
-  //     //   createdAt: createdAt,
-  //     //   updatedAt: now,
-  //     //   title: title,
-  //     // );
-
-  //     await _draftService.saveDraft(draft);
-
-  //     // Update current draft ID
-  //     setState(() {
-  //       currentDraftId = draftId;
-  //     });
-
-  //     _hideLoadingIndicator();
-
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(
-  //         content: Text("Image saved to drafts"),
-  //         action: SnackBarAction(
-  //           label: 'VIEW DRAFTS',
-  //           onPressed: () {
-  //             Navigator.push(
-  //               context,
-  //               MaterialPageRoute(
-  //                 builder: (context) => FilesPage(initialTabIndex: 1), // Go to Drafts tab
-  //               ),
-  //             );
-  //           },
-  //         ),
-  //       ),
-  //     );
-  //   } catch (e) {
-  //     _hideLoadingIndicator();
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(content: Text("Error saving to drafts: $e")),
-  //     );
-  //   }
-  // }
-
-  // // Show dialog to name draft
-  // void _showSaveToDraftsDialog() {
-  //   final TextEditingController titleController = TextEditingController();
-
-  //   showDialog(
-  //     context: context,
-  //     builder: (BuildContext context) {
-  //       return AlertDialog(
-  //         title: Text('Save to Drafts'),
-  //         content: Column(
-  //           mainAxisSize: MainAxisSize.min,
-  //           children: [
-  //             TextField(
-  //               controller: titleController,
-  //               decoration: InputDecoration(
-  //                 hintText: 'Draft name (optional)',
-  //                 border: OutlineInputBorder(),
-  //               ),
-  //             ),
-  //           ],
-  //         ),
-  //         actions: [
-  //           TextButton(
-  //             onPressed: () => Navigator.of(context).pop(),
-  //             child: Text('Cancel'),
-  //           ),
-  //           TextButton(
-  //             onPressed: () {
-  //               Navigator.of(context).pop();
-  //               saveToDrafts(title: titleController.text.isNotEmpty ? titleController.text : null);
-  //             },
-  //             child: Text('Save'),
-  //           ),
-  //         ],
-  //       );
-  //     },
-  //   );
-  // }
+  // Sanitize email for directory name (replace dots with underscores)
+  String _sanitizeEmail(String email) {
+    return email.replaceAll('.', '_').replaceAll('@', '_at_');
+  }
 
   Widget _buildInfoBox() {
     if (!showInfoBox) return SizedBox();
@@ -323,20 +200,20 @@ class _EditScreenState extends State<EditScreen> {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               image:
-                  userProfileImageUrl != null && userProfileImageUrl!.isNotEmpty
-                      ? DecorationImage(
-                          image: NetworkImage(userProfileImageUrl!),
-                          fit: BoxFit.cover,
-                        )
-                      : null,
+              userProfileImageUrl != null && userProfileImageUrl!.isNotEmpty
+                  ? DecorationImage(
+                image: NetworkImage(userProfileImageUrl!),
+                fit: BoxFit.cover,
+              )
+                  : null,
               color: Colors.grey[300],
             ),
             child: userProfileImageUrl == null || userProfileImageUrl!.isEmpty
                 ? Icon(
-                    Icons.person,
-                    color: Colors.grey[400],
-                    size: 30,
-                  )
+              Icons.person,
+              color: Colors.grey[400],
+              size: 30,
+            )
                 : null,
           ),
           SizedBox(width: 12),
@@ -415,7 +292,7 @@ class _EditScreenState extends State<EditScreen> {
           .findRenderObject() as RenderRepaintBoundary;
       final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
       final ByteData? byteData =
-          await image.toByteData(format: ui.ImageByteFormat.png);
+      await image.toByteData(format: ui.ImageByteFormat.png);
 
       if (byteData != null) {
         return byteData.buffer.asUint8List();
@@ -439,7 +316,7 @@ class _EditScreenState extends State<EditScreen> {
       // Get the image with higher quality
       ui.Image image = await boundary.toImage(pixelRatio: 3.0);
       ByteData? byteData =
-          await image.toByteData(format: ui.ImageByteFormat.png);
+      await image.toByteData(format: ui.ImageByteFormat.png);
 
       if (byteData != null) {
         setState(() {
@@ -461,6 +338,27 @@ class _EditScreenState extends State<EditScreen> {
         return AlertDialog(
           title: Text('No Image Selected'),
           content: Text('Please select an image from gallery first.'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Helper method to show login required dialog
+  void _showLoginRequiredDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Login Required'),
+          content: Text('Please sign in to download images. This helps keep your downloads organized.'),
           actions: [
             TextButton(
               onPressed: () {
@@ -787,39 +685,91 @@ class _EditScreenState extends State<EditScreen> {
       return;
     }
 
+    // Check if user is logged in
+    User? user = _auth.currentUser;
+    if (user == null) {
+      _showLoginRequiredDialog();
+      return;
+    }
+
     _showLoadingIndicator();
 
     try {
-      Directory? baseDir;
+      // Request proper permissions based on platform and Android version
+      bool hasPermission = false;
 
       if (Platform.isAndroid) {
-        baseDir = Directory('/storage/emulated/0/Pictures/Vaky');
-      } else {
-        baseDir = Directory(
-            '${(await getApplicationDocumentsDirectory()).path}/Vaky');
+        // Request different permissions based on Android SDK version
+        if (await _getAndroidVersion() >= 33) { // Android 13+
+          hasPermission = await _requestAndroid13Permission();
+        } else if (await _getAndroidVersion() >= 29) { // Android 10-12
+          hasPermission = await Permission.storage.isGranted;
+          if (!hasPermission) {
+            hasPermission = (await Permission.storage.request()).isGranted;
+          }
+        } else { // Android 9 and below
+          hasPermission = await Permission.storage.isGranted;
+          if (!hasPermission) {
+            hasPermission = (await Permission.storage.request()).isGranted;
+          }
+        }
+      } else if (Platform.isIOS) {
+        // iOS typically doesn't need explicit permission for saving to gallery
+        hasPermission = true;
       }
 
-      if (!await baseDir.exists()) {
-        await baseDir.create(
-            recursive: true); // Create the folder if it doesn't exist
+      if (!hasPermission) {
+        _hideLoadingIndicator();
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Storage permission is required to save images"))
+        );
+        return;
       }
 
-      // Use a more descriptive filename with timestamp
+      // Generate a unique filename based on timestamp
       final timestamp = DateTime.now().millisecondsSinceEpoch;
-      String filePath = "${baseDir.path}/edited_image_$timestamp.jpg";
+      final fileName = "Vaky_${timestamp}.jpg";
+
+      // Save to gallery
+      final result = await ImageGallerySaverPlus.saveImage(
+        imageData!,
+        quality: 100,
+        name: fileName,
+      );
+
+      // Check if save was successful
+      bool isGallerySaveSuccess = false;
+      if (result is Map) {
+        isGallerySaveSuccess = result['isSuccess'] ?? false;
+      } else {
+        isGallerySaveSuccess = result != null;
+      }
+
+      if (!isGallerySaveSuccess) {
+        throw Exception("Failed to save image to gallery");
+      }
+
+      // 2. Also save to user-specific directory for Files screen
+      String userDirPath = await _getUserSpecificDirectoryPath();
+      String filePath = '$userDirPath/$fileName';
+
       File file = File(filePath);
       await file.writeAsBytes(imageData!);
 
+      // Keep track of saved images in Firestore
+      await _trackSavedImage(fileName);
+
       _hideLoadingIndicator();
 
-      // Show a more informative message
+      // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Image saved to downloads"),
+          content: Text("Image saved to your gallery and downloads"),
+          duration: Duration(seconds: 3),
           action: SnackBarAction(
-            label: 'VIEW',
+            label: 'VIEW ALL',
             onPressed: () {
-              // Navigate to FilesPage with Downloads tab selected
+              // Navigate to FilesPage
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -830,11 +780,68 @@ class _EditScreenState extends State<EditScreen> {
           ),
         ),
       );
+
+      print("Image saved to gallery and user directory: $fileName");
     } catch (e) {
       _hideLoadingIndicator();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Error saving image: $e")),
       );
+      print("Error saving image: $e");
+    }
+  }
+
+// Get Android version as an integer (e.g., 29 for Android 10)
+  Future<int> _getAndroidVersion() async {
+    if (Platform.isAndroid) {
+      try {
+        final androidInfo = await DeviceInfoPlugin().androidInfo;
+        return androidInfo.version.sdkInt;
+      } catch (e) {
+        print('Error getting Android version: $e');
+        return 0;
+      }
+    }
+    return 0;
+  }
+
+// Request permissions for Android 13+ (API level 33+)
+  Future<bool> _requestAndroid13Permission() async {
+    // Check if photos permission is already granted
+    bool photosGranted = await Permission.photos.isGranted;
+
+    if (!photosGranted) {
+      // Request photos permission
+      final status = await Permission.photos.request();
+      photosGranted = status.isGranted;
+    }
+
+    return photosGranted;
+  }
+
+
+// New helper method to track saved images in Firestore
+  Future<void> _trackSavedImage(String fileName) async {
+    try {
+      User? user = _auth.currentUser;
+      if (user?.email == null) return;
+
+      String userEmail = user!.email!.replaceAll('.', '_');
+
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userEmail)
+          .collection('saved_images')
+          .add({
+        'fileName': fileName,
+        'savedAt': FieldValue.serverTimestamp(),
+        'imageType': widget.templateImageUrl != null ? 'template' : 'custom',
+        'templateId': widget.templateImageUrl ?? 'none',
+        'templateTitle': widget.title,
+      });
+    } catch (e) {
+      print('Error tracking saved image: $e');
+      // Continue even if tracking fails - the image is still saved to gallery
     }
   }
 
@@ -945,53 +952,53 @@ class _EditScreenState extends State<EditScreen> {
               else
                 imageData == null
                     ? GestureDetector(
-                        onTap: pickImageFromGallery,
-                        child: Container(
-                          height: 400,
-                          width: double.infinity,
+                  onTap: pickImageFromGallery,
+                  child: Container(
+                    height: 400,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                          color: Colors.grey.shade400,
+                          style: BorderStyle.solid),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 80,
+                          height: 80,
                           decoration: BoxDecoration(
-                            border: Border.all(
-                                color: Colors.grey.shade400,
-                                style: BorderStyle.solid),
-                            borderRadius: BorderRadius.circular(12),
+                            shape: BoxShape.circle,
+                            color: Colors.grey,
                           ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Container(
-                                width: 80,
-                                height: 80,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Colors.grey,
-                                ),
-                                child: Icon(
-                                  Icons.add,
-                                  size: 40,
-                                  color: Colors.grey.shade400,
-                                ),
-                              ),
-                              SizedBox(height: 16),
-                              Text(
-                                'Tap to upload from gallery',
-                                style: TextStyle(
-                                  color: Colors.grey.shade400,
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ],
+                          child: Icon(
+                            Icons.add,
+                            size: 40,
+                            color: Colors.grey.shade400,
                           ),
                         ),
-                      )
+                        SizedBox(height: 16),
+                        Text(
+                          'Tap to upload from gallery',
+                          style: TextStyle(
+                            color: Colors.grey.shade400,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
                     : RepaintBoundary(
-                        key: imageContainerKey,
-                        child: Column(
-                          children: [
-                            Image.memory(imageData!),
-                            if (showInfoBox && isPaidUser) _buildInfoBox(),
-                          ],
-                        ),
-                      ),
+                  key: imageContainerKey,
+                  child: Column(
+                    children: [
+                      Image.memory(imageData!),
+                      if (showInfoBox && isPaidUser) _buildInfoBox(),
+                    ],
+                  ),
+                ),
               SizedBox(height: 100),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -1002,7 +1009,7 @@ class _EditScreenState extends State<EditScreen> {
                     label: Text('Change Image'),
                     style: ElevatedButton.styleFrom(
                       padding:
-                          EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                     ),
                   ),
                   ElevatedButton.icon(
@@ -1040,7 +1047,7 @@ class _EditScreenState extends State<EditScreen> {
                     label: Text('Edit Image'),
                     style: ElevatedButton.styleFrom(
                       padding:
-                          EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                     ),
                   ),
                 ],

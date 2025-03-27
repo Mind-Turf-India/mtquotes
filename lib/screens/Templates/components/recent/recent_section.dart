@@ -55,7 +55,7 @@ class RecentTemplatesSection extends StatelessWidget {
         ),
         SizedBox(height: 10),
         SizedBox(
-          height: 120,
+          height: 180,
           child: isLoading
               ? Center(child: CircularProgressIndicator())
               : !isUserLoggedIn
@@ -96,7 +96,8 @@ class RecentTemplatesSection extends StatelessWidget {
     return GestureDetector(
       onTap: () => onTemplateSelected(template),
       child: Container(
-        width: 100,
+        width: 150,
+        height: 80,
         margin: EdgeInsets.only(right: 10),
         decoration: BoxDecoration(
           color: Colors.white,
