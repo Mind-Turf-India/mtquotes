@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
+import 'dart:ui';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -15,6 +16,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mtquotes/screens/Templates/components/template/quote_template.dart';
+import '../../../Create_Screen/components/details_screen.dart';
 import '../recent/recent_service.dart';
 
 class FestivalSharingPage extends StatefulWidget {
@@ -64,7 +66,8 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
       );
 
       await RecentTemplateService.addRecentTemplate(template);
-      print('Added festival to recents from sharing page: ${widget.festival.id}');
+      print(
+          'Added festival to recents from sharing page: ${widget.festival.id}');
     } catch (e) {
       print('Error adding festival to recents from sharing page: $e');
     }
@@ -73,7 +76,8 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
   // Load the original image to get its dimensions
   Future<void> _loadOriginalImage() async {
     try {
-      final http.Response response = await http.get(Uri.parse(widget.festival.imageUrl));
+      final http.Response response = await http.get(
+          Uri.parse(widget.festival.imageUrl));
       if (response.statusCode == 200) {
         final decodedImage = await decodeImageFromList(response.bodyBytes);
         setState(() {
@@ -136,7 +140,8 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
                           Icon(Icons.check_circle, color: Colors.green),
                           SizedBox(width: 8),
                           Expanded(
-                            child: Text('Share the festival post without personal branding'),
+                            child: Text(
+                                'Share the festival post without personal branding'),
                           ),
                         ],
                       ),
@@ -169,22 +174,23 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
                             borderRadius: BorderRadius.circular(8),
                             image: DecorationImage(
                               image: NetworkImage(widget.festival.imageUrl),
-                              fit: BoxFit.contain, // Use contain to avoid cropping
+                              fit: BoxFit
+                                  .contain, // Use contain to avoid cropping
                             ),
                           ),
                           child: Stack(
                             children: [
-                              // Preview of watermark in the top right
-                              Positioned(
-                                top: 10,
-                                right: 10,
+                              // Preview of watermark in the center
+                              Positioned.fill(
                                 child: Opacity(
-                                  opacity: 0.3,
-                                  child: Image.asset(
-                                    'assets/logo.png',
-                                    width: 40,
-                                    height: 40,
-                                    fit: BoxFit.contain,
+                                  opacity: 0.2,
+                                  child: Center(
+                                    child: Image.asset(
+                                      'assets/logo.png',
+                                      width: 100,
+                                      height: 100,
+                                      fit: BoxFit.contain,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -197,10 +203,11 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton.icon(
-                          onPressed: () => _shareFestival(
-                            context,
-                            isPaid: false,
-                          ),
+                          onPressed: () =>
+                              _shareFestival(
+                                context,
+                                isPaid: false,
+                              ),
                           icon: Icon(Icons.share),
                           label: Text('Share Basic'),
                           style: ElevatedButton.styleFrom(
@@ -253,7 +260,8 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                   side: BorderSide(
-                    color: widget.isPaidUser ? Colors.blue : Colors.grey.shade300,
+                    color: widget.isPaidUser ? Colors.blue : Colors.grey
+                        .shade300,
                     width: 2,
                   ),
                 ),
@@ -275,7 +283,8 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
                           Icon(Icons.check_circle, color: Colors.green),
                           SizedBox(width: 8),
                           Expanded(
-                            child: Text('Include your name and profile picture on the festival post'),
+                            child: Text(
+                                'Include your name and profile picture on the festival post'),
                           ),
                         ],
                       ),
@@ -295,64 +304,116 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
                           Icon(Icons.check_circle, color: Colors.green),
                           SizedBox(width: 8),
                           Expanded(
+                            child: Text(
+                                'No watermark - clean professional look'),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Icon(Icons.check_circle, color: Colors.green),
+                          SizedBox(width: 8),
+                          Expanded(
                             child: Text('High quality image export'),
                           ),
                         ],
                       ),
                       SizedBox(height: 16),
-                      // Premium post preview with branding
-                      RepaintBoundary(
-                        key: widget._brandedImageKey,
-                        child: AspectRatio(
-                          aspectRatio: _aspectRatio,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(8),
-                              image: DecorationImage(
-                                image: NetworkImage(widget.festival.imageUrl),
-                                fit: BoxFit.contain,
+                      // Premium festival preview with info box
+                      FutureBuilder<DocumentSnapshot>(
+                        future: FirebaseFirestore.instance
+                            .collection('users')
+                            .doc(FirebaseAuth.instance.currentUser?.email
+                            ?.replaceAll('.', '_'))
+                            .get(),
+                        builder: (context, snapshot) {
+                          String userName = '';
+                          String userProfileUrl = '';
+                          String userLocation = '';
+
+                          // Extract user data if available
+                          if (snapshot.hasData && snapshot.data != null &&
+                              snapshot.data!.exists) {
+                            final userData = snapshot.data!.data() as Map<
+                                String,
+                                dynamic>;
+                            userName = userData['name'] ?? '';
+                            userProfileUrl = userData['profileImage'] ?? '';
+                            userLocation = userData['location'] ?? '';
+                          }
+
+                          return RepaintBoundary(
+                            key: widget._brandedImageKey,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.grey.shade300),
                               ),
-                            ),
-                            child: Stack(
-                              children: [
-                                Positioned(
-                                  bottom: 10,
-                                  right: 10,
-                                  child: Container(
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 4,
+                              child: Column(
+                                children: [
+                                  // Festival image with proper aspect ratio
+                                  AspectRatio(
+                                    aspectRatio: _aspectRatio,
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.vertical(
+                                            top: Radius.circular(8)),
+                                        image: DecorationImage(
+                                          image: NetworkImage(
+                                              widget.festival.imageUrl),
+                                          fit: BoxFit.contain,
+                                        ),
+                                      ),
                                     ),
+                                  ),
+
+                                  // Info box at the bottom
+                                  Container(
+                                    width: double.infinity,
+                                    padding: EdgeInsets.all(12),
                                     decoration: BoxDecoration(
-                                      color: Colors.black.withOpacity(0.6),
-                                      borderRadius: BorderRadius.circular(12),
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.vertical(
+                                          bottom: Radius.circular(8)),
                                     ),
                                     child: Row(
-                                      mainAxisSize: MainAxisSize.min,
                                       children: [
+                                        // Profile image
                                         CircleAvatar(
-                                          radius: 10,
-                                          backgroundImage: widget.userProfileImageUrl.isNotEmpty
-                                              ? NetworkImage(widget.userProfileImageUrl)
-                                              : AssetImage('assets/profile_placeholder.png') as ImageProvider,
+                                          radius: 20,
+                                          backgroundImage: userProfileUrl
+                                              .isNotEmpty
+                                              ? NetworkImage(userProfileUrl)
+                                              : AssetImage(
+                                              'assets/profile_placeholder.png') as ImageProvider,
                                         ),
-                                        SizedBox(width: 4),
-                                        Text(
-                                          widget.userName,
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
+                                        SizedBox(width: 12),
+
+                                        // User details
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment
+                                                .start,
+                                            children: [
+                                              Text(
+                                                userName,
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 16,
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ),
                                       ],
                                     ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
-                        ),
+                          );
+                        },
                       ),
                       SizedBox(height: 16),
                       // Premium share button
@@ -360,15 +421,22 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
                         width: double.infinity,
                         child: ElevatedButton.icon(
                           onPressed: widget.isPaidUser
-                              ? () => _shareFestival(
-                            context,
-                            isPaid: true,
-                          )
-                              : () => Navigator.pushNamed(context, '/subscription'),
-                          icon: Icon(widget.isPaidUser ? Icons.share : Icons.lock),
-                          label: Text(widget.isPaidUser ? 'Share Now' : 'Upgrade to Pro'),
+                              ? () =>
+                              _shareFestival(
+                                context,
+                                isPaid: true,
+                              )
+                              : () =>
+                              Navigator.pushNamed(context, '/subscription'),
+                          icon: Icon(widget.isPaidUser ? Icons.share : Icons
+                              .lock),
+                          label: Text(widget.isPaidUser
+                              ? 'Share Now'
+                              : 'Upgrade to Pro'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: widget.isPaidUser ? Colors.blue : Colors.blue,
+                            backgroundColor: widget.isPaidUser
+                                ? Colors.blue
+                                : Colors.blue,
                             foregroundColor: Colors.white,
                             padding: EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
@@ -377,6 +445,24 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
                           ),
                         ),
                       ),
+                      // SizedBox(height: 16),
+                      // // Preview button
+                      // SizedBox(
+                      //   width: double.infinity,
+                      //   child: ElevatedButton.icon(
+                      //     onPressed: () => showFestivalInfoBox(context),
+                      //     icon: Icon(Icons.preview),
+                      //     label: Text('Preview & Create'),
+                      //     style: ElevatedButton.styleFrom(
+                      //       backgroundColor: Colors.grey.shade200,
+                      //       foregroundColor: Colors.black87,
+                      //       padding: EdgeInsets.symmetric(vertical: 12),
+                      //       shape: RoundedRectangleBorder(
+                      //         borderRadius: BorderRadius.circular(24),
+                      //       ),
+                      //     ),
+                      //   ),
+                      // ),
                     ],
                   ),
                 ),
@@ -391,10 +477,14 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
   // Method to capture widget as image with branding
   Future<Uint8List?> _captureBrandedImage() async {
     try {
-      final RenderRepaintBoundary boundary = widget._brandedImageKey.currentContext!
+      final RenderRepaintBoundary boundary = widget._brandedImageKey
+          .currentContext!
           .findRenderObject() as RenderRepaintBoundary;
+
+      // Use a higher pixel ratio for better quality
       final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
-      final ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      final ByteData? byteData = await image.toByteData(
+          format: ui.ImageByteFormat.png);
       return byteData?.buffer.asUint8List();
     } catch (e) {
       print('Error capturing branded image: $e');
@@ -406,7 +496,8 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
   Future<Uint8List?> _addBrandingToImage(Uint8List originalImageBytes) async {
     try {
       // Decode the original image
-      final ui.Image originalImage = await decodeImageFromList(originalImageBytes);
+      final ui.Image originalImage = await decodeImageFromList(
+          originalImageBytes);
 
       // Create a recorder and canvas
       final ui.PictureRecorder recorder = ui.PictureRecorder();
@@ -430,7 +521,8 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
       ui.Image? profileImage;
       if (widget.userProfileImageUrl.isNotEmpty) {
         try {
-          final http.Response response = await http.get(Uri.parse(widget.userProfileImageUrl));
+          final http.Response response = await http.get(
+              Uri.parse(widget.userProfileImageUrl));
           if (response.statusCode == 200) {
             profileImage = await decodeImageFromList(response.bodyBytes);
           }
@@ -446,8 +538,10 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
       // Make branding proportional to image size
       final double brandingWidth = width * 0.4;
       final double brandingHeight = height * 0.06;
-      final double brandingX = width - brandingWidth - width * 0.025; // 2.5% padding
-      final double brandingY = height - brandingHeight - height * 0.025; // 2.5% padding
+      final double brandingX = width - brandingWidth -
+          width * 0.025; // 2.5% padding
+      final double brandingY = height - brandingHeight -
+          height * 0.025; // 2.5% padding
 
       // Draw branding background
       final Paint bgPaint = Paint()
@@ -480,12 +574,14 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
 
         // Draw the profile image in a circle
         final Path clipPath = Path()
-          ..addOval(Rect.fromLTWH(profileX, profileY, profileSize, profileSize));
+          ..addOval(
+              Rect.fromLTWH(profileX, profileY, profileSize, profileSize));
         canvas.clipPath(clipPath);
 
         canvas.drawImageRect(
           profileImage,
-          Rect.fromLTWH(0, 0, profileImage.width.toDouble(), profileImage.height.toDouble()),
+          Rect.fromLTWH(0, 0, profileImage.width.toDouble(),
+              profileImage.height.toDouble()),
           Rect.fromLTWH(profileX, profileY, profileSize, profileSize),
           Paint(),
         );
@@ -513,9 +609,11 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
         ..addText(widget.userName);
 
       final ui.Paragraph paragraph = paragraphBuilder.build()
-        ..layout(ui.ParagraphConstraints(width: brandingWidth - (profileImage != null ? brandingHeight * 0.8 + 12 : 8)));
+        ..layout(ui.ParagraphConstraints(width: brandingWidth -
+            (profileImage != null ? brandingHeight * 0.8 + 12 : 8)));
 
-      canvas.drawParagraph(paragraph, Offset(textX, textY - paragraph.height / 2));
+      canvas.drawParagraph(
+          paragraph, Offset(textX, textY - paragraph.height / 2));
 
       // Convert canvas to image - use the original dimensions
       final ui.Picture picture = recorder.endRecording();
@@ -525,7 +623,8 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
       );
 
       // Convert image to bytes
-      final ByteData? byteData = await renderedImage.toByteData(format: ui.ImageByteFormat.png);
+      final ByteData? byteData = await renderedImage.toByteData(
+          format: ui.ImageByteFormat.png);
       return byteData?.buffer.asUint8List();
     } catch (e) {
       print('Error adding branding to image: $e');
@@ -537,7 +636,8 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
   Future<Uint8List?> _addWatermarkToImage(Uint8List originalImageBytes) async {
     try {
       // Decode the original image
-      final ui.Image originalImage = await decodeImageFromList(originalImageBytes);
+      final ui.Image originalImage = await decodeImageFromList(
+          originalImageBytes);
 
       // Create a recorder and canvas
       final ui.PictureRecorder recorder = ui.PictureRecorder();
@@ -548,23 +648,28 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
 
       // Load the logo watermark
       final ByteData logoData = await rootBundle.load('assets/logo.png');
-      final ui.Image logo = await decodeImageFromList(logoData.buffer.asUint8List());
+      final ui.Image logo = await decodeImageFromList(
+          logoData.buffer.asUint8List());
 
-      // Calculate size and position for the watermark in top right corner
+      // Calculate size and position for the watermark in center (same as template sharing)
       final double width = originalImage.width.toDouble();
       final double height = originalImage.height.toDouble();
-      final double watermarkSize = width * 0.15; // 15% of the image width
-      final double watermarkX = width - watermarkSize - 16;  // Position from right edge with padding
-      final double watermarkY = 16; // Position from top with padding
+      final double watermarkSize = width * 0.2; // 20% of the image width
 
-      // Apply semi-transparent effect to the watermark
-      final Paint watermarkPaint = Paint();
+      // Draw watermark in center
+      final Paint watermarkPaint = Paint()
+        ..color = Colors.white.withOpacity(0.3);
 
-      // Draw the watermark
+      // Draw the watermark in center
       canvas.drawImageRect(
         logo,
         Rect.fromLTWH(0, 0, logo.width.toDouble(), logo.height.toDouble()),
-        Rect.fromLTWH(watermarkX, watermarkY, watermarkSize, watermarkSize),
+        Rect.fromLTWH(
+            (width - watermarkSize) / 2,
+            (height - watermarkSize) / 2,
+            watermarkSize,
+            watermarkSize
+        ),
         watermarkPaint,
       );
 
@@ -576,7 +681,8 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
       );
 
       // Convert image to bytes
-      final ByteData? byteData = await renderedImage.toByteData(format: ui.ImageByteFormat.png);
+      final ByteData? byteData = await renderedImage.toByteData(
+          format: ui.ImageByteFormat.png);
       return byteData?.buffer.asUint8List();
     } catch (e) {
       print('Error adding watermark to image: $e');
@@ -585,7 +691,8 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
   }
 
   // Sharing implementation with fixes
-  Future<void> _shareFestival(BuildContext context, {required bool isPaid}) async {
+  Future<void> _shareFestival(BuildContext context,
+      {required bool isPaid}) async {
     try {
       // Add to recent templates again to ensure it's captured when sharing
       await _addToRecentTemplates();
@@ -611,19 +718,42 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
       Uint8List? imageBytes;
 
       if (isPaid) {
-        // For premium users, add branding to the original image
-        imageBytes = await _addBrandingToImage(originalImageBytes);
+        try {
+          // Make sure UI is fully rendered before capture
+          await Future.delayed(Duration(milliseconds: 100));
 
-        if (imageBytes == null) {
-          print('Branding failed, falling back to original image');
+          // First try to capture the branded template widget directly
+          imageBytes = await _captureBrandedImage();
+
+          // If direct widget capture fails, try programmatic branding approach
+          if (imageBytes == null) {
+            print('Direct capture returned null, trying programmatic branding');
+            imageBytes = await _addBrandingToImage(originalImageBytes);
+          }
+
+          // If both approaches fail, fall back to the original image
+          if (imageBytes == null) {
+            print(
+                'Both branding approaches failed, falling back to direct download');
+            imageBytes = originalImageBytes;
+          }
+        } catch (e) {
+          print(
+              'Error in premium capture: $e, falling back to direct download');
           imageBytes = originalImageBytes;
         }
       } else {
         // For free users, add the watermark to the image
-        imageBytes = await _addWatermarkToImage(originalImageBytes);
+        try {
+          imageBytes = await _addWatermarkToImage(originalImageBytes);
 
-        if (imageBytes == null) {
-          print('Watermark failed, falling back to original image');
+          // If watermarking fails, fall back to the original image
+          if (imageBytes == null) {
+            print('Watermark failed, falling back to direct download');
+            imageBytes = originalImageBytes;
+          }
+        } catch (e) {
+          print('Error adding watermark: $e, falling back to direct download');
           imageBytes = originalImageBytes;
         }
       }
@@ -664,7 +794,6 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
       if (context.mounted) {
         await _showRatingDialog(context);
       }
-
     } catch (e) {
       // Close loading dialog if open
       if (Navigator.of(context, rootNavigator: true).canPop()) {
@@ -685,7 +814,222 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
     }
   }
 
-  // Rating dialog implementation (unchanged)
+  // Info box component for the festival sharing page
+  Widget _buildInfoBox({
+    required String title,
+    required VoidCallback onCreatePressed,
+    required VoidCallback onSharePressed,
+    required VoidCallback onCancelPressed,
+    required Widget contentWidget,
+  }) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Content widget (festival image with branding)
+            contentWidget,
+            SizedBox(height: 24),
+
+            // Title if provided
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: 8),
+
+            Text(
+              'Do you wish to continue?',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            SizedBox(height: 16),
+
+            // Buttons
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: 100,
+                      child: ElevatedButton(
+                        onPressed: onCreatePressed,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                        ),
+                        child: Text('Create'),
+                      ),
+                    ),
+                    SizedBox(width: 40),
+                    SizedBox(
+                      width: 100,
+                      child: ElevatedButton(
+                        onPressed: onCancelPressed,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: Colors.black87,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          padding: EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        child: Text('Cancel'),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 12),
+                // Share Button
+                Center(
+                  child: SizedBox(
+                    width: 140,
+                    child: ElevatedButton.icon(
+                      onPressed: onSharePressed,
+                      icon: Icon(Icons.share),
+                      label: Text('Share'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Add this method to show the info box dialog
+  void showFestivalInfoBox(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+          child: Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: EdgeInsets.symmetric(horizontal: 20),
+            child: SingleChildScrollView(
+              child: _buildInfoBox(
+                title: widget.festival.name,
+                onCreatePressed: () {
+                  Navigator.of(context).pop();
+                  // Navigate to details screen instead of directly to edit screen
+                  QuoteTemplate template = QuoteTemplate(
+                    id: widget.festival.id,
+                    title: widget.festival.name,
+                    imageUrl: widget.festival.imageUrl,
+                    isPaid: widget.festival.isPaid,
+                    category: widget.festival.category,
+                    createdAt: widget.festival.createdAt,
+                  );
+
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          DetailsScreen(
+                            template: template,
+                            isPaidUser: widget.isPaidUser,
+                          ),
+                    ),
+                  );
+                },
+                onSharePressed: () {
+                  Navigator.of(context).pop();
+                  _shareFestival(context, isPaid: widget.isPaidUser);
+                },
+                onCancelPressed: () => Navigator.of(context).pop(),
+                contentWidget: RepaintBoundary(
+                  key: widget._brandedImageKey,
+                  child: AspectRatio(
+                    aspectRatio: _aspectRatio,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        image: DecorationImage(
+                          image: NetworkImage(widget.festival.imageUrl),
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                      child: widget.isPaidUser
+                          ? Align(
+                        alignment: Alignment.bottomRight,
+                        child: Padding(
+                          padding: const EdgeInsets.all(10.0),
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.6),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                CircleAvatar(
+                                  radius: 10,
+                                  backgroundImage: widget.userProfileImageUrl
+                                      .isNotEmpty
+                                      ? NetworkImage(widget.userProfileImageUrl)
+                                      : AssetImage(
+                                      'assets/profile_placeholder.png') as ImageProvider,
+                                ),
+                                SizedBox(width: 4),
+                                Text(
+                                  widget.userName,
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      )
+                          : null,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+// Rating dialog implementation
   Future<void> _showRatingDialog(BuildContext context) async {
     double rating = 0;
 
@@ -699,7 +1043,8 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
                 content: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text('How would you rate your experience with this festival post?'),
+                    Text(
+                        'How would you rate your experience with this festival post?'),
                     SizedBox(height: 20),
                     FittedBox(
                       child: Row(
@@ -708,7 +1053,8 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
                           return IconButton(
                             icon: Icon(
                               index < rating ? Icons.star : Icons.star_border,
-                              color: index < rating ? Colors.amber : Colors.grey,
+                              color: index < rating ? Colors.amber : Colors
+                                  .grey,
                               size: 36,
                             ),
                             onPressed: () {
@@ -731,7 +1077,8 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
                   ),
                   TextButton(
                     onPressed: () {
-                      Navigator.of(dialogContext).pop(rating); // Close the dialog
+                      Navigator.of(dialogContext).pop(
+                          rating); // Close the dialog
                       Navigator.of(context).pushReplacementNamed('/nav_bar');
                     },
                     child: Text('Submit'),
@@ -759,8 +1106,9 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
     });
   }
 
-  // Submit rating - this function remains the same
-  static Future<void> _submitRating(double rating, FestivalPost festival) async {
+// Submit rating function
+  static Future<void> _submitRating(double rating,
+      FestivalPost festival) async {
     try {
       final DateTime now = DateTime.now();
 
@@ -769,28 +1117,32 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
         'festivalId': festival.id,
         'rating': rating,
         'category': festival.category,
-        'createdAt': now,  // Firestore will convert this to Timestamp
+        'createdAt': now,
+        // Firestore will convert this to Timestamp
         'imageUrl': festival.imageUrl,
         'isPaid': festival.isPaid,
-        'userId': FirebaseAuth.instance.currentUser?.uid ?? 'anonymous', // Get user ID if logged in
+        'name': festival.name,
+        'userId': FirebaseAuth.instance.currentUser?.uid ?? 'anonymous',
+        // Get user ID if logged in
       };
 
       await FirebaseFirestore.instance
-          .collection('ratings')
+          .collection('festival_ratings')
           .add(ratingData);
 
       // Update the festival's average rating
       await _updateFestivalAverageRating(festival.id, rating);
-
     } catch (e) {
       print('Error submitting rating: $e');
     }
   }
 
-  static Future<void> _updateFestivalAverageRating(String festivalId, double newRating) async {
+  static Future<void> _updateFestivalAverageRating(String festivalId,
+      double newRating) async {
     try {
       // Get reference to the festival document
-      final festivalRef = FirebaseFirestore.instance.collection('festivals').doc(festivalId);
+      final festivalRef = FirebaseFirestore.instance.collection('festivals')
+          .doc(festivalId.split('_')[0]);
 
       // Run this as a transaction to ensure data consistency
       await FirebaseFirestore.instance.runTransaction((transaction) async {
@@ -805,7 +1157,8 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
           int ratingCount = data['ratingCount'] ?? 0;
 
           int newRatingCount = ratingCount + 1;
-          double newAvgRating = ((currentAvgRating * ratingCount) + newRating) / newRatingCount;
+          double newAvgRating = ((currentAvgRating * ratingCount) + newRating) /
+              newRatingCount;
 
           // Update the festival with the new average rating
           transaction.update(festivalRef, {

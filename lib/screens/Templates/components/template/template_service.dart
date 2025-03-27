@@ -9,16 +9,23 @@ class TemplateService {
   // Check if user is subscribed
   Future<bool> isUserSubscribed() async {
     try {
-      if (_auth.currentUser == null) return false;
+      User? currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser?.email == null) return false;
 
-      DocumentSnapshot userDoc = await _firestore
+      String docId = currentUser!.email!.replaceAll('.', '_');
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
           .collection('users')
-          .doc(_auth.currentUser!.uid)
+          .doc(docId)
           .get();
 
-      return userDoc.exists && (userDoc.data() as Map<String, dynamic>)['isSubscribed'] == true;
+      if (userDoc.exists && userDoc.data() is Map<String, dynamic>) {
+        Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+        return userData['isPaid'] == true ||
+            userData['subscriptionStatus'] == 'active';
+      }
+      return false;
     } catch (e) {
-      print('Error checking subscription: $e');
+      print('Error checking subscription status: $e');
       return false;
     }
   }

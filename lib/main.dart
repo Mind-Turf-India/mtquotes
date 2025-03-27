@@ -1,6 +1,8 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:mtquotes/providers/text_size_provider.dart';
+import 'package:mtquotes/screens/Create_Screen/components/details_screen.dart';
+import 'package:mtquotes/screens/Templates/components/template/quote_template.dart';
 import 'package:mtquotes/screens/Templates/subscription_screen.dart';
 import 'package:mtquotes/screens/Templates/components/template/template_handler.dart';
 import 'package:mtquotes/screens/Templates/subscription_service.dart';
@@ -105,12 +107,20 @@ class MyAppState extends State<MyApp> {
           routes: {
             'onboarding': (context) => OnboardingScreen(),
             'login': (context) => LoginScreen(),
-            'main': (context) => MainScreen(),
             '/subscription': (context) => SubscriptionScreen(),
             '/home': (context) => HomeScreen(),
-            '/nav_bar':(context) => MainScreen()
-          },
-        );
+            '/nav_bar': (context) => MainScreen(),
+            '/profile_details': (context) {
+              final args = ModalRoute
+                  .of(context)!
+                  .settings
+                  .arguments as Map<String, dynamic>;
+              return DetailsScreen(
+                template: args['template'] as QuoteTemplate,
+                isPaidUser: args['isPaidUser'] as bool,
+              );
+            },
+          });
       },
     );
   }

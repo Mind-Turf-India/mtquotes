@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:http/http.dart' as http;
 import 'package:mtquotes/l10n/app_localization.dart';
+import 'package:mtquotes/screens/Create_Screen/components/details_screen.dart';
 import 'package:mtquotes/screens/Templates/components/template/template_service.dart';
 import 'package:mtquotes/screens/Templates/components/template/template_sharing.dart';
 import 'package:path_provider/path_provider.dart';
@@ -70,11 +71,16 @@ class TemplateHandler {
         );
       } else {
         // Show confirmation dialog with preview
-        showTemplateConfirmationDialog(
+        // The issue is here - we need to pass isSubscribed as the third parameter
+        _showTemplateConfirmationDialog(
           context,
           template,
-              () => onAccessGranted(template),
+          isSubscribed, // Pass the boolean value here
         );
+
+        // Then we need to modify _showTemplateConfirmationDialog to handle the callback
+        // This should be done in the implementation of _showTemplateConfirmationDialog
+        // to call onAccessGranted(template) when the create button is pressed
       }
     } catch (e) {
       hideLoadingIndicator(context);
@@ -322,6 +328,9 @@ class TemplateHandler {
         String? userProfileImageUrl,
         bool isPaidUser = false,
       }) async {
+    // Capture context early
+    final capturedContext = context;
+
     try {
       // Add to recent templates when sharing
       try {
@@ -382,31 +391,48 @@ class TemplateHandler {
       }
 
       // Check if we're coming from the sharing page - if not, navigate to it
-      if (!(Navigator.of(context).widget is TemplateSharingPage)) {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => TemplateSharingPage(
-              template: template,
-              userName: userName ?? context.loc.user,  // Default value if null
-              userProfileImageUrl: userProfileImageUrl ?? '',
-              isPaidUser: isPaidUser,
+      if (capturedContext.mounted) {
+        bool isOnSharingPage = false;
+
+        try {
+          // This is more reliable than using is operator which can cause issues
+          isOnSharingPage = Navigator.of(capturedContext).widget.toString().contains('TemplateSharingPage');
+        } catch (e) {
+          print('Error checking current page: $e');
+        }
+
+        if (!isOnSharingPage) {
+          Navigator.of(capturedContext).push(
+            MaterialPageRoute(
+              builder: (context) => TemplateSharingPage(
+                template: template,
+                userName: userName ?? 'User',  // Default value if null
+                userProfileImageUrl: userProfileImageUrl ?? '',
+                isPaidUser: isPaidUser,
+              ),
             ),
-          ),
-        );
-        return;
+          );
+          return;
+        }
+      } else {
+        return; // Context is no longer mounted, can't proceed
       }
 
       // If we're already on the sharing page, perform the actual sharing
       // Show loading indicator
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) {
-          return Center(
-            child: CircularProgressIndicator(),
-          );
-        },
-      );
+      if (capturedContext.mounted) {
+        showDialog(
+          context: capturedContext,
+          barrierDismissible: false,
+          builder: (BuildContext dialogContext) {
+            return Center(
+              child: CircularProgressIndicator(),
+            );
+          },
+        );
+      } else {
+        return; // Context is no longer mounted, can't proceed
+      }
 
       Uint8List? imageBytes;
 
@@ -424,7 +450,11 @@ class TemplateHandler {
       }
 
       // Close loading dialog
-      Navigator.of(context, rootNavigator: true).pop();
+      if (capturedContext.mounted) {
+        Navigator.of(capturedContext, rootNavigator: true).pop();
+      } else {
+        return; // Context is no longer mounted, can't proceed
+      }
 
       if (imageBytes == null) {
         throw Exception('Failed to process image');
@@ -454,330 +484,323 @@ class TemplateHandler {
 
       // Show rating dialog after sharing
       await Future.delayed(Duration(milliseconds: 500));
-      if (context.mounted) {
-        await _showRatingDialog(context, template);
+      if (capturedContext.mounted) {
+        await _showRatingDialog(capturedContext, template);
       }
 
     } catch (e) {
-      // Close loading dialog if open
-      if (Navigator.of(context).canPop()) {
-        Navigator.of(context, rootNavigator: true).pop();
-      }
       print('Error sharing template: $e');
 
-      // Show error message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to share image: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      // Close loading dialog if open
+      if (capturedContext.mounted) {
+        try {
+          Navigator.of(capturedContext, rootNavigator: true).pop();
+        } catch (dialogError) {
+          print('Error closing dialog: $dialogError');
+        }
+
+        // Show error message
+        ScaffoldMessenger.of(capturedContext).showSnackBar(
+          SnackBar(
+            content: Text('Failed to share image: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
 // Method to show the template confirmation dialog
-  static void showTemplateConfirmationDialog(
+  static void _showTemplateConfirmationDialog(
       BuildContext context,
       QuoteTemplate template,
-      VoidCallback onCreatePressed,
-      ) async {
-    // Add to recent templates when showing confirmation dialog
-    try {
-      await RecentTemplateService.addRecentTemplate(template);
-      print('Added template to recents in confirmation dialog: ${template.id}');
-    } catch (e) {
-      print('Error adding template to recents in confirmation dialog: $e');
+      bool isPaidUser,
+      ) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+          child: Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: EdgeInsets.symmetric(horizontal: 20),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Template Image
+                          Container(
+                            height: 400,
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8),
+                              image: DecorationImage(
+                                image: NetworkImage(template.imageUrl),
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: 24),
+                          Text(
+                            'Do you wish to continue?',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          SizedBox(height: 16),
+                          Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  SizedBox(
+                                    width: 100,
+                                    child: ElevatedButton(
+                                      onPressed: () {
+                                        Navigator.of(context).pop();
+                                        // Navigate to profile details screen
+                                        _navigateToProfileDetailsScreen(context, template, isPaidUser);
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.blue,
+                                        foregroundColor: Colors.white,
+                                        elevation: 0,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(24),
+                                        ),
+                                      ),
+                                      child: Text('Create'),
+                                    ),
+                                  ),
+                                  SizedBox(width: 40),
+                                  SizedBox(
+                                    width: 100,
+                                    child: ElevatedButton(
+                                      onPressed: () => Navigator.of(context).pop(),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.white,
+                                        foregroundColor: Colors.black87,
+                                        elevation: 0,
+                                        side: BorderSide(color: Colors.grey.shade300),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(24),
+                                        ),
+                                        padding: EdgeInsets.symmetric(vertical: 12),
+                                      ),
+                                      child: Text('Cancel'),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 12),
+                              // Share Button
+                              Center(
+                                child: SizedBox(
+                                  width: 140,
+                                  child: ElevatedButton.icon(
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                      _handleShareTemplate(context, template, isPaidUser);
+                                    },
+                                    icon: Icon(Icons.share),
+                                    label: Text('Share'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.blue,
+                                      foregroundColor: Colors.white,
+                                      elevation: 0,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(24),
+                                      ),
+                                      padding: EdgeInsets.symmetric(vertical: 12),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  static void _navigateToProfileDetailsScreen(
+      BuildContext context,
+      QuoteTemplate template,
+      bool isPaidUser) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DetailsScreen(
+          template: template,
+          isPaidUser: isPaidUser,
+        ),
+      ),
+    );
+  }
+
+  static void _handleShareTemplate(
+      BuildContext context,
+      QuoteTemplate template,
+      bool isPaidUser) {
+    if (isPaidUser) {
+      // For paid users, try to fetch user info first
+      _navigateToSharing(
+          context,
+          template,
+          'User',
+          '',
+          true
+      );
+    } else {
+      // For free users, go to template sharing page
+      _navigateToSharing(
+          context,
+          template,
+          'User',
+          '',
+          false
+      );
     }
+  }
 
-    showLoadingIndicator(context);
+// Helper method to safely navigate to sharing page
+  static void _navigateToSharing(
+      BuildContext context,
+      QuoteTemplate template,
+      String userName,
+      String userProfileImageUrl,
+      bool isPaidUser) {
+    print("navigating to sharing");
+    // Check if context is still mounted before navigating
+    if (context.mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => TemplateSharingPage(
+            template: template,
+            userName: userName,
+            userProfileImageUrl: userProfileImageUrl,
+            isPaidUser: isPaidUser,
+          ),
+        ),
+      );
+    }
+    print("success");
+  }
 
+  static Future<void> _getUserInfoAndShare(BuildContext context, QuoteTemplate template) async {
     try {
-      final templateService = TemplateService();
-      bool isPaidUser = await templateService.isUserSubscribed();
+      // Capture these values early to ensure context doesn't change during async operations
+      final BuildContext capturedContext = context;
 
       User? currentUser = FirebaseAuth.instance.currentUser;
+      String userName = currentUser?.displayName ?? 'User';
+      String userProfileImageUrl = currentUser?.photoURL ?? '';
 
-      // Default values from Firebase Auth
-      String defaultUserName = currentUser?.displayName ?? context.loc.user;
-      String defaultProfileImageUrl = currentUser?.photoURL ?? '';
-
-      String userName = defaultUserName;
-      String userProfileImageUrl = defaultProfileImageUrl;
-
-      // Fetch user data from users collection if available
+      // Try to get user details from Firestore if available
       if (currentUser?.email != null) {
-        try {
-          // Convert email to document ID format (replace . with _)
-          String docId = currentUser!.email!.replaceAll('.', '_');
+        String docId = currentUser!.email!.replaceAll('.', '_');
 
-          // Fetch user document from Firestore
-          DocumentSnapshot userDoc = await FirebaseFirestore.instance
-              .collection('users')
-              .doc(docId)
-              .get();
+        DocumentSnapshot userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(docId)
+            .get();
+        print("user deets");
 
-          // Check if document exists and has required fields
-          if (userDoc.exists && userDoc.data() is Map<String, dynamic>) {
-            Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+        if (userDoc.exists && userDoc.data() is Map<String, dynamic>) {
+          Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
 
-            // Get name from Firestore with fallback
-            if (userData.containsKey('name') && userData['name'] != null && userData['name'].toString().isNotEmpty) {
-              userName = userData['name'];
-            }
-
-            // Get profile image from Firestore with fallback
-            if (userData.containsKey('profileImage') && userData['profileImage'] != null && userData['profileImage'].toString().isNotEmpty) {
-              userProfileImageUrl = userData['profileImage'];
-            }
+          // Get name from Firestore with fallback
+          if (userData.containsKey('name') && userData['name'] != null && userData['name'].toString().isNotEmpty) {
+            userName = userData['name'];
+            print("name fetched");
           }
-        } catch (e) {
-          print('Error fetching user data: $e');
+
+          // Get profile image from Firestore with fallback
+          if (userData.containsKey('profileImage') && userData['profileImage'] != null && userData['profileImage'].toString().isNotEmpty) {
+            userProfileImageUrl = userData['profileImage'];
+            print("pic fetched");
+
+          }
         }
       }
 
-      hideLoadingIndicator(context);
+      // Use the helper method to navigate safely
+      _navigateToSharing(capturedContext, template, userName, userProfileImageUrl, true);
+      print("navigated");
 
-      // Continue with the rest of your method using userName and userProfileImageUrl
-
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) {
-          return BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-            child: Dialog(
-              backgroundColor: Colors.transparent,
-              insetPadding: EdgeInsets.symmetric(horizontal: 20),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Padding(
-                        padding: EdgeInsets.all(16),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              width: double.infinity,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Padding(
-                                padding: EdgeInsets.all(16),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    RepaintBoundary(
-                                      key: templateImageKey,
-                                      child: Container(
-                                        width: double.infinity,
-                                        decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(8),
-                                          border: Border.all(color: Colors.grey.shade300),
-                                        ),
-                                        child: Column(
-                                          children: [
-                                            Stack(
-                                              children: [
-                                                Container(
-                                                  height: 400,
-                                                  decoration: BoxDecoration(
-                                                    borderRadius: BorderRadius.circular(8),
-                                                    image: DecorationImage(
-                                                      image: NetworkImage(template.imageUrl),
-                                                      fit: BoxFit.cover,
-                                                    ),
-                                                  ),
-                                                  child: isPaidUser
-                                                      ? Stack(
-                                                    children: [
-                                                      // Branded corner mark for paid users
-                                                      Positioned(
-                                                        bottom: 10,
-                                                        right: 10,
-                                                        child: Container(
-                                                          padding: EdgeInsets.symmetric(
-                                                              horizontal: 8,
-                                                              vertical: 4
-                                                          ),
-                                                          decoration: BoxDecoration(
-                                                            color: Colors.black.withOpacity(0.6),
-                                                            borderRadius: BorderRadius.circular(12),
-                                                          ),
-                                                          child: Row(
-                                                            mainAxisSize: MainAxisSize.min,
-                                                            children: [
-                                                              CircleAvatar(
-                                                                radius: 10,
-                                                                backgroundImage: userProfileImageUrl.isNotEmpty
-                                                                    ? NetworkImage(userProfileImageUrl)
-                                                                    : AssetImage('assets/profile_placeholder.png') as ImageProvider,
-                                                              ),
-                                                              SizedBox(width: 4),
-                                                              Text(
-                                                                userName,
-                                                                style: TextStyle(
-                                                                  fontSize: 10,
-                                                                  color: Colors.white,
-                                                                  fontWeight: FontWeight.bold,
-                                                                ),
-                                                              ),
-                                                            ],
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  )
-                                                      : null,
-                                                ),
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                    SizedBox(height: 24),
-                                    Text(
-                                      'Do you wish to continue?',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    SizedBox(height: 16),
-                                    Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Row(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            SizedBox(
-                                              width: 100,
-                                              child: ElevatedButton(
-                                                onPressed: () {
-                                                  Navigator.of(context).pop();
-                                                  // Add template to recents before navigating
-                                                  try {
-                                                    // Try to add to recent templates, but don't wait for it to complete
-                                                    // before navigating - this prevents getting stuck if there's an issue
-                                                    RecentTemplateService.addRecentTemplate(template).catchError((error) {
-                                                      print('Error adding to recents, but continuing: $error');
-                                                    });
-
-                                                    // Navigate to edit screen immediately
-                                                    Navigator.of(context).push(
-                                                      MaterialPageRoute(
-                                                        builder: (context) => EditScreen(
-                                                          title: 'Edit Template',
-                                                          templateImageUrl: template.imageUrl,
-                                                        ),
-                                                      ),
-                                                    );
-                                                  } catch (e) {
-                                                    print('Error navigating to edit screen: $e');
-                                                    // Show error if needed
-                                                    ScaffoldMessenger.of(context).showSnackBar(
-                                                        SnackBar(content: Text('Error opening template for editing'))
-                                                    );
-                                                  }
-                                                },
-                                                style: ElevatedButton.styleFrom(
-                                                  backgroundColor: Colors.blue,
-                                                  foregroundColor: Colors.white,
-                                                  elevation: 0,
-                                                  shape: RoundedRectangleBorder(
-                                                    borderRadius: BorderRadius.circular(24),
-                                                  ),
-                                                ),
-                                                child: Text('Create'),
-                                              ),
-                                            ),
-                                            SizedBox(width: 40),
-                                            SizedBox(
-                                              width: 100,
-                                              child: ElevatedButton(
-                                                onPressed: () => Navigator.of(context).pop(),
-                                                style: ElevatedButton.styleFrom(
-                                                  backgroundColor: Colors.white,
-                                                  foregroundColor: Colors.black87,
-                                                  elevation: 0,
-                                                  side: BorderSide(color: Colors.grey.shade300),
-                                                  shape: RoundedRectangleBorder(
-                                                    borderRadius: BorderRadius.circular(24),
-                                                  ),
-                                                  padding: EdgeInsets.symmetric(vertical: 12),
-                                                ),
-                                                child: Text('Cancel'),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        SizedBox(height: 12),
-                                        // Modified Share Button - now navigates to share page
-                                        Center(
-                                          child: SizedBox(
-                                            width: 140,
-                                            child: ElevatedButton.icon(
-                                              onPressed: () {
-                                                Navigator.of(context).pop();
-                                                Navigator.of(context).push(
-                                                  MaterialPageRoute(
-                                                    builder: (context) => TemplateSharingPage(
-                                                      template: template,
-                                                      userName: userName,
-                                                      userProfileImageUrl: userProfileImageUrl,
-                                                      isPaidUser: isPaidUser,
-                                                    ),
-                                                  ),
-                                                );
-                                              },
-                                              icon: Icon(Icons.share),
-                                              label: Text('Share'),
-                                              style: ElevatedButton.styleFrom(
-                                                backgroundColor: Colors.blue,
-                                                foregroundColor: Colors.white,
-                                                elevation: 0,
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius: BorderRadius.circular(24),
-                                                ),
-                                                padding: EdgeInsets.symmetric(vertical: 12),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            )
-                          ],
-                        ),
-                      ),
-                    )
-                  ],
-                ),
-              ),
-            ),
-          );
-        },
-      );
     } catch (e) {
-      hideLoadingIndicator(context);
-      print('Error in showTemplateConfirmationDialog: $e');
+      print('Error getting user info for sharing: $e');
+      // Fall back to basic sharing if there's an error
+      if (context.mounted) {
+        _navigateToSharing(context, template, 'User', '', true);
+      }
+      print("not navigated");
+    }
+  }
+
+  static Future<void> handleEditScreenSharing(
+      BuildContext context,
+      Uint8List imageData,
+      bool isPaidUser
+      ) async {
+    // For free users, redirect to template sharing
+    if (!isPaidUser) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('An error occurred. Please try again.'),
-          backgroundColor: Colors.red,
+          content: Text('Upgrade to access direct sharing'),
+          action: SnackBarAction(
+            label: 'UPGRADE',
+            onPressed: () {
+              Navigator.pushNamed(context, '/subscription');
+            },
+          ),
         ),
       );
+      return;
+    }
+
+    // For paid users, directly share using Share.shareFiles
+    try {
+      // Save image to temp file
+      final temp = await getTemporaryDirectory();
+      final path = "${temp.path}/edited_image.jpg";
+      File(path).writeAsBytes(imageData);
+
+      // Share the image
+      await Share.shareXFiles(
+        [XFile(path)],
+        text: 'Check out this amazing template from our app!',
+      );
+    } catch (e) {
+      print('Error sharing from edit screen: $e');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to share image. Please try again.')),
+        );
+      }
     }
   }
 

@@ -22,7 +22,7 @@ class Festival {
 
   factory Festival.fromFirestore(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-    
+
     // Parse templates
     List<FestivalTemplate> templatesList = [];
     if (data['templates'] != null) {
@@ -30,7 +30,7 @@ class Festival {
         templatesList.add(FestivalTemplate.fromMap(template));
       }
     }
-    
+
     return Festival(
       id: doc.id,
       name: data['name'] ?? '',
@@ -41,7 +41,6 @@ class Festival {
     );
   }
 }
-
 
 class FestivalTemplate {
   final String id;
@@ -63,14 +62,11 @@ class FestivalTemplate {
   }
 }
 
-
 class FestivalService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-
-  
- // Get templates for a specific festival
+  // Get templates for a specific festival
   List<FestivalTemplate> getTemplatesForFestival(Festival festival) {
     return festival.templates;
   }
@@ -79,28 +75,34 @@ class FestivalService {
   FestivalTemplate? getTemplateById(Festival festival, String templateId) {
     try {
       return festival.templates.firstWhere(
-        (template) => template.id == templateId,
+            (template) => template.id == templateId,
       );
     } catch (e) {
       print('Template not found: $e');
       return null;
     }
   }
-  
 
-  // Check if user is subscribed
+  // Check if user is subscribed - updated to match TemplateService implementation
   Future<bool> isUserSubscribed() async {
     try {
-      if (_auth.currentUser == null) return false;
+      User? currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser?.email == null) return false;
 
-      DocumentSnapshot userDoc = await _firestore
+      String docId = currentUser!.email!.replaceAll('.', '_');
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
           .collection('users')
-          .doc(_auth.currentUser!.uid)
+          .doc(docId)
           .get();
 
-      return userDoc.exists && (userDoc.data() as Map<String, dynamic>)['isSubscribed'] == true;
+      if (userDoc.exists && userDoc.data() is Map<String, dynamic>) {
+        Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+        return userData['isPaid'] == true ||
+            userData['subscriptionStatus'] == 'active';
+      }
+      return false;
     } catch (e) {
-      print('Error checking subscription: $e');
+      print('Error checking subscription status: $e');
       return false;
     }
   }
@@ -111,7 +113,7 @@ class FestivalService {
       // Get current date
       final now = DateTime.now();
       final startOfDay = DateTime(now.year, now.month, now.day);
-      
+
       QuerySnapshot snapshot = await _firestore
           .collection('festivals')
           .where('festivalDate', isGreaterThanOrEqualTo: startOfDay)
@@ -131,41 +133,41 @@ class FestivalService {
   }
 
   // Fetch recent festival posts
-  // Fetch recent festival posts
-Future<List<Festival>> fetchRecentFestivalPosts() async {
-  try {
-    // Get current date
-    final DateTime now = DateTime.now();
-    
-    // Get all festivals
-    QuerySnapshot snapshot = await _firestore
-        .collection('festivals')
-        .orderBy('festivalDate')
-        .get();
+  Future<List<Festival>> fetchRecentFestivalPosts() async {
+    try {
+      // Get current date
+      final DateTime now = DateTime.now();
 
-    // Filter festivals that should be active now
-    List<Festival> festivals = [];
-    
-    for (var doc in snapshot.docs) {
-      final festival = Festival.fromFirestore(doc);
-      
-      // Calculate the date when the festival should start showing
-      final DateTime showFromDate = festival.date.subtract(Duration(days: festival.showDaysBefore));
-      
-      // Only include festivals that should be shown today
-      if (now.isAfter(showFromDate) || now.isAtSameMomentAs(showFromDate)) {
-        if (now.isBefore(festival.date.add(const Duration(days: 1)))) {
-          festivals.add(festival);
+      // Get all festivals
+      QuerySnapshot snapshot = await _firestore
+          .collection('festivals')
+          .orderBy('festivalDate')
+          .get();
+
+      // Filter festivals that should be active now
+      List<Festival> festivals = [];
+
+      for (var doc in snapshot.docs) {
+        final festival = Festival.fromFirestore(doc);
+
+        // Calculate the date when the festival should start showing
+        final DateTime showFromDate = festival.date.subtract(Duration(days: festival.showDaysBefore));
+
+        // Only include festivals that should be shown today
+        if (now.isAfter(showFromDate) || now.isAtSameMomentAs(showFromDate)) {
+          if (now.isBefore(festival.date.add(const Duration(days: 1)))) {
+            festivals.add(festival);
+          }
         }
       }
-    }
 
-    return festivals;
-  } catch (e) {
-    print('Error fetching recent festivals: $e');
-    return [];
+      return festivals;
+    } catch (e) {
+      print('Error fetching recent festivals: $e');
+      return [];
+    }
   }
-}
+
   // Fetch trending festival posts
   Future<List<Festival>> fetchTrendingFestivalPosts() async {
     try {
@@ -210,25 +212,25 @@ Future<List<Festival>> fetchRecentFestivalPosts() async {
     try {
       final DateTime now = DateTime.now();
       final snapshot = await _firestore.collection('festivals').get();
-      
+
       List<Festival> activeFestivals = [];
       for (var doc in snapshot.docs) {
         final festival = Festival.fromFirestore(doc);
         final DateTime showFromDate = festival.date.subtract(Duration(days: festival.showDaysBefore));
-        
+
         // Check if today is within the active window for the festival
         if (now.isAfter(showFromDate) && now.isBefore(festival.date.add(Duration(days: 1)))) {
           activeFestivals.add(festival);
         }
       }
-      
+
       return activeFestivals;
     } catch (e) {
       print('Error fetching active festivals: $e');
       return [];
     }
   }
-  
+
   // Find the next upcoming festival
   Future<Festival?> getNextFestival() async {
     try {
@@ -238,13 +240,109 @@ Future<List<Festival>> fetchRecentFestivalPosts() async {
           .orderBy('festivalDate')
           .limit(1)
           .get();
-          
+
       if (snapshot.docs.isEmpty) return null;
-      
+
       return Festival.fromFirestore(snapshot.docs.first);
     } catch (e) {
       print('Error fetching next festival: $e');
       return null;
+    }
+  }
+
+  // Get user info for the info box
+  Future<Map<String, String>> getUserInfo() async {
+    try {
+      User? currentUser = _auth.currentUser;
+      String defaultUserName = currentUser?.displayName ?? 'User';
+      String defaultProfileImageUrl = currentUser?.photoURL ?? '';
+
+      if (currentUser?.email != null) {
+        String docId = currentUser!.email!.replaceAll('.', '_');
+
+        DocumentSnapshot userDoc = await _firestore
+            .collection('users')
+            .doc(docId)
+            .get();
+
+        if (userDoc.exists && userDoc.data() is Map<String, dynamic>) {
+          Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+
+          String userName = userData['name'] != null && userData['name'].toString().isNotEmpty
+              ? userData['name']
+              : defaultUserName;
+
+          String profileImageUrl = userData['profileImage'] != null && userData['profileImage'].toString().isNotEmpty
+              ? userData['profileImage']
+              : defaultProfileImageUrl;
+
+          return {
+            'userName': userName,
+            'profileImageUrl': profileImageUrl,
+          };
+        }
+      }
+
+      return {
+        'userName': defaultUserName,
+        'profileImageUrl': defaultProfileImageUrl,
+      };
+    } catch (e) {
+      print('Error getting user info: $e');
+      return {
+        'userName': 'User',
+        'profileImageUrl': '',
+      };
+    }
+  }
+
+  // Submit rating for a festival
+  Future<void> submitFestivalRating(Festival festival, double rating) async {
+    try {
+      final DateTime now = DateTime.now();
+      User? currentUser = _auth.currentUser;
+
+      // Create rating record
+      Map<String, dynamic> ratingData = {
+        'festivalId': festival.id,
+        'festivalName': festival.name,
+        'rating': rating,
+        'createdAt': now,
+        'userId': currentUser?.uid ?? 'anonymous',
+        'userEmail': currentUser?.email ?? 'anonymous',
+      };
+
+      // Add to ratings collection
+      await _firestore.collection('festival_ratings').add(ratingData);
+
+      // Update average rating in the festival document
+      DocumentReference festivalRef = _firestore.collection('festivals').doc(festival.id);
+
+      // Run as transaction to ensure data consistency
+      await _firestore.runTransaction((transaction) async {
+        DocumentSnapshot festivalDoc = await transaction.get(festivalRef);
+
+        if (festivalDoc.exists) {
+          Map<String, dynamic> data = festivalDoc.data() as Map<String, dynamic>;
+
+          double currentAvgRating = data['averageRating']?.toDouble() ?? 0.0;
+          int ratingCount = data['ratingCount'] ?? 0;
+
+          int newRatingCount = ratingCount + 1;
+          double newAvgRating = ((currentAvgRating * ratingCount) + rating) / newRatingCount;
+
+          transaction.update(festivalRef, {
+            'averageRating': newAvgRating,
+            'ratingCount': newRatingCount,
+            'lastRated': FieldValue.serverTimestamp(),
+          });
+        }
+      });
+
+      print('Rating submitted successfully for festival ${festival.name}: $rating stars');
+    } catch (e) {
+      print('Error submitting festival rating: $e');
+      throw e;
     }
   }
 }

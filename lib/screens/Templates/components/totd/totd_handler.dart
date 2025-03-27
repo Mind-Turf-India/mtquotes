@@ -13,6 +13,7 @@ import 'package:mtquotes/screens/Templates/components/totd/totd_service.dart';
 import 'package:mtquotes/screens/Templates/components/totd/totd_sharing.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import '../../../Create_Screen/components/details_screen.dart';
 import '../../../Create_Screen/edit_screen_create.dart';
 import 'package:mtquotes/screens/Templates/components/template/quote_template.dart';
 import '../recent/recent_service.dart';
@@ -32,70 +33,6 @@ class TimeOfDayHandler {
     );
   }
 
-  // Handle TOTD post selection with subscription check
-  static Future<void> handleTimeOfDayPostSelection(BuildContext context,
-      TimeOfDayPost post,
-      Function(TimeOfDayPost) onAccessGranted,) async {
-    // Add to recent templates if user is subscribed or post is free
-    try {
-      bool isSubscribed = await _isUserSubscribed();
-      if (!post.isPaid || isSubscribed) {
-        // Convert TOTD post to quote template format for recent templates
-        QuoteTemplate template = _convertTOTDToQuoteTemplate(post);
-        await RecentTemplateService.addRecentTemplate(template);
-        print('Added TOTD to recents on selection: ${post.id}');
-      }
-    } catch (e) {
-      print('Error adding TOTD to recents: $e');
-    }
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return Center(
-          child: CircularProgressIndicator(),
-        );
-      },
-    );
-    final timeOfDayService = TimeOfDayService();
-    bool isSubscribed = await _isUserSubscribed();
-    Navigator.of(context, rootNavigator: true).pop();
-
-    if (post.isPaid && !isSubscribed) {
-      // Show subscription dialog/prompt
-      showDialog(
-        context: context,
-        builder: (context) =>
-            AlertDialog(
-              title: Text('Premium Content'),
-              content: Text(
-                  'This content requires a subscription. Subscribe to access all premium time of day posts.'),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text('Cancel'),
-                ),
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    // Navigate to subscription page
-                    Navigator.pushNamed(context, '/subscription');
-                  },
-                  child: Text('Subscribe'),
-                ),
-              ],
-            ),
-      );
-    } else {
-      // Show confirmation dialog with preview
-      showTOTDConfirmationDialog(
-        context,
-        post,
-            () => onAccessGranted(post),
-      );
-    }
-  }
 
   // Helper method to check if user is subscribed
   static Future<bool> _isUserSubscribed() async {
@@ -472,80 +409,13 @@ class TimeOfDayHandler {
   }
 
 // Method to show the TOTD confirmation dialog
-  static void showTOTDConfirmationDialog(BuildContext context,
+  // Add these methods to your TimeOfDayHandler class
+
+  static void _showTemplateConfirmationDialog(
+      BuildContext context,
       TimeOfDayPost post,
-      VoidCallback onCreatePressed,) async {
-    // Add to recent templates when showing confirmation dialog
-    try {
-      // Convert TOTD post to quote template format for recent templates
-      QuoteTemplate template = _convertTOTDToQuoteTemplate(post);
-      await RecentTemplateService.addRecentTemplate(template);
-      print('Added TOTD to recents in confirmation dialog: ${post.id}');
-    } catch (e) {
-      print('Error adding TOTD to recents in confirmation dialog: $e');
-    }
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return Center(
-          child: CircularProgressIndicator(),
-        );
-      },
-    );
-    bool isPaidUser = await _isUserSubscribed();
-
-    User? currentUser = FirebaseAuth.instance.currentUser;
-
-    // Default values from Firebase Auth
-    String defaultUserName = currentUser?.displayName ?? context.loc.user;
-    String defaultProfileImageUrl = currentUser?.photoURL ?? '';
-
-    String userName = defaultUserName;
-    String userProfileImageUrl = defaultProfileImageUrl;
-
-    // Fetch user data from users collection if available
-    if (currentUser?.email != null) {
-      try {
-        // Convert email to document ID format (replace . with _)
-        String docId = currentUser!.email!.replaceAll('.', '_');
-
-        // Fetch user document from Firestore
-        DocumentSnapshot userDoc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(docId)
-            .get();
-
-
-        // Check if document exists and has required fields
-        if (userDoc.exists && userDoc.data() is Map<String, dynamic>) {
-          Map<String, dynamic> userData = userDoc.data() as Map<String,
-              dynamic>;
-
-          // Get name from Firestore with fallback
-          if (userData.containsKey('name') && userData['name'] != null &&
-              userData['name']
-                  .toString()
-                  .isNotEmpty) {
-            userName = userData['name'];
-          }
-
-          // Get profile image from Firestore with fallback
-          if (userData.containsKey('profileImage') &&
-              userData['profileImage'] != null && userData['profileImage']
-              .toString()
-              .isNotEmpty) {
-            userProfileImageUrl = userData['profileImage'];
-          }
-        }
-      } catch (e) {
-        print('Error fetching user data: $e');
-      }
-    }
-    Navigator.of(context, rootNavigator: true).pop();
-
-    // Continue with the rest of your method using userName and userProfileImageUrl
+      bool isPaidUser,
+      ) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -570,233 +440,143 @@ class TimeOfDayHandler {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Container(
-                            width: double.infinity,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(12),
+                          // TOTD Image with RepaintBoundary for capture
+                          RepaintBoundary(
+                            key: totdImageKey,
+                            child: Container(
+                              height: 400,
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(8),
+                                image: DecorationImage(
+                                  image: NetworkImage(post.imageUrl),
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                              child: isPaidUser
+                                  ? Align(
+                                alignment: Alignment.bottomRight,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(10.0),
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(
+                                        horizontal: 8, vertical: 4),
+                                    // decoration: BoxDecoration(
+                                    //   color: Colors.black.withOpacity(0.6),
+                                    //   borderRadius: BorderRadius.circular(12),
+                                    // ),
+                                    // child: Row(
+                                    //   mainAxisSize: MainAxisSize.min,
+                                    //   children: [
+                                    //     CircleAvatar(
+                                    //       radius: 10,
+                                    //       backgroundImage: _getUserProfileImage(context),
+                                    //     ),
+                                    //     SizedBox(width: 4),
+                                    //     Text(
+                                    //       _getUserName(context),
+                                    //       style: TextStyle(
+                                    //         fontSize: 10,
+                                    //         color: Colors.white,
+                                    //         fontWeight: FontWeight.bold,
+                                    //       ),
+                                    //     ),
+                                    //   ],
+                                    // ),
+                                  ),
+                                ),
+                              )
+                                  : null,
                             ),
-                            child: Padding(
-                              padding: EdgeInsets.all(16),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
+                          ),
+                          SizedBox(height: 24),
+                          // Text(
+                          //   post.title,
+                          //   style: TextStyle(
+                          //     fontSize: 18,
+                          //     fontWeight: FontWeight.bold,
+                          //   ),
+                          // ),
+                          // SizedBox(height: 8),
+                          Text(
+                            'Do you wish to continue?',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          SizedBox(height: 16),
+                          Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  RepaintBoundary(
-                                    key: totdImageKey,
-                                    child: Container(
-                                      width: double.infinity,
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(8),
-                                        border: Border.all(
-                                            color: Colors.grey.shade300),
-                                      ),
-                                      child: Column(
-                                        children: [
-                                          Stack(
-                                            children: [
-                                              Container(
-                                                height: 400,
-                                                decoration: BoxDecoration(
-                                                  borderRadius: BorderRadius
-                                                      .circular(8),
-                                                  image: DecorationImage(
-                                                    image: NetworkImage(
-                                                        post.imageUrl),
-                                                    fit: BoxFit.cover,
-                                                  ),
-                                                ),
-                                                child: isPaidUser
-                                                    ? Stack(
-                                                  children: [
-                                                    // Branded corner mark for paid users
-                                                    Positioned(
-                                                      bottom: 10,
-                                                      right: 10,
-                                                      child: Container(
-                                                        padding: EdgeInsets
-                                                            .symmetric(
-                                                            horizontal: 8,
-                                                            vertical: 4
-                                                        ),
-                                                        decoration: BoxDecoration(
-                                                          color: Colors.black
-                                                              .withOpacity(0.6),
-                                                          borderRadius: BorderRadius
-                                                              .circular(12),
-                                                        ),
-                                                        child: Row(
-                                                          mainAxisSize: MainAxisSize
-                                                              .min,
-                                                          children: [
-                                                            CircleAvatar(
-                                                              radius: 10,
-                                                              backgroundImage: userProfileImageUrl
-                                                                  .isNotEmpty
-                                                                  ? NetworkImage(
-                                                                  userProfileImageUrl)
-                                                                  : AssetImage(
-                                                                  'assets/images/profile_placeholder.png') as ImageProvider,
-                                                            ),
-                                                            SizedBox(width: 4),
-                                                            Text(
-                                                              userName,
-                                                              style: TextStyle(
-                                                                fontSize: 10,
-                                                                color: Colors
-                                                                    .white,
-                                                                fontWeight: FontWeight
-                                                                    .bold,
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ],
-                                                )
-                                                    : null,
-                                              ),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                  SizedBox(height: 24),
-                                  Text(
-                                    post.title,
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  SizedBox(height: 8),
-                                  Text(
-                                    'Do you wish to continue?',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  SizedBox(height: 16),
-                                  Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Row(
-                                        mainAxisAlignment: MainAxisAlignment
-                                            .center,
-                                        children: [
-                                          SizedBox(
-                                            width: 100,
-                                            child: ElevatedButton(
-                                              onPressed: () async {
-                                                Navigator.of(context).pop();
-
-                                                try {
-                                                  // Try to add to recent templates, but don't wait for it to complete
-                                                  // before navigating - this prevents getting stuck if there's an issue
-                                                  QuoteTemplate template = _convertTOTDToQuoteTemplate(post);
-                                                  RecentTemplateService.addRecentTemplate(template).catchError((error) {
-                                                    print('Error adding to recents, but continuing: $error');
-                                                  });
-
-                                                  // Navigate to edit screen immediately
-                                                  Navigator.of(context).push(
-                                                    MaterialPageRoute(
-                                                      builder: (context) =>
-                                                          EditScreen(
-                                                            title: 'Edit Content',
-                                                            templateImageUrl: post
-                                                                .imageUrl,
-                                                          ),
-                                                    ),
-                                                  );
-                                                } catch (e) {
-                                                  print('Error navigating to edit screen: $e');
-                                                  // Show error if needed
-                                                  ScaffoldMessenger.of(context).showSnackBar(
-                                                      SnackBar(content: Text('Error opening content for editing'))
-                                                  );
-                                                }
-                                              },
-                                              style: ElevatedButton.styleFrom(
-                                                backgroundColor: Colors.blue,
-                                                foregroundColor: Colors.white,
-                                                elevation: 0,
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius: BorderRadius
-                                                      .circular(24),
-                                                ),
-                                              ),
-                                              child: Text('Create'),
-                                            ),
-                                          ),
-                                          SizedBox(width: 40),
-                                          SizedBox(
-                                            width: 100,
-                                            child: ElevatedButton(
-                                              onPressed: () =>
-                                                  Navigator.of(context).pop(),
-                                              style: ElevatedButton.styleFrom(
-                                                backgroundColor: Colors.white,
-                                                foregroundColor: Colors.black87,
-                                                elevation: 0,
-                                                side: BorderSide(
-                                                    color: Colors.grey
-                                                        .shade300),
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius: BorderRadius
-                                                      .circular(24),
-                                                ),
-                                                padding: EdgeInsets.symmetric(
-                                                    vertical: 12),
-                                              ),
-                                              child: Text('Cancel'),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      SizedBox(height: 12),
-                                      Center(
-                                        child: SizedBox(
-                                          width: 140,
-                                          child: ElevatedButton.icon(
-                                            onPressed: () {
-                                              Navigator.of(context).pop();
-                                              Navigator.of(context).push(
-                                                MaterialPageRoute(
-                                                  builder: (context) =>
-                                                      TOTDSharingPage(
-                                                        post: post,
-                                                        userName: userName,
-                                                        userProfileImageUrl: userProfileImageUrl,
-                                                        isPaidUser: isPaidUser,
-                                                      ),
-                                                ),
-                                              );
-                                            },
-                                            icon: Icon(Icons.share),
-                                            label: Text('Share'),
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: Colors.blue,
-                                              foregroundColor: Colors.white,
-                                              elevation: 0,
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius: BorderRadius
-                                                    .circular(24),
-                                              ),
-                                              padding: EdgeInsets.symmetric(
-                                                  vertical: 12),
-                                            ),
-                                          ),
+                                  SizedBox(
+                                    width: 100,
+                                    child: ElevatedButton(
+                                      onPressed: () {
+                                        Navigator.of(context).pop();
+                                        // Navigate to edit screen for the TOTD post
+                                        _navigateToEditScreen(context, post, isPaidUser);
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.blue,
+                                        foregroundColor: Colors.white,
+                                        elevation: 0,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(24),
                                         ),
                                       ),
-                                    ],
+                                      child: Text('Create'),
+                                    ),
+                                  ),
+                                  SizedBox(width: 40),
+                                  SizedBox(
+                                    width: 100,
+                                    child: ElevatedButton(
+                                      onPressed: () => Navigator.of(context).pop(),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.white,
+                                        foregroundColor: Colors.black87,
+                                        elevation: 0,
+                                        side: BorderSide(color: Colors.grey.shade300),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(24),
+                                        ),
+                                        padding: EdgeInsets.symmetric(vertical: 12),
+                                      ),
+                                      child: Text('Cancel'),
+                                    ),
                                   ),
                                 ],
                               ),
-                            ),
-                          )
+                              SizedBox(height: 12),
+                              // Share Button
+                              Center(
+                                child: SizedBox(
+                                  width: 140,
+                                  child: ElevatedButton.icon(
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                      _handleShareTOTD(context, post, isPaidUser);
+                                    },
+                                    icon: Icon(Icons.share),
+                                    label: Text('Share'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.blue,
+                                      foregroundColor: Colors.white,
+                                      elevation: 0,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(24),
+                                      ),
+                                      padding: EdgeInsets.symmetric(vertical: 12),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ],
                       ),
                     ),
@@ -808,6 +588,220 @@ class TimeOfDayHandler {
         );
       },
     );
+  }
+
+  // Update this method in your TimeOfDayHandler class
+
+  static void _navigateToEditScreen(
+      BuildContext context,
+      TimeOfDayPost post,
+      bool isPaidUser) {
+    // Convert TimeOfDayPost to QuoteTemplate for compatibility with DetailsScreen
+    QuoteTemplate template = QuoteTemplate(
+      id: post.id,
+      title: post.title,
+      imageUrl: post.imageUrl,
+      isPaid: post.isPaid,
+      category: "Time of Day",
+      createdAt: DateTime.fromMillisecondsSinceEpoch(post.createdAt.millisecondsSinceEpoch),
+    );
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DetailsScreen(
+          template: template,
+          isPaidUser: isPaidUser,
+        ),
+      ),
+    );
+  }
+
+  static void _handleShareTOTD(
+      BuildContext context,
+      TimeOfDayPost post,
+      bool isPaidUser) {
+    if (isPaidUser) {
+      // For paid users, try to fetch user info first
+      _navigateToSharing(
+          context,
+          post,
+          'User',
+          '',
+          true
+      );
+    } else {
+      // For free users, go to template sharing page
+      _navigateToSharing(
+          context,
+          post,
+          'User',
+          '',
+          false
+      );
+    }
+  }
+
+// Helper method to safely navigate to sharing page
+  static void _navigateToSharing(
+      BuildContext context,
+      TimeOfDayPost post,
+      String userName,
+      String userProfileImageUrl,
+      bool isPaidUser) {
+    // Check if context is still mounted before navigating
+    if (context.mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => TOTDSharingPage(
+            post: post,
+            userName: userName,
+            userProfileImageUrl: userProfileImageUrl,
+            isPaidUser: isPaidUser,
+          ),
+        ),
+      );
+    }
+  }
+
+  static Future<void> _getUserInfoAndShare(BuildContext context, TimeOfDayPost post) async {
+    try {
+      // Capture these values early to ensure context doesn't change during async operations
+      final BuildContext capturedContext = context;
+
+      User? currentUser = FirebaseAuth.instance.currentUser;
+      String userName = currentUser?.displayName ?? 'User';
+      String userProfileImageUrl = currentUser?.photoURL ?? '';
+
+      // Try to get user details from Firestore if available
+      if (currentUser?.email != null) {
+        String docId = currentUser!.email!.replaceAll('.', '_');
+
+        DocumentSnapshot userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(docId)
+            .get();
+
+        if (userDoc.exists && userDoc.data() is Map<String, dynamic>) {
+          Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+
+          // Get name from Firestore with fallback
+          if (userData.containsKey('name') && userData['name'] != null && userData['name'].toString().isNotEmpty) {
+            userName = userData['name'];
+          }
+
+          // Get profile image from Firestore with fallback
+          if (userData.containsKey('profileImage') && userData['profileImage'] != null && userData['profileImage'].toString().isNotEmpty) {
+            userProfileImageUrl = userData['profileImage'];
+          }
+        }
+      }
+
+      // Use the helper method to navigate safely
+      _navigateToSharing(capturedContext, post, userName, userProfileImageUrl, true);
+
+    } catch (e) {
+      print('Error getting user info for sharing: $e');
+      // Fall back to basic sharing if there's an error
+      if (context.mounted) {
+        _navigateToSharing(context, post, 'User', '', true);
+      }
+    }
+  }
+
+// Helper methods to get user info
+  static String _getUserName(BuildContext context) {
+    User? currentUser = FirebaseAuth.instance.currentUser;
+    return currentUser?.displayName ?? context.loc.user;
+  }
+
+  static ImageProvider _getUserProfileImage(BuildContext context) {
+    User? currentUser = FirebaseAuth.instance.currentUser;
+    String? photoURL = currentUser?.photoURL;
+
+    if (photoURL != null && photoURL.isNotEmpty) {
+      return NetworkImage(photoURL);
+    } else {
+      return AssetImage('assets/images/profile_placeholder.png');
+    }
+  }
+
+// Integration method for handleTimeOfDayPostSelection
+  static Future<void> handleTimeOfDayPostSelection(
+      BuildContext context,
+      TimeOfDayPost post,
+      Function(TimeOfDayPost) onAccessGranted,) async {
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Center(
+          child: CircularProgressIndicator(),
+        );
+      },
+    );
+
+    try {
+      // Add to recent templates if user is subscribed or post is free
+      bool isSubscribed = await _isUserSubscribed();
+      if (!post.isPaid || isSubscribed) {
+        // Convert TOTD post to quote template format for recent templates
+        QuoteTemplate template = _convertTOTDToQuoteTemplate(post);
+        await RecentTemplateService.addRecentTemplate(template);
+        print('Added TOTD to recents on selection: ${post.id}');
+      }
+
+      // Close loading indicator
+      Navigator.of(context, rootNavigator: true).pop();
+
+      if (post.isPaid && !isSubscribed) {
+        // Show subscription dialog/prompt
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text('Premium Content'),
+            content: Text(
+                'This content requires a subscription. Subscribe to access all premium time of day posts.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  // Navigate to subscription page
+                  Navigator.pushNamed(context, '/subscription');
+                },
+                child: Text('Subscribe'),
+              ),
+            ],
+          ),
+        );
+      } else {
+        // Show confirmation dialog with preview - NEW IMPLEMENTATION
+        _showTemplateConfirmationDialog(
+          context,
+          post,
+          isSubscribed,
+        );
+      }
+    } catch (e) {
+      // Close loading indicator in case of error
+      if (Navigator.of(context, rootNavigator: true).canPop()) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   // Method to initialize TOTD posts if none exist

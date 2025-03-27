@@ -1,9 +1,14 @@
 import 'dart:typed_data';
+import 'dart:ui' as ui;
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:image_editor_plus/image_editor_plus.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:mtquotes/screens/User_Home/components/navbar_mainscreen.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'package:http/http.dart' as http;
@@ -11,6 +16,9 @@ import 'package:share_plus/share_plus.dart';
 import 'package:uuid/uuid.dart';
 import 'package:mtquotes/screens/Create_Screen/components/drafts_service.dart';
 import 'package:mtquotes/screens/Create_Screen/components/imageEditDraft.dart';
+import '../Templates/components/template/quote_template.dart';
+import '../Templates/components/template/template_service.dart';
+import '../Templates/components/template/template_sharing.dart';
 import '../User_Home/files_screen.dart';
 
 class EditScreen extends StatefulWidget {
@@ -25,6 +33,7 @@ class EditScreen extends StatefulWidget {
   final String title;
   final String? templateImageUrl;
   final Uint8List? initialImageData;
+
   // final String? draftId; // To track if we're editing an existing draft
 
   @override
@@ -37,9 +46,24 @@ class _EditScreenState extends State<EditScreen> {
   bool defaultImageLoaded = true;
   bool isLoading = false;
   final uuid = Uuid();
+
   // final DraftService _draftService = DraftService();
   // String? currentDraftId; // Track the current draft ID
   String? originalImagePath; // Track the original image path
+  bool showInfoBox = true;
+  String infoBoxBackground = 'white';
+  String userName = '';
+  String userLocation = '';
+  String userMobile = '';
+  String userDescription = '';
+  String? userProfileImageUrl;
+  bool isBusinessProfile = false;
+  String companyName = '';
+  bool isPaidUser = false;
+  bool isPersonal = true;
+  String userSocialMedia = '';
+
+  final GlobalKey imageContainerKey = GlobalKey();
 
   @override
   void initState() {
@@ -53,6 +77,60 @@ class _EditScreenState extends State<EditScreen> {
         imageData = widget.initialImageData;
         defaultImageLoaded = false;
       });
+    }
+    _loadUserPreferences();
+    _checkSubscriptionStatus();
+  }
+
+  Future<void> _checkSubscriptionStatus() async {
+    try {
+      final templateService = TemplateService();
+      bool isSubscribed = await templateService.isUserSubscribed();
+
+      setState(() {
+        isPaidUser = isSubscribed;
+      });
+    } catch (e) {
+      print('Error checking subscription status: $e');
+    }
+  }
+
+  // Add this method to load user preferences
+  Future<void> _loadUserPreferences() async {
+    try {
+      User? currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser?.email != null) {
+        String docId = currentUser!.email!.replaceAll('.', '_');
+
+        DocumentSnapshot userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(docId)
+            .get();
+
+        if (userDoc.exists && userDoc.data() is Map<String, dynamic>) {
+          Map<String, dynamic> userData =
+              userDoc.data() as Map<String, dynamic>;
+
+          setState(() {
+            showInfoBox = userData['showInfoBox'] ?? true;
+            infoBoxBackground = userData['infoBoxBackground'] ?? 'white';
+            userName = userData['name'] ?? '';
+            userLocation = userData['location'] ?? '';
+            userMobile = userData['mobile'] ?? '';
+            userDescription = userData['description'] ?? '';
+            userSocialMedia =
+                userData['socialMedia'] ?? ''; // Load social media handle
+            userProfileImageUrl = userData['profileImage'];
+            companyName = userData['companyName'] ?? '';
+
+            // Determine if using business profile based on which tab was last active
+            isBusinessProfile = userData['lastActiveProfileTab'] == 'business';
+            isPersonal = userData['lastActiveProfileTab'] == 'personal';
+          });
+        }
+      }
+    } catch (e) {
+      print('Error loading user preferences: $e');
     }
   }
 
@@ -208,6 +286,174 @@ class _EditScreenState extends State<EditScreen> {
   //     },
   //   );
   // }
+
+  Widget _buildInfoBox() {
+    if (!showInfoBox) return SizedBox();
+
+    Color bgColor;
+    switch (infoBoxBackground) {
+      case 'lightGray':
+        bgColor = Colors.grey[200]!;
+        break;
+      case 'lightBlue':
+        bgColor = Colors.blue[100]!;
+        break;
+      case 'lightGreen':
+        bgColor = Colors.green[100]!;
+        break;
+      case 'white':
+      default:
+        bgColor = Colors.white;
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: bgColor,
+        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          // Profile image
+          Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              image:
+                  userProfileImageUrl != null && userProfileImageUrl!.isNotEmpty
+                      ? DecorationImage(
+                          image: NetworkImage(userProfileImageUrl!),
+                          fit: BoxFit.cover,
+                        )
+                      : null,
+              color: Colors.grey[300],
+            ),
+            child: userProfileImageUrl == null || userProfileImageUrl!.isEmpty
+                ? Icon(
+                    Icons.person,
+                    color: Colors.grey[400],
+                    size: 30,
+                  )
+                : null,
+          ),
+          SizedBox(width: 12),
+
+          // User details
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (isPersonal)
+                  Text(
+                    userName.isNotEmpty ? userName : 'Your Name',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                if (isBusinessProfile) // Business profile - show both name and company
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Company name first for business cards
+                      Text(
+                        companyName.isNotEmpty ? companyName : 'Company Name',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      SizedBox(height: 2),
+                      // Then person's name
+                      Text(
+                        userName.isNotEmpty ? userName : 'Your Name',
+                        style: TextStyle(
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                if (userLocation.isNotEmpty)
+                  Text(
+                    userLocation,
+                    style: TextStyle(fontSize: 14),
+                  ),
+                if (userMobile.isNotEmpty)
+                  Text(
+                    userMobile,
+                    style: TextStyle(fontSize: 14),
+                  ),
+                // Only show social media and description for business profile
+                if (isBusinessProfile) ...[
+                  if (userSocialMedia.isNotEmpty)
+                    Text(
+                      userSocialMedia,
+                      style: TextStyle(fontSize: 14, color: Colors.blue),
+                    ),
+                  if (userDescription.isNotEmpty)
+                    Text(
+                      userDescription,
+                      style: TextStyle(fontSize: 14),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<Uint8List?> _captureImageWithInfoBox() async {
+    try {
+      final RenderRepaintBoundary boundary = imageContainerKey.currentContext!
+          .findRenderObject() as RenderRepaintBoundary;
+      final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
+      final ByteData? byteData =
+          await image.toByteData(format: ui.ImageByteFormat.png);
+
+      if (byteData != null) {
+        return byteData.buffer.asUint8List();
+      }
+      return null;
+    } catch (e) {
+      print('Error capturing image with info box: $e');
+      return null;
+    }
+  }
+
+  // In EditScreen class
+  Future<void> _captureFullImage() async {
+    // First ensure the widget has been rendered
+    await Future.delayed(Duration(milliseconds: 500));
+
+    try {
+      RenderRepaintBoundary boundary = imageContainerKey.currentContext!
+          .findRenderObject() as RenderRepaintBoundary;
+
+      // Get the image with higher quality
+      ui.Image image = await boundary.toImage(pixelRatio: 3.0);
+      ByteData? byteData =
+          await image.toByteData(format: ui.ImageByteFormat.png);
+
+      if (byteData != null) {
+        setState(() {
+          imageData = byteData.buffer.asUint8List();
+        });
+      }
+    } catch (e) {
+      print('Error capturing image: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error capturing image with details')),
+      );
+    }
+  }
+
   void showNoImageSelectedDialog() {
     showDialog(
       context: context,
@@ -287,18 +533,62 @@ class _EditScreenState extends State<EditScreen> {
     _showLoadingIndicator();
 
     try {
+      // Get user's subscription status
+      final templateService = TemplateService();
+      bool isPaidUser = await templateService.isUserSubscribed();
+
+      // For free users, redirect to template sharing page
+      if (!isPaidUser) {
+        _hideLoadingIndicator();
+
+        // Get the template URL if it exists
+        String templateUrl = widget.templateImageUrl ?? '';
+
+        // Navigate to template sharing page
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => TemplateSharingPage(
+              template: QuoteTemplate(
+                id: 'custom',
+                imageUrl: templateUrl,
+                title: 'Custom Template',
+                category: '',
+                isPaid: false,
+                createdAt: DateTime.now(),
+              ),
+              userName: 'User',
+              userProfileImageUrl: '',
+              isPaidUser: false,
+            ),
+          ),
+        );
+        return;
+      }
+
+      // For paid users with info box
+      Uint8List finalImageData;
+      if (showInfoBox) {
+        // This would capture the entire widget including info box
+        // You would need to implement a method to capture the combined image
+        // For example using RepaintBoundary and toImage()
+        // This is a placeholder - actual implementation would depend on your UI structure
+        finalImageData = await _captureImageWithInfoBox() ?? imageData!;
+      } else {
+        finalImageData = imageData!;
+      }
+
       // Save the edited image to a temporary file
       final temp = await getTemporaryDirectory();
       final path = "${temp.path}/edited_image.jpg";
-      File(path).writeAsBytesSync(imageData!);
+      File(path).writeAsBytesSync(finalImageData);
 
       _hideLoadingIndicator();
 
       // Share the image
       await Share.shareXFiles(
         [XFile(path)],
-        text:
-            'here the url of the app will come along with the referral code deets',
+        text: 'Check out this amazing template from our app!',
       );
     } catch (e) {
       _hideLoadingIndicator();
@@ -431,39 +721,6 @@ class _EditScreenState extends State<EditScreen> {
         title: Row(
           children: [
             OutlinedButton(
-              onPressed: () {
-                if (imageData != null && !defaultImageLoaded) {
-                  // Show save to drafts dialog when canceling with changes
-                  showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return AlertDialog(
-                        title: Text('Discard Changes?'),
-                        content: Text(
-                            'Do you want to save your changes to drafts before leaving?'),
-                        actions: [
-                          TextButton(
-                            onPressed: () {
-                              Navigator.of(context).pop();
-                              Navigator.of(context).pop(); // Exit screen
-                            },
-                            child: Text('Discard'),
-                          ),
-                          TextButton(
-                            onPressed: () {
-                              Navigator.of(context).pop();
-                              // _showSaveToDraftsDialog();
-                            },
-                            child: Text('Save to Drafts'),
-                          ),
-                        ],
-                      );
-                    },
-                  );
-                } else {
-                  Navigator.of(context).pop();
-                }
-              },
               style: OutlinedButton.styleFrom(
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
@@ -471,6 +728,13 @@ class _EditScreenState extends State<EditScreen> {
                 side: BorderSide(color: Colors.grey),
                 padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               ),
+              onPressed: () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => MainScreen(),
+                    ));
+              },
               child: Text(
                 "Cancel",
                 style: TextStyle(color: Colors.black, fontSize: 16),
@@ -552,7 +816,15 @@ class _EditScreenState extends State<EditScreen> {
                           ),
                         ),
                       )
-                    : Image.memory(imageData!),
+                    : RepaintBoundary(
+                        key: imageContainerKey,
+                        child: Column(
+                          children: [
+                            Image.memory(imageData!),
+                            if (showInfoBox && isPaidUser) _buildInfoBox(),
+                          ],
+                        ),
+                      ),
               SizedBox(height: 100),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,

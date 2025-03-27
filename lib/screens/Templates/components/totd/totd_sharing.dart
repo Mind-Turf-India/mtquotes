@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
+import 'dart:ui';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -12,6 +13,8 @@ import 'package:share_plus/share_plus.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mtquotes/screens/Templates/components/template/quote_template.dart';
+import '../../../Create_Screen/components/details_screen.dart';
+import '../../../Create_Screen/edit_screen_create.dart';
 import '../recent/recent_service.dart';
 
 class TOTDSharingPage extends StatefulWidget {
@@ -93,6 +96,7 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
           icon: Icon(Icons.arrow_back),
           onPressed: () => Navigator.of(context).pop(),
         ),
+        systemOverlayStyle: SystemUiOverlayStyle.light,
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -306,62 +310,93 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
                         ],
                       ),
                       SizedBox(height: 16),
-                      // Premium post preview with branding (used for capturing)
-                      RepaintBoundary(
-                        key: widget._brandedImageKey,
-                        child: AspectRatio(
-                          aspectRatio: _aspectRatio,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(8),
-                              image: DecorationImage(
-                                image: NetworkImage(widget.post.imageUrl),
-                                fit: BoxFit.contain,
-                              ),
-                            ),
-                            child: Stack(
-                              children: [
-                                Positioned(
-                                  bottom: 10,
-                                  right: 10,
-                                  child: Container(
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 4,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.black.withOpacity(0.6),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        CircleAvatar(
-                                          radius: 10,
-                                          backgroundImage: widget.userProfileImageUrl.isNotEmpty
-                                              ? NetworkImage(widget.userProfileImageUrl)
-                                              : AssetImage('assets/images/profile_placeholder.png') as ImageProvider,
-                                        ),
-                                        SizedBox(width: 4),
-                                        Text(
-                                          widget.userName,
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
+                      // Premium template preview with info box
+                      FutureBuilder<DocumentSnapshot>(
+                          future: FirebaseFirestore.instance
+                              .collection('users')
+                              .doc(FirebaseAuth.instance.currentUser?.email?.replaceAll('.', '_'))
+                              .get(),
+                          builder: (context, snapshot) {
+                            String userName = '';
+                            String userProfileUrl = '';
+                            String userLocation = '';
+
+                            // Extract user data if available
+                            if (snapshot.hasData && snapshot.data != null && snapshot.data!.exists) {
+                              final userData = snapshot.data!.data() as Map<String, dynamic>;
+                              userName = userData['name'] ?? '';
+                              userProfileUrl = userData['profileImage'] ?? '';
+                              userLocation = userData['location'] ?? '';
+                            }
+
+                            return RepaintBoundary(
+                              key: widget._brandedImageKey,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: Colors.grey.shade300),
+                                ),
+                                child: Column(
+                                  children: [
+                                    // Template image with proper aspect ratio
+                                    AspectRatio(
+                                      aspectRatio: _aspectRatio,
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+                                          image: DecorationImage(
+                                            image: NetworkImage(widget.post.imageUrl),
+                                            fit: BoxFit.contain, // Changed to contain to avoid cropping
                                           ),
                                         ),
-                                      ],
+                                      ),
                                     ),
-                                  ),
+
+                                    // Info box at the bottom
+                                    Container(
+                                      width: double.infinity,
+                                      padding: EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.vertical(bottom: Radius.circular(8)),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          // Profile image
+                                          CircleAvatar(
+                                            radius: 20,
+                                            backgroundImage: userProfileUrl.isNotEmpty
+                                                ? NetworkImage(userProfileUrl)
+                                                : AssetImage('assets/profile_placeholder.png') as ImageProvider,
+                                          ),
+                                          SizedBox(width: 12),
+
+                                          // User details
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  userName,
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 16,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
-                          ),
-                        ),
+                              ),
+                            );
+                          }
                       ),
                       SizedBox(height: 16),
-                      // Share button
+                      // Premium share button
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton.icon(
@@ -383,6 +418,7 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
                           ),
                         ),
                       ),
+                      SizedBox(height: 16),
                     ],
                   ),
                 ),
@@ -394,11 +430,226 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
     );
   }
 
+  // Info box component for the TOTD sharing page
+  Widget _buildInfoBox({
+    required String title,
+    required VoidCallback onCreatePressed,
+    required VoidCallback onSharePressed,
+    required VoidCallback onCancelPressed,
+    required Widget contentWidget,
+  }) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Content widget (TOTD image with branding)
+            contentWidget,
+            SizedBox(height: 24),
+
+            // Title if provided
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: 8),
+
+            Text(
+              'Do you wish to continue?',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            SizedBox(height: 16),
+
+            // Buttons
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: 100,
+                      child: ElevatedButton(
+                        onPressed: onCreatePressed,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                        ),
+                        child: Text('Create'),
+                      ),
+                    ),
+                    SizedBox(width: 40),
+                    SizedBox(
+                      width: 100,
+                      child: ElevatedButton(
+                        onPressed: onCancelPressed,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: Colors.black87,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          padding: EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        child: Text('Cancel'),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 12),
+                // Share Button
+                Center(
+                  child: SizedBox(
+                    width: 140,
+                    child: ElevatedButton.icon(
+                      onPressed: onSharePressed,
+                      icon: Icon(Icons.share),
+                      label: Text('Share'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Method to show the info box dialog
+  void showTOTDInfoBox(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+          child: Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: EdgeInsets.symmetric(horizontal: 20),
+            child: SingleChildScrollView(
+              child: _buildInfoBox(
+                title: widget.post.title,
+                onCreatePressed: () {
+                  Navigator.of(context).pop();
+                  // Convert TimeOfDayPost to QuoteTemplate for compatibility with DetailsScreen
+                  QuoteTemplate template = QuoteTemplate(
+                    id: widget.post.id,
+                    title: widget.post.title,
+                    imageUrl: widget.post.imageUrl,
+                    isPaid: widget.post.isPaid,
+                    category: "Time of Day",
+                    createdAt: DateTime.fromMillisecondsSinceEpoch(widget.post.createdAt.millisecondsSinceEpoch),
+                  );
+
+                  // Navigate to DetailsScreen instead of directly to EditScreen
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => DetailsScreen(
+                        template: template,
+                        isPaidUser: widget.isPaidUser,
+                      ),
+                    ),
+                  );
+                },
+                onSharePressed: () {
+                  Navigator.of(context).pop();
+                  _sharePost(context, isPaid: widget.isPaidUser);
+                },
+                onCancelPressed: () => Navigator.of(context).pop(),
+                contentWidget: RepaintBoundary(
+                  key: GlobalKey(),
+                  child: AspectRatio(
+                    aspectRatio: _aspectRatio,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        image: DecorationImage(
+                          image: NetworkImage(widget.post.imageUrl),
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                      child: widget.isPaidUser
+                          ? Align(
+                        alignment: Alignment.bottomRight,
+                        child: Padding(
+                          padding: const EdgeInsets.all(10.0),
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.6),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                CircleAvatar(
+                                  radius: 10,
+                                  backgroundImage: widget.userProfileImageUrl.isNotEmpty
+                                      ? NetworkImage(widget.userProfileImageUrl)
+                                      : AssetImage('assets/profile_placeholder.png') as ImageProvider,
+                                ),
+                                SizedBox(width: 4),
+                                Text(
+                                  widget.userName,
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      )
+                          : null,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   // Method to capture widget as image with branding
   Future<Uint8List?> _captureBrandedImage() async {
     try {
       final RenderRepaintBoundary boundary = widget._brandedImageKey.currentContext!
           .findRenderObject() as RenderRepaintBoundary;
+
+      // Use a higher pixel ratio for better quality
       final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
       final ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       return byteData?.buffer.asUint8List();
@@ -539,7 +790,7 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
     }
   }
 
-  // Method to add watermark to image for free users
+  // Method to add watermark to image for free users (center position matching festival sharing)
   Future<Uint8List?> _addWatermarkToImage(Uint8List originalImageBytes) async {
     try {
       // Decode the original image
@@ -556,20 +807,25 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
       final ByteData logoData = await rootBundle.load('assets/logo.png');
       final ui.Image logo = await decodeImageFromList(logoData.buffer.asUint8List());
 
-      // Calculate size and position for the watermark in top right corner
+      // Calculate size and position for the watermark in center (same as template sharing)
       final double width = originalImage.width.toDouble();
       final double height = originalImage.height.toDouble();
-      final double watermarkSize = width * 0.15; // 15% of the image width
-      final double watermarkX = width - watermarkSize - 16;  // Position from right edge with padding
-      final double watermarkY = 16; // Position from top with padding
+      final double watermarkSize = width * 0.2; // 20% of the image width
 
-      // Apply semi-transparent effect to the watermark
-      final Paint watermarkPaint = Paint();
-      // Draw the watermark
+      // Draw watermark in center
+      final Paint watermarkPaint = Paint()
+        ..color = Colors.white.withOpacity(0.3);
+
+      // Draw the watermark in center
       canvas.drawImageRect(
         logo,
         Rect.fromLTWH(0, 0, logo.width.toDouble(), logo.height.toDouble()),
-        Rect.fromLTWH(watermarkX, watermarkY, watermarkSize, watermarkSize),
+        Rect.fromLTWH(
+            (width - watermarkSize) / 2,
+            (height - watermarkSize) / 2,
+            watermarkSize,
+            watermarkSize
+        ),
         watermarkPaint,
       );
 
@@ -606,8 +862,6 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
         },
       );
 
-      Uint8List? imageBytes;
-
       // Download the original image first
       final response = await http.get(Uri.parse(widget.post.imageUrl));
       if (response.statusCode != 200) {
@@ -615,22 +869,43 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
       }
 
       final originalImageBytes = response.bodyBytes;
+      Uint8List? imageBytes;
 
       if (isPaid) {
-        // For premium users, we'll directly use the _addBrandingToImage instead of _captureBrandedImage
-        // This preserves the full image dimensions while adding the branding
-        imageBytes = await _addBrandingToImage(originalImageBytes);
+        try {
+          // Make sure UI is fully rendered before capture
+          await Future.delayed(Duration(milliseconds: 100));
 
-        if (imageBytes == null) {
-          print('Branding failed, falling back to original image');
+          // First try to capture the branded template widget directly
+          imageBytes = await _captureBrandedImage();
+
+          // If direct widget capture fails, try programmatic branding approach
+          if (imageBytes == null) {
+            print('Direct capture returned null, trying programmatic branding');
+            imageBytes = await _addBrandingToImage(originalImageBytes);
+          }
+
+          // If both approaches fail, fall back to the original image
+          if (imageBytes == null) {
+            print('Both branding approaches failed, falling back to direct download');
+            imageBytes = originalImageBytes;
+          }
+        } catch (e) {
+          print('Error in premium capture: $e, falling back to direct download');
           imageBytes = originalImageBytes;
         }
       } else {
-        // For free users, add the watermark to the post image
-        imageBytes = await _addWatermarkToImage(originalImageBytes);
+        // For free users, add the watermark to the image
+        try {
+          imageBytes = await _addWatermarkToImage(originalImageBytes);
 
-        if (imageBytes == null) {
-          print('Watermark failed, falling back to original image');
+          // If watermarking fails, fall back to the original image
+          if (imageBytes == null) {
+            print('Watermark failed, falling back to direct download');
+            imageBytes = originalImageBytes;
+          }
+        } catch (e) {
+          print('Error adding watermark: $e, falling back to direct download');
           imageBytes = originalImageBytes;
         }
       }

@@ -296,60 +296,95 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                         ],
                       ),
                       SizedBox(height: 16),
-                      // Premium template preview with branding (used for capturing)
-                      // This is where we fix the cropping issue
-                      RepaintBoundary(
-                        key: _brandedImageKey,
-                        child: AspectRatio(
-                          aspectRatio: _aspectRatio,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(8),
-                              image: DecorationImage(
-                                image: NetworkImage(widget.template.imageUrl),
-                                fit: BoxFit.contain, // Changed to contain to avoid cropping
+// Premium template preview with info box
+                      FutureBuilder<DocumentSnapshot>(
+                        future: FirebaseFirestore.instance
+                            .collection('users')
+                            .doc(FirebaseAuth.instance.currentUser?.email?.replaceAll('.', '_'))
+                            .get(),
+                        builder: (context, snapshot) {
+                          String userName = '';
+                          String userProfileUrl = '';
+                          String userLocation = '';
+
+                          // Extract user data if available
+                          if (snapshot.hasData && snapshot.data != null && snapshot.data!.exists) {
+                            final userData = snapshot.data!.data() as Map<String, dynamic>;
+                            userName = userData['name'] ?? '';
+                            userProfileUrl = userData['profileImage'] ?? '';
+                            userLocation = userData['location'] ?? '';
+                          }
+
+                          return RepaintBoundary(
+                            key: _brandedImageKey,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.grey.shade300),
                               ),
-                            ),
-                            child: Stack(
-                              children: [
-                                Positioned(
-                                  bottom: 10,
-                                  right: 10,
-                                  child: Container(
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 4,
+                              child: Column(
+                                children: [
+                                  // Template image with proper aspect ratio
+                                  AspectRatio(
+                                    aspectRatio: _aspectRatio,
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+                                        image: DecorationImage(
+                                          image: NetworkImage(widget.template.imageUrl),
+                                          fit: BoxFit.contain, // Changed to contain to avoid cropping
+                                        ),
+                                      ),
                                     ),
+                                  ),
+
+                                  // Info box at the bottom
+                                  Container(
+                                    width: double.infinity,
+                                    padding: EdgeInsets.all(12),
                                     decoration: BoxDecoration(
-                                      color: Colors.black.withOpacity(0.6),
-                                      borderRadius: BorderRadius.circular(12),
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.vertical(bottom: Radius.circular(8)),
                                     ),
                                     child: Row(
-                                      mainAxisSize: MainAxisSize.min,
                                       children: [
+                                        // Profile image
                                         CircleAvatar(
-                                          radius: 10,
-                                          backgroundImage: widget.userProfileImageUrl.isNotEmpty
-                                              ? NetworkImage(widget.userProfileImageUrl)
-                                              : AssetImage('assets/images/profile_placeholder.png') as ImageProvider,
+                                          radius: 20,
+                                          backgroundImage: userProfileUrl.isNotEmpty
+                                              ? NetworkImage(userProfileUrl)
+                                              : AssetImage('assets/profile_placeholder.png') as ImageProvider,
                                         ),
-                                        SizedBox(width: 4),
-                                        Text(
-                                          widget.userName,
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
+                                        SizedBox(width: 12),
+
+                                        // User details
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                userName,
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 16,
+                                                ),
+                                              ),
+                                              // if (userLocation.isNotEmpty)
+                                              //   Text(
+                                              //     userLocation,
+                                              //     style: TextStyle(fontSize: 14),
+                                              //   ),
+                                            ],
                                           ),
                                         ),
                                       ],
                                     ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
-                        ),
+                          );
+                        },
                       ),
                       SizedBox(height: 16),
                       // Share button
