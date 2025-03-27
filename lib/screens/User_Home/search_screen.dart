@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:mtquotes/screens/Payment_Screen/subscription_popup.dart';
+import 'package:mtquotes/screens/User_Home/components/Categories/category_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import '../../l10n/app_localization.dart';
@@ -7,7 +9,6 @@ import '../../providers/text_size_provider.dart';
 import '../Create_Screen/edit_screen_create.dart';
 import '../Templates/components/template/quote_template.dart';
 import '../Templates/components/template/template_service.dart';
-import '../Templates/subscription_popup.dart';
 import '../Templates/components/template/template_section.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -143,11 +144,11 @@ class _SearchScreenState extends State<SearchScreen> {
                 child: ListView(
                   scrollDirection: Axis.horizontal,
                   children: [
-                    categoryCard(Icons.lightbulb, context.loc.motivational, Colors.green, fontSize),
-                    categoryCard(Icons.favorite, context.loc.love, Colors.red, fontSize),
-                    categoryCard(Icons.emoji_emotions, context.loc.funny, Colors.orange, fontSize),
-                    categoryCard(Icons.people, context.loc.friendship, Colors.blue, fontSize),
-                    categoryCard(Icons.self_improvement, context.loc.life, Colors.purple, fontSize),
+                    categoryCard(Icons.lightbulb, context.loc.motivational, Colors.green),
+                    categoryCard(Icons.favorite, context.loc.love, Colors.red, ),
+                    categoryCard(Icons.emoji_emotions, context.loc.funny, Colors.orange, ),
+                    categoryCard(Icons.people, context.loc.friendship, Colors.blue, ),
+                    categoryCard(Icons.self_improvement, context.loc.life, Colors.purple, ),
                   ],
                 ),
               ),
@@ -185,26 +186,46 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  Widget categoryCard(IconData icon, String title, Color color, double fontSize) {
-    return Padding(
-      padding: EdgeInsets.only(right: 12),
-      child: Column(
-        children: [
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12),
+  Widget categoryCard(
+      IconData icon, String title, Color color) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => CategoryScreen(
+              categoryName: title,
+              categoryColor: color,
+              categoryIcon: icon,
             ),
-            child: Icon(icon, color: color, size: 30),
           ),
-          SizedBox(height: 5),
-          Text(title,
-              style: GoogleFonts.poppins(
-                  fontSize: fontSize - 2, fontWeight: FontWeight.w500)),
-        ],
+        );
+      },
+      child: Padding(
+        padding: EdgeInsets.only(right: 12),
+        child: Column(
+          children: [
+            Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: color, size: 30),
+            ),
+            SizedBox(
+              height: 5,
+              width: 10,
+            ),
+            Text(title,
+                style: GoogleFonts.poppins(
+                  fontSize: 13,
+                 fontWeight: FontWeight.w500)),
+          ],
+        ),
       ),
     );
   }
+
 }

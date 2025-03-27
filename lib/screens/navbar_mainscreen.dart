@@ -6,9 +6,9 @@ import 'package:mtquotes/l10n/app_localization.dart';
 import 'package:mtquotes/screens/User_Home/home_screen.dart';
 import 'package:mtquotes/screens/User_Home/files_screen.dart';
 import 'package:mtquotes/screens/User_Home/profile_screen.dart';
-import '../../Create_Screen/edit_screen_create.dart';
-import '../../Create_Screen/template_screen_create.dart';
-import '../search_screen.dart';
+import 'Create_Screen/edit_screen_create.dart';
+import 'Create_Screen/template_screen_create.dart';
+import 'User_Home/search_screen.dart';
 
 class MainScreen extends StatefulWidget {
   @override
@@ -63,7 +63,7 @@ class _MainScreenState extends State<MainScreen> {
                   children: [
                     Flexible(child: _buildCreateOption(context.loc.gallery, Icons.image)),
                     Flexible(child: _buildCreateOption(context.loc.template, Icons.grid_view)),
-                    Flexible(child: _buildCreateOption(context.loc.drafts, Icons.folder)),
+                    Flexible(child: _buildCreateOption(context.loc.downloads, Icons.folder)),
                   ],
                 ),
               ),
@@ -97,7 +97,7 @@ class _MainScreenState extends State<MainScreen> {
             context,
             MaterialPageRoute(builder: (context) => EditScreen(title: context.loc.imageeditor)),
           );
-        } else if (label == context.loc.drafts) {
+        } else if (label == context.loc.downloads) {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => FilesPage()),
@@ -125,7 +125,6 @@ class _MainScreenState extends State<MainScreen> {
       ),
     );
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(

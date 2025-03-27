@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../providers/text_size_provider.dart';
+import '../../../../providers/text_size_provider.dart';
 
 class TextSizeScreen extends StatelessWidget {
   @override
@@ -43,9 +43,9 @@ class TextSizeScreen extends StatelessWidget {
                       builder: (context, textSizeProvider, child) {
                         return Slider(
                           value: textSizeProvider.fontSize,
-                          min: 10,
-                          max: 50,
-                          divisions: 8,
+                          min: 15,
+                          max: 25,
+                          divisions: 3,
                           activeColor: Colors.blue,
                           inactiveColor: Colors.black,
                           onChanged: (value) {

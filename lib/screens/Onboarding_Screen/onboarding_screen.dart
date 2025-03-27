@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:mtquotes/screens/Auth_Screen/Login_Screen/login_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:mtquotes/screens/Login_Screen/login_screen.dart';
+
 
 class OnboardingScreen extends StatefulWidget {
   @override

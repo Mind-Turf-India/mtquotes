@@ -5,8 +5,8 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mtquotes/screens/Create_Screen/edit_screen_create.dart';
+import 'package:mtquotes/screens/Payment_Screen/subscription_screen.dart';
 import 'package:mtquotes/screens/Templates/components/template/quote_template.dart';
-import 'package:mtquotes/screens/Templates/subscription_screen.dart';
 
 class DetailsScreen extends StatefulWidget {
   final QuoteTemplate template;

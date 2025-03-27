@@ -7,11 +7,14 @@ import 'package:image_picker/image_picker.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mtquotes/l10n/app_localization.dart';
 import 'package:mtquotes/providers/text_size_provider.dart';
-import 'package:mtquotes/screens/User_Home/components/about_us.dart';
-import 'package:mtquotes/screens/User_Home/components/notifications.dart';
+import 'package:mtquotes/screens/Payment_Screen/subscription_screen.dart';
+import 'package:mtquotes/screens/User_Home/components/Settings/about_us.dart';
+import 'package:mtquotes/screens/User_Home/components/Notifications/notifications.dart';
+import 'package:mtquotes/screens/User_Home/components/Settings/support.dart';
 import 'package:mtquotes/screens/User_Home/components/refferral_screen.dart';
+import 'package:mtquotes/screens/User_Home/files_screen.dart';
 import 'package:provider/provider.dart';
-import 'components/settings.dart';
+import 'components/Settings/settings.dart';
 import 'package:share_plus/share_plus.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -296,7 +299,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       IconButton(
                         icon: const Icon(Icons.arrow_back_ios, size: 24),
                         onPressed: () {
-                          Navigator.pushReplacementNamed(context, 'main');
+                          Navigator.pushReplacementNamed(context, '/nav_bar');
                         },
                       ),
                       const Spacer(),
@@ -400,7 +403,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     padding: EdgeInsets.zero,
                     children: [
                       _buildMenuItem(Icons.workspace_premium,
-                          context.loc.subscriptions, fontSize, () {}),
+                          context.loc.subscriptions, fontSize, () {
+                            Navigator.push(context, MaterialPageRoute(builder: (context)=> SubscriptionScreen()));
+                          }),
                       _buildMenuItem(Icons.share_rounded,
                           context.loc.shareapplication, fontSize, () {
                         Navigator.push(
@@ -410,9 +415,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         );
                       }),
                       _buildMenuItem(Icons.drafts_outlined, context.loc.downloads,
-                          fontSize, () {}),
+                          fontSize, () {
+                            Navigator.push(context, MaterialPageRoute(builder: (context)=> FilesPage()));
+                          }),
                       _buildMenuItem(Icons.support_agent_outlined,
-                          context.loc.support, fontSize, () {}),
+                          context.loc.support, fontSize, () {
+                            Navigator.push(context, MaterialPageRoute(builder: (context)=> SupportScreen()));
+                          }),
                       _buildMenuItem(
                           Icons.question_mark, context.loc.aboutus, fontSize,
                           () {

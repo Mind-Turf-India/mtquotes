@@ -9,7 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:mtquotes/main.dart';
-import 'package:mtquotes/screens/User_Home/components/navbar_mainscreen.dart';
+import 'package:mtquotes/screens/navbar_mainscreen.dart';
 
 void main() {
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {

@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:async';
 import 'package:lottie/lottie.dart';
-import '../User_Home/components/navbar_mainscreen.dart';
+import '../navbar_mainscreen.dart';
 
 class SuccessScreen extends StatefulWidget {
   final String transactionId;

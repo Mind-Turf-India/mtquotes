@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'payment_screen.dart';
-import 'components/template/template_service.dart';
+import '../Templates/components/template/template_service.dart';
 
 class SubscriptionScreen extends StatefulWidget {
   @override

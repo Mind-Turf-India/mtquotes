@@ -3,12 +3,12 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:mtquotes/screens/navbar_mainscreen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:mtquotes/screens/Signup_Screen/signup_screen.dart';
-import 'package:mtquotes/screens/User_Home/components/navbar_mainscreen.dart';
-import 'package:mtquotes/screens/forgot_password.dart';
+import 'package:mtquotes/screens/Auth_Screen/Signup_Screen/signup_screen.dart';
+import 'package:mtquotes/screens/Auth_Screen/Forgot_Password_Screen/forgot_password.dart';
 import 'package:http/http.dart' as http;
-import '../User_Home/components/notification_service.dart';
+import '../../User_Home/components/Notifications/notification_service.dart';
 
 class LoginScreen extends StatefulWidget {
   @override

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mtquotes/l10n/app_localization.dart';
-import '../../../main.dart';
+import '../../../../main.dart';
 
 class SettingsLanguage extends StatefulWidget {
   const SettingsLanguage({Key? key}) : super(key: key);

@@ -12,7 +12,7 @@ import 'package:mtquotes/screens/Create_Screen/edit_screen_create.dart';
 import 'package:mtquotes/screens/Templates/components/festivals/festival_post.dart';
 import 'package:mtquotes/screens/Templates/components/festivals/festival_service.dart';
 import 'package:mtquotes/screens/Templates/components/festivals/festival_sharing.dart';
-import 'package:mtquotes/screens/Templates/subscription_popup.dart';
+import 'package:mtquotes/screens/Payment_Screen/subscription_popup.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:mtquotes/screens/Templates/components/template/quote_template.dart';

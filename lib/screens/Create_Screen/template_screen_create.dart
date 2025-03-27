@@ -3,6 +3,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:mtquotes/screens/Payment_Screen/subscription_popup.dart';
+import 'package:mtquotes/screens/User_Home/components/Categories/category_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import '../../l10n/app_localization.dart';
@@ -13,7 +15,6 @@ import '../Templates/components/festivals/festival_post.dart';
 import '../Templates/components/festivals/festival_service.dart';
 import '../Templates/components/template/quote_template.dart';
 import '../Templates/components/template/template_service.dart';
-import '../Templates/subscription_popup.dart';
 import '../User_Home/components/templates_list.dart';
 import 'edit_screen_create.dart';
 
@@ -34,7 +35,6 @@ class _TemplatePageState extends State<TemplatePage> {
   bool _loadingFestivals = false;
   List<FestivalPost> _festivalPosts = [];
   final FestivalService _festivalService = FestivalService();
-
 
   @override
   void initState() {
@@ -123,7 +123,7 @@ class _TemplatePageState extends State<TemplatePage> {
     FestivalHandler.handleFestivalSelection(
       context,
       festival,
-          (selectedFestival) {
+      (selectedFestival) {
         // This is what happens when the user gets access to the festival
         // For example, you could navigate to an edit screen:
         Navigator.push(
@@ -192,8 +192,8 @@ class _TemplatePageState extends State<TemplatePage> {
     );
 
     try {
-      final pickedFile = await ImagePicker().pickImage(
-          source: ImageSource.gallery);
+      final pickedFile =
+          await ImagePicker().pickImage(source: ImageSource.gallery);
 
       // Hide loading indicator
       Navigator.pop(context);
@@ -216,11 +216,7 @@ class _TemplatePageState extends State<TemplatePage> {
   @override
   Widget build(BuildContext context) {
     // Initialize tabs with localized strings
-    tabs = [
-      context.loc.category,
-      context.loc.gallery,
-      context.loc.customesize
-    ];
+    tabs = [context.loc.category, context.loc.gallery, context.loc.customesize];
 
     final textSizeProvider = Provider.of<TextSizeProvider>(context);
     double fontSize = textSizeProvider.fontSize;
@@ -262,8 +258,8 @@ class _TemplatePageState extends State<TemplatePage> {
                     onPressed: _toggleListening,
                   ),
                   border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(
-                      horizontal: 20, vertical: 16),
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                 ),
               ),
             ),
@@ -313,7 +309,8 @@ class _TemplatePageState extends State<TemplatePage> {
   }
 
   Widget _buildTabContent(int index) {
-    final textSizeProvider = Provider.of<TextSizeProvider>(context); // Listen to changes
+    final textSizeProvider =
+        Provider.of<TextSizeProvider>(context); // Listen to changes
     double fontSize = textSizeProvider.fontSize;
 
     return Column(
@@ -335,11 +332,28 @@ class _TemplatePageState extends State<TemplatePage> {
             child: ListView(
               scrollDirection: Axis.horizontal,
               children: [
-                categoryCard(Icons.lightbulb, context.loc.motivational, Colors.green, fontSize),
-                categoryCard(Icons.favorite, context.loc.love, Colors.red, fontSize),
-                categoryCard(Icons.emoji_emotions, context.loc.funny, Colors.orange, fontSize),
-                categoryCard(Icons.people, context.loc.friendship, Colors.blue, fontSize),
-                categoryCard(Icons.self_improvement, context.loc.life, Colors.purple, fontSize),
+                categoryCard(
+                    Icons.lightbulb, context.loc.motivational, Colors.green),
+                categoryCard(
+                  Icons.favorite,
+                  context.loc.love,
+                  Colors.red,
+                ),
+                categoryCard(
+                  Icons.emoji_emotions,
+                  context.loc.funny,
+                  Colors.orange,
+                ),
+                categoryCard(
+                  Icons.people,
+                  context.loc.friendship,
+                  Colors.blue,
+                ),
+                categoryCard(
+                  Icons.self_improvement,
+                  context.loc.life,
+                  Colors.purple,
+                ),
               ],
             ),
           ),
@@ -388,23 +402,25 @@ class _TemplatePageState extends State<TemplatePage> {
                 child: _loadingFestivals
                     ? Center(child: CircularProgressIndicator())
                     : _festivalPosts.isEmpty
-                    ? Center(
-                  child: Text(
-                    "No festival posts available",
-                    style: GoogleFonts.poppins(fontSize: fontSize - 2),
-                  ),
-                )
-                    : ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: _festivalPosts.length,
-                  itemBuilder: (context, index) {
-                    return FestivalCard(
-                      festival: _festivalPosts[index],
-                      fontSize: fontSize,
-                      onTap: () => _handleFestivalPostSelection(_festivalPosts[index]),
-                    );
-                  },
-                ),
+                        ? Center(
+                            child: Text(
+                              "No festival posts available",
+                              style:
+                                  GoogleFonts.poppins(fontSize: fontSize - 2),
+                            ),
+                          )
+                        : ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: _festivalPosts.length,
+                            itemBuilder: (context, index) {
+                              return FestivalCard(
+                                festival: _festivalPosts[index],
+                                fontSize: fontSize,
+                                onTap: () => _handleFestivalPostSelection(
+                                    _festivalPosts[index]),
+                              );
+                            },
+                          ),
               ),
             ],
           ),
@@ -417,7 +433,12 @@ class _TemplatePageState extends State<TemplatePage> {
             width: double.infinity,
             child: Center(
               child: GestureDetector(
-                onTap: _pickImage,
+                onTap: () {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => EditScreen(title: '')));
+                },
                 child: Container(
                   padding: EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -502,46 +523,61 @@ class _TemplatePageState extends State<TemplatePage> {
     );
   }
 
-
-  Widget categoryCard(IconData icon, String title, Color color,
-      double fontSize) {
-    return Padding(
-      padding: EdgeInsets.only(right: 12),
-      child: Column(
-        children: [
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12),
+  Widget categoryCard(IconData icon, String title, Color color) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => CategoryScreen(
+              categoryName: title,
+              categoryColor: color,
+              categoryIcon: icon,
             ),
-            child: Icon(icon, color: color, size: 30),
           ),
-          SizedBox(height: 5),
-          Text(title,
-              style: GoogleFonts.poppins(
-                  fontSize: fontSize - 2, fontWeight: FontWeight.w500)),
-        ],
+        );
+      },
+      child: Padding(
+        padding: EdgeInsets.only(right: 12),
+        child: Column(
+          children: [
+            Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: color, size: 30),
+            ),
+            SizedBox(
+              height: 5,
+              width: 10,
+            ),
+            Text(title,
+                style: GoogleFonts.poppins(
+                    fontSize: 13, fontWeight: FontWeight.w500)),
+          ],
+        ),
       ),
     );
   }
+}
 
-  Widget quoteCard(String text, double fontSize) {
-    return Container(
-      width: 100,
-      margin: EdgeInsets.only(right: 10),
-      padding: EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        boxShadow: [BoxShadow(color: Colors.grey.shade300, blurRadius: 5)],
-      ),
-      child: Center(
-        child: Text(text,
-            textAlign: TextAlign.center,
-            style: GoogleFonts.poppins(fontSize: fontSize - 2)),
-      ),
-    );
-  }
+Widget quoteCard(String text, double fontSize) {
+  return Container(
+    width: 100,
+    margin: EdgeInsets.only(right: 10),
+    padding: EdgeInsets.all(10),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(8),
+      boxShadow: [BoxShadow(color: Colors.grey.shade300, blurRadius: 5)],
+    ),
+    child: Center(
+      child: Text(text,
+          textAlign: TextAlign.center,
+          style: GoogleFonts.poppins(fontSize: fontSize - 2)),
+    ),
+  );
 }

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:mtquotes/l10n/app_localization.dart';
-import 'package:mtquotes/screens/User_Home/components/text_language.dart';
-import 'package:mtquotes/screens/User_Home/components/text_size.dart';
+import 'package:mtquotes/screens/User_Home/components/Settings/text_language.dart';
+import 'package:mtquotes/screens/User_Home/components/Settings/text_size.dart';
 import 'package:mtquotes/screens/User_Home/home_screen.dart';
 import 'package:provider/provider.dart';
 
-import '../../../providers/text_size_provider.dart';
+import '../../../../providers/text_size_provider.dart';
 
 class SettingsPage extends StatelessWidget {
   @override

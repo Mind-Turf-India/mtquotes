@@ -73,24 +73,24 @@ class AboutUsScreen extends StatelessWidget {
                   children: [
                     const TextSpan(
                       text: "Vaky is a powerful quote-making app ",
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                      
                     ),
                     const TextSpan(text: "designed to help you "),
                     const TextSpan(
                       text:
                           "create, edit, and customize stunning quote images ",
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                      
                     ),
                     const TextSpan(text: "for social media. Whether it's "),
                     const TextSpan(
                       text:
                           "motivational quotes, life quotes, inspirational messages, or aesthetic text posts",
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                      
                     ),
                     const TextSpan(text: ", Vaky makes it "),
                     const TextSpan(
                       text: "quick, easy, and fun!",
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                     
                     ),
                   ],
                 ),
@@ -110,21 +110,21 @@ class AboutUsScreen extends StatelessWidget {
                     ),
                     const TextSpan(
                       text: "Vaky",
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                      
                     ),
                     const TextSpan(
                         text:
                             ", we believe in the power of words. Our app is built for "),
                     const TextSpan(
                       text: "writers, influencers, and status lovers ",
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                      
                     ),
                     const TextSpan(
                         text: "who want to express themselves through "),
                     const TextSpan(
                       text:
                           "beautifully designed WhatsApp status, attitude quotes, and love Shayari",
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                     
                     ),
                     const TextSpan(text: "."),
                   ],
@@ -172,22 +172,22 @@ class AboutUsScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   _buildNumberedItem(
-                    "1️⃣",
+                
                     "Choose a Background",
                     "Pick from our built-in designs or use your own images.",
                   ),
                   _buildNumberedItem(
-                    "2️⃣",
+                 
                     "Write Your Quote",
                     "Add motivational, romantic, or attitude-based text.",
                   ),
                   _buildNumberedItem(
-                    "3️⃣",
+                    
                     "Customize & Save",
                     "Change font styles, colors, and alignment to match your vibe.",
                   ),
                   _buildNumberedItem(
-                    "4️⃣",
+                    
                     "Share Instantly",
                     "Post your quote on WhatsApp, Instagram, Facebook, and more!",
                   ),
@@ -225,30 +225,7 @@ class AboutUsScreen extends StatelessWidget {
             const SizedBox(height: 24),
 
             // Call to action
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.blue.shade50,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.rocket_launch,
-                      color: Colors.blueAccent, size: 28),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      "Download Vaky today and start turning your words into art!",
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.blueAccent,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            
 
             const SizedBox(height: 32),
 
@@ -305,11 +282,7 @@ class AboutUsScreen extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("✔ ",
-              style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.green,
-                  fontWeight: FontWeight.bold)),
+        
           const SizedBox(width: 8),
           Expanded(
             child: RichText(
@@ -330,13 +303,13 @@ class AboutUsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildNumberedItem(String number, String title, String description) {
+  Widget _buildNumberedItem( String title, String description) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(number, style: const TextStyle(fontSize: 16)),
+    
           const SizedBox(width: 8),
           Expanded(
             child: RichText(
@@ -363,7 +336,7 @@ class AboutUsScreen extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("✅ ", style: TextStyle(fontSize: 16)),
+        
           const SizedBox(width: 8),
           Expanded(
             child: RichText(

@@ -10,10 +10,10 @@ import 'package:mtquotes/screens/Templates/components/template/quote_template.da
 import 'package:mtquotes/screens/Templates/components/totd/totd_card.dart';
 import 'package:mtquotes/screens/Templates/components/totd/totd_handler.dart';
 import 'package:mtquotes/screens/Templates/components/totd/totd_service.dart';
-import 'package:mtquotes/screens/Templates/subscription_popup.dart';
+import 'package:mtquotes/screens/Payment_Screen/subscription_popup.dart';
 import 'package:mtquotes/screens/Templates/components/template/template_section.dart';
 import 'package:mtquotes/screens/User_Home/components/daily_check_in.dart';
-import 'package:mtquotes/screens/User_Home/components/notifications.dart';
+import 'package:mtquotes/screens/User_Home/components/Notifications/notifications.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mtquotes/screens/User_Home/profile_screen.dart';
 import 'package:path_provider/path_provider.dart';
@@ -1056,15 +1056,15 @@ class _HomeScreenState extends State<HomeScreen> {
                                   Icons.lightbulb,
                                   context.loc.motivational,
                                   Colors.green,
-                                  fontSize),
+                                  ),
                               categoryCard(Icons.favorite, context.loc.love,
-                                  Colors.red, fontSize),
+                                  Colors.red, ),
                               categoryCard(Icons.emoji_emotions,
-                                  context.loc.funny, Colors.orange, fontSize),
+                                  context.loc.funny, Colors.orange, ),
                               categoryCard(Icons.people, context.loc.friendship,
-                                  Colors.blue, fontSize),
+                                  Colors.blue, ),
                               categoryCard(Icons.self_improvement,
-                                  context.loc.life, Colors.purple, fontSize),
+                                  context.loc.life, Colors.purple, ),
                             ],
                           ),
                         ),
@@ -1308,16 +1308,14 @@ class _HomeScreenState extends State<HomeScreen> {
           child: ListView(
             scrollDirection: Axis.horizontal,
             children: [
-              categoryCard(Icons.lightbulb, context.loc.motivational,
-                  Colors.green, fontSize),
               categoryCard(
-                  Icons.favorite, context.loc.love, Colors.red, fontSize),
-              categoryCard(Icons.emoji_emotions, context.loc.funny,
-                  Colors.orange, fontSize),
+                  Icons.lightbulb, context.loc.motivational, Colors.green),
+              categoryCard(Icons.favorite, context.loc.love, Colors.red),
               categoryCard(
-                  Icons.people, context.loc.friendship, Colors.blue, fontSize),
-              categoryCard(Icons.self_improvement, context.loc.life,
-                  Colors.purple, fontSize),
+                  Icons.emoji_emotions, context.loc.funny, Colors.orange),
+              categoryCard(Icons.people, context.loc.friendship, Colors.blue),
+              categoryCard(
+                  Icons.self_improvement, context.loc.life, Colors.purple),
             ],
           ),
         ),
@@ -1429,7 +1427,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Update the categoryCard function in your HomeScreen class
   Widget categoryCard(
-      IconData icon, String title, Color color, double fontSize) {
+      IconData icon, String title, Color color) {
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -1456,10 +1454,14 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               child: Icon(icon, color: color, size: 30),
             ),
-            SizedBox(height: 5),
+            SizedBox(
+              height: 5,
+              width: 10,
+            ),
             Text(title,
                 style: GoogleFonts.poppins(
-                    fontSize: fontSize - 2, fontWeight: FontWeight.w500)),
+                  fontSize: 13,
+                 fontWeight: FontWeight.w500)),
           ],
         ),
       ),
