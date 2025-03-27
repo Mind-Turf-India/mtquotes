@@ -570,9 +570,6 @@ class _EditScreenState extends State<EditScreen> {
       Uint8List finalImageData;
       if (showInfoBox) {
         // This would capture the entire widget including info box
-        // You would need to implement a method to capture the combined image
-        // For example using RepaintBoundary and toImage()
-        // This is a placeholder - actual implementation would depend on your UI structure
         finalImageData = await _captureImageWithInfoBox() ?? imageData!;
       } else {
         finalImageData = imageData!;
@@ -590,27 +587,197 @@ class _EditScreenState extends State<EditScreen> {
         [XFile(path)],
         text: 'Check out this amazing template from our app!',
       );
+
+      // Show rating dialog after sharing
+      await Future.delayed(Duration(milliseconds: 500));
+      if (context.mounted) {
+        await _showRatingDialog(context);
+      }
     } catch (e) {
       _hideLoadingIndicator();
 
       // Show error dialog
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: Text('Error'),
-            content: Text('Failed to share image: ${e.toString()}'),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child: Text('OK'),
-              ),
-            ],
+      if (context.mounted) {
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text('Error'),
+              content: Text('Failed to share image: ${e.toString()}'),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: Text('OK'),
+                ),
+              ],
+            );
+          },
+        );
+      }
+    }
+  }
+
+  Future<void> _showRatingDialog(BuildContext context) async {
+    double rating = 0;
+
+    return showDialog<double>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return StatefulBuilder(
+            builder: (context, setState) {
+              return AlertDialog(
+                title: Text('Rate This Content'),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('How would you rate your experience with this template?'),
+                    SizedBox(height: 20),
+                    FittedBox(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: List.generate(5, (index) {
+                          return IconButton(
+                            icon: Icon(
+                              index < rating ? Icons.star : Icons.star_border,
+                              color: index < rating ? Colors.amber : Colors.grey,
+                              size: 36,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                rating = index + 1;
+                              });
+                            },
+                          );
+                        }),
+                      ),
+                    )
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(dialogContext).pop(null);
+                    },
+                    child: Text('Skip'),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(dialogContext).pop(rating); // Close the dialog
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(builder: (context) => MainScreen()),
+                            (route) => false,
+                      );
+                    },
+                    child: Text('Submit'),
+                  ),
+                ],
+              );
+            }
+        );
+      },
+    ).then((value) {
+      if (value != null && value > 0) {
+        // Submit rating
+        _submitRating(value);
+
+        // Show thank you message
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Thanks for your rating!'),
+              backgroundColor: Colors.green,
+            ),
           );
-        },
-      );
+        }
+      }
+    });
+  }
+
+// Add rating submission to Firebase
+  Future<void> _submitRating(double rating) async {
+    try {
+      final DateTime now = DateTime.now();
+      final User? currentUser = FirebaseAuth.instance.currentUser;
+
+      // Create a rating object
+      final Map<String, dynamic> ratingData = {
+        'templateId': widget.templateImageUrl != null ? 'template_${DateTime.now().millisecondsSinceEpoch}' : 'custom_${DateTime.now().millisecondsSinceEpoch}',
+        'rating': rating,
+        'createdAt': now,  // Firestore will convert this to Timestamp
+        'imageUrl': widget.templateImageUrl ?? 'custom_image',
+        'title': widget.title,
+        'userId': currentUser?.uid ?? 'anonymous', // Get user ID if logged in
+        'userEmail': currentUser?.email ?? 'anonymous',
+        'isCustomTemplate': widget.templateImageUrl == null,
+      };
+
+      await FirebaseFirestore.instance
+          .collection('template_ratings')
+          .add(ratingData);
+
+      print('Rating submitted: $rating for template ${widget.title}');
+
+      // If this is a template from the library, update its average rating
+      if (widget.templateImageUrl != null) {
+        await _updateTemplateAverageRating(widget.templateImageUrl!, rating);
+      }
+
+    } catch (e) {
+      print('Error submitting rating: $e');
+    }
+  }
+
+  Future<void> _updateTemplateAverageRating(String templateUrl, double newRating) async {
+    try {
+      // Extract template ID from URL if possible
+      String templateId = 'unknown';
+
+      // Try to parse template ID from URL or use something unique
+      if (templateUrl.contains('/')) {
+        templateId = templateUrl.split('/').last.split('.').first;
+      }
+
+      // Get reference to the template document
+      final templateRef = FirebaseFirestore.instance.collection('templates').doc(templateId);
+
+      // Run this as a transaction to ensure data consistency
+      await FirebaseFirestore.instance.runTransaction((transaction) async {
+        // Get the current template data
+        final templateSnapshot = await transaction.get(templateRef);
+
+        if (templateSnapshot.exists) {
+          final data = templateSnapshot.data() as Map<String, dynamic>;
+
+          // Calculate the new average rating
+          double currentAvgRating = data['averageRating']?.toDouble() ?? 0.0;
+          int ratingCount = data['ratingCount'] ?? 0;
+
+          int newRatingCount = ratingCount + 1;
+          double newAvgRating = ((currentAvgRating * ratingCount) + newRating) / newRatingCount;
+
+          // Update the template with the new average rating
+          transaction.update(templateRef, {
+            'averageRating': newAvgRating,
+            'ratingCount': newRatingCount,
+            'lastRated': FieldValue.serverTimestamp(),
+          });
+        } else {
+          // If the document doesn't exist, create it with initial rating data
+          transaction.set(templateRef, {
+            'averageRating': newRating,
+            'ratingCount': 1,
+            'lastRated': FieldValue.serverTimestamp(),
+            'templateUrl': templateUrl,
+          });
+        }
+      });
+
+      print('Updated template average rating successfully');
+    } catch (e) {
+      print('Error updating template average rating: $e');
     }
   }
 

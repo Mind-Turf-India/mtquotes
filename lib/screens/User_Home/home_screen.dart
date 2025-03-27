@@ -61,10 +61,17 @@ class _HomeScreenState extends State<HomeScreen> {
   int checkInStreak = 0;
   List<QuoteTemplate> _recentTemplates = [];
   bool _loadingRecentTemplates = false;
+  // Firebase auth for user-specific templates
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  // Stream to listen for auth state changes
+  late Stream<User?> _authStateChanges;
 
   @override
   void initState() {
     super.initState();
+    // Initialize the auth state changes stream
+    _authStateChanges = _auth.authStateChanges();
+
     _fetchUserData();
     _fetchUserDisplayName();
     _fetchQOTDImage();
@@ -80,6 +87,12 @@ class _HomeScreenState extends State<HomeScreen> {
     fetchUserRewardPoints();
     fetchCheckInStreak();
     _fetchRecentTemplates();
+
+    // Listen for auth state changes to reload recent templates when user signs in/out
+    _authStateChanges.listen((User? user) {
+      print("Auth state changed: User ${user != null ? 'logged in' : 'logged out'}");
+      _fetchRecentTemplates(); // Reload recent templates on auth state change
+    });
   }
 
   //daily check in
@@ -208,14 +221,30 @@ class _HomeScreenState extends State<HomeScreen> {
 //recent
   Future<void> _fetchRecentTemplates() async {
     print("FETCHING RECENT TEMPLATES!");
-    setState(() {
-      _loadingRecentTemplates = true;
-    });
+    if (mounted) {
+      setState(() {
+        _loadingRecentTemplates = true;
+      });
+    }
 
     try {
+      // Check if user is logged in first
+      User? user = _auth.currentUser;
+      if (user == null) {
+        print('No user logged in, showing empty recent templates');
+        if (mounted) {
+          setState(() {
+            _recentTemplates = [];
+            _loadingRecentTemplates = false;
+          });
+        }
+        return;
+      }
+
+      // User is logged in, fetch their specific recent templates from Firestore
       final templates = await RecentTemplateService.getRecentTemplates();
 
-      print('RECENT TEMPLATES: Found ${templates.length} templates');
+      print('RECENT TEMPLATES: Found ${templates.length} templates for user: ${user.email}');
       for (var template in templates) {
         print('RECENT: ${template.id} - ${template.title}');
       }
@@ -230,6 +259,7 @@ class _HomeScreenState extends State<HomeScreen> {
       print('Error fetching recent templates: $e');
       if (mounted) {
         setState(() {
+          _recentTemplates = [];
           _loadingRecentTemplates = false;
         });
       }
@@ -320,7 +350,7 @@ class _HomeScreenState extends State<HomeScreen> {
     TimeOfDayHandler.handleTimeOfDayPostSelection(
       context,
       post,
-      (selectedPost) {
+          (selectedPost) {
         // This is the callback that will be executed when access is granted
         print('Access granted to post: ${selectedPost.title}');
         // You can add additional logic here if needed
@@ -367,7 +397,7 @@ class _HomeScreenState extends State<HomeScreen> {
     FestivalHandler.handleFestivalSelection(
       context,
       festival,
-      (selectedFestival) {
+          (selectedFestival) {
         // This is what happens when the user gets access to the festival
         // For example, you could navigate to an edit screen:
         Navigator.push(
@@ -417,7 +447,7 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         userName = data['name'] ?? '';
         profileImageUrl =
-            data.containsKey('profileImage') ? data['profileImage'] : null;
+        data.containsKey('profileImage') ? data['profileImage'] : null;
         userRewardPoints = data['rewardPoints'] ?? 0;
       });
     }
@@ -456,12 +486,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       backgroundImage: _selectedImage != null
                           ? FileImage(_selectedImage!)
                           : (profileImageUrl != null &&
-                                  profileImageUrl!.isNotEmpty
-                              ? NetworkImage(profileImageUrl!) as ImageProvider
-                              : null),
+                          profileImageUrl!.isNotEmpty
+                          ? NetworkImage(profileImageUrl!) as ImageProvider
+                          : null),
                       child: (_selectedImage == null &&
-                              (profileImageUrl == null ||
-                                  profileImageUrl!.isEmpty))
+                          (profileImageUrl == null ||
+                              profileImageUrl!.isEmpty))
                           ? Icon(Icons.camera_alt, size: 40)
                           : null,
                     ),
@@ -573,7 +603,7 @@ class _HomeScreenState extends State<HomeScreen> {
         print("Uploading image...");
         TaskSnapshot snapshot = await FirebaseStorage.instance
             .ref(
-                'profile_pictures/${userEmail}_${DateTime.now().millisecondsSinceEpoch}.jpg')
+            'profile_pictures/${userEmail}_${DateTime.now().millisecondsSinceEpoch}.jpg')
             .putFile(image);
 
         imageUrl = await snapshot.ref.getDownloadURL();
@@ -606,7 +636,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<String?> _uploadProfileImage(String uid, File image) async {
     Reference storageRef =
-        FirebaseStorage.instance.ref().child('profile_pictures/$uid.jpg');
+    FirebaseStorage.instance.ref().child('profile_pictures/$uid.jpg');
     UploadTask uploadTask = storageRef.putFile(image);
     TaskSnapshot snapshot = await uploadTask;
     return await snapshot.ref.getDownloadURL();

@@ -1,28 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:mtquotes/screens/Create_Screen/edit_screen_create.dart';
 import 'package:mtquotes/screens/Templates/components/template/quote_template.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 import 'package:mtquotes/providers/text_size_provider.dart';
 import 'package:mtquotes/l10n/app_localization.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class RecentTemplatesSection extends StatelessWidget {
   final List<QuoteTemplate> recentTemplates;
   final Function(QuoteTemplate) onTemplateSelected;
   final bool isLoading;
+  final VoidCallback? onViewAll;
 
   const RecentTemplatesSection({
     Key? key,
     required this.recentTemplates,
     required this.onTemplateSelected,
     this.isLoading = false,
+    this.onViewAll,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     final textSizeProvider = Provider.of<TextSizeProvider>(context);
     double fontSize = textSizeProvider.fontSize;
+    final isUserLoggedIn = FirebaseAuth.instance.currentUser != null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -37,6 +40,17 @@ class RecentTemplatesSection extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
+            if (onViewAll != null && recentTemplates.isNotEmpty)
+              TextButton(
+                onPressed: onViewAll,
+                child: Text(
+                  'View All',
+                  style: GoogleFonts.poppins(
+                    fontSize: fontSize - 2,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                ),
+              ),
           ],
         ),
         SizedBox(height: 10),
@@ -44,6 +58,13 @@ class RecentTemplatesSection extends StatelessWidget {
           height: 120,
           child: isLoading
               ? Center(child: CircularProgressIndicator())
+              : !isUserLoggedIn
+              ? Center(
+            child: Text(
+              "Sign in to view recent templates",
+              style: GoogleFonts.poppins(fontSize: fontSize - 2),
+            ),
+          )
               : recentTemplates.isEmpty
               ? Center(
             child: Text(
