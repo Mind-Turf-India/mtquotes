@@ -72,7 +72,7 @@ class TemplateHandler {
       } else {
         // Show confirmation dialog with preview
         // The issue is here - we need to pass isSubscribed as the third parameter
-        _showTemplateConfirmationDialog(
+        showTemplateConfirmationDialog(
           context,
           template,
           isSubscribed, // Pass the boolean value here
@@ -511,7 +511,7 @@ class TemplateHandler {
   }
 
 // Method to show the template confirmation dialog
-  static void _showTemplateConfirmationDialog(
+  static void showTemplateConfirmationDialog(
       BuildContext context,
       QuoteTemplate template,
       bool isPaidUser,
