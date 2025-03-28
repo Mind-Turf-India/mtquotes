@@ -622,7 +622,7 @@ exports.sendAfternoonTOTDNotification = functionsV2.scheduler
   .onSchedule({
     schedule: "0 13 * * *", // Runs every day at 1 PM
     timeZone: "Asia/Kolkata",
-  }, async (context) => {
+  }, async (context) => {kk
     await sendTOTDNotification("afternoon", "Afternoon Thought");
   });
 
