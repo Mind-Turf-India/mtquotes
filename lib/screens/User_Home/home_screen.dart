@@ -1059,7 +1059,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ],
                     ),
                     SizedBox(
-                      height: 20,
+                      height: 30,
                     ),
 // Categories section with View All button
                     Column(
@@ -1076,7 +1076,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ],
                         ),
-                        SizedBox(height: 10),
+                        SizedBox(height: 20),
                         SizedBox(
                           height: 100,
                           child: ListView(
@@ -1275,7 +1275,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         ),
                                       ],
                                     ),
-                                    SizedBox(height: 10),
+                                    SizedBox(height: 20),
                                     SizedBox(
                                       height: 150,
                                       // width: 0,

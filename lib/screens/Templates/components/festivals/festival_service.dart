@@ -133,7 +133,7 @@ class FestivalService {
   }
 
   // Fetch recent festival posts
-  Future<List<Festival>> fetchRecentFestivalPosts() async {
+ Future<List<Festival>> fetchRecentFestivalPosts() async {
     try {
       // Get current date
       final DateTime now = DateTime.now();
@@ -161,12 +161,26 @@ class FestivalService {
         }
       }
 
+      // If no festivals are found, fetch generic posts
+      if (festivals.isEmpty) {
+        DocumentSnapshot genericDoc = await _firestore
+            .collection('festivals')
+            .doc('generic_posts')
+            .get();
+
+        if (genericDoc.exists) {
+          Festival genericFestival = Festival.fromFirestore(genericDoc);
+          festivals.add(genericFestival);
+        }
+      }
+
       return festivals;
     } catch (e) {
       print('Error fetching recent festivals: $e');
       return [];
     }
   }
+
 
   // Fetch trending festival posts
   Future<List<Festival>> fetchTrendingFestivalPosts() async {
