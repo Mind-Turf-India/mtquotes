@@ -31,7 +31,7 @@ class Category {
 
     // You can define a mapping of category names to icons and colors
     final String categoryName = doc.id.toLowerCase();
-    if (categoryName == 'motivational') {
+    if (categoryName == 'motivation') {
       icon = Icons.lightbulb;
       color = Colors.green;
     } else if (categoryName == 'love') {
@@ -102,7 +102,7 @@ class CategoryService {
   List<Map<String, dynamic>> getPredefinedCategories() {
     return [
       {
-        'name': 'Motivational',
+        'name': 'Motivation',
         'icon': Icons.lightbulb,
         'color': Colors.green,
       },

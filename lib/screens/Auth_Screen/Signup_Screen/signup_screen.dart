@@ -161,6 +161,7 @@ class _SignupScreenState extends State<SignupScreen> {
         'rewardPoints': 100,
         'previousRewardPoints': 0,
         'isSubscribed': false,
+        'isPaid': false,
       };
 
       // Handling referral codes

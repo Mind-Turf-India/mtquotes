@@ -113,7 +113,7 @@ class _EditScreenState extends State<EditScreen> {
 
         if (userDoc.exists && userDoc.data() is Map<String, dynamic>) {
           Map<String, dynamic> userData =
-          userDoc.data() as Map<String, dynamic>;
+              userDoc.data() as Map<String, dynamic>;
 
           setState(() {
             showInfoBox = userData['showInfoBox'] ?? true;
@@ -148,7 +148,8 @@ class _EditScreenState extends State<EditScreen> {
     if (Platform.isAndroid) {
       baseDir = Directory('/storage/emulated/0/Pictures/Vaky/$userDir');
     } else {
-      baseDir = Directory('${(await getApplicationDocumentsDirectory()).path}/Vaky/$userDir');
+      baseDir = Directory(
+          '${(await getApplicationDocumentsDirectory()).path}/Vaky/$userDir');
     }
 
     // Create directory if it doesn't exist
@@ -200,20 +201,20 @@ class _EditScreenState extends State<EditScreen> {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               image:
-              userProfileImageUrl != null && userProfileImageUrl!.isNotEmpty
-                  ? DecorationImage(
-                image: NetworkImage(userProfileImageUrl!),
-                fit: BoxFit.cover,
-              )
-                  : null,
+                  userProfileImageUrl != null && userProfileImageUrl!.isNotEmpty
+                      ? DecorationImage(
+                          image: NetworkImage(userProfileImageUrl!),
+                          fit: BoxFit.cover,
+                        )
+                      : null,
               color: Colors.grey[300],
             ),
             child: userProfileImageUrl == null || userProfileImageUrl!.isEmpty
                 ? Icon(
-              Icons.person,
-              color: Colors.grey[400],
-              size: 30,
-            )
+                    Icons.person,
+                    color: Colors.grey[400],
+                    size: 30,
+                  )
                 : null,
           ),
           SizedBox(width: 12),
@@ -292,7 +293,7 @@ class _EditScreenState extends State<EditScreen> {
           .findRenderObject() as RenderRepaintBoundary;
       final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
       final ByteData? byteData =
-      await image.toByteData(format: ui.ImageByteFormat.png);
+          await image.toByteData(format: ui.ImageByteFormat.png);
 
       if (byteData != null) {
         return byteData.buffer.asUint8List();
@@ -316,7 +317,7 @@ class _EditScreenState extends State<EditScreen> {
       // Get the image with higher quality
       ui.Image image = await boundary.toImage(pixelRatio: 3.0);
       ByteData? byteData =
-      await image.toByteData(format: ui.ImageByteFormat.png);
+          await image.toByteData(format: ui.ImageByteFormat.png);
 
       if (byteData != null) {
         setState(() {
@@ -358,7 +359,8 @@ class _EditScreenState extends State<EditScreen> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text('Login Required'),
-          content: Text('Please sign in to download images. This helps keep your downloads organized.'),
+          content: Text(
+              'Please sign in to download images. This helps keep your downloads organized.'),
           actions: [
             TextButton(
               onPressed: () {
@@ -408,9 +410,12 @@ class _EditScreenState extends State<EditScreen> {
       }
     } catch (e) {
       print('Error loading template image: $e');
-      setState(() {
-        isLoading = false;
-      });
+
+      if (this.mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
 
       // Show error dialog
       if (mounted) {
@@ -523,58 +528,56 @@ class _EditScreenState extends State<EditScreen> {
     return showDialog<double>(
       context: context,
       builder: (BuildContext dialogContext) {
-        return StatefulBuilder(
-            builder: (context, setState) {
-              return AlertDialog(
-                title: Text('Rate This Content'),
-                content: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text('How would you rate your experience with this template?'),
-                    SizedBox(height: 20),
-                    FittedBox(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: List.generate(5, (index) {
-                          return IconButton(
-                            icon: Icon(
-                              index < rating ? Icons.star : Icons.star_border,
-                              color: index < rating ? Colors.amber : Colors.grey,
-                              size: 36,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                rating = index + 1;
-                              });
-                            },
-                          );
-                        }),
-                      ),
-                    )
-                  ],
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(dialogContext).pop(null);
-                    },
-                    child: Text('Skip'),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(dialogContext).pop(rating); // Close the dialog
-                      Navigator.pushAndRemoveUntil(
-                        context,
-                        MaterialPageRoute(builder: (context) => MainScreen()),
-                            (route) => false,
+        return StatefulBuilder(builder: (context, setState) {
+          return AlertDialog(
+            title: Text('Rate This Content'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('How would you rate your experience with this template?'),
+                SizedBox(height: 20),
+                FittedBox(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: List.generate(5, (index) {
+                      return IconButton(
+                        icon: Icon(
+                          index < rating ? Icons.star : Icons.star_border,
+                          color: index < rating ? Colors.amber : Colors.grey,
+                          size: 36,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            rating = index + 1;
+                          });
+                        },
                       );
-                    },
-                    child: Text('Submit'),
+                    }),
                   ),
-                ],
-              );
-            }
-        );
+                )
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(dialogContext).pop(null);
+                },
+                child: Text('Skip'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.of(dialogContext).pop(rating); // Close the dialog
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (context) => MainScreen()),
+                    (route) => false,
+                  );
+                },
+                child: Text('Submit'),
+              ),
+            ],
+          );
+        });
       },
     ).then((value) {
       if (value != null && value > 0) {
@@ -602,9 +605,11 @@ class _EditScreenState extends State<EditScreen> {
 
       // Create a rating object
       final Map<String, dynamic> ratingData = {
-        'templateId': widget.templateImageUrl != null ? 'template_${DateTime.now().millisecondsSinceEpoch}' : 'custom_${DateTime.now().millisecondsSinceEpoch}',
+        'templateId': widget.templateImageUrl != null
+            ? 'template_${DateTime.now().millisecondsSinceEpoch}'
+            : 'custom_${DateTime.now().millisecondsSinceEpoch}',
         'rating': rating,
-        'createdAt': now,  // Firestore will convert this to Timestamp
+        'createdAt': now, // Firestore will convert this to Timestamp
         'imageUrl': widget.templateImageUrl ?? 'custom_image',
         'title': widget.title,
         'userId': currentUser?.uid ?? 'anonymous', // Get user ID if logged in
@@ -622,13 +627,13 @@ class _EditScreenState extends State<EditScreen> {
       if (widget.templateImageUrl != null) {
         await _updateTemplateAverageRating(widget.templateImageUrl!, rating);
       }
-
     } catch (e) {
       print('Error submitting rating: $e');
     }
   }
 
-  Future<void> _updateTemplateAverageRating(String templateUrl, double newRating) async {
+  Future<void> _updateTemplateAverageRating(
+      String templateUrl, double newRating) async {
     try {
       // Extract template ID from URL if possible
       String templateId = 'unknown';
@@ -639,7 +644,8 @@ class _EditScreenState extends State<EditScreen> {
       }
 
       // Get reference to the template document
-      final templateRef = FirebaseFirestore.instance.collection('templates').doc(templateId);
+      final templateRef =
+          FirebaseFirestore.instance.collection('templates').doc(templateId);
 
       // Run this as a transaction to ensure data consistency
       await FirebaseFirestore.instance.runTransaction((transaction) async {
@@ -654,7 +660,8 @@ class _EditScreenState extends State<EditScreen> {
           int ratingCount = data['ratingCount'] ?? 0;
 
           int newRatingCount = ratingCount + 1;
-          double newAvgRating = ((currentAvgRating * ratingCount) + newRating) / newRatingCount;
+          double newAvgRating =
+              ((currentAvgRating * ratingCount) + newRating) / newRatingCount;
 
           // Update the template with the new average rating
           transaction.update(templateRef, {
@@ -700,14 +707,17 @@ class _EditScreenState extends State<EditScreen> {
 
       if (Platform.isAndroid) {
         // Request different permissions based on Android SDK version
-        if (await _getAndroidVersion() >= 33) { // Android 13+
+        if (await _getAndroidVersion() >= 33) {
+          // Android 13+
           hasPermission = await _requestAndroid13Permission();
-        } else if (await _getAndroidVersion() >= 29) { // Android 10-12
+        } else if (await _getAndroidVersion() >= 29) {
+          // Android 10-12
           hasPermission = await Permission.storage.isGranted;
           if (!hasPermission) {
             hasPermission = (await Permission.storage.request()).isGranted;
           }
-        } else { // Android 9 and below
+        } else {
+          // Android 9 and below
           hasPermission = await Permission.storage.isGranted;
           if (!hasPermission) {
             hasPermission = (await Permission.storage.request()).isGranted;
@@ -720,9 +730,8 @@ class _EditScreenState extends State<EditScreen> {
 
       if (!hasPermission) {
         _hideLoadingIndicator();
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Storage permission is required to save images"))
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text("Storage permission is required to save images")));
         return;
       }
 
@@ -818,7 +827,6 @@ class _EditScreenState extends State<EditScreen> {
 
     return photosGranted;
   }
-
 
 // New helper method to track saved images in Firestore
   Future<void> _trackSavedImage(String fileName) async {
@@ -952,53 +960,53 @@ class _EditScreenState extends State<EditScreen> {
               else
                 imageData == null
                     ? GestureDetector(
-                  onTap: pickImageFromGallery,
-                  child: Container(
-                    height: 400,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                          color: Colors.grey.shade400,
-                          style: BorderStyle.solid),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          width: 80,
-                          height: 80,
+                        onTap: pickImageFromGallery,
+                        child: Container(
+                          height: 400,
+                          width: double.infinity,
                           decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.grey,
+                            border: Border.all(
+                                color: Colors.grey.shade400,
+                                style: BorderStyle.solid),
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          child: Icon(
-                            Icons.add,
-                            size: 40,
-                            color: Colors.grey.shade400,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                width: 80,
+                                height: 80,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.grey,
+                                ),
+                                child: Icon(
+                                  Icons.add,
+                                  size: 40,
+                                  color: Colors.grey.shade400,
+                                ),
+                              ),
+                              SizedBox(height: 16),
+                              Text(
+                                'Tap to upload from gallery',
+                                style: TextStyle(
+                                  color: Colors.grey.shade400,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        SizedBox(height: 16),
-                        Text(
-                          'Tap to upload from gallery',
-                          style: TextStyle(
-                            color: Colors.grey.shade400,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                )
+                      )
                     : RepaintBoundary(
-                  key: imageContainerKey,
-                  child: Column(
-                    children: [
-                      Image.memory(imageData!),
-                      if (showInfoBox && isPaidUser) _buildInfoBox(),
-                    ],
-                  ),
-                ),
+                        key: imageContainerKey,
+                        child: Column(
+                          children: [
+                            Image.memory(imageData!),
+                            if (showInfoBox && isPaidUser) _buildInfoBox(),
+                          ],
+                        ),
+                      ),
               SizedBox(height: 100),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -1009,7 +1017,7 @@ class _EditScreenState extends State<EditScreen> {
                     label: Text('Change Image'),
                     style: ElevatedButton.styleFrom(
                       padding:
-                      EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                          EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                     ),
                   ),
                   ElevatedButton.icon(
@@ -1047,7 +1055,7 @@ class _EditScreenState extends State<EditScreen> {
                     label: Text('Edit Image'),
                     style: ElevatedButton.styleFrom(
                       padding:
-                      EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                          EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                     ),
                   ),
                 ],

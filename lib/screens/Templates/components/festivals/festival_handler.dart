@@ -509,6 +509,7 @@ class FestivalHandler {
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w500,
+                              
                             ),
                           ),
                           SizedBox(height: 16),
