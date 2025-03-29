@@ -904,7 +904,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         SizedBox(height: 10),
                         SizedBox(
-                          height: 120,
+                          height: 150,
                           child: _loadingRecentTemplates
                               ? Center(child: CircularProgressIndicator())
                               : _recentTemplates.isEmpty
@@ -927,6 +927,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                   template),
                                           child: Container(
                                             width: 100,
+                                            
                                             margin: EdgeInsets.only(right: 10),
                                             decoration: BoxDecoration(
                                               color: Colors.white,
@@ -941,8 +942,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                             child: ClipRRect(
                                               borderRadius:
                                                   BorderRadius.circular(8),
+                                                 
                                               child: Stack(
                                                 fit: StackFit.expand,
+                                                
                                                 children: [
                                                   // Image background
                                                   template.imageUrl.isNotEmpty
@@ -969,6 +972,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                             );
                                                           },
                                                           fit: BoxFit.cover,
+                                                          
                                                         )
                                                       : Container(
                                                           color:

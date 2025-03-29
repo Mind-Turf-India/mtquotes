@@ -17,6 +17,7 @@ import '../Templates/components/template/quote_template.dart';
 import '../Templates/components/template/template_service.dart';
 import '../User_Home/components/templates_list.dart';
 import 'edit_screen_create.dart';
+import '../User_Home/components/Search/search_service.dart'; // Import the SearchService
 
 class TemplatePage extends StatefulWidget {
   @override
@@ -35,12 +36,24 @@ class _TemplatePageState extends State<TemplatePage> {
   bool _loadingFestivals = false;
   List<FestivalPost> _festivalPosts = [];
   final FestivalService _festivalService = FestivalService();
+  final SearchService _searchService = SearchService(); // Add SearchService
+  
+  bool _isSearching = false;
+  List<QuoteTemplate> _searchResults = []; // Store search results
 
   @override
   void initState() {
     super.initState();
     initSpeech();
-    _fetchFestivalPosts(); // Add this to load festival posts when the page loads
+    _fetchFestivalPosts();
+    _searchController.addListener(_onSearchChanged); // Add listener for search input
+  }
+
+  @override
+  void dispose() {
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
+    super.dispose();
   }
 
   void initSpeech() async {
@@ -85,6 +98,77 @@ class _TemplatePageState extends State<TemplatePage> {
     }
   }
 
+  // Add a method to handle search text changes
+  void _onSearchChanged() {
+    final query = _searchController.text.trim();
+    if (query.isNotEmpty) {
+      _performSearch(query);
+    } else {
+      setState(() {
+        _searchResults = [];
+        _isSearching = false;
+      });
+    }
+  }
+
+  // Add a method to perform the search
+  Future<void> _performSearch(String query) async {
+  setState(() {
+    _isSearching = true;
+  });
+
+  try {
+    // Use the search service to search across collections
+    final searchResults = await _searchService.searchAcrossCollections(query);
+    
+    // Log raw results
+    print('Raw search results count: ${searchResults.length}');
+    for (var i = 0; i < searchResults.length; i++) {
+      var result = searchResults[i];
+      print('Result #${i+1} - ID: ${result.id}, Title: ${result.title}, ImageURL: ${result.imageUrl}');
+    }
+    
+    // Use a map to deduplicate by ID AND filter out items with empty imageUrls
+    Map<String, QuoteTemplate> uniqueTemplatesMap = {};
+
+    for (var result in searchResults) {
+      // Skip items with empty imageUrl
+      if (result.imageUrl == null || result.imageUrl.trim().isEmpty) {
+        print('Skipping result with ID: ${result.id} due to empty imageUrl');
+        continue;
+      }
+      
+      // Create a QuoteTemplate from SearchResult
+      QuoteTemplate template = QuoteTemplate(
+        id: result.id,
+        title: result.title,
+        imageUrl: result.imageUrl,
+        category: result.type,
+        avgRating: 0,
+        isPaid: result.isPaid,
+        createdAt: DateTime.now(),
+      );
+
+      uniqueTemplatesMap[result.id] = template;
+    }
+
+    // Convert map values back to list
+    List<QuoteTemplate> templates = uniqueTemplatesMap.values.toList();
+
+    setState(() {
+      _searchResults = templates;
+      _isSearching = false;
+    });
+
+    print('Found ${templates.length} valid, unique search results');
+  } catch (e) {
+    print('Error in search: $e');
+    setState(() {
+      _searchResults = [];
+      _isSearching = false;
+    });
+  }
+}
   Future<void> _fetchFestivalPosts() async {
     setState(() {
       _loadingFestivals = true;
@@ -162,7 +246,10 @@ class _TemplatePageState extends State<TemplatePage> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => EditScreen(title: 'image'),
+            builder: (context) => EditScreen(
+              title: 'Edit Template',
+              templateImageUrl: template.imageUrl,
+            ),
           ),
         );
       } else {
@@ -265,49 +352,154 @@ class _TemplatePageState extends State<TemplatePage> {
             ),
 
             SizedBox(height: 16),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: List.generate(tabs.length, (index) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                    child: ChoiceChip(
-                      label: Text(
-                        tabs[index],
-                        style: TextStyle(
-                          color: selectedTab == index
-                              ? Colors.white
-                              : Colors.blueAccent,
-                        ),
+            
+            // Show search results or tabs based on search state
+            if (_isSearching)
+              Expanded(
+                child: Center(
+                  child: CircularProgressIndicator(),
+                ),
+              )
+            else if (_searchResults.isNotEmpty)
+              Expanded(
+                child: _buildSearchResultsSection(fontSize),
+              )
+            else
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: List.generate(tabs.length, (index) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                            child: ChoiceChip(
+                              label: Text(
+                                tabs[index],
+                                style: TextStyle(
+                                  color: selectedTab == index
+                                      ? Colors.white
+                                      : Colors.blueAccent,
+                                ),
+                              ),
+                              selected: selectedTab == index,
+                              selectedColor: Colors.blueAccent,
+                              backgroundColor: Colors.white,
+                              side: BorderSide(color: Colors.blueAccent),
+                              showCheckmark: false,
+                              onSelected: (bool selected) {
+                                setState(() {
+                                  selectedTab = index;
+                                });
+                              },
+                            ),
+                          );
+                        }),
                       ),
-                      selected: selectedTab == index,
-                      selectedColor: Colors.blueAccent,
-                      backgroundColor: Colors.white,
-                      side: BorderSide(color: Colors.blueAccent),
-                      showCheckmark: false,
-                      onSelected: (bool selected) {
-                        setState(() {
-                          selectedTab = index;
-                        });
-                      },
                     ),
-                  );
-                }),
+                    SizedBox(height: 16),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: _buildTabContent(selectedTab),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            SizedBox(height: 16),
-            Expanded(
-              child: SingleChildScrollView(
-                child: _buildTabContent(selectedTab),
-              ),
-            ),
           ],
         ),
       ),
     );
   }
 
+  // Add a method to build search results
+  Widget _buildSearchResultsSection(double fontSize) {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        'Search Results (${_searchResults.length})',
+        style: GoogleFonts.poppins(
+          fontSize: fontSize + 2,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      SizedBox(height: 10),
+      Expanded(
+        child: _searchResults.isEmpty
+            ? Center(child: Text('No results found'))
+            : GridView.builder(
+                shrinkWrap: true,
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  childAspectRatio: 0.7,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                ),
+                itemCount: _searchResults.length,
+                itemBuilder: (context, index) {
+                  final template = _searchResults[index];
+
+                  // Skip items with empty imageUrl (should be already filtered out)
+                  if (template.imageUrl == null || template.imageUrl.trim().isEmpty) {
+                    return SizedBox.shrink();
+                  }
+
+                  return GestureDetector(
+                    onTap: () => _handleTemplateSelection(template),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.shade300,
+                            blurRadius: 5,
+                            offset: Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Stack(
+                        children: [
+                          // Image with error handling
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Image.network(
+                              template.imageUrl,
+                              height: double.infinity,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                print('Error loading image for template ${template.id}: $error');
+                                return Container(
+                                  color: Colors.grey[200],
+                                  child: Center(
+                                    child: Icon(Icons.error, color: Colors.grey[500]),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                          // Lock icon 
+                          if (template.isPaid)
+                            Positioned(
+                              bottom: 8,
+                              right: 8,
+                              child: Icon(Icons.lock, color: Colors.amber, size: 16),
+                            ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+      ),
+    ],
+  );
+}
   Widget _buildTabContent(int index) {
     final textSizeProvider =
         Provider.of<TextSizeProvider>(context); // Listen to changes

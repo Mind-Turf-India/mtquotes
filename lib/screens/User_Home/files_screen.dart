@@ -11,6 +11,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../Create_Screen/edit_screen_create.dart';
 
 class FilesPage extends StatefulWidget {
+  const FilesPage({super.key});
+
   @override
   _FilesPageState createState() => _FilesPageState();
 }
@@ -51,7 +53,8 @@ class _FilesPageState extends State<FilesPage> {
     if (Platform.isAndroid) {
       baseDir = Directory('/storage/emulated/0/Pictures/Vaky/$userDir');
     } else {
-      baseDir = Directory('${(await getApplicationDocumentsDirectory()).path}/Vaky/$userDir');
+      baseDir = Directory(
+          '${(await getApplicationDocumentsDirectory()).path}/Vaky/$userDir');
     }
 
     // Create directory if it doesn't exist
@@ -118,8 +121,9 @@ class _FilesPageState extends State<FilesPage> {
 
       // Sort by modification time (newest first)
       imageFiles.sort((a, b) {
-        return File(b.path).lastModifiedSync().compareTo(
-            File(a.path).lastModifiedSync());
+        return File(b.path)
+            .lastModifiedSync()
+            .compareTo(File(a.path).lastModifiedSync());
       });
 
       if (mounted) {
@@ -263,43 +267,43 @@ class _FilesPageState extends State<FilesPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: TextField(
-                controller: _searchController,
-                style: TextStyle(fontSize: fontSize),
-                decoration: InputDecoration(
-                  hintText: context.loc.searchfiles,
-                  hintStyle: GoogleFonts.poppins(
-                      fontSize: fontSize, color: Colors.grey[500]),
-                  prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _isListening ? Icons.mic : Icons.mic_none,
-                      color: _isListening ? Colors.blue : Colors.grey[600],
-                    ),
-                    onPressed: _toggleListening,
-                  ),
-                  border: InputBorder.none,
-                  contentPadding:
-                  EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                ),
-                onChanged: (value) {
-                  setState(() {
-                    _searchQuery = value;
-                  });
-                },
-              ),
-            ),
+            // Container(
+            //   decoration: BoxDecoration(
+            //     color: Colors.grey[100],
+            //     borderRadius: BorderRadius.circular(12),
+            //   ),
+            //   child: TextField(
+            //     controller: _searchController,
+            //     style: TextStyle(fontSize: fontSize),
+            //     decoration: InputDecoration(
+            //       hintText: context.loc.searchfiles,
+            //       hintStyle: GoogleFonts.poppins(
+            //           fontSize: fontSize, color: Colors.grey[500]),
+            //       prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
+            //       suffixIcon: IconButton(
+            //         icon: Icon(
+            //           _isListening ? Icons.mic : Icons.mic_none,
+            //           color: _isListening ? Colors.blue : Colors.grey[600],
+            //         ),
+            //         onPressed: _toggleListening,
+            //       ),
+            //       border: InputBorder.none,
+            //       contentPadding:
+            //       EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            //     ),
+            //     onChanged: (value) {
+            //       setState(() {
+            //         _searchQuery = value;
+            //       });
+            //     },
+            //   ),
+            // ),
             SizedBox(height: 20),
             Text(
               'Downloaded Images',
               style: GoogleFonts.poppins(
                 fontSize: fontSize + 2,
-                fontWeight: FontWeight.w600,
+                // fontWeight: FontWeight.w600,
               ),
             ),
             SizedBox(height: 10),
@@ -346,9 +350,9 @@ class _FilesPageState extends State<FilesPage> {
       padding: EdgeInsets.all(10),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
-        crossAxisSpacing: 15,
-        mainAxisSpacing: 15,
-        childAspectRatio: 0.8,
+        crossAxisSpacing: 5,
+        mainAxisSpacing: 5,
+        childAspectRatio: 0.7,
       ),
       itemCount: filteredDownloadedImages.length,
       itemBuilder: (context, index) {
@@ -357,7 +361,8 @@ class _FilesPageState extends State<FilesPage> {
 
         // Get file modification date
         final DateTime modDate = file.lastModifiedSync();
-        final String dateStr = "${modDate.day}/${modDate.month}/${modDate.year}";
+        final String dateStr =
+            "${modDate.day}/${modDate.month}/${modDate.year}";
 
         return InkWell(
           onTap: () {
@@ -370,13 +375,17 @@ class _FilesPageState extends State<FilesPage> {
               children: [
                 Expanded(
                   child: Container(
+                    width: 100,
+                    height: 80,
                     decoration: BoxDecoration(
                       color: Colors.grey[100],
                       borderRadius: BorderRadius.circular(12),
-                      boxShadow: [BoxShadow(color: Colors.grey.shade300, blurRadius: 3)],
+                      boxShadow: [
+                        BoxShadow(color: Colors.grey.shade300, blurRadius: 3)
+                      ],
                     ),
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(8),
                       child: Image.file(
                         file,
                         fit: BoxFit.cover,

@@ -414,10 +414,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               builder: (context) => ReferralPage()),
                         );
                       }),
-                      _buildMenuItem(Icons.drafts_outlined, context.loc.downloads,
-                          fontSize, () {
-                            Navigator.push(context, MaterialPageRoute(builder: (context)=> FilesPage()));
-                          }),
+                      // _buildMenuItem(Icons.drafts_outlined, context.loc.downloads,
+                      //     fontSize, () {
+                      //       Navigator.push(context, MaterialPageRoute(builder: (context)=> FilesPage()));
+                      //     }),
                       _buildMenuItem(Icons.support_agent_outlined,
                           context.loc.support, fontSize, () {
                             Navigator.push(context, MaterialPageRoute(builder: (context)=> SupportScreen()));
