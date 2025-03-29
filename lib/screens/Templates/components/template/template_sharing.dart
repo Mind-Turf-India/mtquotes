@@ -23,13 +23,13 @@ class TemplateSharingPage extends StatefulWidget {
   final String userProfileImageUrl;
   final bool isPaidUser;
 
-  TemplateSharingPage({
-    Key? key,
+  const TemplateSharingPage({
+    super.key,
     required this.template,
     required this.userName,
     required this.userProfileImageUrl,
     required this.isPaidUser,
-  }) : super(key: key);
+  });
 
   @override
   _TemplateSharingPageState createState() => _TemplateSharingPageState();
@@ -51,15 +51,18 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
   Future<void> _addToRecentTemplates() async {
     try {
       await RecentTemplateService.addRecentTemplate(widget.template);
-      print('Added template to recents from sharing page: ${widget.template.id}');
+      print(
+          'Added template to recents from sharing page: ${widget.template.id}');
     } catch (e) {
       print('Error adding template to recents from sharing page: $e');
     }
   }
+
   // Load the original image to get its dimensions
   Future<void> _loadOriginalImage() async {
     try {
-      final http.Response response = await http.get(Uri.parse(widget.template.imageUrl));
+      final http.Response response =
+          await http.get(Uri.parse(widget.template.imageUrl));
       if (response.statusCode == 200) {
         final decodedImage = await decodeImageFromList(response.bodyBytes);
         setState(() {
@@ -121,7 +124,8 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                           Icon(Icons.check_circle, color: Colors.green),
                           SizedBox(width: 8),
                           Expanded(
-                            child: Text('Share the template without personal branding'),
+                            child: Text(
+                                'Share the template without personal branding'),
                           ),
                         ],
                       ),
@@ -154,22 +158,24 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                             borderRadius: BorderRadius.circular(8),
                             image: DecorationImage(
                               image: NetworkImage(widget.template.imageUrl),
-                              fit: BoxFit.contain, // Changed to contain to avoid cropping
+                              fit: BoxFit
+                                  .contain, // Changed to contain to avoid cropping
                             ),
                           ),
                           child: Stack(
                             children: [
-                              // Preview of watermark
-                              Positioned.fill(
+                              // Watermark in top right
+                              Positioned(
+                                top: 8, // Adjust padding from top
+                                right: 8, // Adjust padding from right
+
                                 child: Opacity(
-                                  opacity: 0.2,
-                                  child: Center(
-                                    child: Image.asset(
-                                      'assets/logo.png',
-                                      width: 100,
-                                      height: 100,
-                                      fit: BoxFit.contain,
-                                    ),
+                                  opacity: 0.6,
+                                  child: Image.asset(
+                                    'assets/logo.png',
+                                    width: 50, // Adjust size as needed
+                                    height: 50, // Adjust size as needed
+                                    fit: BoxFit.contain,
                                   ),
                                 ),
                               ),
@@ -203,27 +209,26 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                 ),
               ),
 
-             // Divider
-             Padding(
-               padding: const EdgeInsets.symmetric(vertical: 24.0),
-               child: Row(
-                 children: [
-                   Expanded(child: Divider()),
-                   Padding(
-                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                     child: Text(
-                       'OR',
-                       style: TextStyle(
-                         color: Colors.grey,
-                         fontWeight: FontWeight.bold,
-                       ),
-                     ),
-                   ),
-                   Expanded(child: Divider()),
-                 ],
-               ),
-             ),
-
+              // Divider
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24.0),
+                child: Row(
+                  children: [
+                    Expanded(child: Divider()),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Text(
+                        'OR',
+                        style: TextStyle(
+                          color: Colors.grey,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    Expanded(child: Divider()),
+                  ],
+                ),
+              ),
 
               // Premium sharing option (moved to the bottom)
               Text(
@@ -239,7 +244,8 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                   side: BorderSide(
-                    color: widget.isPaidUser ? Colors.blue : Colors.grey.shade300,
+                    color:
+                        widget.isPaidUser ? Colors.blue : Colors.grey.shade300,
                     width: 2,
                   ),
                 ),
@@ -261,7 +267,8 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                           Icon(Icons.check_circle, color: Colors.green),
                           SizedBox(width: 8),
                           Expanded(
-                            child: Text('Include your name and profile picture on the template'),
+                            child: Text(
+                                'Include your name and profile picture on the template'),
                           ),
                         ],
                       ),
@@ -281,7 +288,8 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                           Icon(Icons.check_circle, color: Colors.green),
                           SizedBox(width: 8),
                           Expanded(
-                            child: Text('No watermark - clean professional look'),
+                            child:
+                                Text('No watermark - clean professional look'),
                           ),
                         ],
                       ),
@@ -300,7 +308,8 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                       FutureBuilder<DocumentSnapshot>(
                         future: FirebaseFirestore.instance
                             .collection('users')
-                            .doc(FirebaseAuth.instance.currentUser?.email?.replaceAll('.', '_'))
+                            .doc(FirebaseAuth.instance.currentUser?.email
+                                ?.replaceAll('.', '_'))
                             .get(),
                         builder: (context, snapshot) {
                           String userName = '';
@@ -308,8 +317,11 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                           String userLocation = '';
 
                           // Extract user data if available
-                          if (snapshot.hasData && snapshot.data != null && snapshot.data!.exists) {
-                            final userData = snapshot.data!.data() as Map<String, dynamic>;
+                          if (snapshot.hasData &&
+                              snapshot.data != null &&
+                              snapshot.data!.exists) {
+                            final userData =
+                                snapshot.data!.data() as Map<String, dynamic>;
                             userName = userData['name'] ?? '';
                             userProfileUrl = userData['profileImage'] ?? '';
                             userLocation = userData['location'] ?? '';
@@ -329,10 +341,13 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                                     aspectRatio: _aspectRatio,
                                     child: Container(
                                       decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+                                        borderRadius: BorderRadius.vertical(
+                                            top: Radius.circular(8)),
                                         image: DecorationImage(
-                                          image: NetworkImage(widget.template.imageUrl),
-                                          fit: BoxFit.contain, // Changed to contain to avoid cropping
+                                          image: NetworkImage(
+                                              widget.template.imageUrl),
+                                          fit: BoxFit
+                                              .contain, // Changed to contain to avoid cropping
                                         ),
                                       ),
                                     ),
@@ -344,23 +359,28 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                                     padding: EdgeInsets.all(12),
                                     decoration: BoxDecoration(
                                       color: Colors.white,
-                                      borderRadius: BorderRadius.vertical(bottom: Radius.circular(8)),
+                                      borderRadius: BorderRadius.vertical(
+                                          bottom: Radius.circular(8)),
                                     ),
                                     child: Row(
                                       children: [
                                         // Profile image
                                         CircleAvatar(
                                           radius: 20,
-                                          backgroundImage: userProfileUrl.isNotEmpty
+                                          backgroundImage: userProfileUrl
+                                                  .isNotEmpty
                                               ? NetworkImage(userProfileUrl)
-                                              : AssetImage('assets/profile_placeholder.png') as ImageProvider,
+                                              : AssetImage(
+                                                      'assets/profile_placeholder.png')
+                                                  as ImageProvider,
                                         ),
                                         SizedBox(width: 12),
 
                                         // User details
                                         Expanded(
                                           child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
                                               Text(
                                                 userName,
@@ -393,14 +413,19 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                         child: ElevatedButton.icon(
                           onPressed: widget.isPaidUser
                               ? () => _shareTemplate(
-                            context,
-                            isPaid: true,
-                          )
-                              : () => Navigator.pushNamed(context, '/subscription'),
-                          icon: Icon(widget.isPaidUser ? Icons.share : Icons.lock),
-                          label: Text(widget.isPaidUser ? 'Share Now' : 'Upgrade to Pro'),
+                                    context,
+                                    isPaid: true,
+                                  )
+                              : () =>
+                                  Navigator.pushNamed(context, '/subscription'),
+                          icon: Icon(
+                              widget.isPaidUser ? Icons.share : Icons.lock),
+                          label: Text(widget.isPaidUser
+                              ? 'Share Now'
+                              : 'Upgrade to Pro'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: widget.isPaidUser ? Colors.blue : Colors.blue,
+                            backgroundColor:
+                                widget.isPaidUser ? Colors.blue : Colors.blue,
                             foregroundColor: Colors.white,
                             padding: EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
@@ -428,7 +453,8 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
 
       // Use a higher pixel ratio for better quality
       final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
-      final ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      final ByteData? byteData =
+          await image.toByteData(format: ui.ImageByteFormat.png);
       return byteData?.buffer.asUint8List();
     } catch (e) {
       print('Error capturing branded image: $e');
@@ -440,7 +466,8 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
   Future<Uint8List?> _addBrandingToImage(Uint8List originalImageBytes) async {
     try {
       // Decode the original image
-      final ui.Image originalImage = await decodeImageFromList(originalImageBytes);
+      final ui.Image originalImage =
+          await decodeImageFromList(originalImageBytes);
 
       // Create a recorder and canvas with the ORIGINAL image dimensions
       final ui.PictureRecorder recorder = ui.PictureRecorder();
@@ -453,7 +480,8 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
       ui.Image? profileImage;
       if (widget.userProfileImageUrl.isNotEmpty) {
         try {
-          final http.Response response = await http.get(Uri.parse(widget.userProfileImageUrl));
+          final http.Response response =
+              await http.get(Uri.parse(widget.userProfileImageUrl));
           if (response.statusCode == 200) {
             profileImage = await decodeImageFromList(response.bodyBytes);
           }
@@ -471,8 +499,7 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
       final double brandingY = height - brandingHeight - 10;
 
       // Draw branding background
-      final Paint bgPaint = Paint()
-        ..color = Colors.black.withOpacity(0.6);
+      final Paint bgPaint = Paint()..color = Colors.black.withOpacity(0.6);
       canvas.drawRRect(
         RRect.fromRectAndRadius(
           Rect.fromLTWH(brandingX, brandingY, brandingWidth, brandingHeight),
@@ -488,8 +515,7 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
         final double profileY = brandingY + (brandingHeight - profileSize) / 2;
 
         // Draw circle for profile image
-        final Paint circlePaint = Paint()
-          ..color = Colors.white;
+        final Paint circlePaint = Paint()..color = Colors.white;
         canvas.drawCircle(
           Offset(profileX + profileSize / 2, profileY + profileSize / 2),
           profileSize / 2,
@@ -499,11 +525,13 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
         // Draw the profile image in a circle
         canvas.save(); // Save the canvas state before clipping
         final Path clipPath = Path()
-          ..addOval(Rect.fromLTWH(profileX, profileY, profileSize, profileSize));
+          ..addOval(
+              Rect.fromLTWH(profileX, profileY, profileSize, profileSize));
         canvas.clipPath(clipPath);
         canvas.drawImageRect(
           profileImage,
-          Rect.fromLTWH(0, 0, profileImage.width.toDouble(), profileImage.height.toDouble()),
+          Rect.fromLTWH(0, 0, profileImage.width.toDouble(),
+              profileImage.height.toDouble()),
           Rect.fromLTWH(profileX, profileY, profileSize, profileSize),
           Paint(),
         );
@@ -526,9 +554,12 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
         ..addText(widget.userName);
 
       final ui.Paragraph paragraph = paragraphBuilder.build()
-        ..layout(ui.ParagraphConstraints(width: brandingWidth - (profileImage != null ? brandingHeight * 0.8 + 12 : 8)));
+        ..layout(ui.ParagraphConstraints(
+            width: brandingWidth -
+                (profileImage != null ? brandingHeight * 0.8 + 12 : 8)));
 
-      canvas.drawParagraph(paragraph, Offset(textX, textY - paragraph.height / 2));
+      canvas.drawParagraph(
+          paragraph, Offset(textX, textY - paragraph.height / 2));
 
       // Convert canvas to image
       final ui.Picture picture = recorder.endRecording();
@@ -538,7 +569,8 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
       );
 
       // Convert image to bytes
-      final ByteData? byteData = await renderedImage.toByteData(format: ui.ImageByteFormat.png);
+      final ByteData? byteData =
+          await renderedImage.toByteData(format: ui.ImageByteFormat.png);
       return byteData?.buffer.asUint8List();
     } catch (e) {
       print('Error adding branding to image: $e');
@@ -550,7 +582,8 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
   Future<Uint8List?> _addWatermarkToImage(Uint8List originalImageBytes) async {
     try {
       // Decode the original image
-      final ui.Image originalImage = await decodeImageFromList(originalImageBytes);
+      final ui.Image originalImage =
+          await decodeImageFromList(originalImageBytes);
 
       // Create a recorder and canvas
       final ui.PictureRecorder recorder = ui.PictureRecorder();
@@ -561,13 +594,16 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
 
       // Load the logo watermark
       final ByteData logoData = await rootBundle.load('assets/logo.png');
-      final ui.Image logo = await decodeImageFromList(logoData.buffer.asUint8List());
+      final ui.Image logo =
+          await decodeImageFromList(logoData.buffer.asUint8List());
 
       // Calculate size and position for the watermark in top right corner
       final double width = originalImage.width.toDouble();
       final double height = originalImage.height.toDouble();
-      final double watermarkSize = width * 0.2; // 20% of the image width (smaller than before)
-      final double watermarkX = width - watermarkSize - 16;  // Position from right edge with padding
+      final double watermarkSize =
+          width * 0.2; // 20% of the image width (smaller than before)
+      final double watermarkX =
+          width - watermarkSize - 16; // Position from right edge with padding
       final double watermarkY = 16; // Position from top with padding
 
       // Apply semi-transparent effect to the watermark
@@ -589,7 +625,8 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
       );
 
       // Convert image to bytes
-      final ByteData? byteData = await renderedImage.toByteData(format: ui.ImageByteFormat.png);
+      final ByteData? byteData =
+          await renderedImage.toByteData(format: ui.ImageByteFormat.png);
       return byteData?.buffer.asUint8List();
     } catch (e) {
       print('Error adding watermark to image: $e');
@@ -598,7 +635,8 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
   }
 
   // Integrated sharing functionality with proper branding for paid users and watermark for free users
-  Future<void> _shareTemplate(BuildContext context, {required bool isPaid}) async {
+  Future<void> _shareTemplate(BuildContext context,
+      {required bool isPaid}) async {
     try {
       // Show loading indicator
       showDialog(
@@ -637,11 +675,13 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
 
           // If both approaches fail, fall back to the original image
           if (imageBytes == null) {
-            print('Both branding approaches failed, falling back to direct download');
+            print(
+                'Both branding approaches failed, falling back to direct download');
             imageBytes = originalImageBytes;
           }
         } catch (e) {
-          print('Error in premium capture: $e, falling back to direct download');
+          print(
+              'Error in premium capture: $e, falling back to direct download');
           imageBytes = originalImageBytes;
         }
       } else {
@@ -660,25 +700,17 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
         }
       }
 
-     // Close loading dialog
-     if (Navigator.of(context, rootNavigator: true).canPop()) {
-       Navigator.of(context, rootNavigator: true).pop();
-     }
+      // Close loading dialog
+      if (Navigator.of(context, rootNavigator: true).canPop()) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
 
+      // Get temp directory
+      final tempDir = await getTemporaryDirectory();
+      final tempFile = File('${tempDir.path}/shared_template.png');
 
-     if (imageBytes == null) {
-       throw Exception('Failed to process image');
-     }
-
-
-     // Get temp directory
-     final tempDir = await getTemporaryDirectory();
-     final tempFile = File('${tempDir.path}/shared_template.png');
-
-
-     // Save image as file
-     await tempFile.writeAsBytes(imageBytes);
-
+      // Save image as file
+      await tempFile.writeAsBytes(imageBytes);
 
       // Share directly based on user type
       if (isPaid) {
@@ -695,112 +727,105 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
         );
       }
 
-     // Show rating dialog after sharing
-     await Future.delayed(Duration(milliseconds: 500));
-     if (context.mounted) {
-       await _showRatingDialog(context);
-     }
+      // Show rating dialog after sharing
+      await Future.delayed(Duration(milliseconds: 500));
+      if (context.mounted) {
+        await _showRatingDialog(context);
+      }
+    } catch (e) {
+      // Close loading dialog if open
+      if (Navigator.of(context, rootNavigator: true).canPop()) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
 
+      print('Error sharing template: $e');
 
-   } catch (e) {
-     // Close loading dialog if open
-     if (Navigator.of(context, rootNavigator: true).canPop()) {
-       Navigator.of(context, rootNavigator: true).pop();
-     }
+      // Show error message
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to share image: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 
-
-     print('Error sharing template: $e');
-
-
-     // Show error message
-     if (context.mounted) {
-       ScaffoldMessenger.of(context).showSnackBar(
-         SnackBar(
-           content: Text('Failed to share image: ${e.toString()}'),
-           backgroundColor: Colors.red,
-         ),
-       );
-     }
-   }
- }
-
-
- // Rating dialog implementation
- Future<void> _showRatingDialog(BuildContext context) async {
-   double rating = 0;
-
+  // Rating dialog implementation
+  Future<void> _showRatingDialog(BuildContext context) async {
+    double rating = 0;
 
     return showDialog<double>(
       context: context,
       builder: (BuildContext dialogContext) {
-        return StatefulBuilder(
-            builder: (context, setState) {
-              return AlertDialog(
-                title: Text('Rate This Template'),
-                content: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text('How would you rate your experience with this template?'),
-                    SizedBox(height: 20),
-                    FittedBox(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: List.generate(5, (index) {
-                          return IconButton(
-                            icon: Icon(
-                              index < rating ? Icons.star : Icons.star_border,
-                              color: index < rating ? Colors.amber : Colors.grey,
-                              size: 36,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                rating = index + 1;
-                              });
-                            },
-                          );
-                        }),
-                      ),
-                    )
-                  ],
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(dialogContext).pop(null);
-                    },
-                    child: Text('Skip'),
+        return StatefulBuilder(builder: (context, setState) {
+          return AlertDialog(
+            title: Text('Rate This Template'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('How would you rate your experience with this template?'),
+                SizedBox(height: 20),
+                FittedBox(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: List.generate(5, (index) {
+                      return IconButton(
+                        icon: Icon(
+                          index < rating ? Icons.star : Icons.star_border,
+                          color: index < rating ? Colors.amber : Colors.grey,
+                          size: 36,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            rating = index + 1;
+                          });
+                        },
+                      );
+                    }),
                   ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(dialogContext).pop(rating); // Close the dialog
-                      Navigator.of(context).pushReplacementNamed('/nav_bar');
-                    },
-                    child: Text('Submit'),
-                  ),
-                ],
-              );
-            }
-        );
+                )
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(dialogContext).pop(null);
+                },
+                child: Text('Skip'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.of(dialogContext).pop(rating); // Close the dialog
+                  Navigator.of(context).pushReplacementNamed('/nav_bar');
+                },
+                child: Text('Submit'),
+              ),
+            ],
+          );
+        });
       },
     ).then((value) {
       if (value != null && value > 0) {
         // Submit rating
         _submitRating(value, widget.template);
 
-       // Show thank you message
-       if (context.mounted) {
-         ScaffoldMessenger.of(context).showSnackBar(
-           SnackBar(
-             content: Text('Thanks for your rating!'),
-             backgroundColor: Colors.green,
-           ),
-         );
-       }
-     }
-   });
- }
+        // Show thank you message
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Thanks for your rating!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      }
+    });
+  }
 
-  static Future<void> _updateCategoryTemplateRating(String templateId, String category, double newRating) async {
+  static Future<void> _updateCategoryTemplateRating(
+      String templateId, String category, double newRating) async {
     try {
       // Path to the category template document
       final templateRef = FirebaseFirestore.instance
@@ -822,7 +847,8 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
           int ratingCount = data['ratingCount'] ?? 0;
 
           int newRatingCount = ratingCount + 1;
-          double newAvgRating = ((currentAvgRating * ratingCount) + newRating) / newRatingCount;
+          double newAvgRating =
+              ((currentAvgRating * ratingCount) + newRating) / newRatingCount;
 
           // Update the template with the new average rating
           transaction.update(templateRef, {
@@ -841,9 +867,9 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
     }
   }
 
-
- // Submit rating - this calls the TemplateHandler version
-  static Future<void> _submitRating(double rating, QuoteTemplate template) async {
+  // Submit rating - this calls the TemplateHandler version
+  static Future<void> _submitRating(
+      double rating, QuoteTemplate template) async {
     try {
       final DateTime now = DateTime.now();
       final User? currentUser = FirebaseAuth.instance.currentUser;
@@ -866,63 +892,58 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
           .collection('ratings')
           .add(ratingData);
 
-      print('Rating submitted: $rating for template ${template.title} (ID: ${template.id})');
+      print(
+          'Rating submitted: $rating for template ${template.title} (ID: ${template.id})');
 
       // Determine if this is a category template based on non-empty category field
       if (template.category.isNotEmpty) {
         // Update the category template's rating
-        await _updateCategoryTemplateRating(template.id, template.category, rating);
+        await _updateCategoryTemplateRating(
+            template.id, template.category, rating);
       } else {
         // Use the original method for regular templates
         await _updateTemplateAverageRating(template.id, rating);
       }
-
     } catch (e) {
       print('Error submitting rating: $e');
     }
   }
 
+  static Future<void> _updateTemplateAverageRating(
+      String templateId, double newRating) async {
+    try {
+      // Get reference to the template document
+      final templateRef =
+          FirebaseFirestore.instance.collection('templates').doc(templateId);
 
- static Future<void> _updateTemplateAverageRating(String templateId, double newRating) async {
-   try {
-     // Get reference to the template document
-     final templateRef = FirebaseFirestore.instance.collection('templates').doc(templateId);
+      // Run this as a transaction to ensure data consistency
+      await FirebaseFirestore.instance.runTransaction((transaction) async {
+        // Get the current template data
+        final templateSnapshot = await transaction.get(templateRef);
 
+        if (templateSnapshot.exists) {
+          final data = templateSnapshot.data() as Map<String, dynamic>;
 
-     // Run this as a transaction to ensure data consistency
-     await FirebaseFirestore.instance.runTransaction((transaction) async {
-       // Get the current template data
-       final templateSnapshot = await transaction.get(templateRef);
+          // Calculate the new average rating
+          double currentAvgRating = data['averageRating']?.toDouble() ?? 0.0;
+          int ratingCount = data['ratingCount'] ?? 0;
 
+          int newRatingCount = ratingCount + 1;
+          double newAvgRating =
+              ((currentAvgRating * ratingCount) + newRating) / newRatingCount;
 
-       if (templateSnapshot.exists) {
-         final data = templateSnapshot.data() as Map<String, dynamic>;
+          // Update the template with the new average rating
+          transaction.update(templateRef, {
+            'averageRating': newAvgRating,
+            'ratingCount': newRatingCount,
+            'lastRated': FieldValue.serverTimestamp(),
+          });
+        }
+      });
 
-
-         // Calculate the new average rating
-         double currentAvgRating = data['averageRating']?.toDouble() ?? 0.0;
-         int ratingCount = data['ratingCount'] ?? 0;
-
-
-         int newRatingCount = ratingCount + 1;
-         double newAvgRating = ((currentAvgRating * ratingCount) + newRating) / newRatingCount;
-
-
-         // Update the template with the new average rating
-         transaction.update(templateRef, {
-           'averageRating': newAvgRating,
-           'ratingCount': newRatingCount,
-           'lastRated': FieldValue.serverTimestamp(),
-         });
-       }
-     });
-
-
-     print('Updated template average rating successfully');
-   } catch (e) {
-     print('Error updating template average rating: $e');
-   }
- }
+      print('Updated template average rating successfully');
+    } catch (e) {
+      print('Error updating template average rating: $e');
+    }
+  }
 }
-
-

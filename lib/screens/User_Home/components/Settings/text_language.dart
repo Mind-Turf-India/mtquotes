@@ -45,6 +45,10 @@ class _SettingsLanguageState extends State<SettingsLanguage> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
+          leading: GestureDetector(child: Icon(Icons.arrow_back_ios),
+      onTap: () {
+        Navigator.pop(context);
+      },),
         title: Text(context.loc.chooseLanguage, style: TextStyle(color: Colors.black)),
         backgroundColor: Colors.white,
         elevation: 0,

@@ -451,6 +451,11 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        
+          leading: GestureDetector(child: Icon(Icons.arrow_back_ios),
+      onTap: () {
+        Navigator.pop(context);
+      },),
         title: Text('Profile Details'),
         elevation: 0,
       ),

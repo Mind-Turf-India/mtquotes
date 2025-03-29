@@ -175,22 +175,23 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
                             image: DecorationImage(
                               image: NetworkImage(widget.festival.imageUrl),
                               fit: BoxFit
-                                  .contain, // Use contain to avoid cropping
+                                  .contain, // Changed to contain to avoid cropping
                             ),
                           ),
                           child: Stack(
                             children: [
-                              // Preview of watermark in the center
-                              Positioned.fill(
+                              // Watermark in top right
+                              Positioned(
+                                top: 8, // Adjust padding from top
+                                right: 8, // Adjust padding from right
+
                                 child: Opacity(
-                                  opacity: 0.2,
-                                  child: Center(
-                                    child: Image.asset(
-                                      'assets/logo.png',
-                                      width: 100,
-                                      height: 100,
-                                      fit: BoxFit.contain,
-                                    ),
+                                  opacity: 0.6,
+                                  child: Image.asset(
+                                    'assets/logo.png',
+                                    width: 50, // Adjust size as needed
+                                    height: 50, // Adjust size as needed
+                                    fit: BoxFit.contain,
                                   ),
                                 ),
                               ),

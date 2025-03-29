@@ -162,29 +162,31 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
                       ),
                       SizedBox(height: 16),
                       // Preview of content without branding but with watermark
-                      AspectRatio(
+                     AspectRatio(
                         aspectRatio: _aspectRatio,
                         child: Container(
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(8),
                             image: DecorationImage(
                               image: NetworkImage(widget.post.imageUrl),
-                              fit: BoxFit.contain,
+                              fit: BoxFit
+                                  .contain, // Changed to contain to avoid cropping
                             ),
                           ),
                           child: Stack(
                             children: [
-                              // Preview of watermark
-                              Positioned.fill(
+                              // Watermark in top right
+                              Positioned(
+                                top: 8, // Adjust padding from top
+                                right: 8, // Adjust padding from right
+
                                 child: Opacity(
-                                  opacity: 0.2,
-                                  child: Center(
-                                    child: Image.asset(
-                                      'assets/logo.png',
-                                      width: 100,
-                                      height: 100,
-                                      fit: BoxFit.contain,
-                                    ),
+                                  opacity: 0.6,
+                                  child: Image.asset(
+                                    'assets/logo.png',
+                                    width: 50, // Adjust size as needed
+                                    height: 50, // Adjust size as needed
+                                    fit: BoxFit.contain,
                                   ),
                                 ),
                               ),

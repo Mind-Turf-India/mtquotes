@@ -35,6 +35,8 @@ import 'components/Categories/category_screen.dart';
 import 'components/templates_list.dart';
 
 class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
@@ -90,7 +92,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // Listen for auth state changes to reload recent templates when user signs in/out
     _authStateChanges.listen((User? user) {
-      print("Auth state changed: User ${user != null ? 'logged in' : 'logged out'}");
+      print(
+          "Auth state changed: User ${user != null ? 'logged in' : 'logged out'}");
       _fetchRecentTemplates(); // Reload recent templates on auth state change
     });
   }
@@ -244,7 +247,8 @@ class _HomeScreenState extends State<HomeScreen> {
       // User is logged in, fetch their specific recent templates from Firestore
       final templates = await RecentTemplateService.getRecentTemplates();
 
-      print('RECENT TEMPLATES: Found ${templates.length} templates for user: ${user.email}');
+      print(
+          'RECENT TEMPLATES: Found ${templates.length} templates for user: ${user.email}');
       for (var template in templates) {
         print('RECENT: ${template.id} - ${template.title}');
       }
@@ -350,7 +354,7 @@ class _HomeScreenState extends State<HomeScreen> {
     TimeOfDayHandler.handleTimeOfDayPostSelection(
       context,
       post,
-          (selectedPost) {
+      (selectedPost) {
         // This is the callback that will be executed when access is granted
         print('Access granted to post: ${selectedPost.title}');
         // You can add additional logic here if needed
@@ -397,7 +401,7 @@ class _HomeScreenState extends State<HomeScreen> {
     FestivalHandler.handleFestivalSelection(
       context,
       festival,
-          (selectedFestival) {
+      (selectedFestival) {
         // This is what happens when the user gets access to the festival
         // For example, you could navigate to an edit screen:
         Navigator.push(
@@ -447,7 +451,7 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         userName = data['name'] ?? '';
         profileImageUrl =
-        data.containsKey('profileImage') ? data['profileImage'] : null;
+            data.containsKey('profileImage') ? data['profileImage'] : null;
         userRewardPoints = data['rewardPoints'] ?? 0;
       });
     }
@@ -462,7 +466,7 @@ class _HomeScreenState extends State<HomeScreen> {
         // Use dialogContext instead of context for the dialog
         TextEditingController nameController = TextEditingController();
         TextEditingController bioController = TextEditingController();
-        File? _selectedImage;
+        File? selectedImage;
 
         return StatefulBuilder(
           builder: (dialogContext, setDialogState) {
@@ -477,21 +481,21 @@ class _HomeScreenState extends State<HomeScreen> {
                       final pickedImage = await _pickImage();
                       if (pickedImage != null) {
                         setDialogState(() {
-                          _selectedImage = pickedImage;
+                          selectedImage = pickedImage;
                         });
                       }
                     },
                     child: CircleAvatar(
                       radius: 40,
-                      backgroundImage: _selectedImage != null
-                          ? FileImage(_selectedImage!)
+                      backgroundImage: selectedImage != null
+                          ? FileImage(selectedImage!)
                           : (profileImageUrl != null &&
-                          profileImageUrl!.isNotEmpty
-                          ? NetworkImage(profileImageUrl!) as ImageProvider
-                          : null),
-                      child: (_selectedImage == null &&
-                          (profileImageUrl == null ||
-                              profileImageUrl!.isEmpty))
+                                  profileImageUrl!.isNotEmpty
+                              ? NetworkImage(profileImageUrl!) as ImageProvider
+                              : null),
+                      child: (selectedImage == null &&
+                              (profileImageUrl == null ||
+                                  profileImageUrl!.isEmpty))
                           ? Icon(Icons.camera_alt, size: 40)
                           : null,
                     ),
@@ -527,7 +531,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       // Store values before closing dialog
                       final String newName = nameController.text;
                       final String newBio = bioController.text;
-                      final File? imageToUpload = _selectedImage;
+                      final File? imageToUpload = selectedImage;
 
                       // First close the dialog to prevent context issues
                       Navigator.pop(dialogContext);
@@ -603,7 +607,7 @@ class _HomeScreenState extends State<HomeScreen> {
         print("Uploading image...");
         TaskSnapshot snapshot = await FirebaseStorage.instance
             .ref(
-            'profile_pictures/${userEmail}_${DateTime.now().millisecondsSinceEpoch}.jpg')
+                'profile_pictures/${userEmail}_${DateTime.now().millisecondsSinceEpoch}.jpg')
             .putFile(image);
 
         imageUrl = await snapshot.ref.getDownloadURL();
@@ -636,7 +640,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<String?> _uploadProfileImage(String uid, File image) async {
     Reference storageRef =
-    FirebaseStorage.instance.ref().child('profile_pictures/$uid.jpg');
+        FirebaseStorage.instance.ref().child('profile_pictures/$uid.jpg');
     UploadTask uploadTask = storageRef.putFile(image);
     TaskSnapshot snapshot = await uploadTask;
     return await snapshot.ref.getDownloadURL();
@@ -769,8 +773,9 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Scaffold(
             backgroundColor: Colors.white,
             appBar: AppBar(
+              toolbarHeight: 65,
               automaticallyImplyLeading: false,
-              backgroundColor: Colors.transparent,
+              backgroundColor: Colors.white,
               elevation: 0,
               title: Row(
                 children: [
@@ -927,7 +932,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                                   template),
                                           child: Container(
                                             width: 100,
-                                            
                                             margin: EdgeInsets.only(right: 10),
                                             decoration: BoxDecoration(
                                               color: Colors.white,
@@ -942,10 +946,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                             child: ClipRRect(
                                               borderRadius:
                                                   BorderRadius.circular(8),
-                                                 
                                               child: Stack(
                                                 fit: StackFit.expand,
-                                                
                                                 children: [
                                                   // Image background
                                                   template.imageUrl.isNotEmpty
@@ -972,7 +974,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                                             );
                                                           },
                                                           fit: BoxFit.cover,
-                                                          
                                                         )
                                                       : Container(
                                                           color:
@@ -1087,18 +1088,30 @@ class _HomeScreenState extends State<HomeScreen> {
                             scrollDirection: Axis.horizontal,
                             children: [
                               categoryCard(
-                                  Icons.lightbulb,
-                                  context.loc.motivational,
-                                  Colors.green,
-                                  ),
-                              categoryCard(Icons.favorite, context.loc.love,
-                                  Colors.red, ),
-                              categoryCard(Icons.emoji_emotions,
-                                  context.loc.funny, Colors.orange, ),
-                              categoryCard(Icons.people, context.loc.friendship,
-                                  Colors.blue, ),
-                              categoryCard(Icons.self_improvement,
-                                  context.loc.life, Colors.purple, ),
+                                Icons.lightbulb,
+                                context.loc.motivational,
+                                Colors.green,
+                              ),
+                              categoryCard(
+                                Icons.favorite,
+                                context.loc.love,
+                                Colors.red,
+                              ),
+                              categoryCard(
+                                Icons.emoji_emotions,
+                                context.loc.funny,
+                                Colors.orange,
+                              ),
+                              categoryCard(
+                                Icons.people,
+                                context.loc.friendship,
+                                Colors.blue,
+                              ),
+                              categoryCard(
+                                Icons.self_improvement,
+                                context.loc.life,
+                                Colors.purple,
+                              ),
                             ],
                           ),
                         ),
@@ -1290,7 +1303,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                           : _timeOfDayPosts.isEmpty
                                               ? Center(
                                                   child: Text(
-                                                    "No templates available for ${_currentTimeOfDay}",
+                                                    "No templates available for $_currentTimeOfDay",
                                                     style: GoogleFonts.poppins(
                                                         fontSize: fontSize - 2),
                                                   ),
@@ -1414,7 +1427,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         );
                       },
                       fit: BoxFit.cover,
-                      cacheKey: festival.id + "_image",
+                      cacheKey: "${festival.id}_image",
                       maxHeightDiskCache: 500,
                       maxWidthDiskCache: 500,
                     )
@@ -1460,8 +1473,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // Update the categoryCard function in your HomeScreen class
-  Widget categoryCard(
-      IconData icon, String title, Color color) {
+  Widget categoryCard(IconData icon, String title, Color color) {
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -1494,8 +1506,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             Text(title,
                 style: GoogleFonts.poppins(
-                  fontSize: 13,
-                 fontWeight: FontWeight.w500)),
+                    fontSize: 13, fontWeight: FontWeight.w500)),
           ],
         ),
       ),
@@ -1516,6 +1527,6 @@ class FontSizeProvider with ChangeNotifier {
 
 extension StringExtension on String {
   String capitalize() {
-    return "${this[0].toUpperCase()}${this.substring(1)}";
+    return "${this[0].toUpperCase()}${substring(1)}";
   }
 }

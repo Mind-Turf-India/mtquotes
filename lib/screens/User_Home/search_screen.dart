@@ -94,47 +94,62 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Future<void> _performSearch(String query) async {
+  setState(() {
+    _isSearching = true;
+  });
+
+  try {
+    // Use the search service to search across collections
+    final searchResults = await _searchService.searchAcrossCollections(query);
+    
+    // Log raw results
+    print('Raw search results count: ${searchResults.length}');
+    for (var i = 0; i < searchResults.length; i++) {
+      var result = searchResults[i];
+      print('Result #${i+1} - ID: ${result.id}, Title: ${result.title}, ImageURL: ${result.imageUrl}');
+    }
+    
+    // Use a map to deduplicate by ID AND filter out items with empty imageUrls
+    Map<String, QuoteTemplate> uniqueTemplatesMap = {};
+
+    for (var result in searchResults) {
+      // Skip items with empty imageUrl
+      if (result.imageUrl == null || result.imageUrl.trim().isEmpty) {
+        print('Skipping result with ID: ${result.id} due to empty imageUrl');
+        continue;
+      }
+      
+      // Create a QuoteTemplate from SearchResult
+      QuoteTemplate template = QuoteTemplate(
+        id: result.id,
+        title: result.title,
+        imageUrl: result.imageUrl,
+        category: result.type,
+        avgRating: 0,
+        isPaid: result.isPaid,
+        createdAt: DateTime.now(),
+      );
+
+      uniqueTemplatesMap[result.id] = template;
+    }
+
+    // Convert map values back to list
+    List<QuoteTemplate> templates = uniqueTemplatesMap.values.toList();
+
     setState(() {
-      _isSearching = true;
+      _searchResults = templates;
+      _isSearching = false;
     });
 
-    try {
-      // Use the improved search service
-      final searchResults = await _searchService.searchAcrossCollections(query);
-
-      // Convert SearchResult objects to QuoteTemplate objects for display
-      List<QuoteTemplate> templates = [];
-
-      for (var result in searchResults) {
-        // Create a QuoteTemplate from SearchResult
-        QuoteTemplate template = QuoteTemplate(
-          id: result.id,
-          title: result.title,
-          // description: "", // Default empty description
-          imageUrl: result.imageUrl,
-          category: result.type, // Use the type as the category
-          avgRating: 0, // Default rating
-          isPaid: result.isPaid,
-          createdAt: DateTime.now(), // Default date
-        );
-
-        templates.add(template);
-      }
-
-      setState(() {
-        _searchResults = templates;
-        _isSearching = false;
-      });
-
-      print('Converted ${templates.length} search results to templates for display');
-    } catch (e) {
-      print('Error in search: $e');
-      setState(() {
-        _searchResults = [];
-        _isSearching = false;
-      });
-    }
+    print('Found ${templates.length} valid, unique search results');
+  } catch (e) {
+    print('Error in search: $e');
+    setState(() {
+      _searchResults = [];
+      _isSearching = false;
+    });
   }
+}
 
   void _handleTemplateSelection(QuoteTemplate template) async {
     bool isSubscribed = await _templateService.isUserSubscribed();

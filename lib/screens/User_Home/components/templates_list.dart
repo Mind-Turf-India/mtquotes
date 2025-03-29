@@ -209,6 +209,10 @@ class _TemplatesListScreenState extends State<TemplatesListScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
+          leading: GestureDetector(child: Icon(Icons.arrow_back_ios),
+      onTap: () {
+        Navigator.pop(context);
+      },),
         title: Text(
           widget.title,
           style: GoogleFonts.poppins(

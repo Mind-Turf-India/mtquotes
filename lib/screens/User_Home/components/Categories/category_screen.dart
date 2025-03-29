@@ -117,7 +117,12 @@ class _CategoryScreenState extends State<CategoryScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
+      leading: GestureDetector(child: Icon(Icons.arrow_back_ios),
+      onTap: () {
+        Navigator.pop(context);
+      },),
         title: Text(
+          
           widget.categoryName,
           style: GoogleFonts.poppins(
             fontSize: fontSize + 2,
@@ -127,6 +132,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         iconTheme: IconThemeData(color: Colors.black),
+  
       ),
       body: CustomScrollView(
         slivers:[

@@ -14,10 +14,11 @@ class SettingsPage extends StatelessWidget {
     double fontSize = textSizeProvider.fontSize;
     return Scaffold(
       appBar: AppBar(
+        
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.black87),
+          icon: Icon(Icons.arrow_back_ios, color: Colors.black87),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
@@ -25,12 +26,12 @@ class SettingsPage extends StatelessWidget {
           style: TextStyle(color: Colors.black87, fontSize: 18),
         ),
         centerTitle: false,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.notifications_none, color: Colors.black87),
-            onPressed: () {},
-          ),
-        ],
+        // actions: [
+        //   IconButton(
+        //     icon: Icon(Icons.notifications_none, color: Colors.black87),
+        //     onPressed: () {},
+        //   ),
+        // ],
       ),
       body: Container(
         decoration: BoxDecoration(

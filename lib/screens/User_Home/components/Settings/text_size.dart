@@ -10,6 +10,10 @@ class TextSizeScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
+          leading: GestureDetector(child: Icon(Icons.arrow_back_ios),
+      onTap: () {
+        Navigator.pop(context);
+      },),
         title: Text("Text Size Adjuster", style: TextStyle(fontSize: fontSize)),
         backgroundColor: Colors.white,
       ),

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mtquotes/screens/Payment_Screen/subscription_popup.dart';
+import 'package:mtquotes/screens/Templates/components/template/template_section.dart';
 import 'package:mtquotes/screens/User_Home/components/Categories/category_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:speech_to_text/speech_to_text.dart';
@@ -37,7 +38,7 @@ class _TemplatePageState extends State<TemplatePage> {
   List<FestivalPost> _festivalPosts = [];
   final FestivalService _festivalService = FestivalService();
   final SearchService _searchService = SearchService(); // Add SearchService
-  
+
   bool _isSearching = false;
   List<QuoteTemplate> _searchResults = []; // Store search results
 
@@ -46,7 +47,8 @@ class _TemplatePageState extends State<TemplatePage> {
     super.initState();
     initSpeech();
     _fetchFestivalPosts();
-    _searchController.addListener(_onSearchChanged); // Add listener for search input
+    _searchController
+        .addListener(_onSearchChanged); // Add listener for search input
   }
 
   @override
@@ -113,62 +115,64 @@ class _TemplatePageState extends State<TemplatePage> {
 
   // Add a method to perform the search
   Future<void> _performSearch(String query) async {
-  setState(() {
-    _isSearching = true;
-  });
+    setState(() {
+      _isSearching = true;
+    });
 
-  try {
-    // Use the search service to search across collections
-    final searchResults = await _searchService.searchAcrossCollections(query);
-    
-    // Log raw results
-    print('Raw search results count: ${searchResults.length}');
-    for (var i = 0; i < searchResults.length; i++) {
-      var result = searchResults[i];
-      print('Result #${i+1} - ID: ${result.id}, Title: ${result.title}, ImageURL: ${result.imageUrl}');
-    }
-    
-    // Use a map to deduplicate by ID AND filter out items with empty imageUrls
-    Map<String, QuoteTemplate> uniqueTemplatesMap = {};
+    try {
+      // Use the search service to search across collections
+      final searchResults = await _searchService.searchAcrossCollections(query);
 
-    for (var result in searchResults) {
-      // Skip items with empty imageUrl
-      if (result.imageUrl == null || result.imageUrl.trim().isEmpty) {
-        print('Skipping result with ID: ${result.id} due to empty imageUrl');
-        continue;
+      // Log raw results
+      print('Raw search results count: ${searchResults.length}');
+      for (var i = 0; i < searchResults.length; i++) {
+        var result = searchResults[i];
+        print(
+            'Result #${i + 1} - ID: ${result.id}, Title: ${result.title}, ImageURL: ${result.imageUrl}');
       }
-      
-      // Create a QuoteTemplate from SearchResult
-      QuoteTemplate template = QuoteTemplate(
-        id: result.id,
-        title: result.title,
-        imageUrl: result.imageUrl,
-        category: result.type,
-        avgRating: 0,
-        isPaid: result.isPaid,
-        createdAt: DateTime.now(),
-      );
 
-      uniqueTemplatesMap[result.id] = template;
+      // Use a map to deduplicate by ID AND filter out items with empty imageUrls
+      Map<String, QuoteTemplate> uniqueTemplatesMap = {};
+
+      for (var result in searchResults) {
+        // Skip items with empty imageUrl
+        if (result.imageUrl == null || result.imageUrl.trim().isEmpty) {
+          print('Skipping result with ID: ${result.id} due to empty imageUrl');
+          continue;
+        }
+
+        // Create a QuoteTemplate from SearchResult
+        QuoteTemplate template = QuoteTemplate(
+          id: result.id,
+          title: result.title,
+          imageUrl: result.imageUrl,
+          category: result.type,
+          avgRating: 0,
+          isPaid: result.isPaid,
+          createdAt: DateTime.now(),
+        );
+
+        uniqueTemplatesMap[result.id] = template;
+      }
+
+      // Convert map values back to list
+      List<QuoteTemplate> templates = uniqueTemplatesMap.values.toList();
+
+      setState(() {
+        _searchResults = templates;
+        _isSearching = false;
+      });
+
+      print('Found ${templates.length} valid, unique search results');
+    } catch (e) {
+      print('Error in search: $e');
+      setState(() {
+        _searchResults = [];
+        _isSearching = false;
+      });
     }
-
-    // Convert map values back to list
-    List<QuoteTemplate> templates = uniqueTemplatesMap.values.toList();
-
-    setState(() {
-      _searchResults = templates;
-      _isSearching = false;
-    });
-
-    print('Found ${templates.length} valid, unique search results');
-  } catch (e) {
-    print('Error in search: $e');
-    setState(() {
-      _searchResults = [];
-      _isSearching = false;
-    });
   }
-}
+
   Future<void> _fetchFestivalPosts() async {
     setState(() {
       _loadingFestivals = true;
@@ -303,7 +307,10 @@ class _TemplatePageState extends State<TemplatePage> {
   @override
   Widget build(BuildContext context) {
     // Initialize tabs with localized strings
-    tabs = [context.loc.category, context.loc.gallery, context.loc.customesize];
+    tabs = [
+      context.loc.category,
+      context.loc.gallery
+    ]; //, context.loc.customesize
 
     final textSizeProvider = Provider.of<TextSizeProvider>(context);
     double fontSize = textSizeProvider.fontSize;
@@ -350,9 +357,9 @@ class _TemplatePageState extends State<TemplatePage> {
                 ),
               ),
             ),
-
+    
             SizedBox(height: 16),
-            
+    
             // Show search results or tabs based on search state
             if (_isSearching)
               Expanded(
@@ -375,7 +382,8 @@ class _TemplatePageState extends State<TemplatePage> {
                         mainAxisAlignment: MainAxisAlignment.start,
                         children: List.generate(tabs.length, (index) {
                           return Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 8.0),
                             child: ChoiceChip(
                               label: Text(
                                 tabs[index],
@@ -417,301 +425,320 @@ class _TemplatePageState extends State<TemplatePage> {
 
   // Add a method to build search results
   Widget _buildSearchResultsSection(double fontSize) {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(
-        'Search Results (${_searchResults.length})',
-        style: GoogleFonts.poppins(
-          fontSize: fontSize + 2,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      SizedBox(height: 10),
-      Expanded(
-        child: _searchResults.isEmpty
-            ? Center(child: Text('No results found'))
-            : GridView.builder(
-                shrinkWrap: true,
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  childAspectRatio: 0.7,
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
-                ),
-                itemCount: _searchResults.length,
-                itemBuilder: (context, index) {
-                  final template = _searchResults[index];
-
-                  // Skip items with empty imageUrl (should be already filtered out)
-                  if (template.imageUrl == null || template.imageUrl.trim().isEmpty) {
-                    return SizedBox.shrink();
-                  }
-
-                  return GestureDetector(
-                    onTap: () => _handleTemplateSelection(template),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Search Results (${_searchResults.length})',
+            style: GoogleFonts.poppins(
+              fontSize: fontSize + 2,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          SizedBox(height: 10),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              childAspectRatio: 0.7, // Adjusted for better proportions
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+            ),
+            itemCount: _searchResults.length,
+            itemBuilder: (context, index) {
+              final template = _searchResults[index];
+      
+              // Skip items with empty imageUrl to prevent the empty box issue
+              if (template.imageUrl.isEmpty) {
+                return SizedBox
+                    .shrink(); // This will create an empty/invisible widget
+              }
+      
+              return GestureDetector(
+                onTap: () => _handleTemplateSelection(template),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.shade300,
+                        blurRadius: 5,
+                        offset: Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Stack(
+                    children: [
+                      // Image with error handling
+                      ClipRRect(
                         borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.shade300,
-                            blurRadius: 5,
-                            offset: Offset(0, 3),
-                          ),
-                        ],
+                        child: Image.network(
+                          template.imageUrl,
+                          height: double.infinity,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            print(
+                                'Error loading image for template ${template.id}: $error');
+                            return Container(
+                              color: Colors.grey[200],
+                              child: Center(
+                                child: Icon(Icons.error, color: Colors.grey[500]),
+                              ),
+                            );
+                          },
+                        ),
                       ),
-                      child: Stack(
-                        children: [
-                          // Image with error handling
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: Image.network(
-                              template.imageUrl,
-                              height: double.infinity,
-                              width: double.infinity,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                print('Error loading image for template ${template.id}: $error');
-                                return Container(
-                                  color: Colors.grey[200],
-                                  child: Center(
-                                    child: Icon(Icons.error, color: Colors.grey[500]),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                          // Lock icon 
-                          if (template.isPaid)
-                            Positioned(
-                              bottom: 8,
-                              right: 8,
-                              child: Icon(Icons.lock, color: Colors.amber, size: 16),
-                            ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
+                      // Lock icon
+                      if (template.isPaid)
+                        Positioned(
+                          bottom: 8,
+                          right: 8,
+                          child: Icon(Icons.lock, color: Colors.amber, size: 16),
+                        ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
       ),
-    ],
-  );
-}
+    );
+  }
+
   Widget _buildTabContent(int index) {
     final textSizeProvider =
         Provider.of<TextSizeProvider>(context); // Listen to changes
     double fontSize = textSizeProvider.fontSize;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Category Tab
-        if (index == 0) ...[
-          SizedBox(height: 10),
-          Text(
-            context.loc.categories,
-            style: GoogleFonts.poppins(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Category Tab
+          if (index == 0) ...[
+            SizedBox(height: 10),
+            Text(
+              context.loc.categories,
+              style: GoogleFonts.poppins(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-          SizedBox(height: 10),
-          SizedBox(
-            height: 100,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              children: [
-                categoryCard(
-                    Icons.lightbulb, context.loc.motivational, Colors.green),
-                categoryCard(
-                  Icons.favorite,
-                  context.loc.love,
-                  Colors.red,
-                ),
-                categoryCard(
-                  Icons.emoji_emotions,
-                  context.loc.funny,
-                  Colors.orange,
-                ),
-                categoryCard(
-                  Icons.people,
-                  context.loc.friendship,
-                  Colors.blue,
-                ),
-                categoryCard(
-                  Icons.self_improvement,
-                  context.loc.life,
-                  Colors.purple,
-                ),
-              ],
-            ),
-          ),
-          SizedBox(height: 20),
-
-          // Festival Posts Section
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            SizedBox(height: 10),
+            SizedBox(
+              height: 100,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
                 children: [
-                  Text(
-                    context.loc.newtemplate,
-                    style: GoogleFonts.poppins(
-                      fontSize: fontSize,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  categoryCard(
+                      Icons.lightbulb, context.loc.motivational, Colors.green),
+                  categoryCard(
+                    Icons.favorite,
+                    context.loc.love,
+                    Colors.red,
                   ),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => TemplatesListScreen(
-                            title: context.loc.newtemplate,
-                            listType: TemplateListType.festival,
-                          ),
-                        ),
-                      );
-                    },
-                    child: Text(
-                      'View All',
-                      style: GoogleFonts.poppins(
-                        fontSize: fontSize - 2,
-                        color: Colors.blue,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
+                  categoryCard(
+                    Icons.emoji_emotions,
+                    context.loc.funny,
+                    Colors.orange,
+                  ),
+                  categoryCard(
+                    Icons.people,
+                    context.loc.friendship,
+                    Colors.blue,
+                  ),
+                  categoryCard(
+                    Icons.self_improvement,
+                    context.loc.life,
+                    Colors.purple,
                   ),
                 ],
               ),
-              SizedBox(height: 10),
-              SizedBox(
-                height: 150,
-                child: _loadingFestivals
-                    ? Center(child: CircularProgressIndicator())
-                    : _festivalPosts.isEmpty
+            ),
+            SizedBox(height: 20),
+            _isSearching
+                ? Center(child: CircularProgressIndicator())
+                : _searchResults.isNotEmpty
+                    ? _buildSearchResultsSection(fontSize)
+                    : (_searchController.text.isNotEmpty)
                         ? Center(
                             child: Text(
-                              "No festival posts available",
-                              style:
-                                  GoogleFonts.poppins(fontSize: fontSize - 2),
+                              'No results found',
+                              style: GoogleFonts.poppins(fontSize: fontSize),
                             ),
                           )
-                        : ListView.builder(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: _festivalPosts.length,
-                            itemBuilder: (context, index) {
-                              return FestivalCard(
-                                festival: _festivalPosts[index],
-                                fontSize: fontSize,
-                                onTap: () => _handleFestivalPostSelection(
-                                    _festivalPosts[index]),
-                              );
-                            },
-                          ),
-              ),
-            ],
-          ),
-          SizedBox(height: 20),
-        ],
+                        : // explicit empty container for when no conditions are met
 
-        // Gallery Tab
-        if (index == 1) ...[
-          SizedBox(
-            width: double.infinity,
-            child: Center(
-              child: GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => EditScreen(title: '')));
-                },
-                child: Container(
-                  padding: EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.blueAccent,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    context.loc.selectImageFromGallery,
-                    style: GoogleFonts.poppins(
-                      color: Colors.white,
-                      fontSize: 16,
+                        // Festival Posts Section
+                        Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    context.loc.newtemplate,
+                                    style: GoogleFonts.poppins(
+                                      fontSize: fontSize,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  GestureDetector(
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              TemplatesListScreen(
+                                            title: context.loc.newtemplate,
+                                            listType: TemplateListType.festival,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                    child: Text(
+                                      'View All',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: fontSize - 2,
+                                        color: Colors.blue,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 10),
+                              SizedBox(
+                                height: 150,
+                                child: _loadingFestivals
+                                    ? Center(child: CircularProgressIndicator())
+                                    : _festivalPosts.isEmpty
+                                        ? Center(
+                                            child: Text(
+                                              "No festival posts available",
+                                              style: GoogleFonts.poppins(
+                                                  fontSize: fontSize - 2),
+                                            ),
+                                          )
+                                        : ListView.builder(
+                                            scrollDirection: Axis.horizontal,
+                                            itemCount: _festivalPosts.length,
+                                            itemBuilder: (context, index) {
+                                              return FestivalCard(
+                                                festival: _festivalPosts[index],
+                                                fontSize: fontSize,
+                                                onTap: () =>
+                                                    _handleFestivalPostSelection(
+                                                        _festivalPosts[index]),
+                                              );
+                                            },
+                                          ),
+                              ),
+                            ],
+                          ),
+            SizedBox(height: 20),
+          ],
+
+          // Gallery Tab
+          if (index == 1) ...[
+            SizedBox(
+              width: double.infinity,
+              child: Center(
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => EditScreen(title: '')));
+                  },
+                  child: Container(
+                    padding: EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.blueAccent,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      context.loc.selectImageFromGallery,
+                      style: GoogleFonts.poppins(
+                        color: Colors.white,
+                        fontSize: 16,
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
-          ),
-          if (_image != null)
-            Padding(
-              padding: EdgeInsets.symmetric(vertical: 40),
-              child: Image.file(
-                _image!,
-                height: 300,
-                width: double.infinity,
-                fit: BoxFit.cover,
+            if (_image != null)
+              Padding(
+                padding: EdgeInsets.symmetric(vertical: 40),
+                child: Image.file(
+                  _image!,
+                  height: 300,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                ),
               ),
-            ),
-        ],
+          ],
 
-        // Custom Size Tab
-        if (index == 2) ...[
-          SizedBox(
-            height: 400, // Changed from 900 to make it more responsive
-            child: GridView.builder(
-              shrinkWrap: true,
-              physics: AlwaysScrollableScrollPhysics(),
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                childAspectRatio: 0.6,
-                crossAxisSpacing: 8,
-                mainAxisSpacing: 9,
-              ),
-              itemCount: 9,
-              itemBuilder: (context, gridIndex) {
-                List<String> sizes = [
-                  context.loc.sizeStandard,
-                  context.loc.sizeWide,
-                  context.loc.sizeCommon,
-                  context.loc.sizeSquare,
-                  context.loc.sizeNarrow,
-                  context.loc.sizeVertical,
-                  context.loc.sizeUltraWide,
-                  context.loc.sizePortrait,
-                  context.loc.sizePanoramic,
-                ];
-                return Column(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.black),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      sizes[gridIndex],
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                );
-              },
-            ),
-          ),
+          // Custom Size Tab
+          // if (index == 2) ...[
+          //   SizedBox(
+          //     height: 400, // Changed from 900 to make it more responsive
+          //     child: GridView.builder(
+          //       shrinkWrap: true,
+          //       physics: AlwaysScrollableScrollPhysics(),
+          //       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          //         crossAxisCount: 3,
+          //         childAspectRatio: 0.6,
+          //         crossAxisSpacing: 8,
+          //         mainAxisSpacing: 9,
+          //       ),
+          //       itemCount: 9,
+          //       itemBuilder: (context, gridIndex) {
+          //         List<String> sizes = [
+          //           context.loc.sizeStandard,
+          //           context.loc.sizeWide,
+          //           context.loc.sizeCommon,
+          //           context.loc.sizeSquare,
+          //           context.loc.sizeNarrow,
+          //           context.loc.sizeVertical,
+          //           context.loc.sizeUltraWide,
+          //           context.loc.sizePortrait,
+          //           context.loc.sizePanoramic,
+          //         ];
+          //         return Column(
+          //           children: [
+          //             Expanded(
+          //               child: Container(
+          //                 decoration: BoxDecoration(
+          //                   border: Border.all(color: Colors.black),
+          //                   borderRadius: BorderRadius.circular(8),
+          //                 ),
+          //               ),
+          //             ),
+          //             SizedBox(height: 4),
+          //             Text(
+          //               sizes[gridIndex],
+          //               textAlign: TextAlign.center,
+          //               style: GoogleFonts.poppins(
+          //                 fontSize: 12,
+          //                 fontWeight: FontWeight.w500,
+          //               ),
+          //             ),
+          //           ],
+          //         );
+          //       },
+          //     ),
+          //   ),
+          // ],
         ],
-      ],
+      ),
     );
   }
 
