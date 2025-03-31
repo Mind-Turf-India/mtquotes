@@ -18,6 +18,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mtquotes/screens/Templates/components/template/quote_template.dart';
 import '../../../Create_Screen/components/details_screen.dart';
 import '../recent/recent_service.dart';
+import 'package:transparent_image/transparent_image.dart';
 
 class FestivalSharingPage extends StatefulWidget {
   final FestivalPost festival;
@@ -97,7 +98,7 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
       appBar: AppBar(
         title: Text('Share Festival Post'),
         leading: IconButton(
-          icon: Icon(Icons.arrow_back),
+          icon: Icon(Icons.arrow_back_ios),
           onPressed: () => Navigator.of(context).pop(),
         ),
         systemOverlayStyle: SystemUiOverlayStyle.light,
@@ -167,24 +168,38 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
                       ),
                       SizedBox(height: 16),
                       // Preview of festival with watermark
-                      AspectRatio(
+                        AspectRatio(
                         aspectRatio: _aspectRatio,
                         child: Container(
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(8),
-                            image: DecorationImage(
-                              image: NetworkImage(widget.festival.imageUrl),
-                              fit: BoxFit
-                                  .contain, // Changed to contain to avoid cropping
-                            ),
                           ),
                           child: Stack(
+                            fit: StackFit.expand,
                             children: [
+                              // Loading indicator that shows while image is loading
+                              Center(
+                                child: CircularProgressIndicator(),
+                              ),
+
+                              // Image with loading state
+                              FadeInImage(
+                                placeholder: MemoryImage(
+                                    kTransparentImage), // You'll need to add transparent_image package
+                                image: NetworkImage(widget.festival.imageUrl),
+                                fit: BoxFit.contain,
+                                fadeInDuration: Duration(milliseconds: 10),
+                                imageErrorBuilder:
+                                    (context, error, stackTrace) {
+                                  return Center(
+                                      child: Text('Error loading image'));
+                                },
+                              ),
+
                               // Watermark in top right
                               Positioned(
                                 top: 8, // Adjust padding from top
                                 right: 8, // Adjust padding from right
-
                                 child: Opacity(
                                   opacity: 0.6,
                                   child: Image.asset(
@@ -354,7 +369,7 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
                               child: Column(
                                 children: [
                                   // Festival image with proper aspect ratio
-                                  AspectRatio(
+                                AspectRatio(
                                     aspectRatio: _aspectRatio,
                                     child: Container(
                                       decoration: BoxDecoration(
@@ -960,6 +975,7 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
                           DetailsScreen(
                             template: template,
                             isPaidUser: widget.isPaidUser,
+
                           ),
                     ),
                   );
@@ -972,6 +988,9 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
                 contentWidget: RepaintBoundary(
                   key: widget._brandedImageKey,
                   child: AspectRatio(
+
+
+
                     aspectRatio: _aspectRatio,
                     child: Container(
                       decoration: BoxDecoration(

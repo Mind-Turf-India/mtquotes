@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mtquotes/screens/Payment_Screen/subscription_popup.dart';
+import 'package:mtquotes/screens/Templates/components/recent/recent_service.dart';
+import 'package:mtquotes/screens/Templates/components/template/template_handler.dart';
 import 'package:mtquotes/screens/Templates/components/template/template_section.dart';
 import 'package:mtquotes/screens/User_Home/components/Categories/category_screen.dart';
 import 'package:provider/provider.dart';
@@ -207,13 +209,27 @@ class _TemplatePageState extends State<TemplatePage> {
     }
   }
 
-  void _handleFestivalPostSelection(FestivalPost festival) {
-    FestivalHandler.handleFestivalSelection(
-      context,
-      festival,
-      (selectedFestival) {
-        // This is what happens when the user gets access to the festival
-        // For example, you could navigate to an edit screen:
+void _handleFestivalPostSelection(FestivalPost festival) {
+  FestivalHandler.handleFestivalSelection(
+    context,
+    festival,
+    (selectedFestival) async {
+      try {
+        // Create a QuoteTemplate from the festival post
+        QuoteTemplate template = QuoteTemplate(
+          id: selectedFestival.id,
+          title: selectedFestival.name,
+          imageUrl: selectedFestival.imageUrl,
+          category: 'festival',
+          avgRating: 0,
+          isPaid: selectedFestival.isPaid,
+          createdAt: DateTime.now(),
+        );
+        
+        // Add to recent templates
+        await RecentTemplateService.addRecentTemplate(template);
+        
+        // Navigate to edit screen
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -223,53 +239,57 @@ class _TemplatePageState extends State<TemplatePage> {
             ),
           ),
         );
-      },
-    );
-  }
-
-  void _handleTemplateSelection(QuoteTemplate template) async {
-    // Show loading indicator
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return Center(
-          child: CircularProgressIndicator(),
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error adding to recent templates: $e')),
         );
-      },
-    );
-
-    try {
-      bool isSubscribed = await _templateService.isUserSubscribed();
-
-      // Hide loading indicator
-      Navigator.pop(context);
-
-      if (!template.isPaid || isSubscribed) {
-        // Navigate to template editor
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => EditScreen(
-              title: 'Edit Template',
-              templateImageUrl: template.imageUrl,
-            ),
-          ),
-        );
-      } else {
-        // Show subscription popup
-        SubscriptionPopup.show(context);
       }
-    } catch (e) {
-      // Hide loading indicator in case of error
-      Navigator.pop(context);
-      // Show error message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error checking subscription: $e')),
-      );
-    }
-  }
+    },
+  );
+}
 
+// Then replace your current _handleTemplateSelection method with this:
+void _handleTemplateSelection(QuoteTemplate template) async {
+  // Show loading indicator
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (BuildContext context) {
+      return Center(
+        child: CircularProgressIndicator(),
+      );
+    },
+  );
+
+  try {
+    bool isSubscribed = await _templateService.isUserSubscribed();
+    
+    // Add this line to track the template as recently used
+    await RecentTemplateService.addRecentTemplate(template);
+
+    // Hide loading indicator
+    Navigator.pop(context);
+
+    if (!template.isPaid || isSubscribed) {
+      // Instead of directly navigating to EditScreen, show the confirmation dialog
+      TemplateHandler.showTemplateConfirmationDialog(
+        context,
+        template,
+        isSubscribed, // Pass the subscription status
+      );
+    } else {
+      // Show subscription popup
+      SubscriptionPopup.show(context);
+    }
+  } catch (e) {
+    // Hide loading indicator in case of error
+    Navigator.pop(context);
+    // Show error message
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error checking subscription: $e')),
+    );
+  }
+}
   Future<void> _pickImage() async {
     // Show loading indicator
     showDialog(
@@ -305,7 +325,7 @@ class _TemplatePageState extends State<TemplatePage> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) {  
     // Initialize tabs with localized strings
     tabs = [
       context.loc.category,

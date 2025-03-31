@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mtquotes/screens/Create_Screen/components/details_screen.dart';
 import 'package:mtquotes/screens/Payment_Screen/subscription_popup.dart';
+import 'package:mtquotes/screens/Templates/components/recent/recent_service.dart';
 import 'package:mtquotes/screens/User_Home/components/Categories/category_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:speech_to_text/speech_to_text.dart';
@@ -14,7 +15,6 @@ import '../Templates/components/template/template_handler.dart';
 import '../Templates/components/template/template_service.dart';
 import '../Templates/components/template/template_section.dart';
 import 'components/Search/search_service.dart';
-
 
 class SearchScreen extends StatefulWidget {
   @override
@@ -94,76 +94,80 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Future<void> _performSearch(String query) async {
-  setState(() {
-    _isSearching = true;
-  });
+    setState(() {
+      _isSearching = true;
+    });
 
-  try {
-    // Use the search service to search across collections
-    final searchResults = await _searchService.searchAcrossCollections(query);
-    
-    // Log raw results
-    print('Raw search results count: ${searchResults.length}');
-    for (var i = 0; i < searchResults.length; i++) {
-      var result = searchResults[i];
-      print('Result #${i+1} - ID: ${result.id}, Title: ${result.title}, ImageURL: ${result.imageUrl}');
-    }
-    
-    // Use a map to deduplicate by ID AND filter out items with empty imageUrls
-    Map<String, QuoteTemplate> uniqueTemplatesMap = {};
+    try {
+      // Use the search service to search across collections
+      final searchResults = await _searchService.searchAcrossCollections(query);
 
-    for (var result in searchResults) {
-      // Skip items with empty imageUrl
-      if (result.imageUrl == null || result.imageUrl.trim().isEmpty) {
-        print('Skipping result with ID: ${result.id} due to empty imageUrl');
-        continue;
+      // Log raw results
+      print('Raw search results count: ${searchResults.length}');
+      for (var i = 0; i < searchResults.length; i++) {
+        var result = searchResults[i];
+        print(
+            'Result #${i + 1} - ID: ${result.id}, Title: ${result.title}, ImageURL: ${result.imageUrl}');
       }
-      
-      // Create a QuoteTemplate from SearchResult
-      QuoteTemplate template = QuoteTemplate(
-        id: result.id,
-        title: result.title,
-        imageUrl: result.imageUrl,
-        category: result.type,
-        avgRating: 0,
-        isPaid: result.isPaid,
-        createdAt: DateTime.now(),
-      );
 
-      uniqueTemplatesMap[result.id] = template;
+      // Use a map to deduplicate by ID AND filter out items with empty imageUrls
+      Map<String, QuoteTemplate> uniqueTemplatesMap = {};
+
+      for (var result in searchResults) {
+        // Skip items with empty imageUrl
+        if (result.imageUrl == null || result.imageUrl.trim().isEmpty) {
+          print('Skipping result with ID: ${result.id} due to empty imageUrl');
+          continue;
+        }
+
+        // Create a QuoteTemplate from SearchResult
+        QuoteTemplate template = QuoteTemplate(
+          id: result.id,
+          title: result.title,
+          imageUrl: result.imageUrl,
+          category: result.type,
+          avgRating: 0,
+          isPaid: result.isPaid,
+          createdAt: DateTime.now(),
+        );
+
+        uniqueTemplatesMap[result.id] = template;
+      }
+
+      // Convert map values back to list
+      List<QuoteTemplate> templates = uniqueTemplatesMap.values.toList();
+
+      setState(() {
+        _searchResults = templates;
+        _isSearching = false;
+      });
+
+      print('Found ${templates.length} valid, unique search results');
+    } catch (e) {
+      print('Error in search: $e');
+      setState(() {
+        _searchResults = [];
+        _isSearching = false;
+      });
     }
-
-    // Convert map values back to list
-    List<QuoteTemplate> templates = uniqueTemplatesMap.values.toList();
-
-    setState(() {
-      _searchResults = templates;
-      _isSearching = false;
-    });
-
-    print('Found ${templates.length} valid, unique search results');
-  } catch (e) {
-    print('Error in search: $e');
-    setState(() {
-      _searchResults = [];
-      _isSearching = false;
-    });
   }
-}
 
   void _handleTemplateSelection(QuoteTemplate template) async {
-    bool isSubscribed = await _templateService.isUserSubscribed();
+  bool isSubscribed = await _templateService.isUserSubscribed();
 
-    if (!template.isPaid || isSubscribed) {
-      TemplateHandler.showTemplateConfirmationDialog(
-        context,
-        template,
-        isSubscribed, // Pass the subscription status
-      );
-    } else {
-      SubscriptionPopup.show(context);
-    }
+  // Add this line to track the template as recently used
+  await RecentTemplateService.addRecentTemplate(template);
+
+  if (!template.isPaid || isSubscribed) {
+    TemplateHandler.showTemplateConfirmationDialog(
+      context,
+      template,
+      isSubscribed, // Pass the subscription status
+    );
+  } else {
+    SubscriptionPopup.show(context);
   }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -187,82 +191,95 @@ class _SearchScreenState extends State<SearchScreen> {
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Search bar
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    hintText: context.loc.searchquotes,
-                    hintStyle: GoogleFonts.poppins(
-                      fontSize: fontSize,
-                      color: Colors.grey[500],
-                    ),
-                    prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _isListening ? Icons.mic : Icons.mic_none,
-                        color: _isListening ? Colors.blue : Colors.grey[600],
-                      ),
-                      onPressed: _toggleListening,
-                    ),
-                    border: InputBorder.none,
-                    contentPadding:
-                    EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            // Search bar
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: context.loc.searchquotes,
+                  hintStyle: GoogleFonts.poppins(
+                    fontSize: fontSize,
+                    color: Colors.grey[500],
                   ),
+                  prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
+                  suffixIcon: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (_searchController.text.isNotEmpty)
+                        IconButton(
+                          icon: Icon(Icons.clear, color: Colors.grey[600]),
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() {
+                              _searchResults = [];
+                              _isSearching = false;
+                            });
+                          },
+                        ),
+                      IconButton(
+                        icon: Icon(
+                          _isListening ? Icons.mic : Icons.mic_none,
+                          color: _isListening ? Colors.blue : Colors.grey[600],
+                        ),
+                        onPressed: _toggleListening,
+                      ),
+                    ],
+                  ),
+                  border: InputBorder.none,
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                 ),
               ),
-              SizedBox(height: 30),
-              Text(context.loc.categories,
-                  style: GoogleFonts.poppins(
-                      fontSize: fontSize + 2, fontWeight: FontWeight.bold)),
-              SizedBox(height: 10),
-              SizedBox(
-                height: 100,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  children: [
-                    categoryCard(Icons.lightbulb, context.loc.motivational,
-                        Colors.green),
-                    categoryCard(Icons.favorite, context.loc.love, Colors.red),
-                    categoryCard(
-                        Icons.emoji_emotions, context.loc.funny, Colors.orange),
-                    categoryCard(
-                        Icons.people, context.loc.friendship, Colors.blue),
-                    categoryCard(Icons.self_improvement, context.loc.life,
-                        Colors.purple),
-                  ],
-                ),
+            ),
+            SizedBox(height: 30),
+            Text(context.loc.categories,
+                style: GoogleFonts.poppins(
+                    fontSize: fontSize + 2, fontWeight: FontWeight.bold)),
+            SizedBox(height: 10),
+            SizedBox(
+              height: 100,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                children: [
+                  categoryCard(
+                      Icons.lightbulb, context.loc.motivational, Colors.green),
+                  categoryCard(Icons.favorite, context.loc.love, Colors.red),
+                  categoryCard(
+                      Icons.emoji_emotions, context.loc.funny, Colors.orange),
+                  categoryCard(
+                      Icons.people, context.loc.friendship, Colors.blue),
+                  categoryCard(
+                      Icons.self_improvement, context.loc.life, Colors.purple),
+                ],
               ),
-              SizedBox(height: 30),
+            ),
+            SizedBox(height: 30),
 
-              // Conditional rendering based on search state
-              _isSearching
-                  ? Center(child: CircularProgressIndicator())
-                  : _searchResults.isNotEmpty
-                  ? _buildSearchResultsSection(fontSize)
-                  : _searchController.text.isNotEmpty
-                  ? Center(
-                child: Text(
-                  'No results found',
-                  style: GoogleFonts.poppins(fontSize: fontSize),
-                ),
-              )
-                  : TemplateSection(
-                title: context.loc.trendingQuotes,
-                fetchTemplates:
-                _templateService.fetchRecentTemplates,
-                fontSize: fontSize,
-                onTemplateSelected: _handleTemplateSelection,
-              ),
-            ],
-          ),
+            // Conditional rendering based on search state
+            _isSearching
+                ? Center(child: CircularProgressIndicator())
+                : _searchController.text.trim().isEmpty
+                    ? TemplateSection(
+                        title: context.loc.trendingQuotes,
+                        fetchTemplates: _templateService.fetchRecentTemplates,
+                        fontSize: fontSize,
+                        onTemplateSelected: _handleTemplateSelection,
+                      )
+                    : _searchResults.isNotEmpty
+                        ? _buildSearchResultsSection(fontSize)
+                        : Center(
+                            child: Text(
+                              'No results found',
+                              style: GoogleFonts.poppins(fontSize: fontSize),
+                            ),
+                          ),
+        ]),
         ),
       ),
     );
@@ -295,7 +312,8 @@ class _SearchScreenState extends State<SearchScreen> {
 
             // Skip items with empty imageUrl to prevent the empty box issue
             if (template.imageUrl.isEmpty) {
-              return SizedBox.shrink(); // This will create an empty/invisible widget
+              return SizedBox
+                  .shrink(); // This will create an empty/invisible widget
             }
 
             return GestureDetector(

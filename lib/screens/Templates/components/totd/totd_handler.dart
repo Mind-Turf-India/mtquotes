@@ -33,17 +33,16 @@ class TimeOfDayHandler {
     );
   }
 
-
-  // Helper method to check if user is subscribed
-  static Future<bool> _isUserSubscribed() async {
+  static Future<bool> isUserSubscribed() async {
     try {
       final user = FirebaseAuth.instance.currentUser;
-      if (user == null) return false;
+      if (user == null || user.email == null) return false;
 
-      final userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .get();
+      // Convert email to document ID format (replace . with _)
+      String docId = user.email!.replaceAll('.', '_');
+
+      final userDoc =
+          await FirebaseFirestore.instance.collection('users').doc(docId).get();
 
       return userDoc.data()?['isSubscribed'] == true;
     } catch (e) {
@@ -59,7 +58,7 @@ class TimeOfDayHandler {
           .findRenderObject() as RenderRepaintBoundary;
       final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
       final ByteData? byteData =
-      await image.toByteData(format: ui.ImageByteFormat.png);
+          await image.toByteData(format: ui.ImageByteFormat.png);
 
       if (byteData != null) {
         return byteData.buffer.asUint8List();
@@ -72,64 +71,59 @@ class TimeOfDayHandler {
   }
 
   // Add rating dialog for TOTD
-  static Future<void> _showRatingDialog(BuildContext context,
-      TimeOfDayPost post) async {
+  static Future<void> _showRatingDialog(
+      BuildContext context, TimeOfDayPost post) async {
     double rating = 0;
 
     return showDialog<double>(
       context: context,
       builder: (BuildContext dialogContext) {
-        return StatefulBuilder(
-            builder: (context, setState) {
-              return AlertDialog(
-                title: Text('Rate This Content'),
-                content: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                        'How would you rate your experience with this content?'),
-                    SizedBox(height: 20),
-                    FittedBox(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: List.generate(5, (index) {
-                          return IconButton(
-                            icon: Icon(
-                              index < rating ? Icons.star : Icons.star_border,
-                              color: index < rating ? Colors.amber : Colors
-                                  .grey,
-                              size: 36,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                rating = index + 1;
-                              });
-                            },
-                          );
-                        }),
-                      ),
-                    )
-                  ],
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(dialogContext).pop(null);
-                    },
-                    child: Text('Skip'),
+        return StatefulBuilder(builder: (context, setState) {
+          return AlertDialog(
+            title: Text('Rate This Content'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('How would you rate your experience with this content?'),
+                SizedBox(height: 20),
+                FittedBox(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: List.generate(5, (index) {
+                      return IconButton(
+                        icon: Icon(
+                          index < rating ? Icons.star : Icons.star_border,
+                          color: index < rating ? Colors.amber : Colors.grey,
+                          size: 36,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            rating = index + 1;
+                          });
+                        },
+                      );
+                    }),
                   ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(dialogContext).pop(
-                          rating); // Close the dialog
-                      Navigator.of(context).pushReplacementNamed('/home');
-                    },
-                    child: Text('Submit'),
-                  ),
-                ],
-              );
-            }
-        );
+                )
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(dialogContext).pop(null);
+                },
+                child: Text('Skip'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.of(dialogContext).pop(rating); // Close the dialog
+                  Navigator.of(context).pushReplacementNamed('/home');
+                },
+                child: Text('Submit'),
+              ),
+            ],
+          );
+        });
       },
     ).then((value) {
       if (value != null && value > 0) {
@@ -182,8 +176,8 @@ class TimeOfDayHandler {
     }
   }
 
-  static Future<void> _updateTOTDPostAverageRating(String postId,
-      double newRating) async {
+  static Future<void> _updateTOTDPostAverageRating(
+      String postId, double newRating) async {
     try {
       // Parse time of day from post ID (assuming format like "morning_post1")
       final parts = postId.split('_');
@@ -195,8 +189,8 @@ class TimeOfDayHandler {
       final timeOfDay = parts[0];
 
       // Get reference to the TOTD document
-      final totdRef = FirebaseFirestore.instance.collection('totd').doc(
-          timeOfDay);
+      final totdRef =
+          FirebaseFirestore.instance.collection('totd').doc(timeOfDay);
 
       // Run this as a transaction to ensure data consistency
       await FirebaseFirestore.instance.runTransaction((transaction) async {
@@ -215,8 +209,8 @@ class TimeOfDayHandler {
             int ratingCount = postData['ratingCount'] ?? 0;
 
             int newRatingCount = ratingCount + 1;
-            double newAvgRating = ((currentAvgRating * ratingCount) +
-                newRating) / newRatingCount;
+            double newAvgRating =
+                ((currentAvgRating * ratingCount) + newRating) / newRatingCount;
 
             // Update only the specific post field within the document
             Map<String, dynamic> updateData = {};
@@ -236,12 +230,13 @@ class TimeOfDayHandler {
   }
 
   // Method to share TOTD post
-  static Future<void> shareTOTDPost(BuildContext context,
-      TimeOfDayPost post, {
-        String? userName,
-        String? userProfileImageUrl,
-        bool isPaidUser = false,
-      }) async {
+  static Future<void> shareTOTDPost(
+    BuildContext context,
+    TimeOfDayPost post, {
+    String? userName,
+    String? userProfileImageUrl,
+    bool isPaidUser = false,
+  }) async {
     try {
       // Add to recent templates when sharing
       try {
@@ -273,15 +268,13 @@ class TimeOfDayHandler {
 
             // Check if document exists and has required fields
             if (userDoc.exists && userDoc.data() is Map<String, dynamic>) {
-              Map<String, dynamic> userData = userDoc.data() as Map<
-                  String,
-                  dynamic>;
+              Map<String, dynamic> userData =
+                  userDoc.data() as Map<String, dynamic>;
 
               // Get name from Firestore with fallback
-              if (userData.containsKey('name') && userData['name'] != null &&
-                  userData['name']
-                      .toString()
-                      .isNotEmpty) {
+              if (userData.containsKey('name') &&
+                  userData['name'] != null &&
+                  userData['name'].toString().isNotEmpty) {
                 userName = userData['name'];
               } else {
                 userName = defaultUserName;
@@ -289,9 +282,8 @@ class TimeOfDayHandler {
 
               // Get profile image from Firestore with fallback
               if (userData.containsKey('profileImage') &&
-                  userData['profileImage'] != null && userData['profileImage']
-                  .toString()
-                  .isNotEmpty) {
+                  userData['profileImage'] != null &&
+                  userData['profileImage'].toString().isNotEmpty) {
                 userProfileImageUrl = userData['profileImage'];
               } else {
                 userProfileImageUrl = defaultProfileImageUrl;
@@ -312,19 +304,16 @@ class TimeOfDayHandler {
       }
 
       // Check if we're coming from the sharing page - if not, navigate to it
-      if (!(Navigator
-          .of(context)
-          .widget is TOTDSharingPage)) {
+      if (!(Navigator.of(context).widget is TOTDSharingPage)) {
         Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (context) =>
-                TOTDSharingPage(
-                  post: post,
-                  userName: userName ?? context.loc.user,
-                  // Default value if null
-                  userProfileImageUrl: userProfileImageUrl ?? '',
-                  isPaidUser: isPaidUser,
-                ),
+            builder: (context) => TOTDSharingPage(
+              post: post,
+              userName: userName ?? context.loc.user,
+              // Default value if null
+              userProfileImageUrl: userProfileImageUrl ?? '',
+              isPaidUser: isPaidUser,
+            ),
           ),
         );
         return;
@@ -412,9 +401,9 @@ class TimeOfDayHandler {
   // Add these methods to your TimeOfDayHandler class
 
   static void _showTemplateConfirmationDialog(
-      BuildContext context,
-      TimeOfDayPost post,
-      bool isPaidUser,
+      BuildContext context, TimeOfDayPost post, bool isPaidUser,
+      [Function?
+          onConfirm] // Optional callback parameter with default value null
       ) {
     showDialog(
       context: context,
@@ -455,37 +444,37 @@ class TimeOfDayHandler {
                               ),
                               child: isPaidUser
                                   ? Align(
-                                alignment: Alignment.bottomRight,
-                                child: Padding(
-                                  padding: const EdgeInsets.all(10.0),
-                                  child: Container(
-                                    padding: EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 4),
-                                    // decoration: BoxDecoration(
-                                    //   color: Colors.black.withOpacity(0.6),
-                                    //   borderRadius: BorderRadius.circular(12),
-                                    // ),
-                                    // child: Row(
-                                    //   mainAxisSize: MainAxisSize.min,
-                                    //   children: [
-                                    //     CircleAvatar(
-                                    //       radius: 10,
-                                    //       backgroundImage: _getUserProfileImage(context),
-                                    //     ),
-                                    //     SizedBox(width: 4),
-                                    //     Text(
-                                    //       _getUserName(context),
-                                    //       style: TextStyle(
-                                    //         fontSize: 10,
-                                    //         color: Colors.white,
-                                    //         fontWeight: FontWeight.bold,
-                                    //       ),
-                                    //     ),
-                                    //   ],
-                                    // ),
-                                  ),
-                                ),
-                              )
+                                      alignment: Alignment.bottomRight,
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(10.0),
+                                        child: Container(
+                                          padding: EdgeInsets.symmetric(
+                                              horizontal: 8, vertical: 4),
+                                          // decoration: BoxDecoration(
+                                          //   color: Colors.black.withOpacity(0.6),
+                                          //   borderRadius: BorderRadius.circular(12),
+                                          // ),
+                                          // child: Row(
+                                          //   mainAxisSize: MainAxisSize.min,
+                                          //   children: [
+                                          //     CircleAvatar(
+                                          //       radius: 10,
+                                          //       backgroundImage: _getUserProfileImage(context),
+                                          //     ),
+                                          //     SizedBox(width: 4),
+                                          //     Text(
+                                          //       _getUserName(context),
+                                          //       style: TextStyle(
+                                          //         fontSize: 10,
+                                          //         color: Colors.white,
+                                          //         fontWeight: FontWeight.bold,
+                                          //       ),
+                                          //     ),
+                                          //   ],
+                                          // ),
+                                        ),
+                                      ),
+                                    )
                                   : null,
                             ),
                           ),
@@ -517,15 +506,21 @@ class TimeOfDayHandler {
                                     child: ElevatedButton(
                                       onPressed: () {
                                         Navigator.of(context).pop();
+                                        // Call onConfirm callback if provided
+                                        if (onConfirm != null) {
+                                          onConfirm();
+                                        }
                                         // Navigate to edit screen for the TOTD post
-                                        _navigateToEditScreen(context, post, isPaidUser);
+                                        _navigateToEditScreen(
+                                            context, post, isPaidUser);
                                       },
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: Colors.blue,
                                         foregroundColor: Colors.white,
                                         elevation: 0,
                                         shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(24),
+                                          borderRadius:
+                                              BorderRadius.circular(24),
                                         ),
                                       ),
                                       child: Text('Create'),
@@ -535,16 +530,20 @@ class TimeOfDayHandler {
                                   SizedBox(
                                     width: 100,
                                     child: ElevatedButton(
-                                      onPressed: () => Navigator.of(context).pop(),
+                                      onPressed: () =>
+                                          Navigator.of(context).pop(),
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: Colors.white,
                                         foregroundColor: Colors.black87,
                                         elevation: 0,
-                                        side: BorderSide(color: Colors.grey.shade300),
+                                        side: BorderSide(
+                                            color: Colors.grey.shade300),
                                         shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(24),
+                                          borderRadius:
+                                              BorderRadius.circular(24),
                                         ),
-                                        padding: EdgeInsets.symmetric(vertical: 12),
+                                        padding:
+                                            EdgeInsets.symmetric(vertical: 12),
                                       ),
                                       child: Text('Cancel'),
                                     ),
@@ -553,13 +552,33 @@ class TimeOfDayHandler {
                               ),
                               SizedBox(height: 12),
                               // Share Button
+                              // Share Button
                               Center(
                                 child: SizedBox(
                                   width: 140,
                                   child: ElevatedButton.icon(
                                     onPressed: () {
-                                      Navigator.of(context).pop();
-                                      _handleShareTOTD(context, post, isPaidUser);
+                                      // Show loading indicator before proceeding with share
+                                      showDialog(
+                                        context: context,
+                                        barrierDismissible: false,
+                                        builder: (BuildContext dialogContext) {
+                                          return Center(
+                                            child: CircularProgressIndicator(),
+                                          );
+                                        },
+                                      );
+
+                                      // Add a slight delay to ensure loading dialog is visible
+                                      Future.delayed(
+                                          Duration(milliseconds: 100), () {
+                                        // Close the current screen
+                                        Navigator.of(context).pop();
+
+                                        // Then proceed with sharing
+                                        _handleShareTOTD(
+                                            context, post, isPaidUser);
+                                      });
                                     },
                                     icon: Icon(Icons.share),
                                     label: Text('Share'),
@@ -570,7 +589,8 @@ class TimeOfDayHandler {
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(24),
                                       ),
-                                      padding: EdgeInsets.symmetric(vertical: 12),
+                                      padding:
+                                          EdgeInsets.symmetric(vertical: 12),
                                     ),
                                   ),
                                 ),
@@ -593,9 +613,7 @@ class TimeOfDayHandler {
   // Update this method in your TimeOfDayHandler class
 
   static void _navigateToEditScreen(
-      BuildContext context,
-      TimeOfDayPost post,
-      bool isPaidUser) {
+      BuildContext context, TimeOfDayPost post, bool isPaidUser) {
     // Convert TimeOfDayPost to QuoteTemplate for compatibility with DetailsScreen
     QuoteTemplate template = QuoteTemplate(
       id: post.id,
@@ -603,7 +621,8 @@ class TimeOfDayHandler {
       imageUrl: post.imageUrl,
       isPaid: post.isPaid,
       category: "Time of Day",
-      createdAt: DateTime.fromMillisecondsSinceEpoch(post.createdAt.millisecondsSinceEpoch),
+      createdAt: DateTime.fromMillisecondsSinceEpoch(
+          post.createdAt.millisecondsSinceEpoch),
     );
 
     Navigator.push(
@@ -618,41 +637,35 @@ class TimeOfDayHandler {
   }
 
   static void _handleShareTOTD(
-      BuildContext context,
-      TimeOfDayPost post,
-      bool isPaidUser) {
+      BuildContext context, TimeOfDayPost post, bool isPaidUser) {
     if (isPaidUser) {
       // For paid users, try to fetch user info first
-      _navigateToSharing(
-          context,
-          post,
-          'User',
-          '',
-          true
-      );
+      _navigateToSharing(context, post, 'User', '', true);
     } else {
       // For free users, go to template sharing page
-      _navigateToSharing(
-          context,
-          post,
-          'User',
-          '',
-          false
-      );
+      _navigateToSharing(context, post, 'User', '', false);
     }
   }
 
 // Helper method to safely navigate to sharing page
-  static void _navigateToSharing(
-      BuildContext context,
-      TimeOfDayPost post,
-      String userName,
-      String userProfileImageUrl,
-      bool isPaidUser) {
+  static void _navigateToSharing(BuildContext context, TimeOfDayPost post,
+      String userName, String userProfileImageUrl, bool isPaidUser) {
     // Check if context is still mounted before navigating
     if (context.mounted) {
-      Navigator.push(
-        context,
+      // Show loading indicator first
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return Center(
+            child: CircularProgressIndicator(),
+          );
+        },
+      );
+
+      // Navigate to sharing page
+      Navigator.of(context)
+          .push(
         MaterialPageRoute(
           builder: (context) => TOTDSharingPage(
             post: post,
@@ -661,11 +674,18 @@ class TimeOfDayHandler {
             isPaidUser: isPaidUser,
           ),
         ),
-      );
+      )
+          .then((_) {
+        // Ensure the loading dialog is dismissed if user presses back
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
+      });
     }
   }
 
-  static Future<void> _getUserInfoAndShare(BuildContext context, TimeOfDayPost post) async {
+  static Future<void> _getUserInfoAndShare(
+      BuildContext context, TimeOfDayPost post) async {
     try {
       // Capture these values early to ensure context doesn't change during async operations
       final BuildContext capturedContext = context;
@@ -684,23 +704,28 @@ class TimeOfDayHandler {
             .get();
 
         if (userDoc.exists && userDoc.data() is Map<String, dynamic>) {
-          Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+          Map<String, dynamic> userData =
+              userDoc.data() as Map<String, dynamic>;
 
           // Get name from Firestore with fallback
-          if (userData.containsKey('name') && userData['name'] != null && userData['name'].toString().isNotEmpty) {
+          if (userData.containsKey('name') &&
+              userData['name'] != null &&
+              userData['name'].toString().isNotEmpty) {
             userName = userData['name'];
           }
 
           // Get profile image from Firestore with fallback
-          if (userData.containsKey('profileImage') && userData['profileImage'] != null && userData['profileImage'].toString().isNotEmpty) {
+          if (userData.containsKey('profileImage') &&
+              userData['profileImage'] != null &&
+              userData['profileImage'].toString().isNotEmpty) {
             userProfileImageUrl = userData['profileImage'];
           }
         }
       }
 
       // Use the helper method to navigate safely
-      _navigateToSharing(capturedContext, post, userName, userProfileImageUrl, true);
-
+      _navigateToSharing(
+          capturedContext, post, userName, userProfileImageUrl, true);
     } catch (e) {
       print('Error getting user info for sharing: $e');
       // Fall back to basic sharing if there's an error
@@ -729,9 +754,10 @@ class TimeOfDayHandler {
 
 // Integration method for handleTimeOfDayPostSelection
   static Future<void> handleTimeOfDayPostSelection(
-      BuildContext context,
-      TimeOfDayPost post,
-      Function(TimeOfDayPost) onAccessGranted,) async {
+    BuildContext context,
+    TimeOfDayPost post,
+    Function(TimeOfDayPost) onAccessGranted,
+  ) async {
     // Show loading indicator
     showDialog(
       context: context,
@@ -744,8 +770,10 @@ class TimeOfDayHandler {
     );
 
     try {
+      // Check if user is subscribed
+      bool isSubscribed = await isUserSubscribed();
+
       // Add to recent templates if user is subscribed or post is free
-      bool isSubscribed = await _isUserSubscribed();
       if (!post.isPaid || isSubscribed) {
         // Convert TOTD post to quote template format for recent templates
         QuoteTemplate template = _convertTOTDToQuoteTemplate(post);
@@ -781,11 +809,12 @@ class TimeOfDayHandler {
           ),
         );
       } else {
-        // Show confirmation dialog with preview - NEW IMPLEMENTATION
+        // Show confirmation dialog with preview - pass the callback function
         _showTemplateConfirmationDialog(
           context,
           post,
           isSubscribed,
+          () => onAccessGranted(post), // Pass the callback here
         );
       }
     } catch (e) {

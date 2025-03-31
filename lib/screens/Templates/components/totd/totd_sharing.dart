@@ -16,6 +16,7 @@ import 'package:mtquotes/screens/Templates/components/template/quote_template.da
 import '../../../Create_Screen/components/details_screen.dart';
 import '../../../Create_Screen/edit_screen_create.dart';
 import '../recent/recent_service.dart';
+import 'package:transparent_image/transparent_image.dart';
 
 class TOTDSharingPage extends StatefulWidget {
   final TimeOfDayPost post;
@@ -31,7 +32,7 @@ class TOTDSharingPage extends StatefulWidget {
     required this.userProfileImageUrl,
     required this.isPaidUser,
     GlobalKey? brandedImageKey,
-  }) : _brandedImageKey = brandedImageKey ?? GlobalKey(),
+  })  : _brandedImageKey = brandedImageKey ?? GlobalKey(),
         super(key: key);
 
   @override
@@ -73,7 +74,8 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
   // Load the original image to get its dimensions
   Future<void> _loadOriginalImage() async {
     try {
-      final http.Response response = await http.get(Uri.parse(widget.post.imageUrl));
+      final http.Response response =
+          await http.get(Uri.parse(widget.post.imageUrl));
       if (response.statusCode == 200) {
         final decodedImage = await decodeImageFromList(response.bodyBytes);
         setState(() {
@@ -93,7 +95,7 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
       appBar: AppBar(
         title: Text('Share Content'),
         leading: IconButton(
-          icon: Icon(Icons.arrow_back),
+          icon: Icon(Icons.arrow_back_ios),
           onPressed: () => Navigator.of(context).pop(),
         ),
         systemOverlayStyle: SystemUiOverlayStyle.light,
@@ -136,7 +138,8 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
                           Icon(Icons.check_circle, color: Colors.green),
                           SizedBox(width: 8),
                           Expanded(
-                            child: Text('Share the content without personal branding'),
+                            child: Text(
+                                'Share the content without personal branding'),
                           ),
                         ],
                       ),
@@ -162,24 +165,38 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
                       ),
                       SizedBox(height: 16),
                       // Preview of content without branding but with watermark
-                     AspectRatio(
+                      AspectRatio(
                         aspectRatio: _aspectRatio,
                         child: Container(
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(8),
-                            image: DecorationImage(
-                              image: NetworkImage(widget.post.imageUrl),
-                              fit: BoxFit
-                                  .contain, // Changed to contain to avoid cropping
-                            ),
                           ),
                           child: Stack(
+                            fit: StackFit.expand,
                             children: [
+                              // Loading indicator that shows while image is loading
+                              Center(
+                                child: CircularProgressIndicator(),
+                              ),
+
+                              // Image with loading state
+                              FadeInImage(
+                                placeholder: MemoryImage(
+                                    kTransparentImage), // You'll need to add transparent_image package
+                                image: NetworkImage(widget.post.imageUrl),
+                                fit: BoxFit.contain,
+                                fadeInDuration: Duration(milliseconds: 10),
+                                imageErrorBuilder:
+                                    (context, error, stackTrace) {
+                                  return Center(
+                                      child: Text('Error loading image'));
+                                },
+                              ),
+
                               // Watermark in top right
                               Positioned(
                                 top: 8, // Adjust padding from top
                                 right: 8, // Adjust padding from right
-
                                 child: Opacity(
                                   opacity: 0.6,
                                   child: Image.asset(
@@ -255,7 +272,8 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                   side: BorderSide(
-                    color: widget.isPaidUser ? Colors.blue : Colors.grey.shade300,
+                    color:
+                        widget.isPaidUser ? Colors.blue : Colors.grey.shade300,
                     width: 2,
                   ),
                 ),
@@ -277,7 +295,8 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
                           Icon(Icons.check_circle, color: Colors.green),
                           SizedBox(width: 8),
                           Expanded(
-                            child: Text('Include your name and profile picture on the content'),
+                            child: Text(
+                                'Include your name and profile picture on the content'),
                           ),
                         ],
                       ),
@@ -297,7 +316,8 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
                           Icon(Icons.check_circle, color: Colors.green),
                           SizedBox(width: 8),
                           Expanded(
-                            child: Text('No watermark - clean professional look'),
+                            child:
+                                Text('No watermark - clean professional look'),
                           ),
                         ],
                       ),
@@ -316,7 +336,8 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
                       FutureBuilder<DocumentSnapshot>(
                           future: FirebaseFirestore.instance
                               .collection('users')
-                              .doc(FirebaseAuth.instance.currentUser?.email?.replaceAll('.', '_'))
+                              .doc(FirebaseAuth.instance.currentUser?.email
+                                  ?.replaceAll('.', '_'))
                               .get(),
                           builder: (context, snapshot) {
                             String userName = '';
@@ -324,8 +345,11 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
                             String userLocation = '';
 
                             // Extract user data if available
-                            if (snapshot.hasData && snapshot.data != null && snapshot.data!.exists) {
-                              final userData = snapshot.data!.data() as Map<String, dynamic>;
+                            if (snapshot.hasData &&
+                                snapshot.data != null &&
+                                snapshot.data!.exists) {
+                              final userData =
+                                  snapshot.data!.data() as Map<String, dynamic>;
                               userName = userData['name'] ?? '';
                               userProfileUrl = userData['profileImage'] ?? '';
                               userLocation = userData['location'] ?? '';
@@ -336,7 +360,8 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
                               child: Container(
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: Colors.grey.shade300),
+                                  border:
+                                      Border.all(color: Colors.grey.shade300),
                                 ),
                                 child: Column(
                                   children: [
@@ -345,10 +370,13 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
                                       aspectRatio: _aspectRatio,
                                       child: Container(
                                         decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+                                          borderRadius: BorderRadius.vertical(
+                                              top: Radius.circular(8)),
                                           image: DecorationImage(
-                                            image: NetworkImage(widget.post.imageUrl),
-                                            fit: BoxFit.contain, // Changed to contain to avoid cropping
+                                            image: NetworkImage(
+                                                widget.post.imageUrl),
+                                            fit: BoxFit
+                                                .contain, // Changed to contain to avoid cropping
                                           ),
                                         ),
                                       ),
@@ -360,23 +388,28 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
                                       padding: EdgeInsets.all(12),
                                       decoration: BoxDecoration(
                                         color: Colors.white,
-                                        borderRadius: BorderRadius.vertical(bottom: Radius.circular(8)),
+                                        borderRadius: BorderRadius.vertical(
+                                            bottom: Radius.circular(8)),
                                       ),
                                       child: Row(
                                         children: [
                                           // Profile image
                                           CircleAvatar(
                                             radius: 20,
-                                            backgroundImage: userProfileUrl.isNotEmpty
+                                            backgroundImage: userProfileUrl
+                                                    .isNotEmpty
                                                 ? NetworkImage(userProfileUrl)
-                                                : AssetImage('assets/profile_placeholder.png') as ImageProvider,
+                                                : AssetImage(
+                                                        'assets/profile_placeholder.png')
+                                                    as ImageProvider,
                                           ),
                                           SizedBox(width: 12),
 
                                           // User details
                                           Expanded(
                                             child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
                                               children: [
                                                 Text(
                                                   userName,
@@ -395,8 +428,7 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
                                 ),
                               ),
                             );
-                          }
-                      ),
+                          }),
                       SizedBox(height: 16),
                       // Premium share button
                       SizedBox(
@@ -404,14 +436,19 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
                         child: ElevatedButton.icon(
                           onPressed: widget.isPaidUser
                               ? () => _sharePost(
-                            context,
-                            isPaid: true,
-                          )
-                              : () => Navigator.pushNamed(context, '/subscription'),
-                          icon: Icon(widget.isPaidUser ? Icons.share : Icons.lock),
-                          label: Text(widget.isPaidUser ? 'Share Now' : 'Upgrade to Pro'),
+                                    context,
+                                    isPaid: true,
+                                  )
+                              : () =>
+                                  Navigator.pushNamed(context, '/subscription'),
+                          icon: Icon(
+                              widget.isPaidUser ? Icons.share : Icons.lock),
+                          label: Text(widget.isPaidUser
+                              ? 'Share Now'
+                              : 'Upgrade to Pro'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: widget.isPaidUser ? Colors.blue : Colors.blue,
+                            backgroundColor:
+                                widget.isPaidUser ? Colors.blue : Colors.blue,
                             foregroundColor: Colors.white,
                             padding: EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
@@ -567,7 +604,8 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
                     imageUrl: widget.post.imageUrl,
                     isPaid: widget.post.isPaid,
                     category: "Time of Day",
-                    createdAt: DateTime.fromMillisecondsSinceEpoch(widget.post.createdAt.millisecondsSinceEpoch),
+                    createdAt: DateTime.fromMillisecondsSinceEpoch(
+                        widget.post.createdAt.millisecondsSinceEpoch),
                   );
 
                   // Navigate to DetailsScreen instead of directly to EditScreen
@@ -600,39 +638,43 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
                       ),
                       child: widget.isPaidUser
                           ? Align(
-                        alignment: Alignment.bottomRight,
-                        child: Padding(
-                          padding: const EdgeInsets.all(10.0),
-                          child: Container(
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.6),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                CircleAvatar(
-                                  radius: 10,
-                                  backgroundImage: widget.userProfileImageUrl.isNotEmpty
-                                      ? NetworkImage(widget.userProfileImageUrl)
-                                      : AssetImage('assets/profile_placeholder.png') as ImageProvider,
-                                ),
-                                SizedBox(width: 4),
-                                Text(
-                                  widget.userName,
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
+                              alignment: Alignment.bottomRight,
+                              child: Padding(
+                                padding: const EdgeInsets.all(10.0),
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withOpacity(0.6),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      CircleAvatar(
+                                        radius: 10,
+                                        backgroundImage: widget
+                                                .userProfileImageUrl.isNotEmpty
+                                            ? NetworkImage(
+                                                widget.userProfileImageUrl)
+                                            : AssetImage(
+                                                    'assets/profile_placeholder.png')
+                                                as ImageProvider,
+                                      ),
+                                      SizedBox(width: 4),
+                                      Text(
+                                        widget.userName,
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      )
+                              ),
+                            )
                           : null,
                     ),
                   ),
@@ -648,12 +690,14 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
   // Method to capture widget as image with branding
   Future<Uint8List?> _captureBrandedImage() async {
     try {
-      final RenderRepaintBoundary boundary = widget._brandedImageKey.currentContext!
-          .findRenderObject() as RenderRepaintBoundary;
+      final RenderRepaintBoundary boundary =
+          widget._brandedImageKey.currentContext!.findRenderObject()
+              as RenderRepaintBoundary;
 
       // Use a higher pixel ratio for better quality
       final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
-      final ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      final ByteData? byteData =
+          await image.toByteData(format: ui.ImageByteFormat.png);
       return byteData?.buffer.asUint8List();
     } catch (e) {
       print('Error capturing branded image: $e');
@@ -665,19 +709,16 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
   Future<Uint8List?> _addBrandingToImage(Uint8List originalImageBytes) async {
     try {
       // Decode the original image
-      final ui.Image originalImage = await decodeImageFromList(originalImageBytes);
+      final ui.Image originalImage =
+          await decodeImageFromList(originalImageBytes);
 
       // Create a recorder and canvas
       final ui.PictureRecorder recorder = ui.PictureRecorder();
       final Canvas canvas = Canvas(recorder);
 
       // Draw the original image - use the full size
-      final Rect originalRect = Rect.fromLTWH(
-          0,
-          0,
-          originalImage.width.toDouble(),
-          originalImage.height.toDouble()
-      );
+      final Rect originalRect = Rect.fromLTWH(0, 0,
+          originalImage.width.toDouble(), originalImage.height.toDouble());
       canvas.drawImageRect(
         originalImage,
         originalRect,
@@ -689,7 +730,8 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
       ui.Image? profileImage;
       if (widget.userProfileImageUrl.isNotEmpty) {
         try {
-          final http.Response response = await http.get(Uri.parse(widget.userProfileImageUrl));
+          final http.Response response =
+              await http.get(Uri.parse(widget.userProfileImageUrl));
           if (response.statusCode == 200) {
             profileImage = await decodeImageFromList(response.bodyBytes);
           }
@@ -705,12 +747,13 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
       // Make branding proportional to image size
       final double brandingWidth = width * 0.4;
       final double brandingHeight = height * 0.06;
-      final double brandingX = width - brandingWidth - width * 0.025; // 2.5% padding
-      final double brandingY = height - brandingHeight - height * 0.025; // 2.5% padding
+      final double brandingX =
+          width - brandingWidth - width * 0.025; // 2.5% padding
+      final double brandingY =
+          height - brandingHeight - height * 0.025; // 2.5% padding
 
       // Draw branding background
-      final Paint bgPaint = Paint()
-        ..color = Colors.black.withOpacity(0.6);
+      final Paint bgPaint = Paint()..color = Colors.black.withOpacity(0.6);
       canvas.drawRRect(
         RRect.fromRectAndRadius(
           Rect.fromLTWH(brandingX, brandingY, brandingWidth, brandingHeight),
@@ -726,8 +769,7 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
         final double profileY = brandingY + (brandingHeight - profileSize) / 2;
 
         // Draw circle for profile image
-        final Paint circlePaint = Paint()
-          ..color = Colors.white;
+        final Paint circlePaint = Paint()..color = Colors.white;
         canvas.drawCircle(
           Offset(profileX + profileSize / 2, profileY + profileSize / 2),
           profileSize / 2,
@@ -739,12 +781,14 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
 
         // Draw the profile image in a circle
         final Path clipPath = Path()
-          ..addOval(Rect.fromLTWH(profileX, profileY, profileSize, profileSize));
+          ..addOval(
+              Rect.fromLTWH(profileX, profileY, profileSize, profileSize));
         canvas.clipPath(clipPath);
 
         canvas.drawImageRect(
           profileImage,
-          Rect.fromLTWH(0, 0, profileImage.width.toDouble(), profileImage.height.toDouble()),
+          Rect.fromLTWH(0, 0, profileImage.width.toDouble(),
+              profileImage.height.toDouble()),
           Rect.fromLTWH(profileX, profileY, profileSize, profileSize),
           Paint(),
         );
@@ -772,9 +816,12 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
         ..addText(widget.userName);
 
       final ui.Paragraph paragraph = paragraphBuilder.build()
-        ..layout(ui.ParagraphConstraints(width: brandingWidth - (profileImage != null ? brandingHeight * 0.8 + 12 : 8)));
+        ..layout(ui.ParagraphConstraints(
+            width: brandingWidth -
+                (profileImage != null ? brandingHeight * 0.8 + 12 : 8)));
 
-      canvas.drawParagraph(paragraph, Offset(textX, textY - paragraph.height / 2));
+      canvas.drawParagraph(
+          paragraph, Offset(textX, textY - paragraph.height / 2));
 
       // Convert canvas to image - use the original dimensions
       final ui.Picture picture = recorder.endRecording();
@@ -784,7 +831,8 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
       );
 
       // Convert image to bytes
-      final ByteData? byteData = await renderedImage.toByteData(format: ui.ImageByteFormat.png);
+      final ByteData? byteData =
+          await renderedImage.toByteData(format: ui.ImageByteFormat.png);
       return byteData?.buffer.asUint8List();
     } catch (e) {
       print('Error adding branding to image: $e');
@@ -793,10 +841,12 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
   }
 
   // Method to add watermark to image for free users (center position matching festival sharing)
+  // Method to add watermark to image for free users (top right position matching the preview)
   Future<Uint8List?> _addWatermarkToImage(Uint8List originalImageBytes) async {
     try {
       // Decode the original image
-      final ui.Image originalImage = await decodeImageFromList(originalImageBytes);
+      final ui.Image originalImage =
+          await decodeImageFromList(originalImageBytes);
 
       // Create a recorder and canvas
       final ui.PictureRecorder recorder = ui.PictureRecorder();
@@ -807,27 +857,23 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
 
       // Load the logo watermark
       final ByteData logoData = await rootBundle.load('assets/logo.png');
-      final ui.Image logo = await decodeImageFromList(logoData.buffer.asUint8List());
+      final ui.Image logo =
+          await decodeImageFromList(logoData.buffer.asUint8List());
 
-      // Calculate size and position for the watermark in center (same as template sharing)
+      // Calculate size and position for the watermark in top right corner
       final double width = originalImage.width.toDouble();
       final double height = originalImage.height.toDouble();
       final double watermarkSize = width * 0.2; // 20% of the image width
+      final double watermarkX =
+          width - watermarkSize - 16; // Position from right edge with padding
+      final double watermarkY = 16; // Position from top with padding
 
-      // Draw watermark in center
-      final Paint watermarkPaint = Paint()
-        ..color = Colors.white.withOpacity(0.3);
-
-      // Draw the watermark in center
+      // Draw the watermark
+      final Paint watermarkPaint = Paint();
       canvas.drawImageRect(
         logo,
         Rect.fromLTWH(0, 0, logo.width.toDouble(), logo.height.toDouble()),
-        Rect.fromLTWH(
-            (width - watermarkSize) / 2,
-            (height - watermarkSize) / 2,
-            watermarkSize,
-            watermarkSize
-        ),
+        Rect.fromLTWH(watermarkX, watermarkY, watermarkSize, watermarkSize),
         watermarkPaint,
       );
 
@@ -839,7 +885,8 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
       );
 
       // Convert image to bytes
-      final ByteData? byteData = await renderedImage.toByteData(format: ui.ImageByteFormat.png);
+      final ByteData? byteData =
+          await renderedImage.toByteData(format: ui.ImageByteFormat.png);
       return byteData?.buffer.asUint8List();
     } catch (e) {
       print('Error adding watermark to image: $e');
@@ -875,33 +922,41 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
 
       if (isPaid) {
         try {
+          // For premium users, we want to capture the UI exactly as it appears in the preview
           // Make sure UI is fully rendered before capture
-          await Future.delayed(Duration(milliseconds: 100));
+          await Future.delayed(Duration(milliseconds: 200));
 
-          // First try to capture the branded template widget directly
+          // Use the repaint boundary to capture the branded preview as-is
           imageBytes = await _captureBrandedImage();
 
-          // If direct widget capture fails, try programmatic branding approach
+          // Only if that fails, fall back to programmatic approach
           if (imageBytes == null) {
             print('Direct capture returned null, trying programmatic branding');
             imageBytes = await _addBrandingToImage(originalImageBytes);
           }
 
-          // If both approaches fail, fall back to the original image
           if (imageBytes == null) {
-            print('Both branding approaches failed, falling back to direct download');
+            print(
+                'Both branding approaches failed, falling back to direct download');
             imageBytes = originalImageBytes;
           }
         } catch (e) {
-          print('Error in premium capture: $e, falling back to direct download');
+          print(
+              'Error in premium capture: $e, falling back to direct download');
           imageBytes = originalImageBytes;
         }
       } else {
-        // For free users, add the watermark to the image
+        // For free users, we need to render the watermark exactly as in the preview
         try {
+          // First try to capture the free preview with watermark as shown in UI
+          await Future.delayed(Duration(milliseconds: 100));
+
+          // If you have a RepaintBoundary for free preview:
+          // imageBytes = await _captureFreePreviewImage();
+
+          // If no RepaintBoundary for free preview, use consistent watermarking function
           imageBytes = await _addWatermarkToImage(originalImageBytes);
 
-          // If watermarking fails, fall back to the original image
           if (imageBytes == null) {
             print('Watermark failed, falling back to direct download');
             imageBytes = originalImageBytes;
@@ -936,7 +991,7 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
           text: 'Check out this amazing content by ${widget.userName}!',
         );
       } else {
-        // For free users, share without branding
+        // For free users, share with watermark
         await Share.shareXFiles(
           [XFile(tempFile.path)],
           text: 'Check out this amazing content!',
@@ -975,54 +1030,52 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
     return showDialog<double>(
       context: context,
       builder: (BuildContext dialogContext) {
-        return StatefulBuilder(
-            builder: (context, setState) {
-              return AlertDialog(
-                title: Text('Rate This Content'),
-                content: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text('How would you rate your experience with this content?'),
-                    SizedBox(height: 20),
-                    FittedBox(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: List.generate(5, (index) {
-                          return IconButton(
-                            icon: Icon(
-                              index < rating ? Icons.star : Icons.star_border,
-                              color: index < rating ? Colors.amber : Colors.grey,
-                              size: 36,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                rating = index + 1;
-                              });
-                            },
-                          );
-                        }),
-                      ),
-                    )
-                  ],
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(dialogContext).pop(null);
-                    },
-                    child: Text('Skip'),
+        return StatefulBuilder(builder: (context, setState) {
+          return AlertDialog(
+            title: Text('Rate This Content'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('How would you rate your experience with this content?'),
+                SizedBox(height: 20),
+                FittedBox(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: List.generate(5, (index) {
+                      return IconButton(
+                        icon: Icon(
+                          index < rating ? Icons.star : Icons.star_border,
+                          color: index < rating ? Colors.amber : Colors.grey,
+                          size: 36,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            rating = index + 1;
+                          });
+                        },
+                      );
+                    }),
                   ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(dialogContext).pop(rating); // Close the dialog
-                      Navigator.of(context).pushReplacementNamed('/nav_bar');
-                    },
-                    child: Text('Submit'),
-                  ),
-                ],
-              );
-            }
-        );
+                )
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(dialogContext).pop(null);
+                },
+                child: Text('Skip'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.of(dialogContext).pop(rating); // Close the dialog
+                  Navigator.of(context).pushReplacementNamed('/nav_bar');
+                },
+                child: Text('Submit'),
+              ),
+            ],
+          );
+        });
       },
     ).then((value) {
       if (value != null && value > 0) {
@@ -1051,10 +1104,11 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
       final Map<String, dynamic> ratingData = {
         'postId': post.id,
         'rating': rating,
-        'createdAt': now,  // Firestore will convert this to Timestamp
+        'createdAt': now, // Firestore will convert this to Timestamp
         'imageUrl': post.imageUrl,
         'title': post.title,
-        'userId': FirebaseAuth.instance.currentUser?.uid ?? 'anonymous', // Get user ID if logged in
+        'userId': FirebaseAuth.instance.currentUser?.uid ??
+            'anonymous', // Get user ID if logged in
       };
 
       await FirebaseFirestore.instance
@@ -1065,16 +1119,18 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
 
       // Update the post's average rating
       await _updatePostAverageRating(post.id, rating);
-
     } catch (e) {
       print('Error submitting rating: $e');
     }
   }
 
-  static Future<void> _updatePostAverageRating(String postId, double newRating) async {
+  static Future<void> _updatePostAverageRating(
+      String postId, double newRating) async {
     try {
       // Get reference to the post document
-      final postRef = FirebaseFirestore.instance.collection('time_of_day_posts').doc(postId);
+      final postRef = FirebaseFirestore.instance
+          .collection('time_of_day_posts')
+          .doc(postId);
 
       // Run this as a transaction to ensure data consistency
       await FirebaseFirestore.instance.runTransaction((transaction) async {
@@ -1089,7 +1145,8 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
           int ratingCount = data['ratingCount'] ?? 0;
 
           int newRatingCount = ratingCount + 1;
-          double newAvgRating = ((currentAvgRating * ratingCount) + newRating) / newRatingCount;
+          double newAvgRating =
+              ((currentAvgRating * ratingCount) + newRating) / newRatingCount;
 
           // Update the post with the new average rating
           transaction.update(postRef, {
