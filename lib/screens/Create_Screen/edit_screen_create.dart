@@ -440,62 +440,42 @@ class _EditScreenState extends State<EditScreen> {
       final templateService = TemplateService();
       bool isPaidUser = await templateService.isUserSubscribed();
 
-      // For free users, redirect to template sharing page
-      if (!isPaidUser) {
-        _hideLoadingIndicator();
-
-        // Get the template URL if it exists
-        String templateUrl = widget.templateImageUrl ?? '';
-
-        // Navigate to template sharing page
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => TemplateSharingPage(
-              template: QuoteTemplate(
-                id: 'custom',
-                imageUrl: templateUrl,
-                title: 'Custom Template',
-                category: '',
-                isPaid: false,
-                createdAt: DateTime.now(),
-              ),
-              userName: 'User',
-              userProfileImageUrl: '',
-              isPaidUser: false,
-            ),
-          ),
-        );
-        return;
-      }
-
-      // For paid users with info box
       Uint8List finalImageData;
-      if (showInfoBox) {
+
+      // For paid users with info box, capture the image with the info box
+      if (isPaidUser && showInfoBox) {
         // This would capture the entire widget including info box
         finalImageData = await _captureImageWithInfoBox() ?? imageData!;
       } else {
+        // For free users or paid users without info box, use the raw image
         finalImageData = imageData!;
       }
 
-      // Save the edited image to a temporary file
-      final temp = await getTemporaryDirectory();
-      final path = "${temp.path}/edited_image.jpg";
-      File(path).writeAsBytesSync(finalImageData);
-
       _hideLoadingIndicator();
 
-      // Share the image
-      await Share.shareXFiles(
-        [XFile(path)],
-        text: 'Check out this amazing template from our app!',
+      // Navigate to template sharing page with the appropriate image data
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => TemplateSharingPage(
+            // Use a timestamp to ensure uniqueness in the key
+            key: ValueKey("template_sharing_custom_${DateTime.now().millisecondsSinceEpoch}"),
+            template: QuoteTemplate(
+              id: 'custom',
+              imageUrl: widget.templateImageUrl ?? 'custom_image',
+              title: 'Custom Template',
+              category: '',
+              isPaid: false,
+              createdAt: DateTime.now(),
+            ),
+            userName: userName.isNotEmpty ? userName : 'User',
+            userProfileImageUrl: userProfileImageUrl ?? '',
+            isPaidUser: isPaidUser,
+            // Pass the custom image data to the sharing page
+            customImageData: finalImageData,
+          ),
+        ),
       );
-
-      // Show rating dialog after sharing
-      await Future.delayed(Duration(milliseconds: 500));
-      if (context.mounted) {
-        await _showRatingDialog(context);
-      }
     } catch (e) {
       _hideLoadingIndicator();
 
