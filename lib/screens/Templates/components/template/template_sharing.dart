@@ -47,8 +47,7 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
   @override
   void initState() {
     super.initState();
-    print(
-        'TemplateSharingPage initState with template: ${widget.template.id}, imageUrl: ${widget.template.imageUrl}');
+    print('TemplateSharingPage initState with template: ${widget.template.id}, imageUrl: ${widget.template.imageUrl}');
     _currentImageUrl = widget.template.imageUrl;
     _customImageData = widget.customImageData; // Store the custom image data
     _loadImage();
@@ -62,10 +61,8 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
     if (oldWidget.template.id != widget.template.id ||
         oldWidget.template.imageUrl != widget.template.imageUrl ||
         oldWidget.customImageData != widget.customImageData) {
-      print(
-          'Template changed: Old: ${oldWidget.template.id}, ${oldWidget.template.imageUrl}');
-      print(
-          'Template changed: New: ${widget.template.id}, ${widget.template.imageUrl}');
+      print('Template changed: Old: ${oldWidget.template.id}, ${oldWidget.template.imageUrl}');
+      print('Template changed: New: ${widget.template.id}, ${widget.template.imageUrl}');
 
       setState(() {
         _currentImageUrl = widget.template.imageUrl;
@@ -81,8 +78,7 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
   Future<void> _addToRecentTemplates() async {
     try {
       await RecentTemplateService.addRecentTemplate(widget.template);
-      print(
-          'Added template to recents from sharing page: ${widget.template.id}');
+      print('Added template to recents from sharing page: ${widget.template.id}');
     } catch (e) {
       print('Error adding template to recents from sharing page: $e');
     }
@@ -91,6 +87,9 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
   // Load the image based on whether we have custom image data or need to fetch from URL
   Future<void> _loadImage() async {
     print('Loading image. Custom data exists: ${_customImageData != null}');
+    setState(() {
+      _isLoading = true;
+    });
 
     try {
       if (_customImageData != null) {
@@ -107,8 +106,7 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
         }
       } else if (widget.template.imageUrl.startsWith('file:/')) {
         // For local files
-        final String filePath =
-            widget.template.imageUrl.replaceFirst('file:/', '');
+        final String filePath = widget.template.imageUrl.replaceFirst('file:/', '');
         final File imageFile = File(filePath);
 
         if (await imageFile.exists()) {
@@ -133,8 +131,7 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
         }
       } else {
         // For network images
-        final http.Response response =
-            await http.get(Uri.parse(widget.template.imageUrl));
+        final http.Response response = await http.get(Uri.parse(widget.template.imageUrl));
         if (response.statusCode == 200) {
           final decodedImage = await decodeImageFromList(response.bodyBytes);
 
@@ -165,571 +162,20 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    // Force rebuild when template changes by using these in widget tree
-    final String currentTemplateId = widget.template.id;
-    final String currentImageUrl = widget.template.imageUrl;
-    final bool hasCustomImage = _customImageData != null;
-
-    print(
-        'Building sharing UI with template: $currentTemplateId, imageUrl: $currentImageUrl, hasCustomImage: $hasCustomImage');
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Share Template'),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios),
-          onPressed: () => Navigator.of(context).pop(),
+  // Helper method to build consistent image containers
+  Widget _buildImageContainer({
+    required Widget child,
+    required double aspectRatio,
+    BorderRadius? borderRadius,
+  }) {
+    return AspectRatio(
+      aspectRatio: aspectRatio,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: borderRadius ?? BorderRadius.circular(8),
         ),
+        child: child,
       ),
-      body: _isLoading
-          ? Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Free sharing option
-                    Text(
-                      'Free Sharing',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 16),
-                    Card(
-                      elevation: 2,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Basic sharing',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            SizedBox(height: 12),
-                            Row(
-                              children: [
-                                Icon(Icons.check_circle, color: Colors.green),
-                                SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                      'Share the template without personal branding'),
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: 8),
-                            Row(
-                              children: [
-                                Icon(Icons.close, color: Colors.red),
-                                SizedBox(width: 8),
-                                Expanded(
-                                  child:
-                                      Text('No personal branding or watermark'),
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: 8),
-                            Row(
-                              children: [
-                                Icon(Icons.close, color: Colors.red),
-                                SizedBox(width: 8),
-                                Expanded(
-                                  child: Text('Standard quality export'),
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: 16),
-                            // Preview of template without branding but with watermark
-                            AspectRatio(
-                              aspectRatio: _aspectRatio,
-                              child: Container(
-                                key: ValueKey(
-                                    "free_preview_${currentTemplateId}_${currentImageUrl}_${hasCustomImage}"),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(8),
-                                  image: DecorationImage(
-                                    image: _getImageProvider(),
-                                    fit: BoxFit.contain,
-                                  ),
-                                ),
-                                child: Stack(
-                                  children: [
-                                    // Watermark in top right
-                                    Positioned(
-                                      top: 8,
-                                      right: 8,
-                                      child: Opacity(
-                                        opacity: 0.6,
-                                        child: Image.asset(
-                                          'assets/logo.png',
-                                          width: 50,
-                                          height: 50,
-                                          fit: BoxFit.contain,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            SizedBox(height: 16),
-                            // Free share button only
-                            SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton.icon(
-                                onPressed: () => _shareTemplate(
-                                  context,
-                                  isPaid: false,
-                                ),
-                                icon: Icon(Icons.share),
-                                label: Text('Share Basic'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.blue,
-                                  foregroundColor: Colors.white,
-                                  padding: EdgeInsets.symmetric(vertical: 12),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(24),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    // Divider
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 24.0),
-                      child: Row(
-                        children: [
-                          Expanded(child: Divider()),
-                          Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 16.0),
-                            child: Text(
-                              'OR',
-                              style: TextStyle(
-                                color: Colors.grey,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          Expanded(child: Divider()),
-                        ],
-                      ),
-                    ),
-
-                    SizedBox(height: 10,),
-                    // Premium sharing option
-                    Text(
-                      'Premium Sharing',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 16),
-                    Card(
-                      elevation: 2,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        side: BorderSide(
-                          color: widget.isPaidUser
-                              ? Colors.blue
-                              : Colors.grey.shade300,
-                          width: 2,
-                        ),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Share with your branding',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            SizedBox(height: 12),
-                            Row(
-                              children: [
-                                Icon(Icons.check_circle,
-                                    color: Colors.green),
-                                SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                      'Include your name and profile picture on the template'),
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: 8),
-                            Row(
-                              children: [
-                                Icon(Icons.check_circle,
-                                    color: Colors.green),
-                                SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                      'Personalized sharing message'),
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: 8),
-                            Row(
-                              children: [
-                                Icon(Icons.check_circle,
-                                    color: Colors.green),
-                                SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                      'No watermark - clean professional look'),
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: 8),
-                            Row(
-                              children: [
-                                Icon(Icons.check_circle,
-                                    color: Colors.green),
-                                SizedBox(width: 8),
-                                Expanded(
-                                  child:
-                                      Text('High quality image export'),
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: 16),
-
-                            // If we have custom image data, show just the image
-                            if (_customImageData != null)
-                              Column(
-                                children: [
-                                  // Just the image - this part will be captured
-                                  RepaintBoundary(
-                                    key: _brandedImageKey,
-                                    child: AspectRatio(
-                                      aspectRatio: _aspectRatio,
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                          image: DecorationImage(
-                                            image: _getImageProvider(),
-                                            fit: BoxFit.contain,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  SizedBox(height: 16),
-                                  // Share button - this part won't be captured
-                                  SizedBox(
-                                    width: double.infinity,
-                                    child: ElevatedButton.icon(
-                                      onPressed: widget.isPaidUser
-                                          ? () => _shareTemplate(
-                                                context,
-                                                isPaid: true,
-                                              )
-                                          : () => Navigator.pushNamed(
-                                              context, '/subscription'),
-                                      icon: Icon(widget.isPaidUser
-                                          ? Icons.share
-                                          : Icons.lock),
-                                      label: Text(widget.isPaidUser
-                                          ? 'Share Now'
-                                          : 'Upgrade to Pro'),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor:
-                                            widget.isPaidUser
-                                                ? Colors.blue
-                                                : Colors.blue,
-                                        foregroundColor: Colors.white,
-                                        padding: EdgeInsets.symmetric(
-                                            vertical: 12),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(24),
-                                        ),
-                                      ),
-                                    ),
-                                  )
-                                ],
-                              )
-                            // Otherwise show the premium template preview
-                            else
-                              FutureBuilder<DocumentSnapshot>(
-                                  key: ValueKey(
-                                      "premium_preview_${currentTemplateId}_${currentImageUrl}"),
-                                  future: FirebaseFirestore.instance
-                                      .collection('users')
-                                      .doc(FirebaseAuth
-                                          .instance.currentUser?.email
-                                          ?.replaceAll('.', '_'))
-                                      .get(),
-                                  builder: (context, snapshot) {
-                                    String userName = '';
-                                    String userProfileUrl =
-                                        '';
-                                    String userLocation = '';
-                                    String userDescription = '';
-                                    String userSocialMedia = '';
-                                    String companyName = '';
-                                    bool isBusinessProfile = false;
-
-                                    // Extract user data if available
-                                    if (snapshot.hasData &&
-                                        snapshot.data != null &&
-                                        snapshot.data!.exists) {
-                                      final userData =
-                                          snapshot.data!.data()
-                                              as Map<String, dynamic>;
-                                      userName = userData['name'] ?? '';
-
-                                      // Only override profile URL if the passed one is empty
-                                      if (widget.userProfileImageUrl
-                                          .isEmpty) {
-                                        userProfileUrl =
-                                            userData['profileImage'] ??
-                                                '';
-                                      }
-
-                                      // Get additional user info
-                                      userLocation =
-                                          userData['location'] ?? '';
-                                      userDescription =
-                                          userData['description'] ?? '';
-                                      userSocialMedia =
-                                          userData['socialMedia'] ?? '';
-                                      companyName =
-                                          userData['companyName'] ?? '';
-                                      isBusinessProfile = userData[
-                                              'lastActiveProfileTab'] ==
-                                          'business';
-                                    }
-
-                                    // Always show the preview for both paid and unpaid users
-                                    return Column(
-                                      children: [
-                                        // Image and info box together in one RepaintBoundary for capture
-                                        RepaintBoundary(
-                                          key: _brandedImageKey,
-                                          child: Container(
-                                            decoration: BoxDecoration(
-                                              borderRadius:
-                                                  BorderRadius.circular(
-                                                      8),
-                                              border: Border.all(
-                                                  color: Colors
-                                                      .grey.shade300),
-                                            ),
-                                            child: Column(
-                                              children: [
-                                                // Template image with proper aspect ratio
-                                                AspectRatio(
-                                                  aspectRatio:
-                                                      _aspectRatio,
-                                                  child: Container(
-                                                    decoration:
-                                                        BoxDecoration(
-                                                      borderRadius:
-                                                          BorderRadius.vertical(
-                                                              top: Radius
-                                                                  .circular(
-                                                                      8)),
-                                                      image:
-                                                          DecorationImage(
-                                                        image:
-                                                            _getImageProvider(),
-                                                        fit: BoxFit
-                                                            .contain,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-
-                                                // Info box with user details
-                                                Container(
-                                                  width:
-                                                      double.infinity,
-                                                  padding:
-                                                      EdgeInsets.all(
-                                                          12),
-                                                  decoration:
-                                                      BoxDecoration(
-                                                    color: Colors.white,
-                                                    borderRadius:
-                                                        BorderRadius.vertical(
-                                                            bottom: Radius
-                                                                .circular(
-                                                                    8)),
-                                                  ),
-                                                  child: Row(
-                                                    children: [
-                                                      // Profile image
-                                                      CircleAvatar(
-                                                        radius: 20,
-                                                        backgroundImage: userProfileUrl
-                                                                .isNotEmpty
-                                                            ? NetworkImage(
-                                                                userProfileUrl)
-                                                            : AssetImage(
-                                                                    'assets/profile_placeholder.png')
-                                                                as ImageProvider,
-                                                      ),
-                                                      SizedBox(
-                                                          width: 12),
-
-                                                      // User details
-                                                      Expanded(
-                                                        child: Column(
-                                                          crossAxisAlignment:
-                                                              CrossAxisAlignment
-                                                                  .start,
-                                                          children: [
-                                                            // Show Company Name first if business profile
-                                                            if (isBusinessProfile &&
-                                                                companyName
-                                                                    .isNotEmpty)
-                                                              Text(
-                                                                companyName,
-                                                                style:
-                                                                    TextStyle(
-                                                                  fontWeight:
-                                                                      FontWeight.bold,
-                                                                  fontSize:
-                                                                      16,
-                                                                ),
-                                                              ),
-
-                                                            // Show user name
-                                                            Text(
-                                                              userName,
-                                                              style:
-                                                                  TextStyle(
-                                                                fontWeight: isBusinessProfile
-                                                                    ? FontWeight.normal
-                                                                    : FontWeight.bold,
-                                                                fontSize: isBusinessProfile
-                                                                    ? 14
-                                                                    : 16,
-                                                              ),
-                                                            ),
-
-                                                            // Show location if available
-                                                            if (userLocation
-                                                                .isNotEmpty)
-                                                              Text(
-                                                                userLocation,
-                                                                style: TextStyle(
-                                                                    fontSize:
-                                                                        14),
-                                                              ),
-
-                                                            // Show social media for business profiles
-                                                            if (isBusinessProfile &&
-                                                                userSocialMedia
-                                                                    .isNotEmpty)
-                                                              Text(
-                                                                userSocialMedia,
-                                                                style: TextStyle(
-                                                                    fontSize:
-                                                                        14,
-                                                                    color:
-                                                                        Colors.blue),
-                                                              ),
-
-                                                            // Show description for business profiles (truncated)
-                                                            if (isBusinessProfile &&
-                                                                userDescription
-                                                                    .isNotEmpty)
-                                                              Text(
-                                                                userDescription,
-                                                                style: TextStyle(
-                                                                    fontSize:
-                                                                        14),
-                                                                maxLines:
-                                                                    2,
-                                                                overflow:
-                                                                    TextOverflow.ellipsis,
-                                                              ),
-                                                          ],
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-
-                                        SizedBox(height: 16),
-                                        // Share button - outside the RepaintBoundary so it won't be captured
-                                        SizedBox(
-                                          width: double.infinity,
-                                          child: ElevatedButton.icon(
-                                            onPressed: widget.isPaidUser
-                                                ? () => _shareTemplate(
-                                                      context,
-                                                      isPaid: true,
-                                                    )
-                                                : () =>
-                                                    Navigator.pushNamed(
-                                                        context,
-                                                        '/subscription'),
-                                            icon: Icon(widget.isPaidUser
-                                                ? Icons.share
-                                                : Icons.lock),
-                                            label: Text(
-                                                widget.isPaidUser
-                                                    ? 'Share Now'
-                                                    : 'Upgrade to Pro'),
-                                            style: ElevatedButton
-                                                .styleFrom(
-                                              backgroundColor:
-                                                  widget.isPaidUser
-                                                      ? Colors.blue
-                                                      : Colors.blue,
-                                              foregroundColor:
-                                                  Colors.white,
-                                              padding:
-                                                  EdgeInsets.symmetric(
-                                                      vertical: 12),
-                                              shape:
-                                                  RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius
-                                                        .circular(24),
-                                              ),
-                                            ),
-                                          ),
-                                        )
-                                      ],
-                                    );
-                                  })
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
     );
   }
 
@@ -748,6 +194,466 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
     }
   }
 
+  @override
+  Widget build(BuildContext context) {
+    // Force rebuild when template changes by using these in widget tree
+    final String currentTemplateId = widget.template.id;
+    final String currentImageUrl = widget.template.imageUrl;
+    final bool hasCustomImage = _customImageData != null;
+
+    print('Building sharing UI with template: $currentTemplateId, imageUrl: $currentImageUrl, hasCustomImage: $hasCustomImage');
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Share Template'),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ),
+      body: _isLoading
+          ? Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Free sharing option
+              Text(
+                'Free Sharing',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 16),
+              Card(
+                elevation: 2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Basic sharing',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Icon(Icons.check_circle, color: Colors.green),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text('Share the template without personal branding'),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Icon(Icons.close, color: Colors.red),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text('No personal branding or watermark'),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Icon(Icons.close, color: Colors.red),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text('Standard quality export'),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 16),
+
+                      // Preview of template without branding but with watermark - FIXED
+                      _buildImageContainer(
+                        aspectRatio: _aspectRatio,
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            // Image with proper sizing
+                            Container(
+                              key: ValueKey("free_preview_${currentTemplateId}_${currentImageUrl}_${hasCustomImage}"),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(8),
+                                image: DecorationImage(
+                                  image: _getImageProvider(),
+                                  fit: BoxFit.contain,
+                                ),
+                              ),
+                            ),
+
+                            // Watermark in top right
+                            Positioned(
+                              top: 8,
+                              right: 8,
+                              child: Opacity(
+                                opacity: 0.6,
+                                child: Image.asset(
+                                  'assets/logo.png',
+                                  width: 50,
+                                  height: 50,
+                                  fit: BoxFit.contain,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      SizedBox(height: 16),
+                      // Free share button only
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: () => _shareTemplate(
+                            context,
+                            isPaid: false,
+                          ),
+                          icon: Icon(Icons.share),
+                          label: Text('Share Basic'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue,
+                            foregroundColor: Colors.white,
+                            padding: EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(24),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Divider
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24.0),
+                child: Row(
+                  children: [
+                    Expanded(child: Divider()),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Text(
+                        'OR',
+                        style: TextStyle(
+                          color: Colors.grey,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    Expanded(child: Divider()),
+                  ],
+                ),
+              ),
+
+              SizedBox(height: 10,),
+              // Premium sharing option
+              Text(
+                'Premium Sharing',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 16),
+              Card(
+                elevation: 2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(
+                    color: widget.isPaidUser ? Colors.blue : Colors.grey.shade300,
+                    width: 2,
+                  ),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Share with your branding',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Icon(Icons.check_circle, color: Colors.green),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text('Include your name and profile picture on the template'),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Icon(Icons.check_circle, color: Colors.green),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text('Personalized sharing message'),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Icon(Icons.check_circle, color: Colors.green),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text('No watermark - clean professional look'),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Icon(Icons.check_circle, color: Colors.green),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text('High quality image export'),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 16),
+
+                      // If we have custom image data, show just the image - FIXED
+                      if (_customImageData != null)
+                        Column(
+                          children: [
+                            // Just the image - this part will be captured
+                            RepaintBoundary(
+                              key: _brandedImageKey,
+                              child: _buildImageContainer(
+                                aspectRatio: _aspectRatio,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(8),
+                                    image: DecorationImage(
+                                      image: _getImageProvider(),
+                                      fit: BoxFit.contain,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: 16),
+                            // Share button - this part won't be captured
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton.icon(
+                                onPressed: widget.isPaidUser
+                                    ? () => _shareTemplate(
+                                  context,
+                                  isPaid: true,
+                                )
+                                    : () => Navigator.pushNamed(context, '/subscription'),
+                                icon: Icon(widget.isPaidUser ? Icons.share : Icons.lock),
+                                label: Text(widget.isPaidUser ? 'Share Now' : 'Upgrade to Pro'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: widget.isPaidUser ? Colors.blue : Colors.blue,
+                                  foregroundColor: Colors.white,
+                                  padding: EdgeInsets.symmetric(vertical: 12),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(24),
+                                  ),
+                                ),
+                              ),
+                            )
+                          ],
+                        )
+                      // Otherwise show the premium template preview - FIXED
+                      else
+                        FutureBuilder<DocumentSnapshot>(
+                            key: ValueKey("premium_preview_${currentTemplateId}_${currentImageUrl}"),
+                            future: FirebaseFirestore.instance
+                                .collection('users')
+                                .doc(FirebaseAuth.instance.currentUser?.email?.replaceAll('.', '_'))
+                                .get(),
+                            builder: (context, snapshot) {
+                              String userName = '';
+                              String userProfileUrl = '';
+                              String userLocation = '';
+                              String userDescription = '';
+                              String userSocialMedia = '';
+                              String companyName = '';
+                              bool isBusinessProfile = false;
+
+                              // Extract user data if available
+                              if (snapshot.hasData && snapshot.data != null && snapshot.data!.exists) {
+                                final userData = snapshot.data!.data() as Map<String, dynamic>;
+                                userName = userData['name'] ?? '';
+
+                                // Only override profile URL if the passed one is empty
+                                if (widget.userProfileImageUrl.isEmpty) {
+                                  userProfileUrl = userData['profileImage'] ?? '';
+                                }
+
+                                // Get additional user info
+                                userLocation = userData['location'] ?? '';
+                                userDescription = userData['description'] ?? '';
+                                userSocialMedia = userData['socialMedia'] ?? '';
+                                companyName = userData['companyName'] ?? '';
+                                isBusinessProfile = userData['lastActiveProfileTab'] == 'business';
+                              }
+
+                              // Always show the preview for both paid and unpaid users
+                              return Column(
+                                children: [
+                                  // Image and info box together in one RepaintBoundary for capture
+                                  RepaintBoundary(
+                                    key: _brandedImageKey,
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(color: Colors.grey.shade300),
+                                      ),
+                                      child: Column(
+                                        children: [
+                                          // Template image with proper aspect ratio - FIXED
+                                          _buildImageContainer(
+                                            aspectRatio: _aspectRatio,
+                                            borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+                                            child: Container(
+                                              decoration: BoxDecoration(
+                                                borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+                                                image: DecorationImage(
+                                                  image: _getImageProvider(),
+                                                  fit: BoxFit.contain,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+
+                                          // Info box with user details
+                                          Container(
+                                            width: double.infinity,
+                                            padding: EdgeInsets.all(12),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white,
+                                              borderRadius: BorderRadius.vertical(bottom: Radius.circular(8)),
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                // Profile image
+                                                CircleAvatar(
+                                                  radius: 20,
+                                                  backgroundImage: userProfileUrl.isNotEmpty
+                                                      ? NetworkImage(userProfileUrl)
+                                                      : AssetImage('assets/profile_placeholder.png') as ImageProvider,
+                                                ),
+                                                SizedBox(width: 12),
+
+                                                // User details
+                                                Expanded(
+                                                  child: Column(
+                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                    children: [
+                                                      // Show Company Name first if business profile
+                                                      if (isBusinessProfile && companyName.isNotEmpty)
+                                                        Text(
+                                                          companyName,
+                                                          style: TextStyle(
+                                                            fontWeight: FontWeight.bold,
+                                                            fontSize: 16,
+                                                          ),
+                                                        ),
+
+                                                      // Show user name
+                                                      Text(
+                                                        userName.isNotEmpty ? userName : widget.userName,
+                                                        style: TextStyle(
+                                                          fontWeight: isBusinessProfile ? FontWeight.normal : FontWeight.bold,
+                                                          fontSize: isBusinessProfile ? 14 : 16,
+                                                        ),
+                                                      ),
+
+                                                      // Show location if available
+                                                      if (userLocation.isNotEmpty)
+                                                        Text(
+                                                          userLocation,
+                                                          style: TextStyle(fontSize: 14),
+                                                        ),
+
+                                                      // Show social media for business profiles
+                                                      if (isBusinessProfile && userSocialMedia.isNotEmpty)
+                                                        Text(
+                                                          userSocialMedia,
+                                                          style: TextStyle(fontSize: 14, color: Colors.blue),
+                                                        ),
+
+                                                      // Show description for business profiles (truncated)
+                                                      if (isBusinessProfile && userDescription.isNotEmpty)
+                                                        Text(
+                                                          userDescription,
+                                                          style: TextStyle(fontSize: 14),
+                                                          maxLines: 2,
+                                                          overflow: TextOverflow.ellipsis,
+                                                        ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+
+                                  SizedBox(height: 16),
+                                  // Share button - outside the RepaintBoundary so it won't be captured
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: ElevatedButton.icon(
+                                      onPressed: widget.isPaidUser
+                                          ? () => _shareTemplate(
+                                        context,
+                                        isPaid: true,
+                                      )
+                                          : () => Navigator.pushNamed(context, '/subscription'),
+                                      icon: Icon(widget.isPaidUser ? Icons.share : Icons.lock),
+                                      label: Text(widget.isPaidUser ? 'Share Now' : 'Upgrade to Pro'),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: widget.isPaidUser ? Colors.blue : Colors.blue,
+                                        foregroundColor: Colors.white,
+                                        padding: EdgeInsets.symmetric(vertical: 12),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(24),
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                ],
+                              );
+                            })
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   // Method to capture widget as image with branding
   Future<Uint8List?> _captureBrandedImage() async {
     try {
@@ -760,8 +666,7 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
 
       // Use a higher pixel ratio for better quality
       final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
-      final ByteData? byteData =
-          await image.toByteData(format: ui.ImageByteFormat.png);
+      final ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       return byteData?.buffer.asUint8List();
     } catch (e) {
       print('Error capturing branded image: $e');
@@ -773,8 +678,7 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
   Future<Uint8List?> _addBrandingToImage(Uint8List originalImageBytes) async {
     try {
       // Decode the original image
-      final ui.Image originalImage =
-          await decodeImageFromList(originalImageBytes);
+      final ui.Image originalImage = await decodeImageFromList(originalImageBytes);
 
       // Create a recorder and canvas with the ORIGINAL image dimensions
       final ui.PictureRecorder recorder = ui.PictureRecorder();
@@ -787,8 +691,7 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
       ui.Image? profileImage;
       if (widget.userProfileImageUrl.isNotEmpty) {
         try {
-          final http.Response response =
-              await http.get(Uri.parse(widget.userProfileImageUrl));
+          final http.Response response = await http.get(Uri.parse(widget.userProfileImageUrl));
           if (response.statusCode == 200) {
             profileImage = await decodeImageFromList(response.bodyBytes);
           }
@@ -832,13 +735,11 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
         // Draw the profile image in a circle
         canvas.save(); // Save the canvas state before clipping
         final Path clipPath = Path()
-          ..addOval(
-              Rect.fromLTWH(profileX, profileY, profileSize, profileSize));
+          ..addOval(Rect.fromLTWH(profileX, profileY, profileSize, profileSize));
         canvas.clipPath(clipPath);
         canvas.drawImageRect(
           profileImage,
-          Rect.fromLTWH(0, 0, profileImage.width.toDouble(),
-              profileImage.height.toDouble()),
+          Rect.fromLTWH(0, 0, profileImage.width.toDouble(), profileImage.height.toDouble()),
           Rect.fromLTWH(profileX, profileY, profileSize, profileSize),
           Paint(),
         );
@@ -862,11 +763,9 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
 
       final ui.Paragraph paragraph = paragraphBuilder.build()
         ..layout(ui.ParagraphConstraints(
-            width: brandingWidth -
-                (profileImage != null ? brandingHeight * 0.8 + 12 : 8)));
+            width: brandingWidth - (profileImage != null ? brandingHeight * 0.8 + 12 : 8)));
 
-      canvas.drawParagraph(
-          paragraph, Offset(textX, textY - paragraph.height / 2));
+      canvas.drawParagraph(paragraph, Offset(textX, textY - paragraph.height / 2));
 
       // Convert canvas to image
       final ui.Picture picture = recorder.endRecording();
@@ -876,8 +775,7 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
       );
 
       // Convert image to bytes
-      final ByteData? byteData =
-          await renderedImage.toByteData(format: ui.ImageByteFormat.png);
+      final ByteData? byteData = await renderedImage.toByteData(format: ui.ImageByteFormat.png);
       return byteData?.buffer.asUint8List();
     } catch (e) {
       print('Error adding branding to image: $e');
@@ -889,8 +787,7 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
   Future<Uint8List?> _addWatermarkToImage(Uint8List originalImageBytes) async {
     try {
       // Decode the original image
-      final ui.Image originalImage =
-          await decodeImageFromList(originalImageBytes);
+      final ui.Image originalImage = await decodeImageFromList(originalImageBytes);
 
       // Create a recorder and canvas
       final ui.PictureRecorder recorder = ui.PictureRecorder();
@@ -901,16 +798,13 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
 
       // Load the logo watermark
       final ByteData logoData = await rootBundle.load('assets/logo.png');
-      final ui.Image logo =
-          await decodeImageFromList(logoData.buffer.asUint8List());
+      final ui.Image logo = await decodeImageFromList(logoData.buffer.asUint8List());
 
       // Calculate size and position for the watermark in top right corner
       final double width = originalImage.width.toDouble();
       final double height = originalImage.height.toDouble();
-      final double watermarkSize =
-          width * 0.2; // 20% of the image width (smaller than before)
-      final double watermarkX =
-          width - watermarkSize - 16; // Position from right edge with padding
+      final double watermarkSize = width * 0.2; // 20% of the image width (smaller than before)
+      final double watermarkX = width - watermarkSize - 16; // Position from right edge with padding
       final double watermarkY = 16; // Position from top with padding
 
       // Apply semi-transparent effect to the watermark
@@ -932,8 +826,8 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
       );
 
       // Convert image to bytes
-      final ByteData? byteData =
-          await renderedImage.toByteData(format: ui.ImageByteFormat.png);
+      final ByteData? byteData = await renderedImage.toByteData
+        (format: ui.ImageByteFormat.png);
       return byteData?.buffer.asUint8List();
     } catch (e) {
       print('Error adding watermark to image: $e');
@@ -942,8 +836,7 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
   }
 
   // Integrated sharing functionality with proper branding for paid users and watermark for free users
-  Future<void> _shareTemplate(BuildContext context,
-      {required bool isPaid}) async {
+  Future<void> _shareTemplate(BuildContext context, {required bool isPaid}) async {
     try {
       // Show loading indicator
       showDialog(
@@ -964,8 +857,7 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
         originalImageBytes = _customImageData!;
       } else if (widget.template.imageUrl.startsWith('file:/')) {
         // Load from local file
-        final String filePath =
-            widget.template.imageUrl.replaceFirst('file:/', '');
+        final String filePath = widget.template.imageUrl.replaceFirst('file:/', '');
         final File imageFile = File(filePath);
         if (await imageFile.exists()) {
           originalImageBytes = await imageFile.readAsBytes();
@@ -983,28 +875,40 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
 
       if (isPaid) {
         // For paid users, capture with branding
-        // First try to capture the branded template widget directly
-        imageBytes = await _captureBrandedImage();
+        try {
+          // Make sure UI is fully rendered before capture
+          await Future.delayed(Duration(milliseconds: 100));
 
-        // Fallback to original image with programmatic branding if direct capture fails
-        if (imageBytes == null) {
-          print('Direct capture returned null, trying programmatic branding');
-          imageBytes = await _addBrandingToImage(originalImageBytes);
-        }
+          // First try to capture the branded template widget directly
+          imageBytes = await _captureBrandedImage();
 
-        // Final fallback to original image
-        if (imageBytes == null) {
-          print(
-              'Both branding approaches failed, falling back to direct download');
+          // Fallback to original image with programmatic branding if direct capture fails
+          if (imageBytes == null) {
+            print('Direct capture returned null, trying programmatic branding');
+            imageBytes = await _addBrandingToImage(originalImageBytes);
+          }
+
+          // Final fallback to original image
+          if (imageBytes == null) {
+            print('Both branding approaches failed, falling back to direct download');
+            imageBytes = originalImageBytes;
+          }
+        } catch (e) {
+          print('Error in premium capture: $e, falling back to direct download');
           imageBytes = originalImageBytes;
         }
       } else {
         // For free users, add watermark
-        imageBytes = await _addWatermarkToImage(originalImageBytes);
+        try {
+          imageBytes = await _addWatermarkToImage(originalImageBytes);
 
-        // Fallback to original image if watermarking fails
-        if (imageBytes == null) {
-          print('Watermark failed, falling back to direct download');
+          // Fallback to original image if watermarking fails
+          if (imageBytes == null) {
+            print('Watermark failed, falling back to direct download');
+            imageBytes = originalImageBytes;
+          }
+        } catch (e) {
+          print('Error adding watermark: $e, falling back to direct download');
           imageBytes = originalImageBytes;
         }
       }
@@ -1223,7 +1127,7 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
     try {
       // Get reference to the template document
       final templateRef =
-          FirebaseFirestore.instance.collection('templates').doc(templateId);
+      FirebaseFirestore.instance.collection('templates').doc(templateId);
 
       // Run this as a transaction to ensure data consistency
       await FirebaseFirestore.instance.runTransaction((transaction) async {

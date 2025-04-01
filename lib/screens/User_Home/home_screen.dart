@@ -736,9 +736,34 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  void shareImage(String? qotdImageUrl) async {
+  void shareImage(BuildContext context, String? qotdImageUrl) async {
     if (qotdImageUrl != null && qotdImageUrl.isNotEmpty) {
       try {
+        // Show loading indicator dialog
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return Center(
+              child: Container(
+                padding: EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CircularProgressIndicator(),
+                    SizedBox(height: 15),
+                    Text("Preparing image...", style: TextStyle(fontSize: 16)),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+
         final uri = Uri.parse(qotdImageUrl);
         final response = await http.get(uri);
 
@@ -748,12 +773,31 @@ class _HomeScreenState extends State<HomeScreen> {
           File file = File(filePath);
           await file.writeAsBytes(response.bodyBytes);
 
-          /// ✅ Correct way to share files using `share_plus`
+          // Close the loading dialog
+          Navigator.of(context, rootNavigator: true).pop();
+
+          ///  Correct way to share files using `share_plus`
           await Share.shareXFiles([XFile(filePath)], text: "Quote of the Day");
         } else {
+          // Close the loading dialog
+          Navigator.of(context, rootNavigator: true).pop();
+
+          // Show error message
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Failed to download image")),
+          );
           debugPrint("Failed to download image");
         }
       } catch (e) {
+        // Close the loading dialog if open
+        if (Navigator.of(context, rootNavigator: true).canPop()) {
+          Navigator.of(context, rootNavigator: true).pop();
+        }
+
+        // Show error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error sharing image: ${e.toString()}")),
+        );
         debugPrint("Error: $e");
       }
     } else {
@@ -872,7 +916,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 borderRadius: BorderRadius.circular(8),
                               ),
                             ),
-                            onPressed: () => shareImage(qotdImageUrl),
+                            onPressed: () => shareImage(context, qotdImageUrl),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
@@ -882,9 +926,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                     style: TextStyle(color: Colors.white)),
                               ],
                             ),
-                          ),
                         ),
-                      ],
+                        )],
                     ),
 
                     Column(

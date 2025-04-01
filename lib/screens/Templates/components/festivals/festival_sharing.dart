@@ -45,12 +45,13 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
   ui.Image? _originalImage;
   double _aspectRatio = 16 / 9; // Default aspect ratio until image loads
   bool _imageLoaded = false;
+  bool _isImageLoading = true;
 
   @override
   void initState() {
     super.initState();
     _loadOriginalImage();
-    _addToRecentTemplates(); // Add this method to track festivals in recent templates
+    _addToRecentTemplates();
   }
 
   // Add this method to add the festival to recent templates
@@ -76,20 +77,109 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
 
   // Load the original image to get its dimensions
   Future<void> _loadOriginalImage() async {
+    setState(() {
+      _isImageLoading = true;
+    });
+
     try {
       final http.Response response = await http.get(
           Uri.parse(widget.festival.imageUrl));
       if (response.statusCode == 200) {
         final decodedImage = await decodeImageFromList(response.bodyBytes);
+
+        if (mounted) {
+          setState(() {
+            _originalImage = decodedImage;
+            _aspectRatio = decodedImage.width / decodedImage.height;
+            _imageLoaded = true;
+            _isImageLoading = false;
+          });
+        }
+      } else {
         setState(() {
-          _originalImage = decodedImage;
-          _aspectRatio = decodedImage.width / decodedImage.height;
-          _imageLoaded = true;
+          _isImageLoading = false;
         });
       }
     } catch (e) {
       print('Error loading original image: $e');
+      if (mounted) {
+        setState(() {
+          _isImageLoading = false;
+        });
+      }
     }
+  }
+
+  // Helper function to create image container with proper sizing
+  Widget _buildImageContainer({
+    required Widget child,
+    required double aspectRatio,
+    BorderRadius? borderRadius,
+  }) {
+    return AspectRatio(
+      aspectRatio: aspectRatio,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: borderRadius ?? BorderRadius.circular(8),
+        ),
+        child: child,
+      ),
+    );
+  }
+
+  // Helper function to create properly sized image
+  Widget _buildFestivalImage({
+    bool showWatermark = false,
+    BorderRadius? borderRadius,
+  }) {
+    if (_isImageLoading) {
+      return _buildImageContainer(
+        aspectRatio: _aspectRatio,
+        borderRadius: borderRadius,
+        child: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    // Image with proper sizing based on calculated aspect ratio
+    Widget imageWidget = Stack(
+      fit: StackFit.expand,
+      children: [
+        // FadeInImage with proper sizing
+        FadeInImage(
+          placeholder: MemoryImage(kTransparentImage),
+          image: NetworkImage(widget.festival.imageUrl),
+          fit: BoxFit.contain,
+          fadeInDuration: Duration(milliseconds: 300),
+          imageErrorBuilder: (context, error, stackTrace) {
+            return Center(child: Text('Error loading image'));
+          },
+        ),
+
+        // Watermark if needed
+        if (showWatermark)
+          Positioned(
+            top: 8,
+            right: 8,
+            child: Opacity(
+              opacity: 0.6,
+              child: Image.asset(
+                'assets/logo.png',
+                width: 50,
+                height: 50,
+                fit: BoxFit.contain,
+              ),
+            ),
+          ),
+      ],
+    );
+
+    return _buildImageContainer(
+      aspectRatio: _aspectRatio,
+      borderRadius: borderRadius,
+      child: imageWidget,
+    );
   }
 
   @override
@@ -167,53 +257,10 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
                         ],
                       ),
                       SizedBox(height: 16),
-                      // Preview of festival with watermark
-                        AspectRatio(
-                        aspectRatio: _aspectRatio,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Stack(
-                            fit: StackFit.expand,
-                            children: [
-                              // Loading indicator that shows while image is loading
-                              Center(
-                                child: CircularProgressIndicator(),
-                              ),
 
-                              // Image with loading state
-                              FadeInImage(
-                                placeholder: MemoryImage(
-                                    kTransparentImage), // You'll need to add transparent_image package
-                                image: NetworkImage(widget.festival.imageUrl),
-                                fit: BoxFit.contain,
-                                fadeInDuration: Duration(milliseconds: 10),
-                                imageErrorBuilder:
-                                    (context, error, stackTrace) {
-                                  return Center(
-                                      child: Text('Error loading image'));
-                                },
-                              ),
+                      // Preview of festival with watermark - FIXED
+                      _buildFestivalImage(showWatermark: true),
 
-                              // Watermark in top right
-                              Positioned(
-                                top: 8, // Adjust padding from top
-                                right: 8, // Adjust padding from right
-                                child: Opacity(
-                                  opacity: 0.6,
-                                  child: Image.asset(
-                                    'assets/logo.png',
-                                    width: 50, // Adjust size as needed
-                                    height: 50, // Adjust size as needed
-                                    fit: BoxFit.contain,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
                       SizedBox(height: 16),
                       // Free share button
                       SizedBox(
@@ -336,7 +383,8 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
                         ],
                       ),
                       SizedBox(height: 16),
-                      // Premium festival preview with info box
+
+                      // Premium festival preview with info box - FIXED
                       FutureBuilder<DocumentSnapshot>(
                         future: FirebaseFirestore.instance
                             .collection('users')
@@ -346,7 +394,6 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
                         builder: (context, snapshot) {
                           String userName = '';
                           String userProfileUrl = '';
-                          String userLocation = '';
 
                           // Extract user data if available
                           if (snapshot.hasData && snapshot.data != null &&
@@ -356,7 +403,6 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
                                 dynamic>;
                             userName = userData['name'] ?? '';
                             userProfileUrl = userData['profileImage'] ?? '';
-                            userLocation = userData['location'] ?? '';
                           }
 
                           return RepaintBoundary(
@@ -368,8 +414,14 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
                               ),
                               child: Column(
                                 children: [
-                                  // Festival image with proper aspect ratio
-                                AspectRatio(
+                                  // Festival image with proper aspect ratio - FIXED
+                                  _isImageLoading
+                                      ? _buildImageContainer(
+                                    aspectRatio: _aspectRatio,
+                                    borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+                                    child: Center(child: CircularProgressIndicator()),
+                                  )
+                                      : AspectRatio(
                                     aspectRatio: _aspectRatio,
                                     child: Container(
                                       decoration: BoxDecoration(
@@ -409,11 +461,10 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
                                         // User details
                                         Expanded(
                                           child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment
-                                                .start,
+                                            crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
                                               Text(
-                                                userName,
+                                                userName.isEmpty ? widget.userName : userName,
                                                 style: TextStyle(
                                                   fontWeight: FontWeight.bold,
                                                   fontSize: 16,
@@ -461,24 +512,6 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
                           ),
                         ),
                       ),
-                      // SizedBox(height: 16),
-                      // // Preview button
-                      // SizedBox(
-                      //   width: double.infinity,
-                      //   child: ElevatedButton.icon(
-                      //     onPressed: () => showFestivalInfoBox(context),
-                      //     icon: Icon(Icons.preview),
-                      //     label: Text('Preview & Create'),
-                      //     style: ElevatedButton.styleFrom(
-                      //       backgroundColor: Colors.grey.shade200,
-                      //       foregroundColor: Colors.black87,
-                      //       padding: EdgeInsets.symmetric(vertical: 12),
-                      //       shape: RoundedRectangleBorder(
-                      //         borderRadius: BorderRadius.circular(24),
-                      //       ),
-                      //     ),
-                      //   ),
-                      // ),
                     ],
                   ),
                 ),
@@ -490,6 +523,7 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
     );
   }
 
+  // Rest of the code remains the same...
   // Method to capture widget as image with branding
   Future<Uint8List?> _captureBrandedImage() async {
     try {
