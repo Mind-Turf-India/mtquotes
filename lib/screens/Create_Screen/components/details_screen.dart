@@ -137,7 +137,7 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
 
       Reference storageRef = FirebaseStorage.instance
           .ref()
-          .child('profile_pictures')
+          .child('profile_images')
           .child('${user.uid}.jpg');
 
       await storageRef.putFile(_profileImage!);

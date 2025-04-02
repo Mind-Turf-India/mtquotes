@@ -607,7 +607,7 @@ class _HomeScreenState extends State<HomeScreen> {
         print("Uploading image...");
         TaskSnapshot snapshot = await FirebaseStorage.instance
             .ref(
-                'profile_pictures/${userEmail}_${DateTime.now().millisecondsSinceEpoch}.jpg')
+                'profile_images/${userEmail}_${DateTime.now().millisecondsSinceEpoch}.jpg')
             .putFile(image);
 
         imageUrl = await snapshot.ref.getDownloadURL();
@@ -640,7 +640,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<String?> _uploadProfileImage(String uid, File image) async {
     Reference storageRef =
-        FirebaseStorage.instance.ref().child('profile_pictures/$uid.jpg');
+        FirebaseStorage.instance.ref().child('profile_images/$uid.jpg');
     UploadTask uploadTask = storageRef.putFile(image);
     TaskSnapshot snapshot = await uploadTask;
     return await snapshot.ref.getDownloadURL();

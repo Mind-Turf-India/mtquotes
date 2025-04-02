@@ -101,9 +101,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       barrierDismissible: false, // Prevent closing without completing
       builder: (dialogContext) {
         TextEditingController nameController =
-            TextEditingController(text: _userDisplayName);
+        TextEditingController(text: _userDisplayName);
         TextEditingController bioController = TextEditingController();
         File? _selectedImage;
+        bool _isImageLoading = false; // Flag to track image loading state
 
         // Fetch existing bio from Firestore if available
         FirebaseFirestore.instance
@@ -124,7 +125,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   GestureDetector(
-                    onTap: () async {
+                    onTap: _isImageLoading
+                        ? null  // Disable tap when loading
+                        : () async {
                       final pickedImage = await _pickImage();
                       if (pickedImage != null) {
                         setState(() {
@@ -132,19 +135,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         });
                       }
                     },
-                    child: CircleAvatar(
-                      radius: 40,
-                      backgroundImage: _selectedImage != null
-                          ? FileImage(_selectedImage!)
-                          : (_profileImageUrl != null &&
-                                  _profileImageUrl!.isNotEmpty
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        CircleAvatar(
+                          radius: 40,
+                          backgroundImage: _selectedImage != null
+                              ? FileImage(_selectedImage!)
+                              : (_profileImageUrl != null &&
+                              _profileImageUrl!.isNotEmpty
                               ? NetworkImage(_profileImageUrl!) as ImageProvider
                               : null),
-                      child: (_selectedImage == null &&
+                          child: (_selectedImage == null &&
                               (_profileImageUrl == null ||
                                   _profileImageUrl!.isEmpty))
-                          ? Icon(Icons.camera_alt, size: 40)
-                          : null,
+                              ? Icon(Icons.camera_alt, size: 40)
+                              : null,
+                        ),
+                        // Overlay a loading indicator when image is being processed
+                        if (_isImageLoading)
+                          Container(
+                            width: 80,
+                            height: 80,
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.5),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
                   TextField(
@@ -159,13 +182,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               actions: [
                 TextButton(
-                  onPressed: () {
+                  onPressed: _isImageLoading
+                      ? null  // Disable cancel button when loading
+                      : () {
                     Navigator.pop(dialogContext);
                   },
                   child: Text("Cancel"),
                 ),
                 ElevatedButton(
-                  onPressed: () {
+                  onPressed: _isImageLoading
+                      ? null  // Disable save button when loading
+                      : () async {
                     // 1. Validate input synchronously
                     if (nameController.text.isEmpty) {
                       ScaffoldMessenger.of(dialogContext).showSnackBar(
@@ -184,18 +211,50 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       return;
                     }
 
-                    final String userDocId =
-                        currentUser.email!.replaceAll('.', '_');
+                    // 3. If there's a selected image, start loading state and upload it right away
+                    if (_selectedImage != null) {
+                      setState(() {
+                        _isImageLoading = true;
+                      });
+
+                      try {
+                        // Upload the image while dialog is still open
+                        String? imageUrl = await _uploadImage(_selectedImage!);
+
+                        // If upload failed, show error but don't close dialog
+                        if (imageUrl == null) {
+                          setState(() {
+                            _isImageLoading = false;
+                          });
+                          ScaffoldMessenger.of(dialogContext).showSnackBar(
+                            const SnackBar(content: Text("Failed to upload image")),
+                          );
+                          return;
+                        }
+
+                        // Update profile image URL
+                        _profileImageUrl = imageUrl;
+
+                      } catch (e) {
+                        setState(() {
+                          _isImageLoading = false;
+                        });
+                        ScaffoldMessenger.of(dialogContext).showSnackBar(
+                          SnackBar(content: Text("Error uploading image: $e")),
+                        );
+                        return;
+                      }
+                    }
+
+                    final String userDocId = currentUser.email!.replaceAll('.', '_');
                     final String newName = nameController.text;
                     final String newBio = bioController.text;
-                    final File? imageToUpload = _selectedImage;
 
-                    // 3. Close the dialog before any async operation
+                    // 4. Close the dialog after image upload completes
                     Navigator.of(dialogContext).pop();
 
-                    // 4. Perform all async operations after the dialog is closed
-                    // We don't pass dialogContext here since it will be disposed
-                    _saveProfileData(userDocId, newName, newBio, imageToUpload);
+                    // 5. Complete the profile update
+                    _saveProfileData(userDocId, newName, newBio, null);
                   },
                   child: Text("Save"),
                 ),
@@ -224,6 +283,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       // Upload image
       UploadTask uploadTask = ref.putFile(image);
+
+      // Monitor upload progress if needed
+      // uploadTask.snapshotEvents.listen((TaskSnapshot snapshot) {
+      //   double progress = snapshot.bytesTransferred / snapshot.totalBytes;
+      //   print('Upload progress: ${(progress * 100).toStringAsFixed(2)}%');
+      // });
+
       TaskSnapshot snapshot = await uploadTask.whenComplete(() => {});
       String imageUrl = await snapshot.ref.getDownloadURL();
 
@@ -237,8 +303,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _saveProfileData(
       String userDocId, String name, String bio, File? image) async {
     try {
+      // Show loading indicator for the main screen
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return Center(
+              child: CircularProgressIndicator(),
+            );
+          },
+        );
+      }
+
       String? imageUrl;
 
+      // If image parameter is provided, upload it (this path is not used anymore)
       if (image != null) {
         imageUrl = await _uploadImage(image);
       }
@@ -255,11 +335,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       // Only update UI if widget is still mounted
       if (mounted) {
+        // Close loading dialog
+        Navigator.of(context, rootNavigator: true).pop();
+
         setState(() {
           _userDisplayName = name;
-          if (imageUrl != null) {
-            _profileImageUrl = imageUrl;
-          }
         });
 
         // Refresh data
@@ -273,6 +353,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } catch (e) {
       print("Error updating profile: $e");
       if (mounted) {
+        // Close loading dialog if open
+        Navigator.of(context, rootNavigator: true).pop();
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Error updating profile: $e")),
         );
