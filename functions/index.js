@@ -563,7 +563,7 @@ exports.sendDailyQOTDNotification = functionsV2.scheduler
 
       const qotdData = doc.data();
       let imageUrl = qotdData.imageURL;
-      const quoteText = qotdData.quote;
+      const quoteText = qotdData.title;
 
       // Fix image URL format if needed
       if (imageUrl && !imageUrl.startsWith("https://")) {
