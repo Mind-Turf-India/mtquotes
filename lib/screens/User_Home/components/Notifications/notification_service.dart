@@ -94,6 +94,7 @@ class NotificationService {
   NotificationService._();
 
   static final NotificationService instance = NotificationService._();
+  String? _currentUserId;
 
   final _messaging = FirebaseMessaging.instance;
   final _localNotifications = FlutterLocalNotificationsPlugin();
@@ -124,7 +125,14 @@ class NotificationService {
     await _requestPermission();
 
     // Load saved notifications
-    await loadSavedNotifications();
+    if (_currentUserId != null) {
+      await loadSavedNotifications();
+    } else {
+      // Clear notifications if no user is logged in
+      _notifications = [];
+      _notificationsStreamController.add(_notifications);
+      _unreadCountStreamController.add(0);
+    }
 
     // Setup message handlers
     await _setupMessageHandlers();
@@ -431,12 +439,23 @@ class NotificationService {
 
   Future<void> loadSavedNotifications() async {
     try {
+      final userId = _currentUserId;
+
+      // If no user is logged in, don't load any notifications
+      if (userId == null) {
+        _notifications = [];
+        _notificationsStreamController.add(_notifications);
+        _unreadCountStreamController.add(0);
+        return;
+      }
+
       final prefs = await SharedPreferences.getInstance();
-      final savedNotifications = prefs.getStringList('notifications') ?? [];
+      final key = 'notifications_$userId'; // User-specific key
+      final savedNotifications = prefs.getStringList(key) ?? [];
 
       _notifications = savedNotifications
           .map((notificationJson) =>
-              NotificationModel.fromJson(json.decode(notificationJson)))
+          NotificationModel.fromJson(json.decode(notificationJson)))
           .toList();
 
       // Sort by timestamp (newest first)
@@ -447,21 +466,54 @@ class NotificationService {
       _unreadCountStreamController.add(unreadCount);
     } catch (e) {
       print('Error loading notifications: $e');
+      // Initialize with empty list on error
+      _notifications = [];
+      _notificationsStreamController.add(_notifications);
+      _unreadCountStreamController.add(0);
     }
   }
 
+
   Future<void> _saveNotificationsToStorage() async {
     try {
+      final userId = _currentUserId;
+
+      // If no user is logged in, don't save notifications
+      if (userId == null) return;
+
       final prefs = await SharedPreferences.getInstance();
+      final key = 'notifications_$userId'; // User-specific key
       final notificationsJson = _notifications
           .map((notification) => json.encode(notification.toJson()))
           .toList();
 
-      await prefs.setStringList('notifications', notificationsJson);
+      await prefs.setStringList(key, notificationsJson);
     } catch (e) {
       print('Error saving notifications: $e');
     }
   }
+
+  // Add a method to handle user login/logout
+  Future<void> handleUserChanged(String? userId) async {
+    // If the user ID is the same, do nothing
+    if (_currentUserId == userId) return;
+
+    // Update the current user ID
+    _currentUserId = userId;
+
+    // Clear current notifications
+    _notifications = [];
+
+    // If a user is logged in, load their notifications
+    if (userId != null) {
+      await loadSavedNotifications();
+    } else {
+      // If no user is logged in, just update the streams with empty lists
+      _notificationsStreamController.add(_notifications);
+      _unreadCountStreamController.add(0);
+    }
+  }
+
 
   // Method to handle FCM token refresh
   void setupTokenRefresh() {

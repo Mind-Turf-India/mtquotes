@@ -7,6 +7,8 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:mtquotes/screens/Auth_Screen/Login_Screen/login_screen.dart';
 import 'package:mtquotes/screens/navbar_mainscreen.dart';
 
+import '../../User_Home/components/Notifications/notification_service.dart';
+
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
 
@@ -90,6 +92,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
       // Store user info in Firestore
       await _saveUserToFirestore(userCredential.user);
+      await NotificationService.instance.handleUserChanged(userCredential.user?.uid);
 
       _hideLoadingDialog();
 

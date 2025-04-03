@@ -36,6 +36,7 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
 
 
   Future<void> _loadNotifications() async {
+    await Future.delayed(Duration(milliseconds: 300));
     setState(() {
       notifications = NotificationService.instance.notifications;
       isLoading = false;
@@ -210,6 +211,9 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
                         setState(() {
                           selectedIndex = index;
                         });
+
+                        // Mark notification as read
+                        NotificationService.instance.markAsRead(notification.id);
 
                         // Handle notification tap
                         if (notification.data.isNotEmpty) {

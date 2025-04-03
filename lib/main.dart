@@ -33,7 +33,10 @@ void main() async {
 
    // Initialize notification service
   await NotificationService.instance.initialize();
-  
+
+  FirebaseAuth.instance.authStateChanges().listen((User? user) {
+    NotificationService.instance.handleUserChanged(user?.uid);
+  });
   // Setup token refresh listener
   // NotificationService.instance.setupTokenRefresh();
   // FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);

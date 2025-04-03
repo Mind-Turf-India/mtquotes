@@ -14,6 +14,7 @@ import 'package:mtquotes/screens/User_Home/components/Settings/support.dart';
 import 'package:mtquotes/screens/User_Home/components/refferral_screen.dart';
 import 'package:mtquotes/screens/User_Home/files_screen.dart';
 import 'package:provider/provider.dart';
+import 'components/Notifications/notification_service.dart';
 import 'components/Settings/settings.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -89,6 +90,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _logout() async {
     await FirebaseAuth.instance.signOut();
+    await NotificationService.instance.handleUserChanged(null);
+
     if (mounted) {
       Navigator.pushReplacementNamed(context, 'login');
     }

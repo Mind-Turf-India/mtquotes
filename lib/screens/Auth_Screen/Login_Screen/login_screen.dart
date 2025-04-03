@@ -101,10 +101,13 @@ class _LoginScreenState extends State<LoginScreen> {
     _showLoadingDialog();
 
     try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
+      UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
+
+      // Add this line to handle user change for notifications
+      await NotificationService.instance.handleUserChanged(userCredential.user?.uid);
 
       _hideLoadingDialog();
 
@@ -135,12 +138,14 @@ class _LoginScreenState extends State<LoginScreen> {
     _showLoadingDialog();
 
     try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
+      UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
 
       await _saveCredentials();
+      await NotificationService.instance.handleUserChanged(userCredential.user?.uid);
+
 
       _hideLoadingDialog();
 
@@ -177,7 +182,10 @@ class _LoginScreenState extends State<LoginScreen> {
         idToken: googleAuth.idToken,
       );
 
-      await FirebaseAuth.instance.signInWithCredential(credential);
+      UserCredential userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+
+      // Add this line to handle user change for notifications
+      await NotificationService.instance.handleUserChanged(userCredential.user?.uid);
 
       _hideLoadingDialog();
 
