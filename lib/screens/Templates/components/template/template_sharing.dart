@@ -434,7 +434,10 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                       SizedBox(height: 16),
 
                       // If we have custom image data, show just the image - FIXED
-                      if (_customImageData != null)
+                      // Replace the entire conditional structure (if/else with _customImageData)
+
+// If we have custom image data, show just the image for paid users
+                      if (_customImageData != null && widget.isPaidUser)
                         Column(
                           children: [
                             // Just the image - this part will be captured
@@ -454,20 +457,15 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                               ),
                             ),
                             SizedBox(height: 16),
-                            // Share button - this part won't be captured
+                            // Share button
                             SizedBox(
                               width: double.infinity,
                               child: ElevatedButton.icon(
-                                onPressed: widget.isPaidUser
-                                    ? () => _shareTemplate(
-                                  context,
-                                  isPaid: true,
-                                )
-                                    : () => Navigator.pushNamed(context, '/subscription'),
-                                icon: Icon(widget.isPaidUser ? Icons.share : Icons.lock),
-                                label: Text(widget.isPaidUser ? 'Share Now' : 'Upgrade to Pro'),
+                                onPressed: () => _shareTemplate(context, isPaid: true),
+                                icon: Icon(Icons.share),
+                                label: Text('Share Now'),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: widget.isPaidUser ? Colors.blue : Colors.blue,
+                                  backgroundColor: Colors.blue,
                                   foregroundColor: Colors.white,
                                   padding: EdgeInsets.symmetric(vertical: 12),
                                   shape: RoundedRectangleBorder(
@@ -478,171 +476,181 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                             )
                           ],
                         )
-                      // Otherwise show the premium template preview - FIXED
+// Otherwise show the template with user info box for both paid and unpaid users
                       else
                         FutureBuilder<DocumentSnapshot>(
-                            key: ValueKey("premium_preview_${currentTemplateId}_${currentImageUrl}"),
-                            future: FirebaseFirestore.instance
-                                .collection('users')
-                                .doc(FirebaseAuth.instance.currentUser?.email?.replaceAll('.', '_'))
-                                .get(),
-                            builder: (context, snapshot) {
-                              String userName = '';
-                              String userProfileUrl = '';
-                              String userLocation = '';
-                              String userDescription = '';
-                              String userSocialMedia = '';
-                              String companyName = '';
-                              bool isBusinessProfile = false;
+                          key: ValueKey("premium_preview_${currentTemplateId}_${currentImageUrl}"),
+                          future: FirebaseFirestore.instance
+                              .collection('users')
+                              .doc(FirebaseAuth.instance.currentUser?.email?.replaceAll('.', '_'))
+                              .get(),
+                          builder: (context, snapshot) {
+                            String userName = '';
+                            String userProfileUrl = '';
+                            String userLocation = '';
+                            String userDescription = '';
+                            String userSocialMedia = '';
+                            String companyName = '';
+                            bool isBusinessProfile = false;
 
-                              // Extract user data if available
-                              if (snapshot.hasData && snapshot.data != null && snapshot.data!.exists) {
-                                final userData = snapshot.data!.data() as Map<String, dynamic>;
-                                userName = userData['name'] ?? '';
+                            // Extract user data if available
+                            if (snapshot.hasData && snapshot.data != null && snapshot.data!.exists) {
+                              final userData = snapshot.data!.data() as Map<String, dynamic>;
+                              userName = userData['name'] ?? '';
 
-                                // Only override profile URL if the passed one is empty
-                                if (widget.userProfileImageUrl.isEmpty) {
-                                  userProfileUrl = userData['profileImage'] ?? '';
-                                }
+                              // Only override profile URL if the passed one is empty
+                              if (widget.userProfileImageUrl.isEmpty) {
+                                userProfileUrl = userData['profileImage'] ?? '';
+                              }
 
-                                // Get additional user info
+                              // Get additional user info - these will only be used for paid users
+                              if (widget.isPaidUser) {
                                 userLocation = userData['location'] ?? '';
                                 userDescription = userData['description'] ?? '';
                                 userSocialMedia = userData['socialMedia'] ?? '';
                                 companyName = userData['companyName'] ?? '';
                                 isBusinessProfile = userData['lastActiveProfileTab'] == 'business';
                               }
+                            }
 
-                              // Always show the preview for both paid and unpaid users
-                              return Column(
-                                children: [
-                                  // Image and info box together in one RepaintBoundary for capture
-                                  RepaintBoundary(
-                                    key: _brandedImageKey,
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(8),
-                                        border: Border.all(color: Colors.grey.shade300),
-                                      ),
-                                      child: Column(
-                                        children: [
-                                          // Template image with proper aspect ratio - FIXED
-                                          _buildImageContainer(
-                                            aspectRatio: _aspectRatio,
-                                            borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
-                                            child: Container(
-                                              decoration: BoxDecoration(
-                                                borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
-                                                image: DecorationImage(
-                                                  image: _getImageProvider(),
-                                                  fit: BoxFit.contain,
-                                                ),
+                            return Column(
+                              children: [
+                                // Image and info box together in one RepaintBoundary for capture
+                                RepaintBoundary(
+                                  key: _brandedImageKey,
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(color: Colors.grey.shade300),
+                                    ),
+                                    child: Column(
+                                      children: [
+                                        // Template image with proper aspect ratio
+                                        _buildImageContainer(
+                                          aspectRatio: _aspectRatio,
+                                          borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+                                          child: Container(
+                                            decoration: BoxDecoration(
+                                              borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+                                              image: DecorationImage(
+                                                image: _getImageProvider(),
+                                                fit: BoxFit.contain,
                                               ),
                                             ),
                                           ),
+                                        ),
 
-                                          // Info box with user details
-                                          Container(
-                                            width: double.infinity,
-                                            padding: EdgeInsets.all(12),
-                                            decoration: BoxDecoration(
-                                              color: Colors.white,
-                                              borderRadius: BorderRadius.vertical(bottom: Radius.circular(8)),
-                                            ),
-                                            child: Row(
-                                              children: [
-                                                // Profile image
-                                                CircleAvatar(
-                                                  radius: 20,
-                                                  backgroundImage: userProfileUrl.isNotEmpty
-                                                      ? NetworkImage(userProfileUrl)
-                                                      : AssetImage('assets/profile_placeholder.png') as ImageProvider,
-                                                ),
-                                                SizedBox(width: 12),
+                                        // Info box with basic or detailed user info based on paid status
+                                        Container(
+                                          width: double.infinity,
+                                          padding: EdgeInsets.all(12),
+                                          decoration: BoxDecoration(
+                                            color: Colors.white,
+                                            borderRadius: BorderRadius.vertical(bottom: Radius.circular(8)),
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              // Profile image
+                                              CircleAvatar(
+                                                radius: 20,
+                                                backgroundImage: userProfileUrl.isNotEmpty
+                                                    ? NetworkImage(userProfileUrl)
+                                                    : AssetImage('assets/profile_placeholder.png') as ImageProvider,
+                                              ),
+                                              SizedBox(width: 12),
 
-                                                // User details
-                                                Expanded(
-                                                  child: Column(
-                                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                                    children: [
-                                                      // Show Company Name first if business profile
-                                                      if (isBusinessProfile && companyName.isNotEmpty)
-                                                        Text(
-                                                          companyName,
-                                                          style: TextStyle(
-                                                            fontWeight: FontWeight.bold,
-                                                            fontSize: 16,
-                                                          ),
-                                                        ),
-
-                                                      // Show user name
+                                              // User details - simplified for unpaid users
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: widget.isPaidUser
+                                                      ? [
+                                                    // Show Company Name first if business profile (paid users only)
+                                                    if (isBusinessProfile && companyName.isNotEmpty)
                                                       Text(
-                                                        userName.isNotEmpty ? userName : widget.userName,
+                                                        companyName,
                                                         style: TextStyle(
-                                                          fontWeight: isBusinessProfile ? FontWeight.normal : FontWeight.bold,
-                                                          fontSize: isBusinessProfile ? 14 : 16,
+                                                          fontWeight: FontWeight.bold,
+                                                          fontSize: 16,
                                                         ),
                                                       ),
 
-                                                      // Show location if available
-                                                      if (userLocation.isNotEmpty)
-                                                        Text(
-                                                          userLocation,
-                                                          style: TextStyle(fontSize: 14),
-                                                        ),
+                                                    // Show user name
+                                                    Text(
+                                                      userName.isNotEmpty ? userName : widget.userName,
+                                                      style: TextStyle(
+                                                        fontWeight: isBusinessProfile ? FontWeight.normal : FontWeight.bold,
+                                                        fontSize: isBusinessProfile ? 14 : 16,
+                                                      ),
+                                                    ),
 
-                                                      // Show social media for business profiles
-                                                      if (isBusinessProfile && userSocialMedia.isNotEmpty)
-                                                        Text(
-                                                          userSocialMedia,
-                                                          style: TextStyle(fontSize: 14, color: Colors.blue),
-                                                        ),
+                                                    // Show location if available (paid users only)
+                                                    if (userLocation.isNotEmpty)
+                                                      Text(
+                                                        userLocation,
+                                                        style: TextStyle(fontSize: 14),
+                                                      ),
 
-                                                      // Show description for business profiles (truncated)
-                                                      if (isBusinessProfile && userDescription.isNotEmpty)
-                                                        Text(
-                                                          userDescription,
-                                                          style: TextStyle(fontSize: 14),
-                                                          maxLines: 2,
-                                                          overflow: TextOverflow.ellipsis,
-                                                        ),
-                                                    ],
-                                                  ),
+                                                    // Show social media for business profiles (paid users only)
+                                                    if (isBusinessProfile && userSocialMedia.isNotEmpty)
+                                                      Text(
+                                                        userSocialMedia,
+                                                        style: TextStyle(fontSize: 14, color: Colors.blue),
+                                                      ),
+
+                                                    // Show description for business profiles (paid users only)
+                                                    if (isBusinessProfile && userDescription.isNotEmpty)
+                                                      Text(
+                                                        userDescription,
+                                                        style: TextStyle(fontSize: 14),
+                                                        maxLines: 2,
+                                                        overflow: TextOverflow.ellipsis,
+                                                      ),
+                                                  ]
+                                                      : [
+                                                    // Basic info for unpaid users - just the name
+                                                    Text(
+                                                      userName.isNotEmpty ? userName : widget.userName,
+                                                      style: TextStyle(
+                                                        fontWeight: FontWeight.bold,
+                                                        fontSize: 16,
+                                                      ),
+                                                    ),
+                                                  ],
                                                 ),
-                                              ],
-                                            ),
+                                              ),
+                                            ],
                                           ),
-                                        ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+
+                                SizedBox(height: 16),
+                                // Share button - different based on paid status
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: ElevatedButton.icon(
+                                    onPressed: widget.isPaidUser
+                                        ? () => _shareTemplate(context, isPaid: true)
+                                        : () => Navigator.pushNamed(context, '/subscription'),
+                                    icon: Icon(widget.isPaidUser ? Icons.share : Icons.lock),
+                                    label: Text(widget.isPaidUser ? 'Share Now' : 'Upgrade to Pro'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.blue,
+                                      foregroundColor: Colors.white,
+                                      padding: EdgeInsets.symmetric(vertical: 12),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(24),
                                       ),
                                     ),
                                   ),
-
-                                  SizedBox(height: 16),
-                                  // Share button - outside the RepaintBoundary so it won't be captured
-                                  SizedBox(
-                                    width: double.infinity,
-                                    child: ElevatedButton.icon(
-                                      onPressed: widget.isPaidUser
-                                          ? () => _shareTemplate(
-                                        context,
-                                        isPaid: true,
-                                      )
-                                          : () => Navigator.pushNamed(context, '/subscription'),
-                                      icon: Icon(widget.isPaidUser ? Icons.share : Icons.lock),
-                                      label: Text(widget.isPaidUser ? 'Share Now' : 'Upgrade to Pro'),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: widget.isPaidUser ? Colors.blue : Colors.blue,
-                                        foregroundColor: Colors.white,
-                                        padding: EdgeInsets.symmetric(vertical: 12),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(24),
-                                        ),
-                                      ),
-                                    ),
-                                  )
-                                ],
-                              );
-                            })
+                                )
+                              ],
+                            );
+                          },
+                        )
                     ],
                   ),
                 ),
