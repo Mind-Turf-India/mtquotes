@@ -1,5 +1,4 @@
 import 'dart:math';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -91,14 +90,14 @@ class _SignupScreenState extends State<SignupScreen> {
       );
 
       // Store user info in Firestore
-      await _saveUserToFirestore(userCredential.user);
+      await saveUserToFirestore(userCredential.user);
       await NotificationService.instance.handleUserChanged(userCredential.user?.uid);
 
       _hideLoadingDialog();
 
-      Navigator.pushReplacement(
-        context,
+      Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (context) => MainScreen()),
+            (Route<dynamic> route) => false, // Remove all previous screens
       );
     } catch (e) {
       _hideLoadingDialog();
@@ -131,7 +130,10 @@ class _SignupScreenState extends State<SignupScreen> {
       UserCredential userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
 
       // Store user info in Firestore
-      await _saveUserToFirestore(userCredential.user);
+      await saveUserToFirestore(userCredential.user);
+        // Add this line to handle user change for notifications
+      await NotificationService.instance
+          .handleUserChanged(userCredential.user?.uid);
 
       _hideLoadingDialog();
 
@@ -147,7 +149,7 @@ class _SignupScreenState extends State<SignupScreen> {
     }
   }
 
-  Future<void> _saveUserToFirestore(User? user) async {
+  Future<void> saveUserToFirestore(User? user) async {
     if (user != null && user.email != null) {
       final String userEmail = user.email!.replaceAll(".", "_"); // Firestore doesn't allow '.' in document IDs
       final userRef = FirebaseFirestore.instance.collection('users').doc(userEmail);

@@ -5,6 +5,7 @@ import 'package:mtquotes/screens/Create_Screen/components/details_screen.dart';
 import 'package:mtquotes/screens/Payment_Screen/subscription_popup.dart';
 import 'package:mtquotes/screens/Templates/components/recent/recent_service.dart';
 import 'package:mtquotes/screens/User_Home/components/Categories/category_screen.dart';
+import 'package:mtquotes/screens/navbar_mainscreen.dart';
 import 'package:provider/provider.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import '../../l10n/app_localization.dart';
@@ -175,8 +176,10 @@ class _SearchScreenState extends State<SearchScreen> {
     double fontSize = textSizeProvider.fontSize;
 
     return Scaffold(
+      
       backgroundColor: Colors.white,
       appBar: AppBar(
+        
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: Text(
@@ -260,7 +263,7 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
             ),
             SizedBox(height: 30),
-
+    
             // Conditional rendering based on search state
             _isSearching
                 ? Center(child: CircularProgressIndicator())

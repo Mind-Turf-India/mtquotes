@@ -118,7 +118,7 @@ class FestivalService {
           .collection('festivals')
           .where('festivalDate', isGreaterThanOrEqualTo: startOfDay)
           .orderBy('festivalDate', descending: false)
-          .limit(10)
+          .limit(100)
           .get();
 
       List<Festival> festivals = snapshot.docs
@@ -187,7 +187,7 @@ class FestivalService {
     try {
       QuerySnapshot snapshot = await _firestore
           .collection('festivals')
-          .limit(10)
+          .limit(100)
           .get();
 
       List<Festival> festivals = snapshot.docs
@@ -252,7 +252,7 @@ class FestivalService {
       final snapshot = await _firestore.collection('festivals')
           .where('festivalDate', isGreaterThanOrEqualTo: Timestamp.fromDate(now))
           .orderBy('festivalDate')
-          .limit(1)
+          .limit(100)
           .get();
 
       if (snapshot.docs.isEmpty) return null;

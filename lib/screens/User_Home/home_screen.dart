@@ -98,6 +98,33 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+
+//refresh button
+Future<void> _refreshAllData() async {
+  setState(() {
+    // Set loading states to true
+    _loadingFestivals = true;
+    _loadingTimeOfDay = true;
+    _loadingRecentTemplates = true;
+  });
+
+  // Fetch all data in parallel
+  await Future.wait([
+    _fetchQOTDImage(),
+    _fetchFestivalPosts(),
+    _fetchTimeOfDayPosts(),
+    _fetchRecentTemplates(),
+    fetchUserRewardPoints(),
+    fetchCheckInStreak(),
+  ]);
+
+  // Update UI
+  setState(() {
+    _loadingFestivals = false;
+    _loadingTimeOfDay = false;
+    _loadingRecentTemplates = false;
+  });
+}
   //daily check in
   void checkDailyReward() async {
     try {
@@ -863,519 +890,523 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
             ),
-            body: SingleChildScrollView(
-                child: Padding(
-              padding: EdgeInsets.all(16.0),
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Featured Quote of the Day
-                    Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Container(
-                          height: 200,
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            color: Colors.transparent,
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: qotdImageUrl != null
-                                ? CachedNetworkImage(
-                                    imageUrl: qotdImageUrl!,
-                                    placeholder: (context, url) => Center(
-                                        child: CircularProgressIndicator()),
-                                    errorWidget: (context, url, error) =>
-                                        Icon(Icons.error),
-                                    fit: BoxFit.cover,
-                                    width: double.infinity,
-                                    height: double.infinity,
-                                  )
-                                : Container(
-                                    color:
-                                        Colors.grey[300], // Fallback background
-                                    alignment: Alignment.center,
-                                    child: Text(
-                                      "No quote available today",
-                                      textAlign: TextAlign.center,
-                                      style: GoogleFonts.poppins(
-                                          fontSize: fontSize,
-                                          fontWeight: FontWeight.w600),
-                                    ),
-                                  ),
-                          ),
-                        ),
-                        Positioned(
-                          bottom: 35,
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blueAccent,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
+            body: RefreshIndicator(
+              onRefresh: _refreshAllData,
+              child: SingleChildScrollView(
+                 physics: AlwaysScrollableScrollPhysics(),
+                  child: Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Featured Quote of the Day
+                      Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Container(
+                            height: 200,
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              color: Colors.transparent,
                             ),
-                            onPressed: () => shareImage(context, qotdImageUrl),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.share, color: Colors.white),
-                                SizedBox(width: 6),
-                                Text("Share",
-                                    style: TextStyle(color: Colors.white)),
-                              ],
-                            ),
-                        ),
-                        )],
-                    ),
-
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              context.loc.recents,
-                              style: GoogleFonts.poppins(
-                                  fontSize: fontSize,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                            // Optional: Add a refresh button for testing
-                            IconButton(
-                              icon: Icon(Icons.refresh),
-                              onPressed: refreshRecentTemplates,
-                              tooltip: 'Refresh recent templates',
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 10),
-                        SizedBox(
-                          height: 150,
-                          child: _loadingRecentTemplates
-                              ? Center(child: CircularProgressIndicator())
-                              : _recentTemplates.isEmpty
-                                  ? Center(
-                                      child: Text(
-                                        "No recent templates",
-                                        style: GoogleFonts.poppins(
-                                            fontSize: fontSize - 2),
-                                      ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: qotdImageUrl != null
+                                  ? CachedNetworkImage(
+                                      imageUrl: qotdImageUrl!,
+                                      placeholder: (context, url) => Center(
+                                          child: CircularProgressIndicator()),
+                                      errorWidget: (context, url, error) =>
+                                          Icon(Icons.error),
+                                      fit: BoxFit.cover,
+                                      width: double.infinity,
+                                      height: double.infinity,
                                     )
-                                  : ListView.builder(
-                                      scrollDirection: Axis.horizontal,
-                                      itemCount: _recentTemplates.length,
-                                      itemBuilder: (context, index) {
-                                        final template =
-                                            _recentTemplates[index];
-                                        return GestureDetector(
-                                          onTap: () =>
-                                              _handleRecentTemplateSelection(
-                                                  template),
-                                          child: Container(
-                                            width: 100,
-                                            margin: EdgeInsets.only(right: 10),
-                                            decoration: BoxDecoration(
-                                              color: Colors.white,
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                              boxShadow: [
-                                                BoxShadow(
-                                                    color: Colors.grey.shade300,
-                                                    blurRadius: 5)
-                                              ],
-                                            ),
-                                            child: ClipRRect(
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                              child: Stack(
-                                                fit: StackFit.expand,
-                                                children: [
-                                                  // Image background
-                                                  template.imageUrl.isNotEmpty
-                                                      ? CachedNetworkImage(
-                                                          imageUrl:
-                                                              template.imageUrl,
-                                                          placeholder:
-                                                              (context, url) =>
-                                                                  Center(
-                                                            child:
-                                                                CircularProgressIndicator(
-                                                                    strokeWidth:
-                                                                        2),
-                                                          ),
-                                                          errorWidget: (context,
-                                                              url, error) {
-                                                            print(
-                                                                "Image error: $error for URL: $url");
-                                                            return Container(
-                                                              color: Colors
-                                                                  .grey[300],
-                                                              child: Icon(
-                                                                  Icons.error),
-                                                            );
-                                                          },
-                                                          fit: BoxFit.cover,
-                                                        )
-                                                      : Container(
-                                                          color:
-                                                              Colors.grey[200],
-                                                          child: Center(
-                                                            child: Icon(
-                                                                Icons
-                                                                    .image_not_supported,
-                                                                color: Colors
-                                                                    .grey),
-                                                          ),
-                                                        ),
-
-                                                  // Premium indicator
-                                                  if (template.isPaid)
-                                                    Positioned(
-                                                      top: 5,
-                                                      right: 5,
-                                                      child: Container(
-                                                        padding: EdgeInsets
-                                                            .symmetric(
-                                                                horizontal: 6,
-                                                                vertical: 2),
-                                                        decoration:
-                                                            BoxDecoration(
-                                                          color: Colors.black
-                                                              .withOpacity(0.7),
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(10),
-                                                        ),
-                                                        child: Row(
-                                                          mainAxisSize:
-                                                              MainAxisSize.min,
-                                                          children: [
-                                                            Icon(Icons.lock,
-                                                                color: Colors
-                                                                    .amber,
-                                                                size: 12),
-                                                            SizedBox(width: 2),
-                                                            Text(
-                                                              'PRO',
-                                                              style: TextStyle(
-                                                                color: Colors
-                                                                    .white,
-                                                                fontSize: 10,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .bold,
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      ),
-                                                    ),
-
-                                                  // // Template title
-                                                  // Positioned(
-                                                  //   bottom: 0,
-                                                  //   left: 0,
-                                                  //   right: 0,
-                                                  //   child: Container(
-                                                  //     padding: EdgeInsets.symmetric(vertical: 4, horizontal: 6),
-                                                  //     color: Colors.black.withOpacity(0.5),
-                                                  //     child: Text(
-                                                  //       template.title.isNotEmpty
-                                                  //           ? template.title
-                                                  //           : "Template",
-                                                  //       style: GoogleFonts.poppins(
-                                                  //         color: Colors.white,
-                                                  //         fontSize: fontSize - 4,
-                                                  //         fontWeight: FontWeight.w500,
-                                                  //       ),
-                                                  //       overflow: TextOverflow.ellipsis,
-                                                  //       maxLines: 1,
-                                                  //       textAlign: TextAlign.center,
-                                                  //     ),
-                                                  //   ),
-                                                  // ),
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                        );
-                                      },
+                                  : Container(
+                                      color:
+                                          Colors.grey[300], // Fallback background
+                                      alignment: Alignment.center,
+                                      child: Text(
+                                        "No quote available today",
+                                        textAlign: TextAlign.center,
+                                        style: GoogleFonts.poppins(
+                                            fontSize: fontSize,
+                                            fontWeight: FontWeight.w600),
+                                      ),
                                     ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(
-                      height: 30,
-                    ),
-// Categories section with View All button
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              context.loc.categories,
-                              style: GoogleFonts.poppins(
-                                  fontSize: fontSize,
-                                  fontWeight: FontWeight.bold),
                             ),
-                          ],
-                        ),
-                        SizedBox(height: 20),
-                        SizedBox(
-                          height: 100,
-                          child: ListView(
-                            scrollDirection: Axis.horizontal,
-                            children: [
-                              categoryCard(
-                                Icons.lightbulb,
-                                context.loc.motivational,
-                                Colors.green,
-                              ),
-                              categoryCard(
-                                Icons.favorite,
-                                context.loc.love,
-                                Colors.red,
-                              ),
-                              categoryCard(
-                                Icons.emoji_emotions,
-                                context.loc.funny,
-                                Colors.orange,
-                              ),
-                              categoryCard(
-                                Icons.people,
-                                context.loc.friendship,
-                                Colors.blue,
-                              ),
-                              categoryCard(
-                                Icons.self_improvement,
-                                context.loc.life,
-                                Colors.purple,
-                              ),
-                            ],
                           ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(
-                      height: 20,
-                    ),
-                    Column(
+                          Positioned(
+                            bottom: 35,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blueAccent,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              onPressed: () => shareImage(context, qotdImageUrl),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.share, color: Colors.white),
+                                  SizedBox(width: 6),
+                                  Text("Share",
+                                      style: TextStyle(color: Colors.white)),
+                                ],
+                              ),
+                          ),
+                          )],
+                      ),
+              
+                      Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                context.loc.trendingQuotes,
+                                context.loc.recents,
                                 style: GoogleFonts.poppins(
                                     fontSize: fontSize,
                                     fontWeight: FontWeight.bold),
                               ),
-                              GestureDetector(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => TemplatesListScreen(
-                                        title: context.loc.trendingQuotes,
-                                        listType: TemplateListType.trending,
-                                      ),
-                                    ),
-                                  );
-                                },
-                                child: Text(
-                                  'View All',
-                                  style: GoogleFonts.poppins(
-                                    fontSize: fontSize - 2,
-                                    color: Colors.blue,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
+                              // Optional: Add a refresh button for testing
+                              IconButton(
+                                icon: Icon(Icons.refresh),
+                                onPressed: refreshRecentTemplates,
+                                tooltip: 'Refresh recent templates',
                               ),
                             ],
                           ),
-                          TemplateSection(
-                            title: '',
-                            fetchTemplates:
-                                _templateService.fetchRecentTemplates,
-                            fontSize: fontSize,
-                            onTemplateSelected: _handleTemplateSelection,
+                          SizedBox(height: 10),
+                          SizedBox(
+                            height: 150,
+                            child: _loadingRecentTemplates
+                                ? Center(child: CircularProgressIndicator())
+                                : _recentTemplates.isEmpty
+                                    ? Center(
+                                        child: Text(
+                                          "No recent templates",
+                                          style: GoogleFonts.poppins(
+                                              fontSize: fontSize - 2),
+                                        ),
+                                      )
+                                    : ListView.builder(
+                                        scrollDirection: Axis.horizontal,
+                                        itemCount: _recentTemplates.length,
+                                        itemBuilder: (context, index) {
+                                          final template =
+                                              _recentTemplates[index];
+                                          return GestureDetector(
+                                            onTap: () =>
+                                                _handleRecentTemplateSelection(
+                                                    template),
+                                            child: Container(
+                                              width: 100,
+                                              margin: EdgeInsets.only(right: 10),
+                                              decoration: BoxDecoration(
+                                                color: Colors.white,
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                      color: Colors.grey.shade300,
+                                                      blurRadius: 5)
+                                                ],
+                                              ),
+                                              child: ClipRRect(
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                                child: Stack(
+                                                  fit: StackFit.expand,
+                                                  children: [
+                                                    // Image background
+                                                    template.imageUrl.isNotEmpty
+                                                        ? CachedNetworkImage(
+                                                            imageUrl:
+                                                                template.imageUrl,
+                                                            placeholder:
+                                                                (context, url) =>
+                                                                    Center(
+                                                              child:
+                                                                  CircularProgressIndicator(
+                                                                      strokeWidth:
+                                                                          2),
+                                                            ),
+                                                            errorWidget: (context,
+                                                                url, error) {
+                                                              print(
+                                                                  "Image error: $error for URL: $url");
+                                                              return Container(
+                                                                color: Colors
+                                                                    .grey[300],
+                                                                child: Icon(
+                                                                    Icons.error),
+                                                              );
+                                                            },
+                                                            fit: BoxFit.cover,
+                                                          )
+                                                        : Container(
+                                                            color:
+                                                                Colors.grey[200],
+                                                            child: Center(
+                                                              child: Icon(
+                                                                  Icons
+                                                                      .image_not_supported,
+                                                                  color: Colors
+                                                                      .grey),
+                                                            ),
+                                                          ),
+              
+                                                    // Premium indicator
+                                                    if (template.isPaid)
+                                                      Positioned(
+                                                        top: 5,
+                                                        right: 5,
+                                                        child: Container(
+                                                          padding: EdgeInsets
+                                                              .symmetric(
+                                                                  horizontal: 6,
+                                                                  vertical: 2),
+                                                          decoration:
+                                                              BoxDecoration(
+                                                            color: Colors.black
+                                                                .withOpacity(0.7),
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(10),
+                                                          ),
+                                                          child: Row(
+                                                            mainAxisSize:
+                                                                MainAxisSize.min,
+                                                            children: [
+                                                              Icon(Icons.lock,
+                                                                  color: Colors
+                                                                      .amber,
+                                                                  size: 12),
+                                                              SizedBox(width: 2),
+                                                              Text(
+                                                                'PRO',
+                                                                style: TextStyle(
+                                                                  color: Colors
+                                                                      .white,
+                                                                  fontSize: 10,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold,
+                                                                ),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                      ),
+              
+                                                    // // Template title
+                                                    // Positioned(
+                                                    //   bottom: 0,
+                                                    //   left: 0,
+                                                    //   right: 0,
+                                                    //   child: Container(
+                                                    //     padding: EdgeInsets.symmetric(vertical: 4, horizontal: 6),
+                                                    //     color: Colors.black.withOpacity(0.5),
+                                                    //     child: Text(
+                                                    //       template.title.isNotEmpty
+                                                    //           ? template.title
+                                                    //           : "Template",
+                                                    //       style: GoogleFonts.poppins(
+                                                    //         color: Colors.white,
+                                                    //         fontSize: fontSize - 4,
+                                                    //         fontWeight: FontWeight.w500,
+                                                    //       ),
+                                                    //       overflow: TextOverflow.ellipsis,
+                                                    //       maxLines: 1,
+                                                    //       textAlign: TextAlign.center,
+                                                    //     ),
+                                                    //   ),
+                                                    // ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(
+                        height: 30,
+                      ),
+              // Categories section with View All button
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                context.loc.categories,
+                                style: GoogleFonts.poppins(
+                                    fontSize: fontSize,
+                                    fontWeight: FontWeight.bold),
+                              ),
+                            ],
                           ),
                           SizedBox(height: 20),
-                          Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                          SizedBox(
+                            height: 100,
+                            child: ListView(
+                              scrollDirection: Axis.horizontal,
                               children: [
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      context.loc.newtemplate,
-                                      style: GoogleFonts.poppins(
-                                          fontSize: fontSize,
-                                          fontWeight: FontWeight.bold),
-                                    ),
-                                    GestureDetector(
-                                      onTap: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) =>
-                                                TemplatesListScreen(
-                                              title: context.loc.newtemplate,
-                                              listType:
-                                                  TemplateListType.festival,
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                      child: Text(
-                                        'View All',
-                                        style: GoogleFonts.poppins(
-                                          fontSize: fontSize - 2,
-                                          color: Colors.blue,
-                                          fontWeight: FontWeight.w500,
+                                categoryCard(
+                                  Icons.lightbulb,
+                                  context.loc.motivational,
+                                  Colors.green,
+                                ),
+                                categoryCard(
+                                  Icons.favorite,
+                                  context.loc.love,
+                                  Colors.red,
+                                ),
+                                categoryCard(
+                                  Icons.emoji_emotions,
+                                  context.loc.funny,
+                                  Colors.orange,
+                                ),
+                                categoryCard(
+                                  Icons.people,
+                                  context.loc.friendship,
+                                  Colors.blue,
+                                ),
+                                categoryCard(
+                                  Icons.self_improvement,
+                                  context.loc.life,
+                                  Colors.purple,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(
+                        height: 20,
+                      ),
+                      Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  context.loc.trendingQuotes,
+                                  style: GoogleFonts.poppins(
+                                      fontSize: fontSize,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                                GestureDetector(
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => TemplatesListScreen(
+                                          title: context.loc.trendingQuotes,
+                                          listType: TemplateListType.trending,
                                         ),
                                       ),
+                                    );
+                                  },
+                                  child: Text(
+                                    'View All',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: fontSize - 2,
+                                      color: Colors.blue,
+                                      fontWeight: FontWeight.w500,
                                     ),
-                                  ],
+                                  ),
                                 ),
-                                SizedBox(height: 20),
-                                SizedBox(
-                                  height:
-                                      150, // Changed from 200 to 100 to match other card sections
-                                  child: _loadingFestivals
-                                      ? Center(
-                                          child: CircularProgressIndicator())
-                                      : _festivalPosts.isEmpty
-                                          ? Center(
-                                              child: Text(
-                                                "No festival posts available",
-                                                style: GoogleFonts.poppins(
-                                                    fontSize: fontSize - 2),
+                              ],
+                            ),
+                            TemplateSection(
+                              title: '',
+                              fetchTemplates:
+                                  _templateService.fetchRecentTemplates,
+                              fontSize: fontSize,
+                              onTemplateSelected: _handleTemplateSelection,
+                            ),
+                            SizedBox(height: 20),
+                            Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        context.loc.newtemplate,
+                                        style: GoogleFonts.poppins(
+                                            fontSize: fontSize,
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                      GestureDetector(
+                                        onTap: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  TemplatesListScreen(
+                                                title: context.loc.newtemplate,
+                                                listType:
+                                                    TemplateListType.festival,
                                               ),
-                                            )
-                                          : ListView.builder(
-                                              scrollDirection: Axis.horizontal,
-                                              itemCount: _festivalPosts.length,
-                                              itemBuilder: (context, index) {
-                                                return FestivalCard(
-                                                  festival:
-                                                      _festivalPosts[index],
-                                                  fontSize: fontSize,
-                                                  onTap: () =>
-                                                      _handleFestivalPostSelection(
-                                                          _festivalPosts[
-                                                              index]),
-                                                );
-                                              },
                                             ),
-                                ),
-                                SizedBox(height: 30),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        // Left side with title and time
-                                        Expanded(
-                                          child: Row(
-                                            children: [
-                                              Text(
-                                                context.loc.foryou,
-                                                style: GoogleFonts.poppins(
+                                          );
+                                        },
+                                        child: Text(
+                                          'View All',
+                                          style: GoogleFonts.poppins(
+                                            fontSize: fontSize - 2,
+                                            color: Colors.blue,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  SizedBox(height: 20),
+                                  SizedBox(
+                                    height:
+                                        150, // Changed from 200 to 100 to match other card sections
+                                    child: _loadingFestivals
+                                        ? Center(
+                                            child: CircularProgressIndicator())
+                                        : _festivalPosts.isEmpty
+                                            ? Center(
+                                                child: Text(
+                                                  "No festival posts available",
+                                                  style: GoogleFonts.poppins(
+                                                      fontSize: fontSize - 2),
+                                                ),
+                                              )
+                                            : ListView.builder(
+                                                scrollDirection: Axis.horizontal,
+                                                itemCount: _festivalPosts.length,
+                                                itemBuilder: (context, index) {
+                                                  return FestivalCard(
+                                                    festival:
+                                                        _festivalPosts[index],
                                                     fontSize: fontSize,
-                                                    fontWeight:
-                                                        FontWeight.bold),
+                                                    onTap: () =>
+                                                        _handleFestivalPostSelection(
+                                                            _festivalPosts[
+                                                                index]),
+                                                  );
+                                                },
                                               ),
-                                              SizedBox(width: 8),
-                                              Text(
-                                                "• ${_currentTimeOfDay.capitalize()}",
-                                                style: GoogleFonts.poppins(
-                                                  fontSize: 14,
-                                                  color: Colors.grey[600],
-                                                  fontStyle: FontStyle.italic,
+                                  ),
+                                  SizedBox(height: 30),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          // Left side with title and time
+                                          Expanded(
+                                            child: Row(
+                                              children: [
+                                                Text(
+                                                  context.loc.foryou,
+                                                  style: GoogleFonts.poppins(
+                                                      fontSize: fontSize,
+                                                      fontWeight:
+                                                          FontWeight.bold),
                                                 ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-
-                                        // Right side with View All
-                                        GestureDetector(
-                                          onTap: () {
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (context) =>
-                                                    TemplatesListScreen(
-                                                  title:
-                                                      "${context.loc.foryou} • ${_currentTimeOfDay.capitalize()}",
-                                                  listType: TemplateListType
-                                                      .timeOfDay,
-                                                  timeOfDay: _currentTimeOfDay,
+                                                SizedBox(width: 8),
+                                                Text(
+                                                  "• ${_currentTimeOfDay.capitalize()}",
+                                                  style: GoogleFonts.poppins(
+                                                    fontSize: 14,
+                                                    color: Colors.grey[600],
+                                                    fontStyle: FontStyle.italic,
+                                                  ),
                                                 ),
-                                              ),
-                                            );
-                                          },
-                                          child: Text(
-                                            'View All',
-                                            style: GoogleFonts.poppins(
-                                              fontSize: fontSize - 2,
-                                              color: Colors.blue,
-                                              fontWeight: FontWeight.w500,
+                                              ],
                                             ),
                                           ),
-                                        ),
-                                      ],
-                                    ),
-                                    SizedBox(height: 20),
-                                    SizedBox(
-                                      height: 150,
-                                      // width: 0,
-                                      child: _loadingTimeOfDay
-                                          ? Center(
-                                              child:
-                                                  CircularProgressIndicator())
-                                          : _timeOfDayPosts.isEmpty
-                                              ? Center(
-                                                  child: Text(
-                                                    "No templates available for $_currentTimeOfDay",
-                                                    style: GoogleFonts.poppins(
-                                                        fontSize: fontSize - 2),
+              
+                                          // Right side with View All
+                                          GestureDetector(
+                                            onTap: () {
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      TemplatesListScreen(
+                                                    title:
+                                                        "${context.loc.foryou} • ${_currentTimeOfDay.capitalize()}",
+                                                    listType: TemplateListType
+                                                        .timeOfDay,
+                                                    timeOfDay: _currentTimeOfDay,
                                                   ),
-                                                )
-                                              : ListView.builder(
-                                                  scrollDirection:
-                                                      Axis.horizontal,
-                                                  itemCount:
-                                                      _timeOfDayPosts.length,
-                                                  itemBuilder:
-                                                      (context, index) {
-                                                    return TimeOfDayPostComponent(
-                                                      post: _timeOfDayPosts[
-                                                          index],
-                                                      fontSize: fontSize,
-                                                      onTap: () =>
-                                                          _handleTimeOfDayPostSelection(
-                                                              _timeOfDayPosts[
-                                                                  index]),
-                                                    );
-                                                  },
                                                 ),
-                                    ),
-                                  ],
-                                ),
-                              ]),
-                        ]),
-                  ]),
-            ))));
+                                              );
+                                            },
+                                            child: Text(
+                                              'View All',
+                                              style: GoogleFonts.poppins(
+                                                fontSize: fontSize - 2,
+                                                color: Colors.blue,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      SizedBox(height: 20),
+                                      SizedBox(
+                                        height: 150,
+                                        // width: 0,
+                                        child: _loadingTimeOfDay
+                                            ? Center(
+                                                child:
+                                                    CircularProgressIndicator())
+                                            : _timeOfDayPosts.isEmpty
+                                                ? Center(
+                                                    child: Text(
+                                                      "No templates available for $_currentTimeOfDay",
+                                                      style: GoogleFonts.poppins(
+                                                          fontSize: fontSize - 2),
+                                                    ),
+                                                  )
+                                                : ListView.builder(
+                                                    scrollDirection:
+                                                        Axis.horizontal,
+                                                    itemCount:
+                                                        _timeOfDayPosts.length,
+                                                    itemBuilder:
+                                                        (context, index) {
+                                                      return TimeOfDayPostComponent(
+                                                        post: _timeOfDayPosts[
+                                                            index],
+                                                        fontSize: fontSize,
+                                                        onTap: () =>
+                                                            _handleTimeOfDayPostSelection(
+                                                                _timeOfDayPosts[
+                                                                    index]),
+                                                      );
+                                                    },
+                                                  ),
+                                      ),
+                                    ],
+                                  ),
+                                ]),
+                          ]),
+                    ]),
+              )),
+            )));
   }
 
   Widget buildCategoriesSection(BuildContext context, double fontSize) {

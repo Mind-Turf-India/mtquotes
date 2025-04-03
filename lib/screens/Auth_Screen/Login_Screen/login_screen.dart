@@ -1,8 +1,10 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // Add this import
 import 'package:mtquotes/screens/navbar_mainscreen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mtquotes/screens/Auth_Screen/Signup_Screen/signup_screen.dart';
@@ -106,14 +108,17 @@ class _LoginScreenState extends State<LoginScreen> {
         password: password,
       );
 
+      // Check and update user data in Firestore
+      await saveUserToFirestore(userCredential.user);
+      
       // Add this line to handle user change for notifications
       await NotificationService.instance.handleUserChanged(userCredential.user?.uid);
 
       _hideLoadingDialog();
 
-      Navigator.pushReplacement(
-        context,
+      Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (context) => MainScreen()),
+            (Route<dynamic> route) => false, // Remove all previous screens
       );
     } catch (e) {
       _hideLoadingDialog();
@@ -144,14 +149,17 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       await _saveCredentials();
+      
+      // Check and update user data in Firestore
+      await saveUserToFirestore(userCredential.user);
+      
       await NotificationService.instance.handleUserChanged(userCredential.user?.uid);
-
 
       _hideLoadingDialog();
 
-      Navigator.pushReplacement(
-        context,
+      Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (context) => MainScreen()),
+            (Route<dynamic> route) => false, // Remove all previous screens
       );
     } catch (e) {
       _hideLoadingDialog();
@@ -184,6 +192,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
       UserCredential userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
 
+      // Check and update user data in Firestore
+      await saveUserToFirestore(userCredential.user);
+      
       // Add this line to handle user change for notifications
       await NotificationService.instance.handleUserChanged(userCredential.user?.uid);
 
@@ -198,6 +209,54 @@ class _LoginScreenState extends State<LoginScreen> {
 
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text("Google Sign-In Failed: $e")));
+    }
+  }
+
+  // Function to generate a unique referral code (copied from signup screen)
+  String _generateReferralCode(String uid) {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    final random = Random.secure();
+    String randomString = String.fromCharCodes(Iterable.generate(5, (_) => chars.codeUnitAt(random.nextInt(chars.length))));
+    return '${uid.substring(0, 6)}$randomString'; // Example: "AB1234XYZ89"
+  }
+
+  /// Save or update user in Firestore
+  Future<void> saveUserToFirestore(User? user) async {
+    if (user != null && user.email != null) {
+      final String userEmail = user.email!.replaceAll(".", "_"); // Firestore doesn't allow '.' in document IDs
+      final userRef = FirebaseFirestore.instance.collection('users').doc(userEmail);
+      
+      // Check if user document already exists
+      DocumentSnapshot doc = await userRef.get();
+      
+      if (!doc.exists) {
+        // If user doesn't exist in Firestore, create a new profile
+        final String referralCode = _generateReferralCode(user.uid);
+        
+        Map<String, dynamic> userData = {
+          'uid': user.uid,
+          'email': user.email,
+          'name': null,
+          'bio': null,
+          'createdAt': FieldValue.serverTimestamp(),
+          'lastLogin': FieldValue.serverTimestamp(),
+          'referralCode': referralCode,
+          'referrerUid': null,
+          'rewardPoints': 100,
+          'previousRewardPoints': 0,
+          'isSubscribed': false,
+          'isPaid': false,
+          'role': 'user',
+        };
+        
+        // Save user data
+        await userRef.set(userData);
+      } else {
+        // If user exists, just update the lastLogin field
+        await userRef.update({
+          'lastLogin': FieldValue.serverTimestamp(),
+        });
+      }
     }
   }
 

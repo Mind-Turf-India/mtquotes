@@ -36,7 +36,7 @@ class TemplateService {
       QuerySnapshot snapshot = await _firestore
           .collection('templates')
           .orderBy('createdAt', descending: true)
-          .limit(10)
+          .limit(100)
           .get();
 
       // Return all templates regardless of isPaid status
@@ -57,7 +57,7 @@ class TemplateService {
       QuerySnapshot snapshot = await _firestore
           .collection('templates')
           .orderBy('usageCount', descending: true) // Assuming you have a field to track popularity
-          .limit(10)
+          .limit(100)
           .get();
 
       // Return all templates regardless of isPaid status
