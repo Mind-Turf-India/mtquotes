@@ -13,6 +13,7 @@ import 'package:mtquotes/screens/Templates/components/festivals/festival_post.da
 import 'package:mtquotes/screens/Templates/components/festivals/festival_service.dart';
 import 'package:mtquotes/screens/Templates/components/festivals/festival_sharing.dart';
 import 'package:mtquotes/screens/Payment_Screen/subscription_popup.dart';
+import 'package:mtquotes/utils/app_colors.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:mtquotes/screens/Templates/components/template/quote_template.dart';
@@ -191,8 +192,9 @@ class FestivalHandler {
       String festivalId, double newRating) async {
     try {
       // Get reference to the festival document
-      final festivalRef =
-      FirebaseFirestore.instance.collection('festivals').doc(festivalId.split('_')[0]);
+      final festivalRef = FirebaseFirestore.instance
+          .collection('festivals')
+          .doc(festivalId.split('_')[0]);
 
       // Run this as a transaction to ensure data consistency
       await FirebaseFirestore.instance.runTransaction((transaction) async {
@@ -228,12 +230,12 @@ class FestivalHandler {
 
   // Method to share festival post
   static Future<void> shareFestival(
-      BuildContext context,
-      FestivalPost festival, {
-        String? userName,
-        String? userProfileImageUrl,
-        bool isPaidUser = false,
-      }) async {
+    BuildContext context,
+    FestivalPost festival, {
+    String? userName,
+    String? userProfileImageUrl,
+    bool isPaidUser = false,
+  }) async {
     try {
       // Add to recent templates when sharing
       try {
@@ -268,17 +270,22 @@ class FestivalHandler {
 
             // Check if document exists and has required fields
             if (userDoc.exists && userDoc.data() is Map<String, dynamic>) {
-              Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+              Map<String, dynamic> userData =
+                  userDoc.data() as Map<String, dynamic>;
 
               // Get name from Firestore with fallback
-              if (userData.containsKey('name') && userData['name'] != null && userData['name'].toString().isNotEmpty) {
+              if (userData.containsKey('name') &&
+                  userData['name'] != null &&
+                  userData['name'].toString().isNotEmpty) {
                 userName = userData['name'];
               } else {
                 userName = defaultUserName;
               }
 
               // Get profile image from Firestore with fallback
-              if (userData.containsKey('profileImage') && userData['profileImage'] != null && userData['profileImage'].toString().isNotEmpty) {
+              if (userData.containsKey('profileImage') &&
+                  userData['profileImage'] != null &&
+                  userData['profileImage'].toString().isNotEmpty) {
                 userProfileImageUrl = userData['profileImage'];
               } else {
                 userProfileImageUrl = defaultProfileImageUrl;
@@ -401,10 +408,10 @@ class FestivalHandler {
           : festivalImageKey;
 
       final RenderRepaintBoundary boundary =
-      keyToUse.currentContext!.findRenderObject() as RenderRepaintBoundary;
+          keyToUse.currentContext!.findRenderObject() as RenderRepaintBoundary;
       final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
       final ByteData? byteData =
-      await image.toByteData(format: ui.ImageByteFormat.png);
+          await image.toByteData(format: ui.ImageByteFormat.png);
 
       if (byteData != null) {
         return byteData.buffer.asUint8List();
@@ -418,10 +425,10 @@ class FestivalHandler {
 
   // Method to show the festival confirmation dialog
   static void _showFestivalInfoBox(
-      BuildContext context,
-      FestivalPost festival,
-      bool isPaidUser,
-      ) {
+    BuildContext context,
+    FestivalPost festival,
+    bool isPaidUser,
+  ) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -461,37 +468,37 @@ class FestivalHandler {
                               ),
                               child: isPaidUser
                                   ? Align(
-                                alignment: Alignment.bottomRight,
-                                child: Padding(
-                                  padding: const EdgeInsets.all(10.0),
-                                  child: Container(
-                                    padding: EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 4),
-                                    // decoration: BoxDecoration(
-                                    //   color: Colors.black.withOpacity(0.6),
-                                    //   borderRadius: BorderRadius.circular(12),
-                                    // ),
-                                    // child: Row(
-                                    //   mainAxisSize: MainAxisSize.min,
-                                    //   children: [
-                                    //     CircleAvatar(
-                                    //       radius: 10,
-                                    //       backgroundImage: _getUserProfileImage(context),
-                                    //     ),
-                                    //     SizedBox(width: 4),
-                                    //     Text(
-                                    //       _getUserName(context),
-                                    //       style: TextStyle(
-                                    //         fontSize: 10,
-                                    //         color: Colors.white,
-                                    //         fontWeight: FontWeight.bold,
-                                    //       ),
-                                    //     ),
-                                    //   ],
-                                    // ),
-                                  ),
-                                ),
-                              )
+                                      alignment: Alignment.bottomRight,
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(10.0),
+                                        child: Container(
+                                          padding: EdgeInsets.symmetric(
+                                              horizontal: 8, vertical: 4),
+                                          // decoration: BoxDecoration(
+                                          //   color: Colors.black.withOpacity(0.6),
+                                          //   borderRadius: BorderRadius.circular(12),
+                                          // ),
+                                          // child: Row(
+                                          //   mainAxisSize: MainAxisSize.min,
+                                          //   children: [
+                                          //     CircleAvatar(
+                                          //       radius: 10,
+                                          //       backgroundImage: _getUserProfileImage(context),
+                                          //     ),
+                                          //     SizedBox(width: 4),
+                                          //     Text(
+                                          //       _getUserName(context),
+                                          //       style: TextStyle(
+                                          //         fontSize: 10,
+                                          //         color: Colors.white,
+                                          //         fontWeight: FontWeight.bold,
+                                          //       ),
+                                          //     ),
+                                          //   ],
+                                          // ),
+                                        ),
+                                      ),
+                                    )
                                   : null,
                             ),
                           ),
@@ -509,7 +516,6 @@ class FestivalHandler {
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w500,
-                              
                             ),
                           ),
                           SizedBox(height: 16),
@@ -524,34 +530,56 @@ class FestivalHandler {
                                     child: ElevatedButton(
                                       onPressed: () {
                                         Navigator.of(context).pop();
-                                        // Navigate to profile details screen first, then edit screen
-                                        _navigateToDetailsScreen(context, festival, isPaidUser);
+                                        _navigateToDetailsScreen(
+                                            context, festival, isPaidUser);
                                       },
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.blue,
+                                        padding: EdgeInsets.zero,
+                                        backgroundColor: Colors.transparent,
                                         foregroundColor: Colors.white,
                                         elevation: 0,
                                         shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(24),
+                                          borderRadius:
+                                              BorderRadius.circular(24),
                                         ),
                                       ),
-                                      child: Text('Create'),
+                                      child: Ink(
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(
+                                            colors: AppColors.primaryGradient,
+                                            begin: Alignment.centerLeft,
+                                            end: Alignment.centerRight,
+                                          ),
+                                          borderRadius:
+                                              BorderRadius.circular(24),
+                                        ),
+                                        child: Container(
+                                          padding: EdgeInsets.symmetric(
+                                              vertical: 10, horizontal: 26),
+                                          child: Text('Create'),
+                                        ),
+                                      ),
                                     ),
                                   ),
                                   SizedBox(width: 40),
                                   SizedBox(
-                                    width: 100,
+                                    width: 90,
+                                    height: 45,
                                     child: ElevatedButton(
-                                      onPressed: () => Navigator.of(context).pop(),
+                                      onPressed: () =>
+                                          Navigator.of(context).pop(),
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: Colors.white,
                                         foregroundColor: Colors.black87,
                                         elevation: 0,
-                                        side: BorderSide(color: Colors.grey.shade300),
+                                        side: BorderSide(color: Colors.grey),
                                         shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(24),
+                                          borderRadius:
+                                              BorderRadius.circular(24),
                                         ),
-                                        padding: EdgeInsets.symmetric(vertical: 12),
+                                        padding: EdgeInsets.symmetric(
+                                          vertical: 12,
+                                        ),
                                       ),
                                       child: Text('Cancel'),
                                     ),
@@ -562,22 +590,44 @@ class FestivalHandler {
                               // Share Button
                               Center(
                                 child: SizedBox(
-                                  width: 140,
-                                  child: ElevatedButton.icon(
+                                  width: 120,
+                                  child: ElevatedButton(
                                     onPressed: () {
                                       Navigator.of(context).pop();
-                                      _handleShareFestival(context, festival, isPaidUser);
+                                      _handleShareFestival(
+                                          context, festival, isPaidUser);
                                     },
-                                    icon: Icon(Icons.share),
-                                    label: Text('Share'),
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.blue,
+                                      padding: EdgeInsets.zero,
+                                      backgroundColor: Colors.transparent,
                                       foregroundColor: Colors.white,
                                       elevation: 0,
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(24),
                                       ),
-                                      padding: EdgeInsets.symmetric(vertical: 12),
+                                    ),
+                                    child: Ink(
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          colors: AppColors.primaryGradient,
+                                          begin: Alignment.centerLeft,
+                                          end: Alignment.centerRight,
+                                        ),
+                                        borderRadius: BorderRadius.circular(24),
+                                      ),
+                                      child: Container(
+                                        padding:
+                                            EdgeInsets.symmetric(vertical: 12),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Icon(Icons.share, color: Colors.white,),
+                                            SizedBox(width: 8),
+                                            Text('Share'),
+                                          ],
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -599,9 +649,7 @@ class FestivalHandler {
 
   // Navigate to the details screen first, not directly to edit screen
   static void _navigateToDetailsScreen(
-      BuildContext context,
-      FestivalPost festival,
-      bool isPaidUser) {
+      BuildContext context, FestivalPost festival, bool isPaidUser) {
     // Convert FestivalPost to QuoteTemplate for compatibility with DetailsScreen
     QuoteTemplate template = QuoteTemplate(
       id: festival.id,
@@ -624,37 +672,19 @@ class FestivalHandler {
   }
 
   static void _handleShareFestival(
-      BuildContext context,
-      FestivalPost festival,
-      bool isPaidUser) {
+      BuildContext context, FestivalPost festival, bool isPaidUser) {
     if (isPaidUser) {
       // For paid users, try to fetch user info first
-      _navigateToSharing(
-          context,
-          festival,
-          'User',
-          '',
-          true
-      );
+      _navigateToSharing(context, festival, 'User', '', true);
     } else {
       // For free users, go to festival sharing page
-      _navigateToSharing(
-          context,
-          festival,
-          'User',
-          '',
-          false
-      );
+      _navigateToSharing(context, festival, 'User', '', false);
     }
   }
 
   // Helper method to safely navigate to sharing page
-  static void _navigateToSharing(
-      BuildContext context,
-      FestivalPost festival,
-      String userName,
-      String userProfileImageUrl,
-      bool isPaidUser) {
+  static void _navigateToSharing(BuildContext context, FestivalPost festival,
+      String userName, String userProfileImageUrl, bool isPaidUser) {
     print("navigating to sharing");
     // Check if context is still mounted before navigating
     if (context.mounted) {
@@ -673,7 +703,8 @@ class FestivalHandler {
     print("success");
   }
 
-  static Future<void> _getUserInfoAndShare(BuildContext context, FestivalPost festival) async {
+  static Future<void> _getUserInfoAndShare(
+      BuildContext context, FestivalPost festival) async {
     try {
       // Capture these values early to ensure context doesn't change during async operations
       final BuildContext capturedContext = context;
@@ -693,16 +724,21 @@ class FestivalHandler {
         print("user deets");
 
         if (userDoc.exists && userDoc.data() is Map<String, dynamic>) {
-          Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+          Map<String, dynamic> userData =
+              userDoc.data() as Map<String, dynamic>;
 
           // Get name from Firestore with fallback
-          if (userData.containsKey('name') && userData['name'] != null && userData['name'].toString().isNotEmpty) {
+          if (userData.containsKey('name') &&
+              userData['name'] != null &&
+              userData['name'].toString().isNotEmpty) {
             userName = userData['name'];
             print("name fetched");
           }
 
           // Get profile image from Firestore with fallback
-          if (userData.containsKey('profileImage') && userData['profileImage'] != null && userData['profileImage'].toString().isNotEmpty) {
+          if (userData.containsKey('profileImage') &&
+              userData['profileImage'] != null &&
+              userData['profileImage'].toString().isNotEmpty) {
             userProfileImageUrl = userData['profileImage'];
             print("pic fetched");
           }
@@ -710,9 +746,9 @@ class FestivalHandler {
       }
 
       // Use the helper method to navigate safely
-      _navigateToSharing(capturedContext, festival, userName, userProfileImageUrl, true);
+      _navigateToSharing(
+          capturedContext, festival, userName, userProfileImageUrl, true);
       print("navigated");
-
     } catch (e) {
       print('Error getting user info for sharing: $e');
       // Fall back to basic sharing if there's an error
@@ -742,10 +778,10 @@ class FestivalHandler {
 
   // Integration method for handleFestivalSelection
   static Future<void> handleFestivalSelection(
-      BuildContext context,
-      FestivalPost festival,
-      Function(FestivalPost) onFestivalSelected,
-      ) async {
+    BuildContext context,
+    FestivalPost festival,
+    Function(FestivalPost) onFestivalSelected,
+  ) async {
     // Show loading indicator
     showLoadingIndicator(context);
 

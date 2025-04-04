@@ -12,22 +12,22 @@ import 'package:mtquotes/l10n/app_localization.dart';
 import 'package:mtquotes/screens/Create_Screen/components/details_screen.dart';
 import 'package:mtquotes/screens/Templates/components/template/template_service.dart';
 import 'package:mtquotes/screens/Templates/components/template/template_sharing.dart';
+import 'package:mtquotes/utils/app_colors.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:mtquotes/screens/Templates/components/template/quote_template.dart';
 import '../../../Create_Screen/edit_screen_create.dart';
 import '../recent/recent_service.dart';
 
-
 class TemplateHandler {
   static final GlobalKey templateImageKey = GlobalKey();
 
   // Handle template selection with subscription check
   static Future<void> handleTemplateSelection(
-      BuildContext context,
-      QuoteTemplate template,
-      Function(QuoteTemplate) onAccessGranted,
-      ) async {
+    BuildContext context,
+    QuoteTemplate template,
+    Function(QuoteTemplate) onAccessGranted,
+  ) async {
     showLoadingIndicator(context);
     try {
       final templateService = TemplateService();
@@ -119,7 +119,7 @@ class TemplateHandler {
           .findRenderObject() as RenderRepaintBoundary;
       final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
       final ByteData? byteData =
-      await image.toByteData(format: ui.ImageByteFormat.png);
+          await image.toByteData(format: ui.ImageByteFormat.png);
 
       if (byteData != null) {
         return byteData.buffer.asUint8List();
@@ -132,59 +132,59 @@ class TemplateHandler {
   }
 
   // Add this function to your TemplateConfirmationDialog class
-  static Future<void> _showRatingDialog(BuildContext context,QuoteTemplate template) async {
+  static Future<void> _showRatingDialog(
+      BuildContext context, QuoteTemplate template) async {
     double rating = 0;
 
     return showDialog<double>(
       context: context,
       builder: (BuildContext dialogContext) {
-        return StatefulBuilder(
-            builder: (context, setState) {
-              return AlertDialog(
-                title: Text('Rate This Template'),
-                content: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text('How would you rate your experience with this template?'),
-                    SizedBox(height: 20),
-                    FittedBox(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: List.generate(5, (index) {
-                          return IconButton(
-                            icon: Icon(
-                              index < rating ? Icons.star : Icons.star_border,
-                              color: index < rating ? Colors.amber : Colors.grey,
-                              size: 36,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                rating = index + 1;
-                              });
-                            },
-                          );
-                        }),
-                      ),
-                    )],
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(dialogContext).pop(null);
-                    },
-                    child: Text('Skip'),
+        return StatefulBuilder(builder: (context, setState) {
+          return AlertDialog(
+            title: Text('Rate This Template'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('How would you rate your experience with this template?'),
+                SizedBox(height: 20),
+                FittedBox(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: List.generate(5, (index) {
+                      return IconButton(
+                        icon: Icon(
+                          index < rating ? Icons.star : Icons.star_border,
+                          color: index < rating ? Colors.amber : Colors.grey,
+                          size: 36,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            rating = index + 1;
+                          });
+                        },
+                      );
+                    }),
                   ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(dialogContext).pop(rating); // Close the dialog
-                      Navigator.of(context).pushReplacementNamed('/home');
-                    },
-                    child: Text('Submit'),
-                  ),
-                ],
-              );
-            }
-        );
+                )
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(dialogContext).pop(null);
+                },
+                child: Text('Skip'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.of(dialogContext).pop(rating); // Close the dialog
+                  Navigator.of(context).pushReplacementNamed('/home');
+                },
+                child: Text('Submit'),
+              ),
+            ],
+          );
+        });
       },
     ).then((value) {
       if (value != null && value > 0) {
@@ -204,7 +204,8 @@ class TemplateHandler {
     });
   }
 
-  static Future<void> _updateCategoryTemplateRating(String templateId, String category, double newRating) async {
+  static Future<void> _updateCategoryTemplateRating(
+      String templateId, String category, double newRating) async {
     try {
       // Path to the category template document
       final templateRef = FirebaseFirestore.instance
@@ -226,7 +227,8 @@ class TemplateHandler {
           int ratingCount = data['ratingCount'] ?? 0;
 
           int newRatingCount = ratingCount + 1;
-          double newAvgRating = ((currentAvgRating * ratingCount) + newRating) / newRatingCount;
+          double newAvgRating =
+              ((currentAvgRating * ratingCount) + newRating) / newRatingCount;
 
           // Update the template with the new average rating
           transaction.update(templateRef, {
@@ -246,7 +248,8 @@ class TemplateHandler {
   }
 
 // Add this function to submit the rating to your backend
-  static Future<void> _submitRating(double rating, QuoteTemplate template) async {
+  static Future<void> _submitRating(
+      double rating, QuoteTemplate template) async {
     try {
       final DateTime now = DateTime.now();
       final User? currentUser = FirebaseAuth.instance.currentUser;
@@ -269,26 +272,29 @@ class TemplateHandler {
           .collection('ratings')
           .add(ratingData);
 
-      print('Rating submitted: $rating for template ${template.title} (ID: ${template.id})');
+      print(
+          'Rating submitted: $rating for template ${template.title} (ID: ${template.id})');
 
       // Determine if this is a category template based on non-empty category field
       if (template.category.isNotEmpty) {
         // Update the category template's rating
-        await _updateCategoryTemplateRating(template.id, template.category, rating);
+        await _updateCategoryTemplateRating(
+            template.id, template.category, rating);
       } else {
         // Use the original method for regular templates
         await _updateTemplateAverageRating(template.id, rating);
       }
-
     } catch (e) {
       print('Error submitting rating: $e');
     }
   }
 
-  static Future<void> _updateTemplateAverageRating(String templateId, double newRating) async {
+  static Future<void> _updateTemplateAverageRating(
+      String templateId, double newRating) async {
     try {
       // Get reference to the template document
-      final templateRef = FirebaseFirestore.instance.collection('templates').doc(templateId);
+      final templateRef =
+          FirebaseFirestore.instance.collection('templates').doc(templateId);
 
       // Run this as a transaction to ensure data consistency
       await FirebaseFirestore.instance.runTransaction((transaction) async {
@@ -303,7 +309,8 @@ class TemplateHandler {
           int ratingCount = data['ratingCount'] ?? 0;
 
           int newRatingCount = ratingCount + 1;
-          double newAvgRating = ((currentAvgRating * ratingCount) + newRating) / newRatingCount;
+          double newAvgRating =
+              ((currentAvgRating * ratingCount) + newRating) / newRatingCount;
 
           // Update the template with the new average rating
           transaction.update(templateRef, {
@@ -320,14 +327,13 @@ class TemplateHandler {
     }
   }
 
-
   static Future<void> shareTemplate(
-      BuildContext context,
-      QuoteTemplate template, {
-        String? userName,
-        String? userProfileImageUrl,
-        bool isPaidUser = false,
-      }) async {
+    BuildContext context,
+    QuoteTemplate template, {
+    String? userName,
+    String? userProfileImageUrl,
+    bool isPaidUser = false,
+  }) async {
     // Capture context early
     final capturedContext = context;
 
@@ -360,17 +366,22 @@ class TemplateHandler {
 
             // Check if document exists and has required fields
             if (userDoc.exists && userDoc.data() is Map<String, dynamic>) {
-              Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+              Map<String, dynamic> userData =
+                  userDoc.data() as Map<String, dynamic>;
 
               // Get name from Firestore with fallback
-              if (userData.containsKey('name') && userData['name'] != null && userData['name'].toString().isNotEmpty) {
+              if (userData.containsKey('name') &&
+                  userData['name'] != null &&
+                  userData['name'].toString().isNotEmpty) {
                 userName = userData['name'];
               } else {
                 userName = defaultUserName;
               }
 
               // Get profile image from Firestore with fallback
-              if (userData.containsKey('profileImage') && userData['profileImage'] != null && userData['profileImage'].toString().isNotEmpty) {
+              if (userData.containsKey('profileImage') &&
+                  userData['profileImage'] != null &&
+                  userData['profileImage'].toString().isNotEmpty) {
                 userProfileImageUrl = userData['profileImage'];
               } else {
                 userProfileImageUrl = defaultProfileImageUrl;
@@ -396,7 +407,10 @@ class TemplateHandler {
 
         try {
           // This is more reliable than using is operator which can cause issues
-          isOnSharingPage = Navigator.of(capturedContext).widget.toString().contains('TemplateSharingPage');
+          isOnSharingPage = Navigator.of(capturedContext)
+              .widget
+              .toString()
+              .contains('TemplateSharingPage');
         } catch (e) {
           print('Error checking current page: $e');
         }
@@ -406,7 +420,7 @@ class TemplateHandler {
             MaterialPageRoute(
               builder: (context) => TemplateSharingPage(
                 template: template,
-                userName: userName ?? 'User',  // Default value if null
+                userName: userName ?? 'User', // Default value if null
                 userProfileImageUrl: userProfileImageUrl ?? '',
                 isPaidUser: isPaidUser,
               ),
@@ -487,7 +501,6 @@ class TemplateHandler {
       if (capturedContext.mounted) {
         await _showRatingDialog(capturedContext, template);
       }
-
     } catch (e) {
       print('Error sharing template: $e');
 
@@ -512,10 +525,10 @@ class TemplateHandler {
 
 // Method to show the template confirmation dialog
   static void showTemplateConfirmationDialog(
-      BuildContext context,
-      QuoteTemplate template,
-      bool isPaidUser,
-      ) {
+    BuildContext context,
+    QuoteTemplate template,
+    bool isPaidUser,
+  ) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -572,60 +585,107 @@ class TemplateHandler {
                                     child: ElevatedButton(
                                       onPressed: () {
                                         Navigator.of(context).pop();
-                                        // Navigate to profile details screen
-                                        _navigateToProfileDetailsScreen(context, template, isPaidUser);
+                                        _navigateToProfileDetailsScreen(
+                                            context, template, isPaidUser);
                                       },
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.blue,
+                                        padding: EdgeInsets.zero,
+                                        backgroundColor: Colors.transparent,
                                         foregroundColor: Colors.white,
                                         elevation: 0,
                                         shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(24),
+                                          borderRadius:
+                                              BorderRadius.circular(24),
                                         ),
                                       ),
-                                      child: Text('Create'),
+                                      child: Ink(
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(
+                                            colors: AppColors.primaryGradient,
+                                            begin: Alignment.centerLeft,
+                                            end: Alignment.centerRight,
+                                          ),
+                                          borderRadius:
+                                              BorderRadius.circular(24),
+                                        ),
+                                        child: Container(
+                                          padding: EdgeInsets.symmetric(
+                                              vertical: 10, horizontal: 26),
+                                          child: Text('Create'),
+                                        ),
+                                      ),
                                     ),
                                   ),
-                                  SizedBox(width: 40),
+                                   SizedBox(width: 40),
                                   SizedBox(
-                                    width: 100,
+                                    width: 90,
+                                    height: 45,
                                     child: ElevatedButton(
-                                      onPressed: () => Navigator.of(context).pop(),
+                                      onPressed: () =>
+                                          Navigator.of(context).pop(),
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: Colors.white,
                                         foregroundColor: Colors.black87,
                                         elevation: 0,
-                                        side: BorderSide(color: Colors.grey.shade300),
+                                        side: BorderSide(color: Colors.grey),
                                         shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(24),
+                                          borderRadius:
+                                              BorderRadius.circular(24),
                                         ),
-                                        padding: EdgeInsets.symmetric(vertical: 12),
+                                        padding: EdgeInsets.symmetric(
+                                          vertical: 12,
+                                        ),
                                       ),
                                       child: Text('Cancel'),
                                     ),
                                   ),
                                 ],
+                                
                               ),
+                              
+                                 
                               SizedBox(height: 12),
                               // Share Button
                               Center(
                                 child: SizedBox(
-                                  width: 140,
-                                  child: ElevatedButton.icon(
+                                  width: 120,
+                                  child: ElevatedButton(
                                     onPressed: () {
                                       Navigator.of(context).pop();
-                                      _handleShareTemplate(context, template, isPaidUser);
+                                      _navigateToProfileDetailsScreen(
+                                          context, template, isPaidUser);
                                     },
-                                    icon: Icon(Icons.share),
-                                    label: Text('Share'),
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.blue,
+                                      padding: EdgeInsets.zero,
+                                      backgroundColor: Colors.transparent,
                                       foregroundColor: Colors.white,
                                       elevation: 0,
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(24),
                                       ),
-                                      padding: EdgeInsets.symmetric(vertical: 12),
+                                    ),
+                                    child: Ink(
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          colors: AppColors.primaryGradient,
+                                          begin: Alignment.centerLeft,
+                                          end: Alignment.centerRight,
+                                        ),
+                                        borderRadius: BorderRadius.circular(24),
+                                      ),
+                                      child: Container(
+                                        padding:
+                                            EdgeInsets.symmetric(vertical: 12),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Icon(Icons.share, color: Colors.white,),
+                                            SizedBox(width: 8),
+                                            Text('Share'),
+                                          ],
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -646,9 +706,7 @@ class TemplateHandler {
   }
 
   static void _navigateToProfileDetailsScreen(
-      BuildContext context,
-      QuoteTemplate template,
-      bool isPaidUser) {
+      BuildContext context, QuoteTemplate template, bool isPaidUser) {
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -661,37 +719,19 @@ class TemplateHandler {
   }
 
   static void _handleShareTemplate(
-      BuildContext context,
-      QuoteTemplate template,
-      bool isPaidUser) {
+      BuildContext context, QuoteTemplate template, bool isPaidUser) {
     if (isPaidUser) {
       // For paid users, try to fetch user info first
-      _navigateToSharing(
-          context,
-          template,
-          'User',
-          '',
-          true
-      );
+      _navigateToSharing(context, template, 'User', '', true);
     } else {
       // For free users, go to template sharing page
-      _navigateToSharing(
-          context,
-          template,
-          'User',
-          '',
-          false
-      );
+      _navigateToSharing(context, template, 'User', '', false);
     }
   }
 
 // Helper method to safely navigate to sharing page
-  static void _navigateToSharing(
-      BuildContext context,
-      QuoteTemplate template,
-      String userName,
-      String userProfileImageUrl,
-      bool isPaidUser) {
+  static void _navigateToSharing(BuildContext context, QuoteTemplate template,
+      String userName, String userProfileImageUrl, bool isPaidUser) {
     print("navigating to sharing");
     // Check if context is still mounted before navigating
     if (context.mounted) {
@@ -710,7 +750,8 @@ class TemplateHandler {
     print("success");
   }
 
-  static Future<void> _getUserInfoAndShare(BuildContext context, QuoteTemplate template) async {
+  static Future<void> _getUserInfoAndShare(
+      BuildContext context, QuoteTemplate template) async {
     try {
       // Capture these values early to ensure context doesn't change during async operations
       final BuildContext capturedContext = context;
@@ -730,27 +771,31 @@ class TemplateHandler {
         print("user deets");
 
         if (userDoc.exists && userDoc.data() is Map<String, dynamic>) {
-          Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+          Map<String, dynamic> userData =
+              userDoc.data() as Map<String, dynamic>;
 
           // Get name from Firestore with fallback
-          if (userData.containsKey('name') && userData['name'] != null && userData['name'].toString().isNotEmpty) {
+          if (userData.containsKey('name') &&
+              userData['name'] != null &&
+              userData['name'].toString().isNotEmpty) {
             userName = userData['name'];
             print("name fetched");
           }
 
           // Get profile image from Firestore with fallback
-          if (userData.containsKey('profileImage') && userData['profileImage'] != null && userData['profileImage'].toString().isNotEmpty) {
+          if (userData.containsKey('profileImage') &&
+              userData['profileImage'] != null &&
+              userData['profileImage'].toString().isNotEmpty) {
             userProfileImageUrl = userData['profileImage'];
             print("pic fetched");
-
           }
         }
       }
 
       // Use the helper method to navigate safely
-      _navigateToSharing(capturedContext, template, userName, userProfileImageUrl, true);
+      _navigateToSharing(
+          capturedContext, template, userName, userProfileImageUrl, true);
       print("navigated");
-
     } catch (e) {
       print('Error getting user info for sharing: $e');
       // Fall back to basic sharing if there's an error
@@ -762,10 +807,7 @@ class TemplateHandler {
   }
 
   static Future<void> handleEditScreenSharing(
-      BuildContext context,
-      Uint8List imageData,
-      bool isPaidUser
-      ) async {
+      BuildContext context, Uint8List imageData, bool isPaidUser) async {
     // For free users, redirect to template sharing
     if (!isPaidUser) {
       ScaffoldMessenger.of(context).showSnackBar(

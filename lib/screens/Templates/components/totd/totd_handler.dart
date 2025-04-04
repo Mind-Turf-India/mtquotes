@@ -11,6 +11,7 @@ import 'package:http/http.dart' as http;
 import 'package:mtquotes/l10n/app_localization.dart';
 import 'package:mtquotes/screens/Templates/components/totd/totd_service.dart';
 import 'package:mtquotes/screens/Templates/components/totd/totd_sharing.dart';
+import 'package:mtquotes/utils/app_colors.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../Create_Screen/components/details_screen.dart';
@@ -506,16 +507,12 @@ class TimeOfDayHandler {
                                     child: ElevatedButton(
                                       onPressed: () {
                                         Navigator.of(context).pop();
-                                        // Call onConfirm callback if provided
-                                        if (onConfirm != null) {
-                                          onConfirm();
-                                        }
-                                        // Navigate to edit screen for the TOTD post
-                                        _navigateToEditScreen(
+                                        _navigateToDetailsScreen(
                                             context, post, isPaidUser);
                                       },
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.blue,
+                                        padding: EdgeInsets.zero,
+                                        backgroundColor: Colors.transparent,
                                         foregroundColor: Colors.white,
                                         elevation: 0,
                                         shape: RoundedRectangleBorder(
@@ -523,12 +520,28 @@ class TimeOfDayHandler {
                                               BorderRadius.circular(24),
                                         ),
                                       ),
-                                      child: Text('Create'),
+                                      child: Ink(
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(
+                                            colors: AppColors.primaryGradient,
+                                            begin: Alignment.centerLeft,
+                                            end: Alignment.centerRight,
+                                          ),
+                                          borderRadius:
+                                              BorderRadius.circular(24),
+                                        ),
+                                        child: Container(
+                                          padding: EdgeInsets.symmetric(
+                                              vertical: 10, horizontal: 26),
+                                          child: Text('Create'),
+                                        ),
+                                      ),
                                     ),
                                   ),
                                   SizedBox(width: 40),
                                   SizedBox(
-                                    width: 100,
+                                    width: 90,
+                                    height: 45,
                                     child: ElevatedButton(
                                       onPressed: () =>
                                           Navigator.of(context).pop(),
@@ -536,14 +549,14 @@ class TimeOfDayHandler {
                                         backgroundColor: Colors.white,
                                         foregroundColor: Colors.black87,
                                         elevation: 0,
-                                        side: BorderSide(
-                                            color: Colors.grey.shade300),
+                                        side: BorderSide(color: Colors.grey),
                                         shape: RoundedRectangleBorder(
                                           borderRadius:
                                               BorderRadius.circular(24),
                                         ),
-                                        padding:
-                                            EdgeInsets.symmetric(vertical: 12),
+                                        padding: EdgeInsets.symmetric(
+                                          vertical: 12,
+                                        ),
                                       ),
                                       child: Text('Cancel'),
                                     ),
@@ -552,45 +565,46 @@ class TimeOfDayHandler {
                               ),
                               SizedBox(height: 12),
                               // Share Button
-                              // Share Button
                               Center(
                                 child: SizedBox(
-                                  width: 140,
-                                  child: ElevatedButton.icon(
+                                  width: 120,
+                                  child: ElevatedButton(
                                     onPressed: () {
-                                      // Show loading indicator before proceeding with share
-                                      showDialog(
-                                        context: context,
-                                        barrierDismissible: false,
-                                        builder: (BuildContext dialogContext) {
-                                          return Center(
-                                            child: CircularProgressIndicator(),
-                                          );
-                                        },
-                                      );
-
-                                      // Add a slight delay to ensure loading dialog is visible
-                                      Future.delayed(
-                                          Duration(milliseconds: 100), () {
-                                        // Close the current screen
-                                        Navigator.of(context).pop();
-
-                                        // Then proceed with sharing
-                                        _handleShareTOTD(
-                                            context, post, isPaidUser);
-                                      });
+                                      Navigator.of(context).pop();
+                                      _handleShareTOTD(
+                                          context, post, isPaidUser);
                                     },
-                                    icon: Icon(Icons.share),
-                                    label: Text('Share'),
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.blue,
+                                      padding: EdgeInsets.zero,
+                                      backgroundColor: Colors.transparent,
                                       foregroundColor: Colors.white,
                                       elevation: 0,
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(24),
                                       ),
-                                      padding:
-                                          EdgeInsets.symmetric(vertical: 12),
+                                    ),
+                                    child: Ink(
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          colors: AppColors.primaryGradient,
+                                          begin: Alignment.centerLeft,
+                                          end: Alignment.centerRight,
+                                        ),
+                                        borderRadius: BorderRadius.circular(24),
+                                      ),
+                                      child: Container(
+                                        padding:
+                                            EdgeInsets.symmetric(vertical: 12),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Icon(Icons.share, color: Colors.white,),
+                                            SizedBox(width: 8),
+                                            Text('Share'),
+                                          ],
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -612,7 +626,7 @@ class TimeOfDayHandler {
 
   // Update this method in your TimeOfDayHandler class
 
-  static void _navigateToEditScreen(
+  static void _navigateToDetailsScreen(
       BuildContext context, TimeOfDayPost post, bool isPaidUser) {
     // Convert TimeOfDayPost to QuoteTemplate for compatibility with DetailsScreen
     QuoteTemplate template = QuoteTemplate(

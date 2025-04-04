@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:mtquotes/utils/app_colors.dart';
 import 'package:share_plus/share_plus.dart';
 
 class ReferralPage extends StatefulWidget {
@@ -150,7 +151,8 @@ class _ReferralPageState extends State<ReferralPage> {
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.star, color: Colors.amber, size: 20),
+                                  Icon(Icons.star,
+                                      color: Colors.amber, size: 20),
                                   const SizedBox(width: 8),
                                   Text.rich(
                                     TextSpan(
@@ -204,8 +206,8 @@ class _ReferralPageState extends State<ReferralPage> {
                               decoration: BoxDecoration(
                                 color: Colors.blue.withOpacity(0.05),
                                 borderRadius: BorderRadius.circular(10),
-                                border:
-                                    Border.all(color: Colors.blue.withOpacity(0.2)),
+                                border: Border.all(
+                                    color: Colors.blue.withOpacity(0.2)),
                               ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -218,27 +220,53 @@ class _ReferralPageState extends State<ReferralPage> {
                                     ),
                                   ),
                                   const SizedBox(height: 8),
-                                  _buildStep('1. Share your referral code with friends'),
-                                  _buildStep('2. Friend signs up using your code'),
-                                  _buildStep('3. Both of you earn reward points'),
+                                  _buildStep(
+                                      '1. Share your referral code with friends'),
+                                  _buildStep(
+                                      '2. Friend signs up using your code'),
+                                  _buildStep(
+                                      '3. Both of you earn reward points'),
                                 ],
                               ),
                             ),
                             const SizedBox(height: 24),
-                            ElevatedButton.icon(
-                              icon: Icon(Icons.share, color: Colors.white),
-                              label: Text(
-                                'Share',
-                                style: TextStyle(color: Colors.white),
-                              ),
+                            ElevatedButton(
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.blue,
+                                padding: EdgeInsets.zero,
+                                backgroundColor: Colors.transparent,
                                 minimumSize: Size(double.infinity, 45),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(25),
                                 ),
+                                elevation: 0,
                               ),
                               onPressed: _shareReferralCode,
+                              child: Ink(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: AppColors.primaryGradient,
+                                    begin: Alignment.centerLeft,
+                                    end: Alignment.centerRight,
+                                  ),
+                                  borderRadius: BorderRadius.circular(25),
+                                ),
+                                child: Container(
+                                  height: 45,
+                                  width: double.infinity,
+                                  alignment: Alignment.center,
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.share, color: Colors.white),
+                                      SizedBox(width: 8),
+                                      Text(
+                                        'Share',
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
                             ),
                             const SizedBox(height: 16),
                           ],

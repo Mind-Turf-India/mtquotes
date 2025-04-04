@@ -13,6 +13,7 @@ import 'package:mtquotes/screens/User_Home/components/Notifications/notification
 import 'package:mtquotes/screens/User_Home/components/Settings/support.dart';
 import 'package:mtquotes/screens/User_Home/components/refferral_screen.dart';
 import 'package:mtquotes/screens/User_Home/files_screen.dart';
+import 'package:mtquotes/utils/app_colors.dart';
 import 'package:provider/provider.dart';
 import 'components/Notifications/notification_service.dart';
 import 'components/Settings/settings.dart';
@@ -104,10 +105,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       barrierDismissible: false, // Prevent closing without completing
       builder: (dialogContext) {
         TextEditingController nameController =
-        TextEditingController(text: _userDisplayName);
+            TextEditingController(text: _userDisplayName);
         TextEditingController bioController = TextEditingController();
-        File? _selectedImage;
-        bool _isImageLoading = false; // Flag to track image loading state
+        File? selectedImage;
+        bool isImageLoading = false; // Flag to track image loading state
 
         // Fetch existing bio from Firestore if available
         FirebaseFirestore.instance
@@ -128,35 +129,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   GestureDetector(
-                    onTap: _isImageLoading
-                        ? null  // Disable tap when loading
+                    onTap: isImageLoading
+                        ? null // Disable tap when loading
                         : () async {
-                      final pickedImage = await _pickImage();
-                      if (pickedImage != null) {
-                        setState(() {
-                          _selectedImage = pickedImage;
-                        });
-                      }
-                    },
+                            final pickedImage = await _pickImage();
+                            if (pickedImage != null) {
+                              setState(() {
+                                selectedImage = pickedImage;
+                              });
+                            }
+                          },
                     child: Stack(
                       alignment: Alignment.center,
                       children: [
                         CircleAvatar(
                           radius: 40,
-                          backgroundImage: _selectedImage != null
-                              ? FileImage(_selectedImage!)
+                          backgroundImage: selectedImage != null
+                              ? FileImage(selectedImage!)
                               : (_profileImageUrl != null &&
-                              _profileImageUrl!.isNotEmpty
-                              ? NetworkImage(_profileImageUrl!) as ImageProvider
-                              : null),
-                          child: (_selectedImage == null &&
-                              (_profileImageUrl == null ||
-                                  _profileImageUrl!.isEmpty))
+                                      _profileImageUrl!.isNotEmpty
+                                  ? NetworkImage(_profileImageUrl!)
+                                      as ImageProvider
+                                  : null),
+                          child: (selectedImage == null &&
+                                  (_profileImageUrl == null ||
+                                      _profileImageUrl!.isEmpty))
                               ? Icon(Icons.camera_alt, size: 40)
                               : null,
                         ),
                         // Overlay a loading indicator when image is being processed
-                        if (_isImageLoading)
+                        if (isImageLoading)
                           Container(
                             width: 80,
                             height: 80,
@@ -166,7 +168,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                             child: Center(
                               child: CircularProgressIndicator(
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(Colors.white),
                               ),
                             ),
                           ),
@@ -185,80 +188,86 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               actions: [
                 TextButton(
-                  onPressed: _isImageLoading
-                      ? null  // Disable cancel button when loading
+                  onPressed: isImageLoading
+                      ? null // Disable cancel button when loading
                       : () {
-                    Navigator.pop(dialogContext);
-                  },
+                          Navigator.pop(dialogContext);
+                        },
                   child: Text("Cancel"),
                 ),
                 ElevatedButton(
-                  onPressed: _isImageLoading
-                      ? null  // Disable save button when loading
+                  onPressed: isImageLoading
+                      ? null // Disable save button when loading
                       : () async {
-                    // 1. Validate input synchronously
-                    if (nameController.text.isEmpty) {
-                      ScaffoldMessenger.of(dialogContext).showSnackBar(
-                        const SnackBar(content: Text("Name cannot be empty")),
-                      );
-                      return;
-                    }
+                          // 1. Validate input synchronously
+                          if (nameController.text.isEmpty) {
+                            ScaffoldMessenger.of(dialogContext).showSnackBar(
+                              const SnackBar(
+                                  content: Text("Name cannot be empty")),
+                            );
+                            return;
+                          }
 
-                    // 2. Capture all data needed BEFORE any async operation
-                    final User? currentUser = FirebaseAuth.instance.currentUser;
-                    if (currentUser == null) {
-                      ScaffoldMessenger.of(dialogContext).showSnackBar(
-                        const SnackBar(
-                            content: Text("Error: User not logged in")),
-                      );
-                      return;
-                    }
+                          // 2. Capture all data needed BEFORE any async operation
+                          final User? currentUser =
+                              FirebaseAuth.instance.currentUser;
+                          if (currentUser == null) {
+                            ScaffoldMessenger.of(dialogContext).showSnackBar(
+                              const SnackBar(
+                                  content: Text("Error: User not logged in")),
+                            );
+                            return;
+                          }
 
-                    // 3. If there's a selected image, start loading state and upload it right away
-                    if (_selectedImage != null) {
-                      setState(() {
-                        _isImageLoading = true;
-                      });
+                          // 3. If there's a selected image, start loading state and upload it right away
+                          if (selectedImage != null) {
+                            setState(() {
+                              isImageLoading = true;
+                            });
 
-                      try {
-                        // Upload the image while dialog is still open
-                        String? imageUrl = await _uploadImage(_selectedImage!);
+                            try {
+                              // Upload the image while dialog is still open
+                              String? imageUrl =
+                                  await _uploadImage(selectedImage!);
 
-                        // If upload failed, show error but don't close dialog
-                        if (imageUrl == null) {
-                          setState(() {
-                            _isImageLoading = false;
-                          });
-                          ScaffoldMessenger.of(dialogContext).showSnackBar(
-                            const SnackBar(content: Text("Failed to upload image")),
-                          );
-                          return;
-                        }
+                              // If upload failed, show error but don't close dialog
+                              if (imageUrl == null) {
+                                setState(() {
+                                  isImageLoading = false;
+                                });
+                                ScaffoldMessenger.of(dialogContext)
+                                    .showSnackBar(
+                                  const SnackBar(
+                                      content: Text("Failed to upload image")),
+                                );
+                                return;
+                              }
 
-                        // Update profile image URL
-                        _profileImageUrl = imageUrl;
+                              // Update profile image URL
+                              _profileImageUrl = imageUrl;
+                            } catch (e) {
+                              setState(() {
+                                isImageLoading = false;
+                              });
+                              ScaffoldMessenger.of(dialogContext).showSnackBar(
+                                SnackBar(
+                                    content: Text("Error uploading image: $e")),
+                              );
+                              return;
+                            }
+                          }
 
-                      } catch (e) {
-                        setState(() {
-                          _isImageLoading = false;
-                        });
-                        ScaffoldMessenger.of(dialogContext).showSnackBar(
-                          SnackBar(content: Text("Error uploading image: $e")),
-                        );
-                        return;
-                      }
-                    }
+                          final String userDocId =
+                              currentUser.email!.replaceAll('.', '_');
+                          final String newName = nameController.text;
+                          final String newBio = bioController.text;
 
-                    final String userDocId = currentUser.email!.replaceAll('.', '_');
-                    final String newName = nameController.text;
-                    final String newBio = bioController.text;
+                          // 4. Close the dialog after image upload completes
+                          Navigator.of(dialogContext).pop();
 
-                    // 4. Close the dialog after image upload completes
-                    Navigator.of(dialogContext).pop();
-
-                    // 5. Complete the profile update
-                    _saveProfileData(userDocId, newName, newBio, null);
-                  },
+                          // 5. Complete the profile update
+                          _saveProfileData(userDocId, newName, newBio, null);
+                        },
                   child: Text("Save"),
                 ),
               ],
@@ -483,15 +492,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 20),     
+                const SizedBox(height: 20),
                 Expanded(
                   child: ListView(
                     padding: EdgeInsets.zero,
                     children: [
                       _buildMenuItem(Icons.workspace_premium,
                           context.loc.subscriptions, fontSize, () {
-                            Navigator.push(context, MaterialPageRoute(builder: (context)=> SubscriptionScreen()));
-                          }),
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => SubscriptionScreen()));
+                      }),
                       _buildMenuItem(Icons.share_rounded,
                           context.loc.shareapplication, fontSize, () {
                         Navigator.push(
@@ -506,8 +518,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       //     }),
                       _buildMenuItem(Icons.support_agent_outlined,
                           context.loc.support, fontSize, () {
-                            Navigator.push(context, MaterialPageRoute(builder: (context)=> SupportScreen()));
-                          }),
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => SupportScreen()));
+                      }),
                       _buildMenuItem(
                           Icons.question_mark, context.loc.aboutus, fontSize,
                           () {
@@ -539,18 +554,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: ElevatedButton(
                       onPressed: _logout,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blueAccent,
+                        padding: EdgeInsets
+                            .zero, // Remove default padding for the gradient
+                        backgroundColor: Colors
+                            .transparent, // Make button background transparent
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(30),
                         ),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        elevation: 0, // Optional: Remove elevation shadow
                       ),
-                      child: Text(
-                        context.loc.logout,
-                        style: TextStyle(
-                            fontSize: fontSize + 2,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white),
+                      child: Ink(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: AppColors.primaryGradient,
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                          ),
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        child: Container(
+                          width: double
+                              .infinity, // Make button expand to full width
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          alignment: Alignment.center, // Center the text
+                          child: Text(
+                            context.loc.logout,
+                            style: TextStyle(
+                              fontSize: fontSize + 2,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ),

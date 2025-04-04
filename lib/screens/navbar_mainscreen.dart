@@ -1,11 +1,11 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:curved_labeled_navigation_bar/curved_navigation_bar.dart';
-import 'package:curved_labeled_navigation_bar/curved_navigation_bar_item.dart';
-import 'package:mtquotes/l10n/app_localization.dart';
 import 'package:mtquotes/screens/User_Home/home_screen.dart';
 import 'package:mtquotes/screens/User_Home/files_screen.dart';
 import 'package:mtquotes/screens/User_Home/profile_screen.dart';
+import 'package:mtquotes/utils/gradient_curved_navigation_bar.dart'; // Import your new navigation bar
+import 'package:curved_labeled_navigation_bar/curved_navigation_bar_item.dart';
+import 'package:mtquotes/l10n/app_localization.dart';
 import 'Create_Screen/edit_screen_create.dart';
 import 'Create_Screen/template_screen_create.dart';
 import 'User_Home/search_screen.dart';
@@ -61,9 +61,15 @@ class _MainScreenState extends State<MainScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    Flexible(child: _buildCreateOption(context.loc.gallery, Icons.image)),
-                    Flexible(child: _buildCreateOption(context.loc.template, Icons.grid_view)),
-                    Flexible(child: _buildCreateOption(context.loc.downloads, Icons.folder)),
+                    Flexible(
+                        child: _buildCreateOption(
+                            context.loc.gallery, Icons.image)),
+                    Flexible(
+                        child: _buildCreateOption(
+                            context.loc.template, Icons.grid_view)),
+                    Flexible(
+                        child: _buildCreateOption(
+                            context.loc.downloads, Icons.folder)),
                   ],
                 ),
               ),
@@ -95,7 +101,9 @@ class _MainScreenState extends State<MainScreen> {
         } else if (label == context.loc.gallery) {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => EditScreen(title: context.loc.imageeditor)),
+            MaterialPageRoute(
+                builder: (context) =>
+                    EditScreen(title: context.loc.imageeditor)),
           );
         } else if (label == context.loc.downloads) {
           Navigator.push(
@@ -112,6 +120,13 @@ class _MainScreenState extends State<MainScreen> {
             height: 60,
             decoration: BoxDecoration(
               color: Colors.blue,
+              gradient: LinearGradient(
+                colors: [Color(0xFF2897FF), Color(0xFF00D1A7)],
+                begin:
+                    Alignment.topLeft, // Optional: specify gradient direction
+                end: Alignment
+                    .bottomRight, // Optional: specify gradient direction
+              ),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: Colors.white, size: 30),
@@ -119,19 +134,31 @@ class _MainScreenState extends State<MainScreen> {
           SizedBox(height: 8),
           Text(
             label,
-            style: TextStyle(color: Colors.blue, fontSize: 12, fontWeight: FontWeight.w500, decoration: TextDecoration.none),
+            style: TextStyle(
+                color: Colors.blue,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                decoration: TextDecoration.none),
           ),
         ],
       ),
     );
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: _screens[_currentIndex],
-      bottomNavigationBar: CurvedNavigationBar(
+      bottomNavigationBar: GradientCurvedNavigationBar(
+        
+       useGradientButton: true,
         backgroundColor: Colors.transparent,
-        color: Colors.blueAccent,
+        gradientColors: [
+          const Color(0xFF2897FF),
+          const Color(0xFF00D1A7)
+        ], // Define your gradient colors
+        gradientBegin: Alignment.centerLeft,
+        gradientEnd: Alignment.centerRight,
         index: _currentIndex,
         onTap: (index) {
           if (index == 2) {
