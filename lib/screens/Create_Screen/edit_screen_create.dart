@@ -11,6 +11,8 @@ import 'package:image_editor_plus/image_editor_plus.dart';
 import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mtquotes/screens/navbar_mainscreen.dart';
+import 'package:mtquotes/utils/theme_provider.dart';
+import 'package:provider/provider.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'package:http/http.dart' as http;
@@ -344,18 +346,31 @@ class _EditScreenState extends State<EditScreen> {
   }
 
   void showNoImageSelectedDialog() {
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    final isDarkMode = themeProvider.isDarkMode;
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('No Image Selected'),
-          content: Text('Please select an image from gallery first.'),
+          backgroundColor: AppColors.getSurfaceColor(isDarkMode),
+          title: Text(
+            'No Image Selected',
+            style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+          ),
+          content: Text(
+            'Please select an image from gallery first.',
+            style: TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode)),
+          ),
           actions: [
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: Text('OK'),
+              child: Text(
+                'OK',
+                style: TextStyle(color: AppColors.primaryBlue),
+              ),
             ),
           ],
         );
@@ -365,19 +380,31 @@ class _EditScreenState extends State<EditScreen> {
 
   // Helper method to show login required dialog
   void _showLoginRequiredDialog() {
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    final isDarkMode = themeProvider.isDarkMode;
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Login Required'),
+          backgroundColor: AppColors.getSurfaceColor(isDarkMode),
+          title: Text(
+            'Login Required',
+            style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+          ),
           content: Text(
-              'Please sign in to download images. This helps keep your downloads organized.'),
+            'Please sign in to download images. This helps keep your downloads organized.',
+            style: TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode)),
+          ),
           actions: [
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: Text('OK'),
+              child: Text(
+                'OK',
+                style: TextStyle(color: AppColors.primaryBlue),
+              ),
             ),
           ],
         );
@@ -387,13 +414,17 @@ class _EditScreenState extends State<EditScreen> {
 
   // Helper method to show loading indicator
   void _showLoadingIndicator() {
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    final isDarkMode = themeProvider.isDarkMode;
+
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
         return Center(
           child: CircularProgressIndicator(
-            color: Theme.of(context).colorScheme.primary,
+            color: AppColors.primaryBlue,
+            backgroundColor: AppColors.getSurfaceColor(isDarkMode),
           ),
         );
       },
@@ -432,8 +463,14 @@ class _EditScreenState extends State<EditScreen> {
 
       // Show error dialog
       if (mounted) {
+        final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+        final isDarkMode = themeProvider.isDarkMode;
+
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error loading template image")),
+          SnackBar(
+            content: Text("Error loading template image"),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
@@ -494,18 +531,31 @@ class _EditScreenState extends State<EditScreen> {
 
       // Show error dialog
       if (context.mounted) {
+        final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+        final isDarkMode = themeProvider.isDarkMode;
+
         showDialog(
           context: context,
           builder: (BuildContext context) {
             return AlertDialog(
-              title: Text('Error'),
-              content: Text('Failed to share image: ${e.toString()}'),
+              backgroundColor: AppColors.getSurfaceColor(isDarkMode),
+              title: Text(
+                'Error',
+                style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+              ),
+              content: Text(
+                'Failed to share image: ${e.toString()}',
+                style: TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode)),
+              ),
               actions: [
                 TextButton(
                   onPressed: () {
                     Navigator.of(context).pop();
                   },
-                  child: Text('OK'),
+                  child: Text(
+                    'OK',
+                    style: TextStyle(color: AppColors.primaryBlue),
+                  ),
                 ),
               ],
             );
@@ -517,17 +567,26 @@ class _EditScreenState extends State<EditScreen> {
 
   Future<void> _showRatingDialog(BuildContext context) async {
     double rating = 0;
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    final isDarkMode = themeProvider.isDarkMode;
 
     return showDialog<double>(
       context: context,
       builder: (BuildContext dialogContext) {
         return StatefulBuilder(builder: (context, setState) {
           return AlertDialog(
-            title: Text('Rate This Content'),
+            backgroundColor: AppColors.getSurfaceColor(isDarkMode),
+            title: Text(
+              'Rate This Content',
+              style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+            ),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('How would you rate your experience with this template?'),
+                Text(
+                  'How would you rate your experience with this template?',
+                  style: TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode)),
+                ),
                 SizedBox(height: 20),
                 FittedBox(
                   child: Row(
@@ -536,7 +595,7 @@ class _EditScreenState extends State<EditScreen> {
                       return IconButton(
                         icon: Icon(
                           index < rating ? Icons.star : Icons.star_border,
-                          color: index < rating ? Colors.amber : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                          color: index < rating ? Colors.amber : isDarkMode ? Colors.grey[600] : Colors.grey[400],
                           size: 36,
                         ),
                         onPressed: () {
@@ -555,7 +614,10 @@ class _EditScreenState extends State<EditScreen> {
                 onPressed: () {
                   Navigator.of(dialogContext).pop(null);
                 },
-                child: Text('Skip'),
+                child: Text(
+                  'Skip',
+                  style: TextStyle(color: AppColors.primaryBlue),
+                ),
               ),
               TextButton(
                 onPressed: () {
@@ -566,7 +628,10 @@ class _EditScreenState extends State<EditScreen> {
                         (route) => false,
                   );
                 },
-                child: Text('Submit'),
+                child: Text(
+                  'Submit',
+                  style: TextStyle(color: AppColors.primaryBlue),
+                ),
               ),
             ],
           );
@@ -764,13 +829,14 @@ class _EditScreenState extends State<EditScreen> {
       _hideLoadingIndicator();
 
       // Show success message
+      final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+      final isDarkMode = themeProvider.isDarkMode;
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text("Image saved to your gallery and downloads"),
           duration: Duration(seconds: 3),
-          backgroundColor: Theme.of(context).brightness == Brightness.dark
-              ? AppColors.primaryGreen.withOpacity(0.7)
-              : AppColors.primaryGreen,
+          backgroundColor: isDarkMode ? AppColors.primaryGreen.withOpacity(0.7) : AppColors.primaryGreen,
           action: SnackBarAction(
             label: 'VIEW ALL',
             textColor: Colors.white,
@@ -861,7 +927,6 @@ class _EditScreenState extends State<EditScreen> {
       if (image != null) {
         // Show loading indicator for file reading
         _showLoadingIndicator();
-
         try {
           final File file = File(image.path);
           final Uint8List bytes = await file.readAsBytes();
@@ -892,13 +957,19 @@ class _EditScreenState extends State<EditScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final textColor = Theme.of(context).textTheme.bodyMedium?.color;
-    final borderColor = isDarkMode ? AppColors.darkDivider : AppColors.lightDivider;
-    final primaryColor = Theme.of(context).colorScheme.primary;
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDarkMode = themeProvider.isDarkMode;
+    final textColor = AppColors.getTextColor(isDarkMode);
+    final backgroundColor = AppColors.getBackgroundColor(isDarkMode);
+    final surfaceColor = AppColors.getSurfaceColor(isDarkMode);
+    final borderColor = AppColors.getDividerColor(isDarkMode);
+    final iconColor = AppColors.getIconColor(isDarkMode);
+    final primaryColor = AppColors.primaryBlue;
 
     return Scaffold(
+      backgroundColor: backgroundColor,
       appBar: AppBar(
+        backgroundColor: backgroundColor,
         elevation: 0,
         title: Row(
           children: [
@@ -907,7 +978,7 @@ class _EditScreenState extends State<EditScreen> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
-                side: BorderSide(color: isDarkMode ? AppColors.darkDivider : Colors.grey),
+                side: BorderSide(color: borderColor),
                 padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               ),
               onPressed: () {
@@ -944,63 +1015,66 @@ class _EditScreenState extends State<EditScreen> {
                   height: 400,
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.shade400),
+                    border: Border.all(color: borderColor),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Center(
-                    child: CircularProgressIndicator(),
+                    child: CircularProgressIndicator(
+                      color: primaryColor,
+                      backgroundColor: surfaceColor,
+                    ),
                   ),
                 )
               else
                 imageData == null
                     ? GestureDetector(
-                        onTap: pickImageFromGallery,
-                        child: Container(
-                          height: 400,
-                          width: double.infinity,
+                  onTap: pickImageFromGallery,
+                  child: Container(
+                    height: 400,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                          color: borderColor,
+                          style: BorderStyle.solid),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 80,
+                          height: 80,
                           decoration: BoxDecoration(
-                            border: Border.all(
-                                color: Colors.grey.shade400,
-                                style: BorderStyle.solid),
-                            borderRadius: BorderRadius.circular(12),
+                            shape: BoxShape.circle,
+                            color: isDarkMode ? Colors.grey[700] : Colors.grey[300],
                           ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Container(
-                                width: 80,
-                                height: 80,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Colors.grey,
-                                ),
-                                child: Icon(
-                                  Icons.add,
-                                  size: 40,
-                                  color: Colors.grey.shade400,
-                                ),
-                              ),
-                              SizedBox(height: 16),
-                              Text(
-                                'Tap to upload from gallery',
-                                style: TextStyle(
-                                  color: Colors.grey.shade400,
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ],
+                          child: Icon(
+                            Icons.add,
+                            size: 40,
+                            color: isDarkMode ? Colors.grey[500] : Colors.grey[400],
                           ),
                         ),
-                      )
+                        SizedBox(height: 16),
+                        Text(
+                          'Tap to upload from gallery',
+                          style: TextStyle(
+                            color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
                     : RepaintBoundary(
-                        key: imageContainerKey,
-                        child: Column(
-                          children: [
-                            Image.memory(imageData!),
-                            if (showInfoBox && isPaidUser) _buildInfoBox(),
-                          ],
-                        ),
-                      ),
+                  key: imageContainerKey,
+                  child: Column(
+                    children: [
+                      Image.memory(imageData!),
+                      if (showInfoBox && isPaidUser) _buildInfoBox(),
+                    ],
+                  ),
+                ),
               SizedBox(height: 100),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -1008,11 +1082,13 @@ class _EditScreenState extends State<EditScreen> {
                   ElevatedButton.icon(
                     onPressed: pickImageFromGallery,
                     icon: Icon(Icons.photo_library,
-                    color: Colors.white,),
+                      color: Colors.white,),
                     label: Text('Change Image'),
                     style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryColor,
+                      foregroundColor: Colors.white,
                       padding:
-                          EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                     ),
                   ),
                   ElevatedButton.icon(
@@ -1046,11 +1122,13 @@ class _EditScreenState extends State<EditScreen> {
                         }
                       }
                     },
-                    icon: Icon(Icons.edit,color: Colors.white,),
+                    icon: Icon(Icons.edit, color: Colors.white,),
                     label: Text('Edit Image'),
                     style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryColor,
+                      foregroundColor: Colors.white,
                       padding:
-                          EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                     ),
                   ),
                 ],

@@ -980,7 +980,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                             'No quote available for today',
                                             style: GoogleFonts.poppins(
                                               fontSize: fontSize,
-                                              color: AppColors.getTextColor(
+                                              color: AppColors.getTextColorWhite(
                                                   isDarkMode), // Ensure text color respects theme
                                             ),
                                           ),

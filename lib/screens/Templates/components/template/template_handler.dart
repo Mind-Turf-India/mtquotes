@@ -24,10 +24,10 @@ class TemplateHandler {
 
   // Handle template selection with subscription check
   static Future<void> handleTemplateSelection(
-    BuildContext context,
-    QuoteTemplate template,
-    Function(QuoteTemplate) onAccessGranted,
-  ) async {
+      BuildContext context,
+      QuoteTemplate template,
+      Function(QuoteTemplate) onAccessGranted,
+      ) async {
     showLoadingIndicator(context);
     try {
       final templateService = TemplateService();
@@ -46,17 +46,31 @@ class TemplateHandler {
       hideLoadingIndicator(context);
 
       if (template.isPaid && !isSubscribed) {
-        // Show subscription dialog/prompt
+        // Show subscription dialog/prompt with proper theming
+        final ThemeData theme = Theme.of(context);
+        final bool isDarkMode = theme.brightness == Brightness.dark;
+        final Color backgroundColor = isDarkMode ? AppColors.darkSurface : AppColors.lightSurface;
+        final Color textColor = isDarkMode ? AppColors.darkText : AppColors.lightText;
+
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
-            title: Text('Premium Template'),
+            backgroundColor: backgroundColor,
+            title: Text(
+              'Premium Template',
+              style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
+            ),
             content: Text(
-                'This template requires a subscription. Subscribe to access all premium templates.'),
+              'This template requires a subscription. Subscribe to access all premium templates.',
+              style: TextStyle(color: textColor),
+            ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: Text('Cancel'),
+                child: Text(
+                  'Cancel',
+                  style: TextStyle(color: AppColors.primaryBlue),
+                ),
               ),
               TextButton(
                 onPressed: () {
@@ -64,23 +78,21 @@ class TemplateHandler {
                   // Navigate to subscription page
                   Navigator.pushNamed(context, '/subscription');
                 },
-                child: Text('Subscribe'),
+                child: Text(
+                  'Subscribe',
+                  style: TextStyle(color: AppColors.primaryBlue),
+                ),
               ),
             ],
           ),
         );
       } else {
         // Show confirmation dialog with preview
-        // The issue is here - we need to pass isSubscribed as the third parameter
         showTemplateConfirmationDialog(
           context,
           template,
-          isSubscribed, // Pass the boolean value here
+          isSubscribed,
         );
-
-        // Then we need to modify _showTemplateConfirmationDialog to handle the callback
-        // This should be done in the implementation of _showTemplateConfirmationDialog
-        // to call onAccessGranted(template) when the create button is pressed
       }
     } catch (e) {
       hideLoadingIndicator(context);
@@ -95,12 +107,18 @@ class TemplateHandler {
   }
 
   static void showLoadingIndicator(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final bool isDarkMode = theme.brightness == Brightness.dark;
+
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
         return Center(
-          child: CircularProgressIndicator(),
+          child: CircularProgressIndicator(
+            color: AppColors.primaryBlue,
+            backgroundColor: isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
+          ),
         );
       },
     );
@@ -119,7 +137,7 @@ class TemplateHandler {
           .findRenderObject() as RenderRepaintBoundary;
       final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
       final ByteData? byteData =
-          await image.toByteData(format: ui.ImageByteFormat.png);
+      await image.toByteData(format: ui.ImageByteFormat.png);
 
       if (byteData != null) {
         return byteData.buffer.asUint8List();
@@ -135,17 +153,29 @@ class TemplateHandler {
   static Future<void> _showRatingDialog(
       BuildContext context, QuoteTemplate template) async {
     double rating = 0;
+    final ThemeData theme = Theme.of(context);
+    final bool isDarkMode = theme.brightness == Brightness.dark;
+    final Color backgroundColor = isDarkMode ? AppColors.darkSurface : AppColors.lightSurface;
+    final Color textColor = isDarkMode ? AppColors.darkText : AppColors.lightText;
+    final Color secondaryTextColor = isDarkMode ? AppColors.darkSecondaryText : AppColors.lightSecondaryText;
 
     return showDialog<double>(
       context: context,
       builder: (BuildContext dialogContext) {
         return StatefulBuilder(builder: (context, setState) {
           return AlertDialog(
-            title: Text('Rate This Template'),
+            backgroundColor: backgroundColor,
+            title: Text(
+              'Rate This Template',
+              style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
+            ),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('How would you rate your experience with this template?'),
+                Text(
+                  'How would you rate your experience with this template?',
+                  style: TextStyle(color: secondaryTextColor),
+                ),
                 SizedBox(height: 20),
                 FittedBox(
                   child: Row(
@@ -154,7 +184,7 @@ class TemplateHandler {
                       return IconButton(
                         icon: Icon(
                           index < rating ? Icons.star : Icons.star_border,
-                          color: index < rating ? Colors.amber : Colors.grey,
+                          color: index < rating ? Colors.amber : isDarkMode ? Colors.grey[600] : Colors.grey[400],
                           size: 36,
                         ),
                         onPressed: () {
@@ -173,14 +203,20 @@ class TemplateHandler {
                 onPressed: () {
                   Navigator.of(dialogContext).pop(null);
                 },
-                child: Text('Skip'),
+                child: Text(
+                  'Skip',
+                  style: TextStyle(color: AppColors.primaryBlue),
+                ),
               ),
               TextButton(
                 onPressed: () {
                   Navigator.of(dialogContext).pop(rating); // Close the dialog
                   Navigator.of(context).pushReplacementNamed('/home');
                 },
-                child: Text('Submit'),
+                child: Text(
+                  'Submit',
+                  style: TextStyle(color: AppColors.primaryBlue),
+                ),
               ),
             ],
           );
@@ -196,7 +232,7 @@ class TemplateHandler {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Thanks for your rating!'),
-              backgroundColor: Colors.green,
+              backgroundColor: AppColors.primaryGreen,
             ),
           );
         }
@@ -247,7 +283,7 @@ class TemplateHandler {
     }
   }
 
-// Add this function to submit the rating to your backend
+  // Add this function to submit the rating to your backend
   static Future<void> _submitRating(
       double rating, QuoteTemplate template) async {
     try {
@@ -294,7 +330,7 @@ class TemplateHandler {
     try {
       // Get reference to the template document
       final templateRef =
-          FirebaseFirestore.instance.collection('templates').doc(templateId);
+      FirebaseFirestore.instance.collection('templates').doc(templateId);
 
       // Run this as a transaction to ensure data consistency
       await FirebaseFirestore.instance.runTransaction((transaction) async {
@@ -327,208 +363,18 @@ class TemplateHandler {
     }
   }
 
-  // static Future<void> shareTemplate(
-  //   BuildContext context,
-  //   QuoteTemplate template, {
-  //   String? userName,
-  //   String? userProfileImageUrl,
-  //   bool isPaidUser = false,
-  // }) async {
-  //   // Capture context early
-  //   final capturedContext = context;
-
-  //   try {
-  //     // Add to recent templates when sharing
-  //     try {
-  //       await RecentTemplateService.addRecentTemplate(template);
-  //       print('Added template to recents when sharing: ${template.id}');
-  //     } catch (e) {
-  //       print('Error adding template to recents when sharing: $e');
-  //     }
-
-  //     // If userName or userProfileImageUrl are null, get them from Firebase
-  //     if (userName == null || userProfileImageUrl == null) {
-  //       User? currentUser = FirebaseAuth.instance.currentUser;
-  //       String defaultUserName = currentUser?.displayName ?? context.loc.user;
-  //       String defaultProfileImageUrl = currentUser?.photoURL ?? '';
-
-  //       // Fetch user data from users collection if available
-  //       if (currentUser?.email != null) {
-  //         try {
-  //           // Convert email to document ID format (replace . with _)
-  //           String docId = currentUser!.email!.replaceAll('.', '_');
-
-  //           // Fetch user document from Firestore
-  //           DocumentSnapshot userDoc = await FirebaseFirestore.instance
-  //               .collection('users')
-  //               .doc(docId)
-  //               .get();
-
-  //           // Check if document exists and has required fields
-  //           if (userDoc.exists && userDoc.data() is Map<String, dynamic>) {
-  //             Map<String, dynamic> userData =
-  //                 userDoc.data() as Map<String, dynamic>;
-
-  //             // Get name from Firestore with fallback
-  //             if (userData.containsKey('name') &&
-  //                 userData['name'] != null &&
-  //                 userData['name'].toString().isNotEmpty) {
-  //               userName = userData['name'];
-  //             } else {
-  //               userName = defaultUserName;
-  //             }
-
-  //             // Get profile image from Firestore with fallback
-  //             if (userData.containsKey('profileImage') &&
-  //                 userData['profileImage'] != null &&
-  //                 userData['profileImage'].toString().isNotEmpty) {
-  //               userProfileImageUrl = userData['profileImage'];
-  //             } else {
-  //               userProfileImageUrl = defaultProfileImageUrl;
-  //             }
-  //           } else {
-  //             userName = defaultUserName;
-  //             userProfileImageUrl = defaultProfileImageUrl;
-  //           }
-  //         } catch (e) {
-  //           print('Error fetching user data: $e');
-  //           userName = defaultUserName;
-  //           userProfileImageUrl = defaultProfileImageUrl;
-  //         }
-  //       } else {
-  //         userName = defaultUserName;
-  //         userProfileImageUrl = defaultProfileImageUrl;
-  //       }
-  //     }
-
-  //     // Check if we're coming from the sharing page - if not, navigate to it
-  //     if (capturedContext.mounted) {
-  //       bool isOnSharingPage = false;
-
-  //       try {
-  //         // This is more reliable than using is operator which can cause issues
-  //         isOnSharingPage = Navigator.of(capturedContext)
-  //             .widget
-  //             .toString()
-  //             .contains('TemplateSharingPage');
-  //       } catch (e) {
-  //         print('Error checking current page: $e');
-  //       }
-
-  //       if (!isOnSharingPage) {
-  //         Navigator.of(capturedContext).push(
-  //           MaterialPageRoute(
-  //             builder: (context) => TemplateSharingPage(
-  //               template: template,
-  //               userName: userName ?? 'User', // Default value if null
-  //               userProfileImageUrl: userProfileImageUrl ?? '',
-  //               isPaidUser: isPaidUser,
-  //             ),
-  //           ),
-  //         );
-  //         return;
-  //       }
-  //     } else {
-  //       return; // Context is no longer mounted, can't proceed
-  //     }
-
-  //     // If we're already on the sharing page, perform the actual sharing
-  //     // Show loading indicator
-  //     if (capturedContext.mounted) {
-  //       showDialog(
-  //         context: capturedContext,
-  //         barrierDismissible: false,
-  //         builder: (BuildContext dialogContext) {
-  //           return Center(
-  //             child: CircularProgressIndicator(),
-  //           );
-  //         },
-  //       );
-  //     } else {
-  //       return; // Context is no longer mounted, can't proceed
-  //     }
-
-  //     Uint8List? imageBytes;
-
-  //     if (isPaidUser) {
-  //       // For paid users, capture the whole template including profile details
-  //       imageBytes = await captureTemplateImage();
-  //     } else {
-  //       // For free users, just download the original template image
-  //       final response = await http.get(Uri.parse(template.imageUrl));
-
-  //       if (response.statusCode != 200) {
-  //         throw Exception('Failed to load image');
-  //       }
-  //       imageBytes = response.bodyBytes;
-  //     }
-
-  //     // Close loading dialog
-  //     if (capturedContext.mounted) {
-  //       Navigator.of(capturedContext, rootNavigator: true).pop();
-  //     } else {
-  //       return; // Context is no longer mounted, can't proceed
-  //     }
-
-  //     if (imageBytes == null) {
-  //       throw Exception('Failed to process image');
-  //     }
-
-  //     // Get temp directory
-  //     final tempDir = await getTemporaryDirectory();
-  //     final tempFile = File('${tempDir.path}/shared_template.png');
-
-  //     // Save image as file
-  //     await tempFile.writeAsBytes(imageBytes);
-
-  //     // Share directly based on user type
-  //     if (isPaidUser) {
-  //       // For paid users, share with full branding
-  //       await Share.shareXFiles(
-  //         [XFile(tempFile.path)],
-  //         text: 'Check out this amazing quote template by $userName!',
-  //       );
-  //     } else {
-  //       // For free users, share without branding
-  //       await Share.shareXFiles(
-  //         [XFile(tempFile.path)],
-  //         text: 'Check out this amazing quote template!',
-  //       );
-  //     }
-
-  //     // Show rating dialog after sharing
-  //     await Future.delayed(Duration(milliseconds: 500));
-  //     if (capturedContext.mounted) {
-  //       await _showRatingDialog(capturedContext, template);
-  //     }
-  //   } catch (e) {
-  //     print('Error sharing template: $e');
-
-  //     // Close loading dialog if open
-  //     if (capturedContext.mounted) {
-  //       try {
-  //         Navigator.of(capturedContext, rootNavigator: true).pop();
-  //       } catch (dialogError) {
-  //         print('Error closing dialog: $dialogError');
-  //       }
-
-  //       // Show error message
-  //       ScaffoldMessenger.of(capturedContext).showSnackBar(
-  //         SnackBar(
-  //           content: Text('Failed to share image: ${e.toString()}'),
-  //           backgroundColor: Colors.red,
-  //         ),
-  //       );
-  //     }
-  //   }
-  // }
-
-// Method to show the template confirmation dialog
+  // Method to show the template confirmation dialog
   static void showTemplateConfirmationDialog(
-    BuildContext context,
-    QuoteTemplate template,
-    bool isPaidUser,
-  ) {
+      BuildContext context,
+      QuoteTemplate template,
+      bool isPaidUser,
+      ) {
+    final ThemeData theme = Theme.of(context);
+    final bool isDarkMode = theme.brightness == Brightness.dark;
+    final Color backgroundColor = isDarkMode ? AppColors.darkSurface : AppColors.lightSurface;
+    final Color textColor = isDarkMode ? AppColors.darkText : AppColors.lightText;
+    final Color dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.lightDivider;
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -545,7 +391,7 @@ class TemplateHandler {
                   Container(
                     width: double.infinity,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: backgroundColor,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Padding(
@@ -571,6 +417,7 @@ class TemplateHandler {
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w500,
+                              color: textColor,
                             ),
                           ),
                           SizedBox(height: 16),
@@ -595,7 +442,7 @@ class TemplateHandler {
                                         elevation: 0,
                                         shape: RoundedRectangleBorder(
                                           borderRadius:
-                                              BorderRadius.circular(24),
+                                          BorderRadius.circular(24),
                                         ),
                                       ),
                                       child: Ink(
@@ -606,7 +453,7 @@ class TemplateHandler {
                                             end: Alignment.centerRight,
                                           ),
                                           borderRadius:
-                                              BorderRadius.circular(24),
+                                          BorderRadius.circular(24),
                                         ),
                                         child: Container(
                                           padding: EdgeInsets.symmetric(
@@ -616,7 +463,7 @@ class TemplateHandler {
                                       ),
                                     ),
                                   ),
-                                   SizedBox(width: 40),
+                                  SizedBox(width: 40),
                                   SizedBox(
                                     width: 90,
                                     height: 45,
@@ -624,13 +471,13 @@ class TemplateHandler {
                                       onPressed: () =>
                                           Navigator.of(context).pop(),
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.white,
-                                        foregroundColor: Colors.black87,
+                                        backgroundColor: backgroundColor,
+                                        foregroundColor: textColor,
                                         elevation: 0,
-                                        side: BorderSide(color: Colors.grey),
+                                        side: BorderSide(color: dividerColor),
                                         shape: RoundedRectangleBorder(
                                           borderRadius:
-                                              BorderRadius.circular(24),
+                                          BorderRadius.circular(24),
                                         ),
                                         padding: EdgeInsets.symmetric(
                                           vertical: 12,
@@ -640,10 +487,7 @@ class TemplateHandler {
                                     ),
                                   ),
                                 ],
-                                
                               ),
-                              
-                                 
                               SizedBox(height: 12),
                               // Share Button
                               Center(
@@ -675,12 +519,12 @@ class TemplateHandler {
                                       ),
                                       child: Container(
                                         padding:
-                                            EdgeInsets.symmetric(vertical: 12),
+                                        EdgeInsets.symmetric(vertical: 12),
                                         child: Row(
                                           mainAxisAlignment:
-                                              MainAxisAlignment.center,
+                                          MainAxisAlignment.center,
                                           children: [
-                                            Icon(Icons.share, color: Colors.white,),
+                                            Icon(Icons.share, color: Colors.white),
                                             SizedBox(width: 8),
                                             Text('Share'),
                                           ],
@@ -729,7 +573,7 @@ class TemplateHandler {
     }
   }
 
-// Helper method to safely navigate to sharing page
+  // Helper method to safely navigate to sharing page
   static void _navigateToSharing(BuildContext context, QuoteTemplate template,
       String userName, String userProfileImageUrl, bool isPaidUser) {
     print("navigating to sharing");
@@ -772,7 +616,7 @@ class TemplateHandler {
 
         if (userDoc.exists && userDoc.data() is Map<String, dynamic>) {
           Map<String, dynamic> userData =
-              userDoc.data() as Map<String, dynamic>;
+          userDoc.data() as Map<String, dynamic>;
 
           // Get name from Firestore with fallback
           if (userData.containsKey('name') &&
@@ -808,13 +652,22 @@ class TemplateHandler {
 
   static Future<void> handleEditScreenSharing(
       BuildContext context, Uint8List imageData, bool isPaidUser) async {
+    final ThemeData theme = Theme.of(context);
+    final bool isDarkMode = theme.brightness == Brightness.dark;
+    final Color textColor = isDarkMode ? AppColors.darkText : AppColors.lightText;
+
     // For free users, redirect to template sharing
     if (!isPaidUser) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Upgrade to access direct sharing'),
+          backgroundColor: isDarkMode ? AppColors.darkSurface : null,
+          content: Text(
+            'Upgrade to access direct sharing',
+            style: TextStyle(color: textColor),
+          ),
           action: SnackBarAction(
             label: 'UPGRADE',
+            textColor: AppColors.primaryBlue,
             onPressed: () {
               Navigator.pushNamed(context, '/subscription');
             },
@@ -826,10 +679,16 @@ class TemplateHandler {
 
     // For paid users, directly share using Share.shareFiles
     try {
+      // Show loading indicator
+      showLoadingIndicator(context);
+
       // Save image to temp file
       final temp = await getTemporaryDirectory();
       final path = "${temp.path}/edited_image.jpg";
       File(path).writeAsBytes(imageData);
+
+      // Hide loading indicator
+      hideLoadingIndicator(context);
 
       // Share the image
       await Share.shareXFiles(
@@ -838,9 +697,19 @@ class TemplateHandler {
       );
     } catch (e) {
       print('Error sharing from edit screen: $e');
+
+      // Hide loading indicator if visible
+      hideLoadingIndicator(context);
+
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to share image. Please try again.')),
+          SnackBar(
+            backgroundColor: isDarkMode ? AppColors.darkSurface : null,
+            content: Text(
+              'Failed to share image. Please try again.',
+              style: TextStyle(color: textColor),
+            ),
+          ),
         );
       }
     }

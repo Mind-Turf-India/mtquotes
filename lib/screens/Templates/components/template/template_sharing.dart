@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:mtquotes/l10n/app_localization.dart';
 import 'package:mtquotes/screens/Templates/components/template/quote_template.dart';
 import 'package:mtquotes/screens/Templates/components/template/template_handler.dart';
+import 'package:mtquotes/utils/app_colors.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:http/http.dart' as http;
@@ -196,6 +197,18 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Get the current theme and determine if we're in dark mode
+    final ThemeData theme = Theme.of(context);
+    final bool isDarkMode = theme.brightness == Brightness.dark;
+
+    // Theme colors
+    final Color backgroundColor = isDarkMode ? AppColors.darkBackground : AppColors.lightBackground;
+    final Color cardColor = isDarkMode ? AppColors.darkSurface : AppColors.lightSurface;
+    final Color textColor = isDarkMode ? AppColors.darkText : AppColors.lightText;
+    final Color secondaryTextColor = isDarkMode ? AppColors.darkSecondaryText : AppColors.lightSecondaryText;
+    final Color dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.lightDivider;
+    final Color iconColor = isDarkMode ? AppColors.darkIcon : AppColors.lightIcon;
+
     // Force rebuild when template changes by using these in widget tree
     final String currentTemplateId = widget.template.id;
     final String currentImageUrl = widget.template.imageUrl;
@@ -204,15 +217,28 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
     print('Building sharing UI with template: $currentTemplateId, imageUrl: $currentImageUrl, hasCustomImage: $hasCustomImage');
 
     return Scaffold(
+      backgroundColor: backgroundColor,
       appBar: AppBar(
-        title: Text('Share Template'),
+        backgroundColor: backgroundColor,
+        title: Text(
+          'Share Template',
+          style: TextStyle(color: textColor),
+        ),
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios),
+          icon: Icon(Icons.arrow_back_ios, color: iconColor),
           onPressed: () => Navigator.of(context).pop(),
         ),
+        systemOverlayStyle: isDarkMode
+            ? SystemUiOverlayStyle.light
+            : SystemUiOverlayStyle.dark,
       ),
       body: _isLoading
-          ? Center(child: CircularProgressIndicator())
+          ? Center(
+        child: CircularProgressIndicator(
+          color: AppColors.primaryBlue,
+          backgroundColor: isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
+        ),
+      )
           : SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -225,11 +251,13 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
+                  color: textColor,
                 ),
               ),
               SizedBox(height: 16),
               Card(
                 elevation: 2,
+                color: cardColor,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -243,15 +271,19 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
+                          color: textColor,
                         ),
                       ),
                       SizedBox(height: 12),
                       Row(
                         children: [
-                          Icon(Icons.check_circle, color: Colors.green),
+                          Icon(Icons.check_circle, color: AppColors.primaryGreen),
                           SizedBox(width: 8),
                           Expanded(
-                            child: Text('Share the template without personal branding'),
+                            child: Text(
+                              'Share the template without personal branding',
+                              style: TextStyle(color: textColor),
+                            ),
                           ),
                         ],
                       ),
@@ -261,7 +293,10 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                           Icon(Icons.close, color: Colors.red),
                           SizedBox(width: 8),
                           Expanded(
-                            child: Text('No personal branding or watermark'),
+                            child: Text(
+                              'No personal branding or watermark',
+                              style: TextStyle(color: textColor),
+                            ),
                           ),
                         ],
                       ),
@@ -271,7 +306,10 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                           Icon(Icons.close, color: Colors.red),
                           SizedBox(width: 8),
                           Expanded(
-                            child: Text('Standard quality export'),
+                            child: Text(
+                              'Standard quality export',
+                              style: TextStyle(color: textColor),
+                            ),
                           ),
                         ],
                       ),
@@ -322,10 +360,10 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                             context,
                             isPaid: false,
                           ),
-                          icon: Icon(Icons.share, color: Colors.white,),
+                          icon: Icon(Icons.share, color: Colors.white),
                           label: Text('Share Basic'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
+                            backgroundColor: AppColors.primaryBlue,
                             foregroundColor: Colors.white,
                             padding: EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
@@ -344,38 +382,40 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                 padding: const EdgeInsets.symmetric(vertical: 24.0),
                 child: Row(
                   children: [
-                    Expanded(child: Divider()),
+                    Expanded(child: Divider(color: dividerColor)),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16.0),
                       child: Text(
                         'OR',
                         style: TextStyle(
-                          color: Colors.grey,
+                          color: secondaryTextColor,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
-                    Expanded(child: Divider()),
+                    Expanded(child: Divider(color: dividerColor)),
                   ],
                 ),
               ),
 
-              SizedBox(height: 10,),
+              SizedBox(height: 10),
               // Premium sharing option
               Text(
                 'Premium Sharing',
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
+                  color: textColor,
                 ),
               ),
               SizedBox(height: 16),
               Card(
                 elevation: 2,
+                color: cardColor,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                   side: BorderSide(
-                    color: widget.isPaidUser ? Colors.blue : Colors.grey.shade300,
+                    color: widget.isPaidUser ? AppColors.primaryBlue : dividerColor,
                     width: 2,
                   ),
                 ),
@@ -389,54 +429,64 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
+                          color: textColor,
                         ),
                       ),
                       SizedBox(height: 12),
                       Row(
                         children: [
-                          Icon(Icons.check_circle, color: Colors.green),
+                          Icon(Icons.check_circle, color: AppColors.primaryGreen),
                           SizedBox(width: 8),
                           Expanded(
-                            child: Text('Include your name and profile picture on the template'),
+                            child: Text(
+                              'Include your name and profile picture on the template',
+                              style: TextStyle(color: textColor),
+                            ),
                           ),
                         ],
                       ),
                       SizedBox(height: 8),
                       Row(
                         children: [
-                          Icon(Icons.check_circle, color: Colors.green),
+                          Icon(Icons.check_circle, color: AppColors.primaryGreen),
                           SizedBox(width: 8),
                           Expanded(
-                            child: Text('Personalized sharing message'),
+                            child: Text(
+                              'Personalized sharing message',
+                              style: TextStyle(color: textColor),
+                            ),
                           ),
                         ],
                       ),
                       SizedBox(height: 8),
                       Row(
                         children: [
-                          Icon(Icons.check_circle, color: Colors.green),
+                          Icon(Icons.check_circle, color: AppColors.primaryGreen),
                           SizedBox(width: 8),
                           Expanded(
-                            child: Text('No watermark - clean professional look'),
+                            child: Text(
+                              'No watermark - clean professional look',
+                              style: TextStyle(color: textColor),
+                            ),
                           ),
                         ],
                       ),
                       SizedBox(height: 8),
                       Row(
                         children: [
-                          Icon(Icons.check_circle, color: Colors.green),
+                          Icon(Icons.check_circle, color: AppColors.primaryGreen),
                           SizedBox(width: 8),
                           Expanded(
-                            child: Text('High quality image export'),
+                            child: Text(
+                              'High quality image export',
+                              style: TextStyle(color: textColor),
+                            ),
                           ),
                         ],
                       ),
                       SizedBox(height: 16),
 
-                      // If we have custom image data, show just the image - FIXED
-                      // Replace the entire conditional structure (if/else with _customImageData)
-
-// If we have custom image data, show just the image for paid users
+                      // If we have custom image data, show just the image for paid users
                       if (_customImageData != null && widget.isPaidUser)
                         Column(
                           children: [
@@ -462,10 +512,10 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                               width: double.infinity,
                               child: ElevatedButton.icon(
                                 onPressed: () => _shareTemplate(context, isPaid: true),
-                                icon: Icon(Icons.share, color: Colors.white,),
+                                icon: Icon(Icons.share, color: Colors.white),
                                 label: Text('Share Now'),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.blue,
+                                  backgroundColor: AppColors.primaryBlue,
                                   foregroundColor: Colors.white,
                                   padding: EdgeInsets.symmetric(vertical: 12),
                                   shape: RoundedRectangleBorder(
@@ -476,7 +526,7 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                             )
                           ],
                         )
-// Otherwise show the template with user info box for both paid and unpaid users
+                      // Otherwise show the template with user info box for both paid and unpaid users
                       else
                         FutureBuilder<DocumentSnapshot>(
                           key: ValueKey("premium_preview_${currentTemplateId}_${currentImageUrl}"),
@@ -521,7 +571,7 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                                   child: Container(
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(color: Colors.grey.shade300),
+                                      border: Border.all(color: dividerColor),
                                     ),
                                     child: Column(
                                       children: [
@@ -545,7 +595,7 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                                           width: double.infinity,
                                           padding: EdgeInsets.all(12),
                                           decoration: BoxDecoration(
-                                            color: Colors.white,
+                                            color: cardColor,
                                             borderRadius: BorderRadius.vertical(bottom: Radius.circular(8)),
                                           ),
                                           child: Row(
@@ -572,6 +622,7 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                                                         style: TextStyle(
                                                           fontWeight: FontWeight.bold,
                                                           fontSize: 16,
+                                                          color: textColor,
                                                         ),
                                                       ),
 
@@ -581,6 +632,7 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                                                       style: TextStyle(
                                                         fontWeight: isBusinessProfile ? FontWeight.normal : FontWeight.bold,
                                                         fontSize: isBusinessProfile ? 14 : 16,
+                                                        color: textColor,
                                                       ),
                                                     ),
 
@@ -588,21 +640,30 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                                                     if (userLocation.isNotEmpty)
                                                       Text(
                                                         userLocation,
-                                                        style: TextStyle(fontSize: 14),
+                                                        style: TextStyle(
+                                                          fontSize: 14,
+                                                          color: secondaryTextColor,
+                                                        ),
                                                       ),
 
                                                     // Show social media for business profiles (paid users only)
                                                     if (isBusinessProfile && userSocialMedia.isNotEmpty)
                                                       Text(
                                                         userSocialMedia,
-                                                        style: TextStyle(fontSize: 14, color: Colors.blue),
+                                                        style: TextStyle(
+                                                          fontSize: 14,
+                                                          color: AppColors.primaryBlue,
+                                                        ),
                                                       ),
 
                                                     // Show description for business profiles (paid users only)
                                                     if (isBusinessProfile && userDescription.isNotEmpty)
                                                       Text(
                                                         userDescription,
-                                                        style: TextStyle(fontSize: 14),
+                                                        style: TextStyle(
+                                                          fontSize: 14,
+                                                          color: secondaryTextColor,
+                                                        ),
                                                         maxLines: 2,
                                                         overflow: TextOverflow.ellipsis,
                                                       ),
@@ -614,6 +675,7 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                                                       style: TextStyle(
                                                         fontWeight: FontWeight.bold,
                                                         fontSize: 16,
+                                                        color: textColor,
                                                       ),
                                                     ),
                                                   ],
@@ -638,7 +700,7 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                                     icon: Icon(widget.isPaidUser ? Icons.share : Icons.lock),
                                     label: Text(widget.isPaidUser ? 'Share Now' : 'Upgrade to Pro'),
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.blue,
+                                      backgroundColor: AppColors.primaryBlue,
                                       foregroundColor: Colors.white,
                                       padding: EdgeInsets.symmetric(vertical: 12),
                                       shape: RoundedRectangleBorder(
@@ -681,6 +743,7 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
       return null;
     }
   }
+
 
   // Method to add branding to image programmatically for paid users
   Future<Uint8List?> _addBrandingToImage(Uint8List originalImageBytes) async {

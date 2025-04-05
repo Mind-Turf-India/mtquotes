@@ -12,6 +12,8 @@ import 'package:mtquotes/l10n/app_localization.dart';
 import 'package:mtquotes/screens/Templates/components/totd/totd_service.dart';
 import 'package:mtquotes/screens/Templates/components/totd/totd_sharing.dart';
 import 'package:mtquotes/utils/app_colors.dart';
+import 'package:provider/provider.dart';
+import 'package:mtquotes/utils/theme_provider.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../Create_Screen/components/details_screen.dart';
@@ -43,7 +45,7 @@ class TimeOfDayHandler {
       String docId = user.email!.replaceAll('.', '_');
 
       final userDoc =
-          await FirebaseFirestore.instance.collection('users').doc(docId).get();
+      await FirebaseFirestore.instance.collection('users').doc(docId).get();
 
       return userDoc.data()?['isSubscribed'] == true;
     } catch (e) {
@@ -59,7 +61,7 @@ class TimeOfDayHandler {
           .findRenderObject() as RenderRepaintBoundary;
       final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
       final ByteData? byteData =
-          await image.toByteData(format: ui.ImageByteFormat.png);
+      await image.toByteData(format: ui.ImageByteFormat.png);
 
       if (byteData != null) {
         return byteData.buffer.asUint8List();
@@ -75,17 +77,29 @@ class TimeOfDayHandler {
   static Future<void> _showRatingDialog(
       BuildContext context, TimeOfDayPost post) async {
     double rating = 0;
+    final ThemeProvider themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    final bool isDarkMode = themeProvider.isDarkMode;
 
     return showDialog<double>(
       context: context,
       builder: (BuildContext dialogContext) {
         return StatefulBuilder(builder: (context, setState) {
           return AlertDialog(
-            title: Text('Rate This Content'),
+            backgroundColor: AppColors.getSurfaceColor(isDarkMode),
+            title: Text(
+              'Rate This Content',
+              style: TextStyle(
+                color: AppColors.getTextColor(isDarkMode),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('How would you rate your experience with this content?'),
+                Text(
+                  'How would you rate your experience with this content?',
+                  style: TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode)),
+                ),
                 SizedBox(height: 20),
                 FittedBox(
                   child: Row(
@@ -94,7 +108,7 @@ class TimeOfDayHandler {
                       return IconButton(
                         icon: Icon(
                           index < rating ? Icons.star : Icons.star_border,
-                          color: index < rating ? Colors.amber : Colors.grey,
+                          color: index < rating ? Colors.amber : isDarkMode ? Colors.grey[600] : Colors.grey[400],
                           size: 36,
                         ),
                         onPressed: () {
@@ -113,14 +127,20 @@ class TimeOfDayHandler {
                 onPressed: () {
                   Navigator.of(dialogContext).pop(null);
                 },
-                child: Text('Skip'),
+                child: Text(
+                  'Skip',
+                  style: TextStyle(color: AppColors.primaryBlue),
+                ),
               ),
               TextButton(
                 onPressed: () {
                   Navigator.of(dialogContext).pop(rating); // Close the dialog
                   Navigator.of(context).pushReplacementNamed('/home');
                 },
-                child: Text('Submit'),
+                child: Text(
+                  'Submit',
+                  style: TextStyle(color: AppColors.primaryBlue),
+                ),
               ),
             ],
           );
@@ -136,7 +156,7 @@ class TimeOfDayHandler {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Thanks for your rating!'),
-              backgroundColor: Colors.green,
+              backgroundColor: AppColors.primaryGreen,
             ),
           );
         }
@@ -191,7 +211,7 @@ class TimeOfDayHandler {
 
       // Get reference to the TOTD document
       final totdRef =
-          FirebaseFirestore.instance.collection('totd').doc(timeOfDay);
+      FirebaseFirestore.instance.collection('totd').doc(timeOfDay);
 
       // Run this as a transaction to ensure data consistency
       await FirebaseFirestore.instance.runTransaction((transaction) async {
@@ -232,13 +252,16 @@ class TimeOfDayHandler {
 
   // Method to share TOTD post
   static Future<void> shareTOTDPost(
-    BuildContext context,
-    TimeOfDayPost post, {
-    String? userName,
-    String? userProfileImageUrl,
-    bool isPaidUser = false,
-  }) async {
+      BuildContext context,
+      TimeOfDayPost post, {
+        String? userName,
+        String? userProfileImageUrl,
+        bool isPaidUser = false,
+      }) async {
     try {
+      final ThemeProvider themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+      final bool isDarkMode = themeProvider.isDarkMode;
+
       // Add to recent templates when sharing
       try {
         // Convert TOTD post to quote template format for recent templates
@@ -270,7 +293,7 @@ class TimeOfDayHandler {
             // Check if document exists and has required fields
             if (userDoc.exists && userDoc.data() is Map<String, dynamic>) {
               Map<String, dynamic> userData =
-                  userDoc.data() as Map<String, dynamic>;
+              userDoc.data() as Map<String, dynamic>;
 
               // Get name from Firestore with fallback
               if (userData.containsKey('name') &&
@@ -327,7 +350,10 @@ class TimeOfDayHandler {
         barrierDismissible: false,
         builder: (BuildContext context) {
           return Center(
-            child: CircularProgressIndicator(),
+            child: CircularProgressIndicator(
+              color: AppColors.primaryBlue,
+              backgroundColor: AppColors.getSurfaceColor(isDarkMode),
+            ),
           );
         },
       );
@@ -389,10 +415,16 @@ class TimeOfDayHandler {
       print('Error sharing TOTD post: $e');
 
       // Show error message
+      final ThemeProvider themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+      final bool isDarkMode = themeProvider.isDarkMode;
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to share image: ${e.toString()}'),
           backgroundColor: Colors.red,
+          content: Text(
+            'Failed to share image: ${e.toString()}',
+            style: TextStyle(color: Colors.white),
+          ),
         ),
       );
     }
@@ -404,8 +436,11 @@ class TimeOfDayHandler {
   static void _showTemplateConfirmationDialog(
       BuildContext context, TimeOfDayPost post, bool isPaidUser,
       [Function?
-          onConfirm] // Optional callback parameter with default value null
+      onConfirm] // Optional callback parameter with default value null
       ) {
+    final ThemeProvider themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    final bool isDarkMode = themeProvider.isDarkMode;
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -422,7 +457,7 @@ class TimeOfDayHandler {
                   Container(
                     width: double.infinity,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: AppColors.getSurfaceColor(isDarkMode),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Padding(
@@ -445,54 +480,25 @@ class TimeOfDayHandler {
                               ),
                               child: isPaidUser
                                   ? Align(
-                                      alignment: Alignment.bottomRight,
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(10.0),
-                                        child: Container(
-                                          padding: EdgeInsets.symmetric(
-                                              horizontal: 8, vertical: 4),
-                                          // decoration: BoxDecoration(
-                                          //   color: Colors.black.withOpacity(0.6),
-                                          //   borderRadius: BorderRadius.circular(12),
-                                          // ),
-                                          // child: Row(
-                                          //   mainAxisSize: MainAxisSize.min,
-                                          //   children: [
-                                          //     CircleAvatar(
-                                          //       radius: 10,
-                                          //       backgroundImage: _getUserProfileImage(context),
-                                          //     ),
-                                          //     SizedBox(width: 4),
-                                          //     Text(
-                                          //       _getUserName(context),
-                                          //       style: TextStyle(
-                                          //         fontSize: 10,
-                                          //         color: Colors.white,
-                                          //         fontWeight: FontWeight.bold,
-                                          //       ),
-                                          //     ),
-                                          //   ],
-                                          // ),
-                                        ),
-                                      ),
-                                    )
+                                alignment: Alignment.bottomRight,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(10.0),
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(
+                                        horizontal: 8, vertical: 4),
+                                  ),
+                                ),
+                              )
                                   : null,
                             ),
                           ),
                           SizedBox(height: 24),
-                          // Text(
-                          //   post.title,
-                          //   style: TextStyle(
-                          //     fontSize: 18,
-                          //     fontWeight: FontWeight.bold,
-                          //   ),
-                          // ),
-                          // SizedBox(height: 8),
                           Text(
                             'Do you wish to continue?',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w500,
+                              color: AppColors.getTextColor(isDarkMode),
                             ),
                           ),
                           SizedBox(height: 16),
@@ -517,7 +523,7 @@ class TimeOfDayHandler {
                                         elevation: 0,
                                         shape: RoundedRectangleBorder(
                                           borderRadius:
-                                              BorderRadius.circular(24),
+                                          BorderRadius.circular(24),
                                         ),
                                       ),
                                       child: Ink(
@@ -528,7 +534,7 @@ class TimeOfDayHandler {
                                             end: Alignment.centerRight,
                                           ),
                                           borderRadius:
-                                              BorderRadius.circular(24),
+                                          BorderRadius.circular(24),
                                         ),
                                         child: Container(
                                           padding: EdgeInsets.symmetric(
@@ -546,13 +552,13 @@ class TimeOfDayHandler {
                                       onPressed: () =>
                                           Navigator.of(context).pop(),
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.white,
-                                        foregroundColor: Colors.black87,
+                                        backgroundColor: AppColors.getSurfaceColor(isDarkMode),
+                                        foregroundColor: AppColors.getTextColor(isDarkMode),
                                         elevation: 0,
-                                        side: BorderSide(color: Colors.grey),
+                                        side: BorderSide(color: AppColors.getDividerColor(isDarkMode)),
                                         shape: RoundedRectangleBorder(
                                           borderRadius:
-                                              BorderRadius.circular(24),
+                                          BorderRadius.circular(24),
                                         ),
                                         padding: EdgeInsets.symmetric(
                                           vertical: 12,
@@ -594,12 +600,12 @@ class TimeOfDayHandler {
                                       ),
                                       child: Container(
                                         padding:
-                                            EdgeInsets.symmetric(vertical: 12),
+                                        EdgeInsets.symmetric(vertical: 12),
                                         child: Row(
                                           mainAxisAlignment:
-                                              MainAxisAlignment.center,
+                                          MainAxisAlignment.center,
                                           children: [
-                                            Icon(Icons.share, color: Colors.white,),
+                                            Icon(Icons.share, color: Colors.white),
                                             SizedBox(width: 8),
                                             Text('Share'),
                                           ],
@@ -666,13 +672,19 @@ class TimeOfDayHandler {
       String userName, String userProfileImageUrl, bool isPaidUser) {
     // Check if context is still mounted before navigating
     if (context.mounted) {
+      final ThemeProvider themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+      final bool isDarkMode = themeProvider.isDarkMode;
+
       // Show loading indicator first
       showDialog(
         context: context,
         barrierDismissible: false,
         builder: (BuildContext context) {
           return Center(
-            child: CircularProgressIndicator(),
+            child: CircularProgressIndicator(
+              color: AppColors.primaryBlue,
+              backgroundColor: AppColors.getSurfaceColor(isDarkMode),
+            ),
           );
         },
       );
@@ -719,7 +731,7 @@ class TimeOfDayHandler {
 
         if (userDoc.exists && userDoc.data() is Map<String, dynamic>) {
           Map<String, dynamic> userData =
-              userDoc.data() as Map<String, dynamic>;
+          userDoc.data() as Map<String, dynamic>;
 
           // Get name from Firestore with fallback
           if (userData.containsKey('name') &&
@@ -768,17 +780,23 @@ class TimeOfDayHandler {
 
 // Integration method for handleTimeOfDayPostSelection
   static Future<void> handleTimeOfDayPostSelection(
-    BuildContext context,
-    TimeOfDayPost post,
-    Function(TimeOfDayPost) onAccessGranted,
-  ) async {
+      BuildContext context,
+      TimeOfDayPost post,
+      Function(TimeOfDayPost) onAccessGranted,
+      ) async {
+    final ThemeProvider themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    final bool isDarkMode = themeProvider.isDarkMode;
+
     // Show loading indicator
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
         return Center(
-          child: CircularProgressIndicator(),
+          child: CircularProgressIndicator(
+            color: AppColors.primaryBlue,
+            backgroundColor: AppColors.getSurfaceColor(isDarkMode),
+          ),
         );
       },
     );
@@ -803,13 +821,25 @@ class TimeOfDayHandler {
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
-            title: Text('Premium Content'),
+            backgroundColor: AppColors.getSurfaceColor(isDarkMode),
+            title: Text(
+              'Premium Content',
+              style: TextStyle(
+                color: AppColors.getTextColor(isDarkMode),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             content: Text(
-                'This content requires a subscription. Subscribe to access all premium time of day posts.'),
+              'This content requires a subscription. Subscribe to access all premium time of day posts.',
+              style: TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode)),
+            ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: Text('Cancel'),
+                child: Text(
+                  'Cancel',
+                  style: TextStyle(color: AppColors.primaryBlue),
+                ),
               ),
               TextButton(
                 onPressed: () {
@@ -817,7 +847,10 @@ class TimeOfDayHandler {
                   // Navigate to subscription page
                   Navigator.pushNamed(context, '/subscription');
                 },
-                child: Text('Subscribe'),
+                child: Text(
+                  'Subscribe',
+                  style: TextStyle(color: AppColors.primaryBlue),
+                ),
               ),
             ],
           ),
@@ -828,7 +861,7 @@ class TimeOfDayHandler {
           context,
           post,
           isSubscribed,
-          () => onAccessGranted(post), // Pass the callback here
+              () => onAccessGranted(post), // Pass the callback here
         );
       }
     } catch (e) {
@@ -868,3 +901,4 @@ class TimeOfDayHandler {
     Navigator.of(context, rootNavigator: true).pop();
   }
 }
+    // Show loading indicator

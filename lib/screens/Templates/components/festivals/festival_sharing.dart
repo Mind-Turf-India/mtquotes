@@ -16,6 +16,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mtquotes/screens/Templates/components/template/quote_template.dart';
+import 'package:mtquotes/utils/app_colors.dart';
 import '../../../Create_Screen/components/details_screen.dart';
 import '../recent/recent_service.dart';
 import 'package:transparent_image/transparent_image.dart';
@@ -132,12 +133,19 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
     bool showWatermark = false,
     BorderRadius? borderRadius,
   }) {
+    final bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final Color loadingColor = AppColors.primaryBlue;
+    final Color loadingBackground = isDarkMode ? AppColors.darkSurface : AppColors.lightSurface;
+
     if (_isImageLoading) {
       return _buildImageContainer(
         aspectRatio: _aspectRatio,
         borderRadius: borderRadius,
         child: Center(
-          child: CircularProgressIndicator(),
+          child: CircularProgressIndicator(
+            color: loadingColor,
+            backgroundColor: loadingBackground,
+          ),
         ),
       );
     }
@@ -153,7 +161,14 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
           fit: BoxFit.contain,
           fadeInDuration: Duration(milliseconds: 300),
           imageErrorBuilder: (context, error, stackTrace) {
-            return Center(child: Text('Error loading image'));
+            return Center(
+              child: Text(
+                'Error loading image',
+                style: TextStyle(
+                  color: isDarkMode ? AppColors.darkText : AppColors.lightText,
+                ),
+              ),
+            );
           },
         ),
 
@@ -184,14 +199,30 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
 
   @override
   Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final bool isDarkMode = theme.brightness == Brightness.dark;
+    final Color backgroundColor = isDarkMode ? AppColors.darkBackground : AppColors.lightBackground;
+    final Color cardBackgroundColor = isDarkMode ? AppColors.darkSurface : AppColors.lightSurface;
+    final Color textColor = isDarkMode ? AppColors.darkText : AppColors.lightText;
+    final Color secondaryTextColor = isDarkMode ? AppColors.darkSecondaryText : AppColors.lightSecondaryText;
+    final Color dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.lightDivider;
+    final Color iconColor = isDarkMode ? AppColors.darkIcon : AppColors.lightIcon;
+
     return Scaffold(
+      backgroundColor: backgroundColor,
       appBar: AppBar(
-        title: Text('Share Festival Post'),
+        backgroundColor: backgroundColor,
+        title: Text(
+          'Share Festival Post',
+          style: TextStyle(color: textColor),
+        ),
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios),
+          icon: Icon(Icons.arrow_back_ios, color: iconColor),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        systemOverlayStyle: SystemUiOverlayStyle.light,
+        systemOverlayStyle: isDarkMode
+            ? SystemUiOverlayStyle.light
+            : SystemUiOverlayStyle.dark,
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -205,11 +236,13 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
+                  color: textColor,
                 ),
               ),
               SizedBox(height: 16),
               Card(
                 elevation: 2,
+                color: cardBackgroundColor,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -223,16 +256,19 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
+                          color: textColor,
                         ),
                       ),
                       SizedBox(height: 12),
                       Row(
                         children: [
-                          Icon(Icons.check_circle, color: Colors.green),
+                          Icon(Icons.check_circle, color: AppColors.primaryGreen),
                           SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                                'Share the festival post without personal branding'),
+                              'Share the festival post without personal branding',
+                              style: TextStyle(color: textColor),
+                            ),
                           ),
                         ],
                       ),
@@ -242,7 +278,10 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
                           Icon(Icons.close, color: Colors.red),
                           SizedBox(width: 8),
                           Expanded(
-                            child: Text('No personal branding or watermark'),
+                            child: Text(
+                              'No personal branding or watermark',
+                              style: TextStyle(color: textColor),
+                            ),
                           ),
                         ],
                       ),
@@ -252,7 +291,10 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
                           Icon(Icons.close, color: Colors.red),
                           SizedBox(width: 8),
                           Expanded(
-                            child: Text('Standard quality export'),
+                            child: Text(
+                              'Standard quality export',
+                              style: TextStyle(color: textColor),
+                            ),
                           ),
                         ],
                       ),
@@ -266,15 +308,14 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton.icon(
-                          onPressed: () =>
-                              _shareFestival(
-                                context,
-                                isPaid: false,
-                              ),
+                          onPressed: () => _shareFestival(
+                            context,
+                            isPaid: false,
+                          ),
                           icon: Icon(Icons.share),
                           label: Text('Share Basic'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
+                            backgroundColor: AppColors.primaryBlue,
                             foregroundColor: Colors.white,
                             padding: EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
@@ -293,18 +334,18 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
                 padding: const EdgeInsets.symmetric(vertical: 24.0),
                 child: Row(
                   children: [
-                    Expanded(child: Divider()),
+                    Expanded(child: Divider(color: dividerColor)),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16.0),
                       child: Text(
                         'OR',
                         style: TextStyle(
-                          color: Colors.grey,
+                          color: secondaryTextColor,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
-                    Expanded(child: Divider()),
+                    Expanded(child: Divider(color: dividerColor)),
                   ],
                 ),
               ),
@@ -315,16 +356,17 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
+                  color: textColor,
                 ),
               ),
               SizedBox(height: 16),
               Card(
                 elevation: 2,
+                color: cardBackgroundColor,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                   side: BorderSide(
-                    color: widget.isPaidUser ? Colors.blue : Colors.grey
-                        .shade300,
+                    color: widget.isPaidUser ? AppColors.primaryBlue : dividerColor,
                     width: 2,
                   ),
                 ),
@@ -338,47 +380,58 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
+                          color: textColor,
                         ),
                       ),
                       SizedBox(height: 12),
                       Row(
                         children: [
-                          Icon(Icons.check_circle, color: Colors.green),
+                          Icon(Icons.check_circle, color: AppColors.primaryGreen),
                           SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                                'Include your name and profile picture on the festival post'),
+                              'Include your name and profile picture on the festival post',
+                              style: TextStyle(color: textColor),
+                            ),
                           ),
                         ],
                       ),
                       SizedBox(height: 8),
                       Row(
                         children: [
-                          Icon(Icons.check_circle, color: Colors.green),
-                          SizedBox(width: 8),
-                          Expanded(
-                            child: Text('Personalized sharing message'),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Icon(Icons.check_circle, color: Colors.green),
+                          Icon(Icons.check_circle, color: AppColors.primaryGreen),
                           SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                                'No watermark - clean professional look'),
+                              'Personalized sharing message',
+                              style: TextStyle(color: textColor),
+                            ),
                           ),
                         ],
                       ),
                       SizedBox(height: 8),
                       Row(
                         children: [
-                          Icon(Icons.check_circle, color: Colors.green),
+                          Icon(Icons.check_circle, color: AppColors.primaryGreen),
                           SizedBox(width: 8),
                           Expanded(
-                            child: Text('High quality image export'),
+                            child: Text(
+                              'No watermark - clean professional look',
+                              style: TextStyle(color: textColor),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Icon(Icons.check_circle, color: AppColors.primaryGreen),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'High quality image export',
+                              style: TextStyle(color: textColor),
+                            ),
                           ),
                         ],
                       ),
@@ -410,7 +463,7 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
                             child: Container(
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: Colors.grey.shade300),
+                                border: Border.all(color: dividerColor),
                               ),
                               child: Column(
                                 children: [
@@ -419,7 +472,12 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
                                       ? _buildImageContainer(
                                     aspectRatio: _aspectRatio,
                                     borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
-                                    child: Center(child: CircularProgressIndicator()),
+                                    child: Center(
+                                      child: CircularProgressIndicator(
+                                        color: AppColors.primaryBlue,
+                                        backgroundColor: isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
+                                      ),
+                                    ),
                                   )
                                       : AspectRatio(
                                     aspectRatio: _aspectRatio,
@@ -441,7 +499,7 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
                                     width: double.infinity,
                                     padding: EdgeInsets.all(12),
                                     decoration: BoxDecoration(
-                                      color: Colors.white,
+                                      color: isDarkMode ? AppColors.darkSurface : Colors.white,
                                       borderRadius: BorderRadius.vertical(
                                           bottom: Radius.circular(8)),
                                     ),
@@ -468,6 +526,7 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
                                                 style: TextStyle(
                                                   fontWeight: FontWeight.bold,
                                                   fontSize: 16,
+                                                  color: textColor,
                                                 ),
                                               ),
                                             ],
@@ -488,22 +547,17 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
                         width: double.infinity,
                         child: ElevatedButton.icon(
                           onPressed: widget.isPaidUser
-                              ? () =>
-                              _shareFestival(
-                                context,
-                                isPaid: true,
-                              )
-                              : () =>
-                              Navigator.pushNamed(context, '/subscription'),
-                          icon: Icon(widget.isPaidUser ? Icons.share : Icons
-                              .lock),
+                              ? () => _shareFestival(
+                            context,
+                            isPaid: true,
+                          )
+                              : () => Navigator.pushNamed(context, '/subscription'),
+                          icon: Icon(widget.isPaidUser ? Icons.share : Icons.lock),
                           label: Text(widget.isPaidUser
                               ? 'Share Now'
                               : 'Upgrade to Pro'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: widget.isPaidUser
-                                ? Colors.blue
-                                : Colors.blue,
+                            backgroundColor: AppColors.primaryBlue,
                             foregroundColor: Colors.white,
                             padding: EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
@@ -523,7 +577,6 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
     );
   }
 
-  // Rest of the code remains the same...
   // Method to capture widget as image with branding
   Future<Uint8List?> _captureBrandedImage() async {
     try {
@@ -739,6 +792,7 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
       return null;
     }
   }
+
 
   // Sharing implementation with fixes
   Future<void> _shareFestival(BuildContext context,
