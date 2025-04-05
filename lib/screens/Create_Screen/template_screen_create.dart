@@ -8,6 +8,8 @@ import 'package:mtquotes/screens/Templates/components/recent/recent_service.dart
 import 'package:mtquotes/screens/Templates/components/template/template_handler.dart';
 import 'package:mtquotes/screens/Templates/components/template/template_section.dart';
 import 'package:mtquotes/screens/User_Home/components/Categories/category_screen.dart';
+import 'package:mtquotes/utils/app_colors.dart';
+import 'package:mtquotes/utils/theme_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import '../../l10n/app_localization.dart';
@@ -20,7 +22,7 @@ import '../Templates/components/template/quote_template.dart';
 import '../Templates/components/template/template_service.dart';
 import '../User_Home/components/templates_list.dart';
 import 'edit_screen_create.dart';
-import '../User_Home/components/Search/search_service.dart'; // Import the SearchService
+import '../User_Home/components/Search/search_service.dart';
 
 class TemplatePage extends StatefulWidget {
   @override
@@ -39,18 +41,17 @@ class _TemplatePageState extends State<TemplatePage> {
   bool _loadingFestivals = false;
   List<FestivalPost> _festivalPosts = [];
   final FestivalService _festivalService = FestivalService();
-  final SearchService _searchService = SearchService(); // Add SearchService
+  final SearchService _searchService = SearchService();
 
   bool _isSearching = false;
-  List<QuoteTemplate> _searchResults = []; // Store search results
+  List<QuoteTemplate> _searchResults = [];
 
   @override
   void initState() {
     super.initState();
     initSpeech();
     _fetchFestivalPosts();
-    _searchController
-        .addListener(_onSearchChanged); // Add listener for search input
+    _searchController.addListener(_onSearchChanged);
   }
 
   @override
@@ -102,7 +103,6 @@ class _TemplatePageState extends State<TemplatePage> {
     }
   }
 
-  // Add a method to handle search text changes
   void _onSearchChanged() {
     final query = _searchController.text.trim();
     if (query.isNotEmpty) {
@@ -115,17 +115,14 @@ class _TemplatePageState extends State<TemplatePage> {
     }
   }
 
-  // Add a method to perform the search
   Future<void> _performSearch(String query) async {
     setState(() {
       _isSearching = true;
     });
 
     try {
-      // Use the search service to search across collections
       final searchResults = await _searchService.searchAcrossCollections(query);
 
-      // Log raw results
       print('Raw search results count: ${searchResults.length}');
       for (var i = 0; i < searchResults.length; i++) {
         var result = searchResults[i];
@@ -133,17 +130,14 @@ class _TemplatePageState extends State<TemplatePage> {
             'Result #${i + 1} - ID: ${result.id}, Title: ${result.title}, ImageURL: ${result.imageUrl}');
       }
 
-      // Use a map to deduplicate by ID AND filter out items with empty imageUrls
       Map<String, QuoteTemplate> uniqueTemplatesMap = {};
 
       for (var result in searchResults) {
-        // Skip items with empty imageUrl
         if (result.imageUrl == null || result.imageUrl.trim().isEmpty) {
           print('Skipping result with ID: ${result.id} due to empty imageUrl');
           continue;
         }
 
-        // Create a QuoteTemplate from SearchResult
         QuoteTemplate template = QuoteTemplate(
           id: result.id,
           title: result.title,
@@ -157,7 +151,6 @@ class _TemplatePageState extends State<TemplatePage> {
         uniqueTemplatesMap[result.id] = template;
       }
 
-      // Convert map values back to list
       List<QuoteTemplate> templates = uniqueTemplatesMap.values.toList();
 
       setState(() {
@@ -185,13 +178,11 @@ class _TemplatePageState extends State<TemplatePage> {
 
       if (mounted) {
         setState(() {
-          // Use the new method to create multiple FestivalPosts from each Festival
           _festivalPosts = [];
           for (var festival in festivals) {
             _festivalPosts.addAll(FestivalPost.multipleFromFestival(festival));
           }
 
-          // Debug prints
           for (var post in _festivalPosts) {
             print("Post: ${post.name}, Image URL: ${post.imageUrl}");
           }
@@ -209,89 +200,78 @@ class _TemplatePageState extends State<TemplatePage> {
     }
   }
 
-void _handleFestivalPostSelection(FestivalPost festival) {
-  FestivalHandler.handleFestivalSelection(
-    context,
-    festival,
-    (selectedFestival) async {
-      try {
-        // Create a QuoteTemplate from the festival post
-        QuoteTemplate template = QuoteTemplate(
-          id: selectedFestival.id,
-          title: selectedFestival.name,
-          imageUrl: selectedFestival.imageUrl,
-          category: 'festival',
-          avgRating: 0,
-          isPaid: selectedFestival.isPaid,
-          createdAt: DateTime.now(),
-        );
-        
-        // Add to recent templates
-        await RecentTemplateService.addRecentTemplate(template);
-        
-        // Navigate to edit screen
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => EditScreen(
-              title: 'Edit Festival Post',
-              templateImageUrl: selectedFestival.imageUrl,
+  void _handleFestivalPostSelection(FestivalPost festival) {
+    FestivalHandler.handleFestivalSelection(
+      context,
+      festival,
+      (selectedFestival) async {
+        try {
+          QuoteTemplate template = QuoteTemplate(
+            id: selectedFestival.id,
+            title: selectedFestival.name,
+            imageUrl: selectedFestival.imageUrl,
+            category: 'festival',
+            avgRating: 0,
+            isPaid: selectedFestival.isPaid,
+            createdAt: DateTime.now(),
+          );
+          
+          await RecentTemplateService.addRecentTemplate(template);
+          
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => EditScreen(
+                title: 'Edit Festival Post',
+                templateImageUrl: selectedFestival.imageUrl,
+              ),
             ),
-          ),
-        );
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error adding to recent templates: $e')),
-        );
-      }
-    },
-  );
-}
-
-// Then replace your current _handleTemplateSelection method with this:
-void _handleTemplateSelection(QuoteTemplate template) async {
-  // Show loading indicator
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (BuildContext context) {
-      return Center(
-        child: CircularProgressIndicator(),
-      );
-    },
-  );
-
-  try {
-    bool isSubscribed = await _templateService.isUserSubscribed();
-    
-    // Add this line to track the template as recently used
-    await RecentTemplateService.addRecentTemplate(template);
-
-    // Hide loading indicator
-    Navigator.pop(context);
-
-    if (!template.isPaid || isSubscribed) {
-      // Instead of directly navigating to EditScreen, show the confirmation dialog
-      TemplateHandler.showTemplateConfirmationDialog(
-        context,
-        template,
-        isSubscribed, // Pass the subscription status
-      );
-    } else {
-      // Show subscription popup
-      SubscriptionPopup.show(context);
-    }
-  } catch (e) {
-    // Hide loading indicator in case of error
-    Navigator.pop(context);
-    // Show error message
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Error checking subscription: $e')),
+          );
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error adding to recent templates: $e')),
+          );
+        }
+      },
     );
   }
-}
+
+  void _handleTemplateSelection(QuoteTemplate template) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Center(
+          child: CircularProgressIndicator(),
+        );
+      },
+    );
+
+    try {
+      bool isSubscribed = await _templateService.isUserSubscribed();
+      
+      await RecentTemplateService.addRecentTemplate(template);
+
+      Navigator.pop(context);
+
+      if (!template.isPaid || isSubscribed) {
+        TemplateHandler.showTemplateConfirmationDialog(
+          context,
+          template,
+          isSubscribed,
+        );
+      } else {
+        SubscriptionPopup.show(context);
+      }
+    } catch (e) {
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error checking subscription: $e')),
+      );
+    }
+  }
+
   Future<void> _pickImage() async {
-    // Show loading indicator
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -306,7 +286,6 @@ void _handleTemplateSelection(QuoteTemplate template) async {
       final pickedFile =
           await ImagePicker().pickImage(source: ImageSource.gallery);
 
-      // Hide loading indicator
       Navigator.pop(context);
 
       if (pickedFile != null) {
@@ -315,9 +294,7 @@ void _handleTemplateSelection(QuoteTemplate template) async {
         });
       }
     } catch (e) {
-      // Hide loading indicator in case of error
       Navigator.pop(context);
-      // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error picking image: $e')),
       );
@@ -325,25 +302,53 @@ void _handleTemplateSelection(QuoteTemplate template) async {
   }
 
   @override
-  Widget build(BuildContext context) {  
+  Widget build(BuildContext context) {
+    // Get theme mode from provider
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDarkMode = themeProvider.isDarkMode;
+    
+    // Get colors based on current theme
+    final backgroundColor = AppColors.getBackgroundColor(isDarkMode);
+    final textColor = AppColors.getTextColor(isDarkMode);
+    final secondaryTextColor = AppColors.getSecondaryTextColor(isDarkMode);
+    final surfaceColor = AppColors.getSurfaceColor(isDarkMode);
+    final dividerColor = AppColors.getDividerColor(isDarkMode);
+    final iconColor = AppColors.getIconColor(isDarkMode);
+    
     // Initialize tabs with localized strings
     tabs = [
       context.loc.category,
       context.loc.gallery
-    ]; //, context.loc.customesize
+    ];
 
     final textSizeProvider = Provider.of<TextSizeProvider>(context);
     double fontSize = textSizeProvider.fontSize;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: backgroundColor,
       appBar: AppBar(
-        title: Text(context.loc.template),
-        backgroundColor: Colors.white,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios),
-          onPressed: () => Navigator.pop(context), // Navigate back
+        title: Text(
+          context.loc.template,
+          style: TextStyle(color: textColor),
         ),
+        backgroundColor: backgroundColor,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios, color: iconColor),
+          onPressed: () => Navigator.pop(context),
+        ),
+        actions: [
+          // Theme toggle button
+          IconButton(
+            icon: Icon(
+              isDarkMode ? Icons.light_mode : Icons.dark_mode,
+              color: iconColor,
+            ),
+            onPressed: () {
+              themeProvider.toggleTheme();
+            },
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -353,21 +358,22 @@ void _handleTemplateSelection(QuoteTemplate template) async {
             // Search bar
             Container(
               decoration: BoxDecoration(
-                color: Colors.grey[100],
+                color: isDarkMode ? AppColors.darkSurface : Colors.grey[100],
                 borderRadius: BorderRadius.circular(12),
               ),
               child: TextField(
                 controller: _searchController,
+                style: GoogleFonts.poppins(color: textColor),
                 decoration: InputDecoration(
                   hintText: context.loc.searchquotes,
                   hintStyle: GoogleFonts.poppins(
-                    color: Colors.grey[500],
+                    color: secondaryTextColor,
                   ),
-                  prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
+                  prefixIcon: Icon(Icons.search, color: secondaryTextColor),
                   suffixIcon: IconButton(
                     icon: Icon(
                       _isListening ? Icons.mic : Icons.mic_none,
-                      color: _isListening ? Colors.blue : Colors.grey[600],
+                      color: _isListening ? AppColors.primaryBlue : secondaryTextColor,
                     ),
                     onPressed: _toggleListening,
                   ),
@@ -384,12 +390,14 @@ void _handleTemplateSelection(QuoteTemplate template) async {
             if (_isSearching)
               Expanded(
                 child: Center(
-                  child: CircularProgressIndicator(),
+                  child: CircularProgressIndicator(
+                    color: AppColors.primaryBlue,
+                  ),
                 ),
               )
             else if (_searchResults.isNotEmpty)
               Expanded(
-                child: _buildSearchResultsSection(fontSize),
+                child: _buildSearchResultsSection(fontSize, textColor, surfaceColor, isDarkMode),
               )
             else
               Expanded(
@@ -410,13 +418,13 @@ void _handleTemplateSelection(QuoteTemplate template) async {
                                 style: TextStyle(
                                   color: selectedTab == index
                                       ? Colors.white
-                                      : Colors.blueAccent,
+                                      : AppColors.primaryBlue,
                                 ),
                               ),
                               selected: selectedTab == index,
-                              selectedColor: Colors.blueAccent,
-                              backgroundColor: Colors.white,
-                              side: BorderSide(color: Colors.blueAccent),
+                              selectedColor: AppColors.primaryBlue,
+                              backgroundColor: surfaceColor,
+                              side: BorderSide(color: AppColors.primaryBlue),
                               showCheckmark: false,
                               onSelected: (bool selected) {
                                 setState(() {
@@ -431,7 +439,7 @@ void _handleTemplateSelection(QuoteTemplate template) async {
                     SizedBox(height: 16),
                     Expanded(
                       child: SingleChildScrollView(
-                        child: _buildTabContent(selectedTab),
+                        child: _buildTabContent(selectedTab, textColor, surfaceColor, isDarkMode),
                       ),
                     ),
                   ],
@@ -443,8 +451,7 @@ void _handleTemplateSelection(QuoteTemplate template) async {
     );
   }
 
-  // Add a method to build search results
-  Widget _buildSearchResultsSection(double fontSize) {
+  Widget _buildSearchResultsSection(double fontSize, Color textColor, Color surfaceColor, bool isDarkMode) {
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -454,6 +461,7 @@ void _handleTemplateSelection(QuoteTemplate template) async {
             style: GoogleFonts.poppins(
               fontSize: fontSize + 2,
               fontWeight: FontWeight.bold,
+              color: textColor,
             ),
           ),
           SizedBox(height: 10),
@@ -462,7 +470,7 @@ void _handleTemplateSelection(QuoteTemplate template) async {
             physics: NeverScrollableScrollPhysics(),
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 3,
-              childAspectRatio: 0.7, // Adjusted for better proportions
+              childAspectRatio: 0.7,
               crossAxisSpacing: 10,
               mainAxisSpacing: 10,
             ),
@@ -470,21 +478,19 @@ void _handleTemplateSelection(QuoteTemplate template) async {
             itemBuilder: (context, index) {
               final template = _searchResults[index];
       
-              // Skip items with empty imageUrl to prevent the empty box issue
               if (template.imageUrl.isEmpty) {
-                return SizedBox
-                    .shrink(); // This will create an empty/invisible widget
+                return SizedBox.shrink();
               }
       
               return GestureDetector(
                 onTap: () => _handleTemplateSelection(template),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: surfaceColor,
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.grey.shade300,
+                        color: isDarkMode ? Colors.black26 : Colors.grey.shade300,
                         blurRadius: 5,
                         offset: Offset(0, 3),
                       ),
@@ -492,7 +498,6 @@ void _handleTemplateSelection(QuoteTemplate template) async {
                   ),
                   child: Stack(
                     children: [
-                      // Image with error handling
                       ClipRRect(
                         borderRadius: BorderRadius.circular(12),
                         child: Image.network(
@@ -501,18 +506,19 @@ void _handleTemplateSelection(QuoteTemplate template) async {
                           width: double.infinity,
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) {
-                            print(
-                                'Error loading image for template ${template.id}: $error');
+                            print('Error loading image for template ${template.id}: $error');
                             return Container(
-                              color: Colors.grey[200],
+                              color: isDarkMode ? Colors.grey[800] : Colors.grey[200],
                               child: Center(
-                                child: Icon(Icons.error, color: Colors.grey[500]),
+                                child: Icon(
+                                  Icons.error, 
+                                  color: isDarkMode ? Colors.grey[600] : Colors.grey[500],
+                                ),
                               ),
                             );
                           },
                         ),
                       ),
-                      // Lock icon
                       if (template.isPaid)
                         Positioned(
                           bottom: 8,
@@ -530,9 +536,8 @@ void _handleTemplateSelection(QuoteTemplate template) async {
     );
   }
 
-  Widget _buildTabContent(int index) {
-    final textSizeProvider =
-        Provider.of<TextSizeProvider>(context); // Listen to changes
+  Widget _buildTabContent(int index, Color textColor, Color surfaceColor, bool isDarkMode) {
+    final textSizeProvider = Provider.of<TextSizeProvider>(context);
     double fontSize = textSizeProvider.fontSize;
 
     return SingleChildScrollView(
@@ -547,6 +552,7 @@ void _handleTemplateSelection(QuoteTemplate template) async {
               style: GoogleFonts.poppins(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
+                color: textColor,
               ),
             ),
             SizedBox(height: 10),
@@ -555,58 +561,41 @@ void _handleTemplateSelection(QuoteTemplate template) async {
               child: ListView(
                 scrollDirection: Axis.horizontal,
                 children: [
-                  categoryCard(
-                      Icons.lightbulb, context.loc.motivational, Colors.green),
-                  categoryCard(
-                    Icons.favorite,
-                    context.loc.love,
-                    Colors.red,
-                  ),
-                  categoryCard(
-                    Icons.emoji_emotions,
-                    context.loc.funny,
-                    Colors.orange,
-                  ),
-                  categoryCard(
-                    Icons.people,
-                    context.loc.friendship,
-                    Colors.blue,
-                  ),
-                  categoryCard(
-                    Icons.self_improvement,
-                    context.loc.life,
-                    Colors.purple,
-                  ),
+                  categoryCard(Icons.lightbulb, context.loc.motivational, Colors.green, textColor),
+                  categoryCard(Icons.favorite, context.loc.love, Colors.red, textColor),
+                  categoryCard(Icons.emoji_emotions, context.loc.funny, Colors.orange, textColor),
+                  categoryCard(Icons.people, context.loc.friendship, Colors.blue, textColor),
+                  categoryCard(Icons.self_improvement, context.loc.life, Colors.purple, textColor),
                 ],
               ),
             ),
             SizedBox(height: 20),
             _isSearching
-                ? Center(child: CircularProgressIndicator())
+                ? Center(child: CircularProgressIndicator(color: AppColors.primaryBlue))
                 : _searchResults.isNotEmpty
-                    ? _buildSearchResultsSection(fontSize)
+                    ? _buildSearchResultsSection(fontSize, textColor, surfaceColor, isDarkMode)
                     : (_searchController.text.isNotEmpty)
                         ? Center(
                             child: Text(
                               'No results found',
-                              style: GoogleFonts.poppins(fontSize: fontSize),
+                              style: GoogleFonts.poppins(
+                                fontSize: fontSize,
+                                color: textColor,
+                              ),
                             ),
                           )
-                        : // explicit empty container for when no conditions are met
-
-                        // Festival Posts Section
-                        Column(
+                        : Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
                                     context.loc.newtemplate,
                                     style: GoogleFonts.poppins(
                                       fontSize: fontSize,
                                       fontWeight: FontWeight.bold,
+                                      color: textColor,
                                     ),
                                   ),
                                   GestureDetector(
@@ -614,8 +603,7 @@ void _handleTemplateSelection(QuoteTemplate template) async {
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                          builder: (context) =>
-                                              TemplatesListScreen(
+                                          builder: (context) => TemplatesListScreen(
                                             title: context.loc.newtemplate,
                                             listType: TemplateListType.festival,
                                           ),
@@ -626,7 +614,7 @@ void _handleTemplateSelection(QuoteTemplate template) async {
                                       'View All',
                                       style: GoogleFonts.poppins(
                                         fontSize: fontSize - 2,
-                                        color: Colors.blue,
+                                        color: AppColors.primaryBlue,
                                         fontWeight: FontWeight.w500,
                                       ),
                                     ),
@@ -637,13 +625,15 @@ void _handleTemplateSelection(QuoteTemplate template) async {
                               SizedBox(
                                 height: 150,
                                 child: _loadingFestivals
-                                    ? Center(child: CircularProgressIndicator())
+                                    ? Center(child: CircularProgressIndicator(color: AppColors.primaryBlue))
                                     : _festivalPosts.isEmpty
                                         ? Center(
                                             child: Text(
                                               "No festival posts available",
                                               style: GoogleFonts.poppins(
-                                                  fontSize: fontSize - 2),
+                                                fontSize: fontSize - 2,
+                                                color: textColor,
+                                              ),
                                             ),
                                           )
                                         : ListView.builder(
@@ -653,9 +643,7 @@ void _handleTemplateSelection(QuoteTemplate template) async {
                                               return FestivalCard(
                                                 festival: _festivalPosts[index],
                                                 fontSize: fontSize,
-                                                onTap: () =>
-                                                    _handleFestivalPostSelection(
-                                                        _festivalPosts[index]),
+                                                onTap: () => _handleFestivalPostSelection(_festivalPosts[index]),
                                               );
                                             },
                                           ),
@@ -673,14 +661,16 @@ void _handleTemplateSelection(QuoteTemplate template) async {
                 child: GestureDetector(
                   onTap: () {
                     Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => EditScreen(title: '')));
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => EditScreen(title: ''),
+                      ),
+                    );
                   },
                   child: Container(
                     padding: EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.blueAccent,
+                      color: AppColors.primaryBlue,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
@@ -705,64 +695,12 @@ void _handleTemplateSelection(QuoteTemplate template) async {
                 ),
               ),
           ],
-
-          // Custom Size Tab
-          // if (index == 2) ...[
-          //   SizedBox(
-          //     height: 400, // Changed from 900 to make it more responsive
-          //     child: GridView.builder(
-          //       shrinkWrap: true,
-          //       physics: AlwaysScrollableScrollPhysics(),
-          //       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          //         crossAxisCount: 3,
-          //         childAspectRatio: 0.6,
-          //         crossAxisSpacing: 8,
-          //         mainAxisSpacing: 9,
-          //       ),
-          //       itemCount: 9,
-          //       itemBuilder: (context, gridIndex) {
-          //         List<String> sizes = [
-          //           context.loc.sizeStandard,
-          //           context.loc.sizeWide,
-          //           context.loc.sizeCommon,
-          //           context.loc.sizeSquare,
-          //           context.loc.sizeNarrow,
-          //           context.loc.sizeVertical,
-          //           context.loc.sizeUltraWide,
-          //           context.loc.sizePortrait,
-          //           context.loc.sizePanoramic,
-          //         ];
-          //         return Column(
-          //           children: [
-          //             Expanded(
-          //               child: Container(
-          //                 decoration: BoxDecoration(
-          //                   border: Border.all(color: Colors.black),
-          //                   borderRadius: BorderRadius.circular(8),
-          //                 ),
-          //               ),
-          //             ),
-          //             SizedBox(height: 4),
-          //             Text(
-          //               sizes[gridIndex],
-          //               textAlign: TextAlign.center,
-          //               style: GoogleFonts.poppins(
-          //                 fontSize: 12,
-          //                 fontWeight: FontWeight.w500,
-          //               ),
-          //             ),
-          //           ],
-          //         );
-          //       },
-          //     ),
-          //   ),
-          // ],
         ],
       ),
     );
   }
 
-  Widget categoryCard(IconData icon, String title, Color color) {
+  Widget categoryCard(IconData icon, String title, Color color, Color textColor) {
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -789,13 +727,15 @@ void _handleTemplateSelection(QuoteTemplate template) async {
               ),
               child: Icon(icon, color: color, size: 30),
             ),
-            SizedBox(
-              height: 5,
-              width: 10,
+            SizedBox(height: 5, width: 10),
+            Text(
+              title,
+              style: GoogleFonts.poppins(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: textColor,
+              ),
             ),
-            Text(title,
-                style: GoogleFonts.poppins(
-                    fontSize: 13, fontWeight: FontWeight.w500)),
           ],
         ),
       ),
@@ -803,20 +743,30 @@ void _handleTemplateSelection(QuoteTemplate template) async {
   }
 }
 
-Widget quoteCard(String text, double fontSize) {
+Widget quoteCard(String text, double fontSize, Color textColor, Color backgroundColor) {
   return Container(
     width: 100,
     margin: EdgeInsets.only(right: 10),
     padding: EdgeInsets.all(10),
     decoration: BoxDecoration(
-      color: Colors.white,
+      color: backgroundColor,
       borderRadius: BorderRadius.circular(8),
-      boxShadow: [BoxShadow(color: Colors.grey.shade300, blurRadius: 5)],
+      boxShadow: [
+        BoxShadow(
+          color: backgroundColor == Colors.white ? Colors.grey.shade300 : Colors.black26,
+          blurRadius: 5,
+        ),
+      ],
     ),
     child: Center(
-      child: Text(text,
-          textAlign: TextAlign.center,
-          style: GoogleFonts.poppins(fontSize: fontSize - 2)),
+      child: Text(
+        text,
+        textAlign: TextAlign.center,
+        style: GoogleFonts.poppins(
+          fontSize: fontSize - 2,
+          color: textColor,
+        ),
+      ),
     ),
   );
 }

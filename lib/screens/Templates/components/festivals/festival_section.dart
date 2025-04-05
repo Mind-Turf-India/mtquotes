@@ -3,6 +3,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:mtquotes/screens/Templates/components/festivals/festival_card.dart';
 import 'package:mtquotes/screens/Templates/components/festivals/festival_handler.dart';
 import 'package:mtquotes/screens/Templates/components/festivals/festival_post.dart';
+import 'package:mtquotes/utils/app_colors.dart';
+import 'package:mtquotes/utils/theme_provider.dart';
+import 'package:provider/provider.dart';
+
 
 class FestivalSection extends StatelessWidget {
   final String title;
@@ -22,6 +26,11 @@ class FestivalSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Get theme information
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDarkMode = themeProvider.isDarkMode;
+    final theme = Theme.of(context);
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -33,6 +42,7 @@ class FestivalSection extends StatelessWidget {
               style: GoogleFonts.poppins(
                 fontSize: fontSize,
                 fontWeight: FontWeight.bold,
+                color: AppColors.getTextColor(isDarkMode),
               ),
             ),
             if (onSeeAllPressed != null)
@@ -43,28 +53,46 @@ class FestivalSection extends StatelessWidget {
                   style: GoogleFonts.poppins(
                     fontSize: fontSize - 2,
                     fontWeight: FontWeight.w500,
-                    color: Colors.blueAccent,
+                    color: theme.colorScheme.primary, // Use primaryBlue from the theme
                   ),
                 ),
               ),
           ],
         ),
-        SizedBox(height: 10),
+        const SizedBox(height: 10),
         SizedBox(
           height: 120,
           child: FutureBuilder<List<FestivalPost>>(
             future: fetchFestivals(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return Center(child: CircularProgressIndicator());
+                return Center(
+                  child: CircularProgressIndicator(
+                    color: theme.colorScheme.primary, // Use primary color from theme
+                  ),
+                );
               }
 
               if (snapshot.hasError) {
-                return Center(child: Text('Error loading festivals'));
+                return Center(
+                  child: Text(
+                    'Error loading festivals',
+                    style: TextStyle(
+                      color: AppColors.getSecondaryTextColor(isDarkMode),
+                    ),
+                  ),
+                );
               }
 
               if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                return Center(child: Text('No festivals available'));
+                return Center(
+                  child: Text(
+                    'No festivals available',
+                    style: TextStyle(
+                      color: AppColors.getSecondaryTextColor(isDarkMode),
+                    ),
+                  ),
+                );
               }
 
               return ListView.builder(

@@ -7,6 +7,10 @@ import 'package:image_picker/image_picker.dart';
 import 'package:mtquotes/screens/Create_Screen/edit_screen_create.dart';
 import 'package:mtquotes/screens/Payment_Screen/subscription_screen.dart';
 import 'package:mtquotes/screens/Templates/components/template/quote_template.dart';
+import 'package:mtquotes/utils/app_colors.dart';
+import 'package:mtquotes/utils/theme_provider.dart';
+import 'package:provider/provider.dart';
+
 
 class DetailsScreen extends StatefulWidget {
   final QuoteTemplate template;
@@ -29,7 +33,6 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _companyNameController = TextEditingController();
   final TextEditingController _socialMediaController = TextEditingController();
-
 
   late TabController _tabController;
   File? _profileImage;
@@ -77,7 +80,7 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
             _locationController.text = userData['location'] ?? '';
             _descriptionController.text = userData['description'] ?? '';
             _companyNameController.text = userData['companyName'] ?? '';
-            _socialMediaController.text = userData['socialMedia'] ?? ''; // Load social media handle
+            _socialMediaController.text = userData['socialMedia'] ?? '';
             _profileImageUrl = userData['profileImage'];
             _showInfoBox = userData['showInfoBox'] ?? true;
             _selectedBackground = userData['infoBoxBackground'] ?? 'white';
@@ -173,7 +176,7 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
         'location': _locationController.text,
         'description': _descriptionController.text,
         'companyName': _companyNameController.text,
-        'socialMedia': _socialMediaController.text, // Save social media handle
+        'socialMedia': _socialMediaController.text,
         'showInfoBox': _showInfoBox,
         'infoBoxBackground': _selectedBackground,
         'lastActiveProfileTab': _tabController.index == 0 ? 'personal' : 'business',
@@ -189,12 +192,18 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
           .update(userData);
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Profile details saved successfully')),
+        SnackBar(
+          content: Text('Profile details saved successfully'),
+          backgroundColor: AppColors.primaryBlue,
+        ),
       );
     } catch (e) {
       print('Error saving user data: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to save profile details')),
+        SnackBar(
+          content: Text('Failed to save profile details'),
+          backgroundColor: Colors.red,
+        ),
       );
     } finally {
       setState(() {
@@ -243,12 +252,14 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
   }
 
   // Build the template preview with user details in info box
-  // Updated _buildTemplatePreview method to properly show name in business tab
   Widget _buildTemplatePreview({required bool isPersonal}) {
+    final isDarkMode = Provider.of<ThemeProvider>(context).isDarkMode;
+    final textColor = isDarkMode ? Colors.black : Colors.black;  // Info box text is always black regardless of theme
+
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: AppColors.getDividerColor(isDarkMode)),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
@@ -292,6 +303,7 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
+                              color: textColor,
                             ),
                           )
                         else
@@ -304,6 +316,7 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 16,
+                                  color: textColor,
                                 ),
                               ),
                               SizedBox(height: 2),
@@ -312,6 +325,7 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
                                 _nameController.text.isNotEmpty ? _nameController.text : 'Your Name',
                                 style: TextStyle(
                                   fontSize: 14,
+                                  color: textColor,
                                 ),
                               ),
                             ],
@@ -319,24 +333,24 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
                         if (_locationController.text.isNotEmpty)
                           Text(
                             _locationController.text,
-                            style: TextStyle(fontSize: 14),
+                            style: TextStyle(fontSize: 14, color: textColor),
                           ),
                         if (_mobileController.text.isNotEmpty)
                           Text(
                             _mobileController.text,
-                            style: TextStyle(fontSize: 14),
+                            style: TextStyle(fontSize: 14, color: textColor),
                           ),
                         // Only show social media and description in business profile
                         if (!isPersonal) ...[
                           if (_socialMediaController.text.isNotEmpty)
                             Text(
                               _socialMediaController.text,
-                              style: TextStyle(fontSize: 14, color: Colors.blue),
+                              style: TextStyle(fontSize: 14, color: AppColors.primaryBlue),
                             ),
                           if (_descriptionController.text.isNotEmpty)
                             Text(
                               _descriptionController.text,
-                              style: TextStyle(fontSize: 14),
+                              style: TextStyle(fontSize: 14, color: textColor),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -359,31 +373,33 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
 
   // Build circular image widget for both profile and preview
   Widget _buildCircularImage({required double size}) {
+    final isDarkMode = Provider.of<ThemeProvider>(context).isDarkMode;
+    
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: AppColors.getDividerColor(isDarkMode)),
         image: _profileImage != null
             ? DecorationImage(
-          image: FileImage(_profileImage!),
-          fit: BoxFit.cover,
-        )
+                image: FileImage(_profileImage!),
+                fit: BoxFit.cover,
+              )
             : _profileImageUrl != null && _profileImageUrl!.isNotEmpty
-            ? DecorationImage(
-          image: NetworkImage(_profileImageUrl!),
-          fit: BoxFit.cover,
-        )
-            : null,
-        color: Colors.grey.shade200,
+                ? DecorationImage(
+                    image: NetworkImage(_profileImageUrl!),
+                    fit: BoxFit.cover,
+                  )
+                : null,
+        color: isDarkMode ? Colors.grey.shade800 : Colors.grey.shade200,
       ),
       child: _profileImage == null && (_profileImageUrl == null || _profileImageUrl!.isEmpty)
           ? Icon(
-        Icons.person,
-        color: Colors.grey.shade400,
-        size: size / 2,
-      )
+              Icons.person,
+              color: isDarkMode ? Colors.grey.shade600 : Colors.grey.shade400,
+              size: size / 2,
+            )
           : null,
     );
   }
@@ -395,6 +411,8 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
     int maxLines = 1,
     TextInputType keyboardType = TextInputType.text,
   }) {
+    final isDarkMode = Provider.of<ThemeProvider>(context).isDarkMode;
+    
     if (widget.isPaidUser) {
       // Normal text field for paid users
       return TextField(
@@ -402,12 +420,29 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
         maxLines: maxLines,
         keyboardType: keyboardType,
         onChanged: (_) => setState(() {}), // Update preview in real-time
+        style: TextStyle(
+          color: AppColors.getTextColor(isDarkMode),
+        ),
         decoration: InputDecoration(
           hintText: hintText,
+          hintStyle: TextStyle(
+            color: AppColors.getSecondaryTextColor(isDarkMode),
+          ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide(color: AppColors.getDividerColor(isDarkMode)),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide(color: AppColors.getDividerColor(isDarkMode)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide(color: AppColors.primaryBlue, width: 2),
           ),
           contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+          filled: true,
+          fillColor: isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
         ),
       );
     } else {
@@ -417,7 +452,8 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.grey.shade300),
+            border: Border.all(color: AppColors.getDividerColor(isDarkMode)),
+            color: isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
           ),
           child: Stack(
             children: [
@@ -428,7 +464,7 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
                 child: Text(
                   hintText,
                   style: TextStyle(
-                    color: Colors.grey,
+                    color: AppColors.getSecondaryTextColor(isDarkMode),
                   ),
                 ),
               ),
@@ -449,55 +485,72 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Provider.of<ThemeProvider>(context).isDarkMode;
+    final theme = Theme.of(context);
+    
     return Scaffold(
+      backgroundColor: AppColors.getBackgroundColor(isDarkMode),
       appBar: AppBar(
-        
-          leading: GestureDetector(child: Icon(Icons.arrow_back_ios),
-      onTap: () {
-        Navigator.pop(context);
-      },),
-        title: Text('Profile Details'),
+        backgroundColor: AppColors.getBackgroundColor(isDarkMode),
+        foregroundColor: AppColors.getTextColor(isDarkMode),
+        leading: GestureDetector(
+          child: Icon(
+            Icons.arrow_back_ios,
+            color: AppColors.getIconColor(isDarkMode),
+          ),
+          onTap: () {
+            Navigator.pop(context);
+          },
+        ),
+        title: Text(
+          'Profile Details',
+          style: TextStyle(
+            color: AppColors.getTextColor(isDarkMode),
+          ),
+        ),
         elevation: 0,
       ),
       body: _isLoading
-          ? Center(child: CircularProgressIndicator())
+          ? Center(child: CircularProgressIndicator(color: AppColors.primaryBlue))
           : Column(
-        children: [
-          // Tab Bar
-          Container(
-
-            child: TabBar(
-              controller: _tabController,
-              tabs: [
-                Tab(text: 'Personal'),
-                Tab(text: 'Business'),
-              ],
-              labelColor: Colors.blue,
-              unselectedLabelColor: Colors.black,
-              indicatorColor: Colors.blue,
-              indicatorSize: TabBarIndicatorSize.tab,
-            ),
-          ),
-
-          // Tab Content
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
               children: [
-                // Personal Tab
-                _buildPersonalTab(),
+                // Tab Bar
+                Container(
+                  color: AppColors.getBackgroundColor(isDarkMode),
+                  child: TabBar(
+                    controller: _tabController,
+                    tabs: [
+                      Tab(text: 'Personal'),
+                      Tab(text: 'Business'),
+                    ],
+                    labelColor: AppColors.primaryBlue,
+                    unselectedLabelColor: AppColors.getSecondaryTextColor(isDarkMode),
+                    indicatorColor: AppColors.primaryBlue,
+                    indicatorSize: TabBarIndicatorSize.tab,
+                  ),
+                ),
 
-                // Business Tab
-                _buildBusinessTab(),
+                // Tab Content
+                Expanded(
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      // Personal Tab
+                      _buildPersonalTab(),
+
+                      // Business Tab
+                      _buildBusinessTab(),
+                    ],
+                  ),
+                ),
               ],
             ),
-          ),
-        ],
-      ),
     );
   }
 
   Widget _buildPersonalTab() {
+    final isDarkMode = Provider.of<ThemeProvider>(context).isDarkMode;
+    
     return SingleChildScrollView(
       padding: EdgeInsets.all(16),
       child: Column(
@@ -505,7 +558,10 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
         children: [
           Text(
             'Name',
-            style: TextStyle(fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: AppColors.getTextColor(isDarkMode),
+            ),
           ),
           SizedBox(height: 8),
           _buildTextField(
@@ -517,7 +573,10 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
 
           Text(
             'Mobile',
-            style: TextStyle(fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: AppColors.getTextColor(isDarkMode),
+            ),
           ),
           SizedBox(height: 8),
           _buildTextField(
@@ -530,7 +589,10 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
 
           Text(
             'Location',
-            style: TextStyle(fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: AppColors.getTextColor(isDarkMode),
+            ),
           ),
           SizedBox(height: 8),
           _buildTextField(
@@ -538,25 +600,15 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
             hintText: 'Enter your location',
           ),
 
-          // SizedBox(height: 16),
-          //
-          // Text(
-          //   'Description',
-          //   style: TextStyle(fontWeight: FontWeight.bold),
-          // ),
-          // SizedBox(height: 8),
-          // _buildTextField(
-          //   controller: _descriptionController,
-          //   hintText: 'Enter a short description or message',
-          //   maxLines: 3,
-          // ),
-
           SizedBox(height: 24),
 
           // Profile Photo Section
           Text(
             'Profile Photo',
-            style: TextStyle(fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: AppColors.getTextColor(isDarkMode),
+            ),
           ),
           SizedBox(height: 12),
           Row(
@@ -567,7 +619,7 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
                 onPressed: _pickImage,
                 child: Text('Change photo'),
                 style: TextButton.styleFrom(
-                  foregroundColor: Colors.blue,
+                  foregroundColor: AppColors.primaryBlue,
                   textStyle: TextStyle(
                     decoration: TextDecoration.underline,
                   ),
@@ -583,7 +635,10 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
           // Template Preview
           Text(
             'Template Preview',
-            style: TextStyle(fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: AppColors.getTextColor(isDarkMode),
+            ),
           ),
           SizedBox(height: 12),
           _buildTemplatePreview(isPersonal: true),
@@ -594,14 +649,22 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
           if (widget.isPaidUser) ...[
             Text(
               'Display Options',
-              style: TextStyle(fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: AppColors.getTextColor(isDarkMode),
+              ),
             ),
             SizedBox(height: 12),
 
             // Show Info Box Toggle
             Row(
               children: [
-                Text('Show Info Box'),
+                Text(
+                  'Show Info Box',
+                  style: TextStyle(
+                    color: AppColors.getTextColor(isDarkMode),
+                  ),
+                ),
                 Spacer(),
                 Switch(
                   value: _showInfoBox,
@@ -610,6 +673,7 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
                       _showInfoBox = value;
                     });
                   },
+                  activeColor: AppColors.primaryBlue,
                 ),
               ],
             ),
@@ -617,7 +681,12 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
             // Background Color Selection
             if (_showInfoBox) ...[
               SizedBox(height: 8),
-              Text('Background Color'),
+              Text(
+                'Background Color',
+                style: TextStyle(
+                  color: AppColors.getTextColor(isDarkMode),
+                ),
+              ),
               SizedBox(height: 8),
               Wrap(
                 spacing: 8,
@@ -635,8 +704,8 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
                         color: bg['color'],
                         border: Border.all(
                           color: _selectedBackground == bg['value']
-                              ? Colors.blue
-                              : Colors.grey,
+                              ? AppColors.primaryBlue
+                              : AppColors.getDividerColor(isDarkMode),
                           width: _selectedBackground == bg['value'] ? 2 : 1,
                         ),
                         borderRadius: BorderRadius.circular(8),
@@ -658,10 +727,10 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
                   onPressed: _saveUserData,
                   child: Text('Save'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors.black,
+                    backgroundColor: isDarkMode ? AppColors.darkSurface : Colors.white,
+                    foregroundColor: AppColors.getTextColor(isDarkMode),
                     elevation: 1,
-                    side: BorderSide(color: Colors.grey),
+                    side: BorderSide(color: AppColors.getDividerColor(isDarkMode)),
                     padding: EdgeInsets.symmetric(vertical: 12),
                   ),
                 ),
@@ -672,7 +741,7 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
                   onPressed: _navigateToEditScreen,
                   child: Text('Next'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
+                    backgroundColor: AppColors.primaryBlue,
                     foregroundColor: Colors.white,
                     padding: EdgeInsets.symmetric(vertical: 12),
                   ),
@@ -686,6 +755,8 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
   }
 
   Widget _buildBusinessTab() {
+    final isDarkMode = Provider.of<ThemeProvider>(context).isDarkMode;
+    
     return SingleChildScrollView(
       padding: EdgeInsets.all(16),
       child: Column(
@@ -693,7 +764,10 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
         children: [
           Text(
             'Name',
-            style: TextStyle(fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: AppColors.getTextColor(isDarkMode),
+            ),
           ),
           SizedBox(height: 8),
           _buildTextField(
@@ -705,7 +779,10 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
 
           Text(
             'Company Name',
-            style: TextStyle(fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: AppColors.getTextColor(isDarkMode),
+            ),
           ),
           SizedBox(height: 8),
           _buildTextField(
@@ -717,7 +794,10 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
 
           Text(
             'Mobile',
-            style: TextStyle(fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: AppColors.getTextColor(isDarkMode),
+            ),
           ),
           SizedBox(height: 8),
           _buildTextField(
@@ -730,7 +810,10 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
 
           Text(
             'Location',
-            style: TextStyle(fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: AppColors.getTextColor(isDarkMode),
+            ),
           ),
           SizedBox(height: 8),
           _buildTextField(
@@ -743,7 +826,10 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
           // New Social Media field
           Text(
             'Social Media Handle',
-            style: TextStyle(fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: AppColors.getTextColor(isDarkMode),
+            ),
           ),
           SizedBox(height: 8),
           _buildTextField(
@@ -755,7 +841,10 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
 
           Text(
             'Product Description',
-            style: TextStyle(fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: AppColors.getTextColor(isDarkMode),
+            ),
           ),
           SizedBox(height: 8),
           _buildTextField(
@@ -768,7 +857,10 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
 
           Text(
             'Logo',
-            style: TextStyle(fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: AppColors.getTextColor(isDarkMode),
+            ),
           ),
           SizedBox(height: 12),
           Row(
@@ -779,7 +871,7 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
                 onPressed: _pickImage,
                 child: Text('Change logo'),
                 style: TextButton.styleFrom(
-                  foregroundColor: Colors.blue,
+                  foregroundColor: AppColors.primaryBlue,
                   textStyle: TextStyle(
                     decoration: TextDecoration.underline,
                   ),
@@ -795,7 +887,10 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
           // Template Preview
           Text(
             'Template Preview',
-            style: TextStyle(fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: AppColors.getTextColor(isDarkMode),
+            ),
           ),
           SizedBox(height: 12),
           _buildTemplatePreview(isPersonal: false),
@@ -806,14 +901,22 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
           if (widget.isPaidUser) ...[
             Text(
               'Display Options',
-              style: TextStyle(fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: AppColors.getTextColor(isDarkMode),
+              ),
             ),
             SizedBox(height: 12),
 
             // Show Info Box Toggle
             Row(
               children: [
-                Text('Show Info Box'),
+                Text(
+                  'Show Info Box',
+                  style: TextStyle(
+                    color: AppColors.getTextColor(isDarkMode),
+                  ),
+                ),
                 Spacer(),
                 Switch(
                   value: _showInfoBox,
@@ -822,6 +925,7 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
                       _showInfoBox = value;
                     });
                   },
+                  activeColor: AppColors.primaryBlue,
                 ),
               ],
             ),
@@ -829,7 +933,12 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
             // Background Color Selection
             if (_showInfoBox) ...[
               SizedBox(height: 8),
-              Text('Background Color'),
+              Text(
+                'Background Color',
+                style: TextStyle(
+                  color: AppColors.getTextColor(isDarkMode),
+                ),
+              ),
               SizedBox(height: 8),
               Wrap(
                 spacing: 8,
@@ -847,8 +956,8 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
                         color: bg['color'],
                         border: Border.all(
                           color: _selectedBackground == bg['value']
-                              ? Colors.blue
-                              : Colors.grey,
+                              ? AppColors.primaryBlue
+                              : AppColors.getDividerColor(isDarkMode),
                           width: _selectedBackground == bg['value'] ? 2 : 1,
                         ),
                         borderRadius: BorderRadius.circular(8),
@@ -870,10 +979,10 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
                   onPressed: _saveUserData,
                   child: Text('Save'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors.black,
+                    backgroundColor: isDarkMode ? AppColors.darkSurface : Colors.white,
+                    foregroundColor: AppColors.getTextColor(isDarkMode),
                     elevation: 1,
-                    side: BorderSide(color: Colors.grey),
+                    side: BorderSide(color: AppColors.getDividerColor(isDarkMode)),
                     padding: EdgeInsets.symmetric(vertical: 12),
                   ),
                 ),
@@ -884,7 +993,7 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
                   onPressed: _navigateToEditScreen,
                   child: Text('Next'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
+                    backgroundColor: AppColors.primaryBlue,
                     foregroundColor: Colors.white,
                     padding: EdgeInsets.symmetric(vertical: 12),
                   ),

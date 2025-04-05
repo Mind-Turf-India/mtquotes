@@ -1,8 +1,11 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:mtquotes/utils/theme_provider.dart';
+import 'package:provider/provider.dart';
+
 
 class ForgotPasswordScreen extends StatefulWidget {
-  ForgotPasswordScreen({super.key});
+  const ForgotPasswordScreen({super.key});
 
   @override
   State<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
@@ -25,7 +28,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       barrierDismissible: false,
       builder: (BuildContext context) {
         return Center(
-          child: CircularProgressIndicator(),
+          child: CircularProgressIndicator(
+            color: Theme.of(context).colorScheme.primary,
+          ),
         );
       },
     );
@@ -43,8 +48,22 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       showDialog(
           context: context,
           builder: (context) {
-            return const AlertDialog(
-              content: Text("Please enter your email."),
+            final theme = Theme.of(context);
+            return AlertDialog(
+              backgroundColor: theme.colorScheme.surface,
+              content: Text(
+                "Please enter your email.",
+                style: theme.textTheme.bodyMedium,
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(
+                    "OK",
+                    style: TextStyle(color: theme.colorScheme.primary),
+                  ),
+                ),
+              ],
             );
           });
       return;
@@ -60,16 +79,24 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       _hideLoadingIndicator();
 
       // Show a success dialog (whether the email exists or not)
+      if (!mounted) return;
       showDialog(
           context: context,
           builder: (context) {
+            final theme = Theme.of(context);
             return AlertDialog(
-              content: const Text(
-                  "If this email is registered, a password reset link has been sent."),
+              backgroundColor: theme.colorScheme.surface,
+              content: Text(
+                "If this email is registered, a password reset link has been sent.",
+                style: theme.textTheme.bodyMedium,
+              ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text("OK"),
+                  child: Text(
+                    "OK",
+                    style: TextStyle(color: theme.colorScheme.primary),
+                  ),
                 ),
               ],
             );
@@ -85,15 +112,24 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         message = "Invalid email format. Please enter a valid email.";
       }
 
+      if (!mounted) return;
       showDialog(
           context: context,
           builder: (context) {
+            final theme = Theme.of(context);
             return AlertDialog(
-              content: Text(message),
+              backgroundColor: theme.colorScheme.surface,
+              content: Text(
+                message,
+                style: theme.textTheme.bodyMedium,
+              ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text("OK"),
+                  child: Text(
+                    "OK",
+                    style: TextStyle(color: theme.colorScheme.primary),
+                  ),
                 ),
               ],
             );
@@ -102,15 +138,24 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       // Hide loading indicator for any other exceptions
       _hideLoadingIndicator();
 
+      if (!mounted) return;
       showDialog(
           context: context,
           builder: (context) {
+            final theme = Theme.of(context);
             return AlertDialog(
-              content: Text("An unexpected error occurred. Please try again."),
+              backgroundColor: theme.colorScheme.surface,
+              content: Text(
+                "An unexpected error occurred. Please try again.",
+                style: theme.textTheme.bodyMedium,
+              ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text("OK"),
+                  child: Text(
+                    "OK",
+                    style: TextStyle(color: theme.colorScheme.primary),
+                  ),
                 ),
               ],
             );
@@ -120,13 +165,20 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDarkMode = themeProvider.isDarkMode;
+    final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.black),
+          icon: Icon(
+            Icons.arrow_back,
+            color: theme.iconTheme.color,
+          ),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
@@ -137,38 +189,59 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                SizedBox(height: 30),
+                const SizedBox(height: 30),
                 Image.asset(
                   'assets/logo.png',
                   height: 100,
                   width: 100,
                 ),
                 const SizedBox(height: 30),
-                const Text('Forgot Password',
-                    style:
-                    TextStyle(fontSize: 24, fontWeight: FontWeight.w500)),
-                const Text('Enter your email to reset your password',
-                    style: TextStyle(color: Colors.grey)),
+                Text(
+                  'Forgot Password',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                Text(
+                  'Enter your email to reset your password',
+                  style: theme.textTheme.bodySmall,
+                ),
                 const SizedBox(height: 100),
                 TextField(
                   controller: _emailController,
-                  decoration: const InputDecoration(
+                  style: theme.textTheme.bodyMedium,
+                  decoration: InputDecoration(
                     labelText: 'Email',
-                    border: OutlineInputBorder(),
+                    border: OutlineInputBorder(
+                      borderSide: BorderSide(color: theme.colorScheme.primary),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
+                    ),
+                    labelStyle: theme.textTheme.bodyMedium,
+                    fillColor: theme.colorScheme.surface,
+                    filled: true,
                   ),
                   keyboardType: TextInputType.emailAddress,
                 ),
                 const SizedBox(height: 40),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
+                    backgroundColor: theme.colorScheme.primary,
+                    foregroundColor: Colors.white,
                     minimumSize: const Size(double.infinity, 50),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
                   onPressed: _isLoading ? null : passwordReset,
                   child: _isLoading
                       ? CircularProgressIndicator(color: Colors.white)
-                      : const Text('Submit',
-                      style: TextStyle(fontSize: 18, color: Colors.white)),
+                      : const Text(
+                          'Submit',
+                          style: TextStyle(fontSize: 18),
+                        ),
                 ),
               ],
             ),

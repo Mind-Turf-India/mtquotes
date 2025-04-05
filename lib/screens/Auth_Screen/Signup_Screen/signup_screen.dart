@@ -5,8 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:mtquotes/screens/Auth_Screen/Login_Screen/login_screen.dart';
 import 'package:mtquotes/screens/navbar_mainscreen.dart';
-
+import 'package:mtquotes/utils/theme_provider.dart';
+import 'package:provider/provider.dart';
 import '../../User_Home/components/Notifications/notification_service.dart';
+
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -38,7 +40,9 @@ class _SignupScreenState extends State<SignupScreen> {
       barrierDismissible: false,
       builder: (BuildContext context) {
         return Center(
-          child: CircularProgressIndicator(),
+          child: CircularProgressIndicator(
+            color: Theme.of(context).colorScheme.primary,
+          ),
         );
       },
     );
@@ -76,7 +80,10 @@ class _SignupScreenState extends State<SignupScreen> {
   Future<void> _signInWithEmailAndPassword() async {
     if (!passwordConfirmed()) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Passwords do not match!")),
+        SnackBar(
+          content: Text("Passwords do not match!"),
+          backgroundColor: Colors.red,
+        ),
       );
       return;
     }
@@ -103,7 +110,10 @@ class _SignupScreenState extends State<SignupScreen> {
       _hideLoadingDialog();
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Signup Failed: $e")),
+        SnackBar(
+          content: Text("Signup Failed: $e"),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
@@ -144,8 +154,12 @@ class _SignupScreenState extends State<SignupScreen> {
     } catch (e) {
       _hideLoadingDialog();
 
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text("Google Sign-In Failed: $e")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Google Sign-In Failed: $e"),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -223,10 +237,14 @@ class _SignupScreenState extends State<SignupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDarkMode = themeProvider.isDarkMode;
+    final theme = Theme.of(context);
+    
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: _isLoading
-          ? Center(child: CircularProgressIndicator())
+          ? Center(child: CircularProgressIndicator(color: theme.colorScheme.primary))
           : SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Center(
@@ -236,22 +254,55 @@ class _SignupScreenState extends State<SignupScreen> {
               const SizedBox(height: 50),
               Image.asset('assets/logo.png', height: 100, width: 100),
               const SizedBox(height: 10),
-              const Text('Welcome', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w500)),
-              const Text('Create New Account', style: TextStyle(color: Colors.grey)),
+              Text(
+                'Welcome', 
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontSize: 24, 
+                  fontWeight: FontWeight.w500
+                )
+              ),
+              Text(
+                'Create New Account', 
+                style: theme.textTheme.bodySmall
+              ),
               const SizedBox(height: 50),
               TextField(
                 controller: _emailController,
-                decoration: const InputDecoration(labelText: 'Email', border: OutlineInputBorder()),
+                style: theme.textTheme.bodyMedium,
+                decoration: InputDecoration(
+                  labelText: 'Email', 
+                  border: OutlineInputBorder(
+                    borderSide: BorderSide(color: theme.colorScheme.primary)
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: theme.colorScheme.primary, width: 2)
+                  ),
+                  labelStyle: theme.textTheme.bodyMedium,
+                  fillColor: theme.colorScheme.surface,
+                  filled: true,
+                ),
               ),
               const SizedBox(height: 20),
               TextField(
                 controller: _passwordController,
+                style: theme.textTheme.bodyMedium,
                 obscureText: _isObscure1,
                 decoration: InputDecoration(
                   labelText: 'Password',
-                  border: const OutlineInputBorder(),
+                  border: OutlineInputBorder(
+                    borderSide: BorderSide(color: theme.colorScheme.primary)
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: theme.colorScheme.primary, width: 2)
+                  ),
+                  labelStyle: theme.textTheme.bodyMedium,
+                  fillColor: theme.colorScheme.surface,
+                  filled: true,
                   suffixIcon: IconButton(
-                    icon: Icon(_isObscure1 ? Icons.visibility_off : Icons.visibility),
+                    icon: Icon(
+                      _isObscure1 ? Icons.visibility_off : Icons.visibility,
+                      color: theme.iconTheme.color,
+                    ),
                     onPressed: () {
                       setState(() {
                         _isObscure1 = !_isObscure1;
@@ -263,12 +314,24 @@ class _SignupScreenState extends State<SignupScreen> {
               const SizedBox(height: 20),
               TextField(
                 controller: _confirmPasswordController,
+                style: theme.textTheme.bodyMedium,
                 obscureText: _isObscure2,
                 decoration: InputDecoration(
                   labelText: 'Confirm Password',
-                  border: const OutlineInputBorder(),
+                  border: OutlineInputBorder(
+                    borderSide: BorderSide(color: theme.colorScheme.primary)
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: theme.colorScheme.primary, width: 2)
+                  ),
+                  labelStyle: theme.textTheme.bodyMedium,
+                  fillColor: theme.colorScheme.surface,
+                  filled: true,
                   suffixIcon: IconButton(
-                    icon: Icon(_isObscure2 ? Icons.visibility_off : Icons.visibility),
+                    icon: Icon(
+                      _isObscure2 ? Icons.visibility_off : Icons.visibility,
+                      color: theme.iconTheme.color,
+                    ),
                     onPressed: () {
                       setState(() {
                         _isObscure2 = !_isObscure2;
@@ -280,9 +343,18 @@ class _SignupScreenState extends State<SignupScreen> {
               const SizedBox(height: 20),
               TextField(
                 controller: _referralController,
-                decoration: const InputDecoration(
+                style: theme.textTheme.bodyMedium,
+                decoration: InputDecoration(
                   labelText: 'Referral Code (if any)',
-                  border: OutlineInputBorder(),
+                  border: OutlineInputBorder(
+                    borderSide: BorderSide(color: theme.colorScheme.primary)
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: theme.colorScheme.primary, width: 2)
+                  ),
+                  labelStyle: theme.textTheme.bodyMedium,
+                  fillColor: theme.colorScheme.surface,
+                  filled: true,
                 ),
               ),
               const SizedBox(height: 10),
@@ -295,19 +367,30 @@ class _SignupScreenState extends State<SignupScreen> {
                         _rememberMe = value ?? false;
                       });
                     },
-                    activeColor: Colors.blue,
+                    activeColor: theme.colorScheme.primary,
+                    checkColor: Colors.white,
                   ),
-                  const Text('Remember me'),
+                  Text(
+                    'Remember me',
+                    style: theme.textTheme.bodyMedium,
+                  ),
                 ],
               ),
               const SizedBox(height: 10),
               ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, minimumSize: const Size(double.infinity, 50)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: theme.colorScheme.primary,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(double.infinity, 50),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
                 onPressed: _signInWithEmailAndPassword,
-                child: const Text('Sign Up', style: TextStyle(fontSize: 18, color: Colors.white)),
+                child: const Text('Sign Up', style: TextStyle(fontSize: 18)),
               ),
               const SizedBox(height: 20),
-              const Text('or', style: TextStyle(color: Colors.black)),
+              Text('or', style: theme.textTheme.bodyMedium),
               const SizedBox(height: 10),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -328,12 +411,21 @@ class _SignupScreenState extends State<SignupScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text("Already have an account? "),
+                  Text(
+                    "Already have an account? ",
+                    style: theme.textTheme.bodyMedium,
+                  ),
                   GestureDetector(
                     onTap: () {
                       Navigator.push(context, MaterialPageRoute(builder: (context) => LoginScreen()));
                     },
-                    child: const Text('Sign In', style: TextStyle(color: Colors.blue)),
+                    child: Text(
+                      'Sign In', 
+                      style: TextStyle(
+                        color: theme.colorScheme.primary, 
+                        fontWeight: FontWeight.bold
+                      )
+                    ),
                   ),
                 ],
               ),

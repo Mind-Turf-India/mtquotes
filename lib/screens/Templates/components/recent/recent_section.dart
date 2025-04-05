@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mtquotes/screens/Templates/components/template/quote_template.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:mtquotes/utils/theme_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:mtquotes/providers/text_size_provider.dart';
+
 import 'package:mtquotes/l10n/app_localization.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -24,6 +26,9 @@ class RecentTemplatesSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textSizeProvider = Provider.of<TextSizeProvider>(context);
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDarkMode = themeProvider.isDarkMode;
+    final theme = Theme.of(context);
     double fontSize = textSizeProvider.fontSize;
     final isUserLoggedIn = FirebaseAuth.instance.currentUser != null;
 
@@ -38,6 +43,7 @@ class RecentTemplatesSection extends StatelessWidget {
               style: GoogleFonts.poppins(
                 fontSize: fontSize,
                 fontWeight: FontWeight.bold,
+                color: theme.textTheme.titleLarge?.color,
               ),
             ),
             if (onViewAll != null && recentTemplates.isNotEmpty)
@@ -47,7 +53,7 @@ class RecentTemplatesSection extends StatelessWidget {
                   'View All',
                   style: GoogleFonts.poppins(
                     fontSize: fontSize - 2,
-                    color: Theme.of(context).primaryColor,
+                    color: theme.primaryColor,
                   ),
                 ),
               ),
@@ -57,42 +63,52 @@ class RecentTemplatesSection extends StatelessWidget {
         SizedBox(
           height: 180,
           child: isLoading
-              ? Center(child: CircularProgressIndicator())
+              ? Center(child: CircularProgressIndicator(color: theme.primaryColor))
               : !isUserLoggedIn
               ? Center(
-            child: Text(
-              "Sign in to view recent templates",
-              style: GoogleFonts.poppins(fontSize: fontSize - 2),
-            ),
-          )
+                  child: Text(
+                    "Sign in to view recent templates",
+                    style: GoogleFonts.poppins(
+                      fontSize: fontSize - 2,
+                      color: theme.textTheme.bodyMedium?.color,
+                    ),
+                  ),
+                )
               : recentTemplates.isEmpty
               ? Center(
-            child: Text(
-              "No recent templates",
-              style: GoogleFonts.poppins(fontSize: fontSize - 2),
-            ),
-          )
+                  child: Text(
+                    "No recent templates",
+                    style: GoogleFonts.poppins(
+                      fontSize: fontSize - 2,
+                      color: theme.textTheme.bodyMedium?.color,
+                    ),
+                  ),
+                )
               : ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: recentTemplates.length,
-            itemBuilder: (context, index) {
-              return recentTemplateCard(
-                context,
-                recentTemplates[index],
-                fontSize,
-              );
-            },
-          ),
+                  scrollDirection: Axis.horizontal,
+                  itemCount: recentTemplates.length,
+                  itemBuilder: (context, index) {
+                    return recentTemplateCard(
+                      context,
+                      recentTemplates[index],
+                      fontSize,
+                      isDarkMode,
+                    );
+                  },
+                ),
         ),
       ],
     );
   }
 
   Widget recentTemplateCard(
-      BuildContext context,
-      QuoteTemplate template,
-      double fontSize,
-      ) {
+    BuildContext context,
+    QuoteTemplate template,
+    double fontSize,
+    bool isDarkMode,
+  ) {
+    final theme = Theme.of(context);
+    
     return GestureDetector(
       onTap: () => onTemplateSelected(template),
       child: Container(
@@ -100,9 +116,16 @@ class RecentTemplatesSection extends StatelessWidget {
         height: 80,
         margin: EdgeInsets.only(right: 10),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: theme.colorScheme.surface,
           borderRadius: BorderRadius.circular(8),
-          boxShadow: [BoxShadow(color: Colors.grey.shade300, blurRadius: 5)],
+          boxShadow: [
+            BoxShadow(
+              color: isDarkMode 
+                ? Colors.black26 
+                : Colors.grey.shade300,
+              blurRadius: 5
+            )
+          ],
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(8),
@@ -112,28 +135,37 @@ class RecentTemplatesSection extends StatelessWidget {
               // Template image
               template.imageUrl.isNotEmpty
                   ? CachedNetworkImage(
-                imageUrl: template.imageUrl,
-                placeholder: (context, url) => Center(
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-                errorWidget: (context, url, error) {
-                  print("Image loading error: $error for URL: $url");
-                  return Container(
-                    color: Colors.grey[300],
-                    child: Icon(Icons.error),
-                  );
-                },
-                fit: BoxFit.cover,
-                cacheKey: template.id + "_recent_image",
-                maxHeightDiskCache: 500,
-                maxWidthDiskCache: 500,
-              )
+                      imageUrl: template.imageUrl,
+                      placeholder: (context, url) => Center(
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: theme.primaryColor,
+                        ),
+                      ),
+                      errorWidget: (context, url, error) {
+                        print("Image loading error: $error for URL: $url");
+                        return Container(
+                          color: isDarkMode ? Colors.grey[800] : Colors.grey[300],
+                          child: Icon(
+                            Icons.error,
+                            color: theme.iconTheme.color,
+                          ),
+                        );
+                      },
+                      fit: BoxFit.cover,
+                      cacheKey: template.id + "_recent_image",
+                      maxHeightDiskCache: 500,
+                      maxWidthDiskCache: 500,
+                    )
                   : Container(
-                color: Colors.grey[200],
-                child: Center(
-                  child: Icon(Icons.image_not_supported, color: Colors.grey),
-                ),
-              ),
+                      color: isDarkMode ? Colors.grey[800] : Colors.grey[200],
+                      child: Center(
+                        child: Icon(
+                          Icons.image_not_supported,
+                          color: isDarkMode ? Colors.grey[400] : Colors.grey,
+                        ),
+                      ),
+                    ),
 
               // Premium badge if needed
               if (template.isPaid)
@@ -176,8 +208,8 @@ class RecentTemplatesSection extends StatelessWidget {
                     template.title.isNotEmpty
                         ? template.title
                         : template.category.isNotEmpty
-                        ? template.category
-                        : "Template",
+                            ? template.category
+                            : "Template",
                     style: GoogleFonts.poppins(
                       color: Colors.white,
                       fontSize: fontSize - 4,
