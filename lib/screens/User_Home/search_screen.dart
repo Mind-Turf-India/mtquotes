@@ -10,6 +10,8 @@ import 'package:provider/provider.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import '../../l10n/app_localization.dart';
 import '../../providers/text_size_provider.dart';
+import '../../utils/app_colors.dart';
+import '../../utils/theme_provider.dart';
 import '../Create_Screen/edit_screen_create.dart';
 import '../Templates/components/template/quote_template.dart';
 import '../Templates/components/template/template_handler.dart';
@@ -154,32 +156,32 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   void _handleTemplateSelection(QuoteTemplate template) async {
-  bool isSubscribed = await _templateService.isUserSubscribed();
+    bool isSubscribed = await _templateService.isUserSubscribed();
 
-  // Add this line to track the template as recently used
-  await RecentTemplateService.addRecentTemplate(template);
+    // Add this line to track the template as recently used
+    await RecentTemplateService.addRecentTemplate(template);
 
-  if (!template.isPaid || isSubscribed) {
-    TemplateHandler.showTemplateConfirmationDialog(
-      context,
-      template,
-      isSubscribed, // Pass the subscription status
-    );
-  } else {
-    SubscriptionPopup.show(context);
+    if (!template.isPaid || isSubscribed) {
+      TemplateHandler.showTemplateConfirmationDialog(
+        context,
+        template,
+        isSubscribed, // Pass the subscription status
+      );
+    } else {
+      SubscriptionPopup.show(context);
+    }
   }
-}
 
   @override
   Widget build(BuildContext context) {
     final textSizeProvider = Provider.of<TextSizeProvider>(context);
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDarkMode = themeProvider.isDarkMode;
     double fontSize = textSizeProvider.fontSize;
 
     return Scaffold(
-      
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.getBackgroundColor(isDarkMode),
       appBar: AppBar(
-        
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: Text(
@@ -187,108 +189,124 @@ class _SearchScreenState extends State<SearchScreen> {
           style: GoogleFonts.poppins(
             fontSize: fontSize + 6,
             fontWeight: FontWeight.w600,
-            color: Colors.black,
+            color: AppColors.getTextColor(isDarkMode),
           ),
         ),
       ),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
-          child:
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            // Search bar
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: TextField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  hintText: context.loc.searchquotes,
-                  hintStyle: GoogleFonts.poppins(
-                    fontSize: fontSize,
-                    color: Colors.grey[500],
+          child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Search bar
+                Container(
+                  decoration: BoxDecoration(
+                    color: isDarkMode ? Colors.grey[800] : Colors.grey[100],
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
-                  suffixIcon: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (_searchController.text.isNotEmpty)
-                        IconButton(
-                          icon: Icon(Icons.clear, color: Colors.grey[600]),
-                          onPressed: () {
-                            _searchController.clear();
-                            setState(() {
-                              _searchResults = [];
-                              _isSearching = false;
-                            });
-                          },
-                        ),
-                      IconButton(
-                        icon: Icon(
-                          _isListening ? Icons.mic : Icons.mic_none,
-                          color: _isListening ? Colors.blue : Colors.grey[600],
-                        ),
-                        onPressed: _toggleListening,
+                  child: TextField(
+                    controller: _searchController,
+                    style: TextStyle(
+                      color: AppColors.getTextColor(isDarkMode),
+                    ),
+                    decoration: InputDecoration(
+                      hintText: context.loc.searchquotes,
+                      hintStyle: GoogleFonts.poppins(
+                        fontSize: fontSize,
+                        color: isDarkMode ? Colors.grey[400] : Colors.grey[500],
                       ),
+                      prefixIcon: Icon(
+                          Icons.search,
+                          color: isDarkMode ? Colors.grey[400] : Colors.grey[600]
+                      ),
+                      suffixIcon: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (_searchController.text.isNotEmpty)
+                            IconButton(
+                              icon: Icon(
+                                  Icons.clear,
+                                  color: isDarkMode ? Colors.grey[400] : Colors.grey[600]
+                              ),
+                              onPressed: () {
+                                _searchController.clear();
+                                setState(() {
+                                  _searchResults = [];
+                                  _isSearching = false;
+                                });
+                              },
+                            ),
+                          IconButton(
+                            icon: Icon(
+                              _isListening ? Icons.mic : Icons.mic_none,
+                              color: _isListening
+                                  ? AppColors.primaryBlue
+                                  : (isDarkMode ? Colors.grey[400] : Colors.grey[600]),
+                            ),
+                            onPressed: _toggleListening,
+                          ),
+                        ],
+                      ),
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 30),
+                Text(
+                    context.loc.categories,
+                    style: GoogleFonts.poppins(
+                      fontSize: fontSize + 2,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.getTextColor(isDarkMode),
+                    )
+                ),
+                SizedBox(height: 10),
+                SizedBox(
+                  height: 100,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    children: [
+                      categoryCard(Icons.lightbulb, context.loc.motivational, Colors.green, isDarkMode),
+                      categoryCard(Icons.favorite, context.loc.love, Colors.red, isDarkMode),
+                      categoryCard(Icons.emoji_emotions, context.loc.funny, Colors.orange, isDarkMode),
+                      categoryCard(Icons.people, context.loc.friendship, Colors.blue, isDarkMode),
+                      categoryCard(Icons.self_improvement, context.loc.life, Colors.purple, isDarkMode),
                     ],
                   ),
-                  border: InputBorder.none,
-                  contentPadding:
-                      EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                 ),
-              ),
-            ),
-            SizedBox(height: 30),
-            Text(context.loc.categories,
-                style: GoogleFonts.poppins(
-                    fontSize: fontSize + 2, fontWeight: FontWeight.bold)),
-            SizedBox(height: 10),
-            SizedBox(
-              height: 100,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                children: [
-                  categoryCard(
-                      Icons.lightbulb, context.loc.motivational, Colors.green),
-                  categoryCard(Icons.favorite, context.loc.love, Colors.red),
-                  categoryCard(
-                      Icons.emoji_emotions, context.loc.funny, Colors.orange),
-                  categoryCard(
-                      Icons.people, context.loc.friendship, Colors.blue),
-                  categoryCard(
-                      Icons.self_improvement, context.loc.life, Colors.purple),
-                ],
-              ),
-            ),
-            SizedBox(height: 30),
-    
-            // Conditional rendering based on search state
-            _isSearching
-                ? Center(child: CircularProgressIndicator())
-                : _searchController.text.trim().isEmpty
+                SizedBox(height: 30),
+
+                // Conditional rendering based on search state
+                _isSearching
+                    ? Center(child: CircularProgressIndicator(color: AppColors.primaryBlue))
+                    : _searchController.text.trim().isEmpty
                     ? TemplateSection(
-                        title: context.loc.trendingQuotes,
-                        fetchTemplates: _templateService.fetchRecentTemplates,
-                        fontSize: fontSize,
-                        onTemplateSelected: _handleTemplateSelection,
-                      )
+                  title: context.loc.trendingQuotes,
+                  fetchTemplates: _templateService.fetchRecentTemplates,
+                  fontSize: fontSize,
+                  onTemplateSelected: _handleTemplateSelection,
+                  isDarkMode: isDarkMode,
+                )
                     : _searchResults.isNotEmpty
-                        ? _buildSearchResultsSection(fontSize)
-                        : Center(
-                            child: Text(
-                              'No results found',
-                              style: GoogleFonts.poppins(fontSize: fontSize),
-                            ),
-                          ),
-        ]),
+                    ? _buildSearchResultsSection(fontSize, isDarkMode)
+                    : Center(
+                  child: Text(
+                    'No results found',
+                    style: GoogleFonts.poppins(
+                      fontSize: fontSize,
+                      color: AppColors.getTextColor(isDarkMode),
+                    ),
+                  ),
+                ),
+              ]),
         ),
       ),
     );
   }
 
-  Widget _buildSearchResultsSection(double fontSize) {
+  Widget _buildSearchResultsSection(double fontSize, bool isDarkMode) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -297,6 +315,7 @@ class _SearchScreenState extends State<SearchScreen> {
           style: GoogleFonts.poppins(
             fontSize: fontSize + 2,
             fontWeight: FontWeight.bold,
+            color: AppColors.getTextColor(isDarkMode),
           ),
         ),
         SizedBox(height: 10),
@@ -315,19 +334,20 @@ class _SearchScreenState extends State<SearchScreen> {
 
             // Skip items with empty imageUrl to prevent the empty box issue
             if (template.imageUrl.isEmpty) {
-              return SizedBox
-                  .shrink(); // This will create an empty/invisible widget
+              return SizedBox.shrink(); // This will create an empty/invisible widget
             }
 
             return GestureDetector(
               onTap: () => _handleTemplateSelection(template),
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: isDarkMode ? Colors.grey[800] : Colors.white,
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.grey.shade300,
+                      color: isDarkMode
+                          ? Colors.black.withOpacity(0.3)
+                          : Colors.grey.shade300,
                       blurRadius: 5,
                       offset: Offset(0, 3),
                     ),
@@ -343,6 +363,17 @@ class _SearchScreenState extends State<SearchScreen> {
                         height: double.infinity,
                         width: double.infinity,
                         fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: isDarkMode ? Colors.grey[700] : Colors.grey[200],
+                            child: Center(
+                              child: Icon(
+                                Icons.image_not_supported,
+                                color: isDarkMode ? Colors.grey[500] : Colors.grey[400],
+                              ),
+                            ),
+                          );
+                        },
                       ),
                     ),
                     // Lock icon positioned at the bottom right
@@ -362,7 +393,7 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  Widget categoryCard(IconData icon, String title, Color color) {
+  Widget categoryCard(IconData icon, String title, Color color, bool isDarkMode) {
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -384,7 +415,7 @@ class _SearchScreenState extends State<SearchScreen> {
               width: 60,
               height: 60,
               decoration: BoxDecoration(
-                color: color.withOpacity(0.2),
+                color: color.withOpacity(isDarkMode ? 0.3 : 0.2),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: color, size: 30),
@@ -393,9 +424,14 @@ class _SearchScreenState extends State<SearchScreen> {
               height: 5,
               width: 10,
             ),
-            Text(title,
-                style: GoogleFonts.poppins(
-                    fontSize: 13, fontWeight: FontWeight.w500)),
+            Text(
+              title,
+              style: GoogleFonts.poppins(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: AppColors.getTextColor(isDarkMode),
+              ),
+            ),
           ],
         ),
       ),

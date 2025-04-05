@@ -1,11 +1,12 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:mtquotes/l10n/app_localization.dart';
 import 'package:mtquotes/screens/User_Home/home_screen.dart';
 import 'package:mtquotes/screens/User_Home/files_screen.dart';
 import 'package:mtquotes/screens/User_Home/profile_screen.dart';
-import 'package:mtquotes/utils/gradient_curved_navigation_bar.dart'; // Import your new navigation bar
-import 'package:curved_labeled_navigation_bar/curved_navigation_bar_item.dart';
-import 'package:mtquotes/l10n/app_localization.dart';
+import 'package:provider/provider.dart';
+import '../utils/app_colors.dart';
+import '../utils/theme_provider.dart';
 import 'Create_Screen/edit_screen_create.dart';
 import 'Create_Screen/template_screen_create.dart';
 import 'User_Home/search_screen.dart';
@@ -23,7 +24,7 @@ class _MainScreenState extends State<MainScreen> {
   final List<Widget> _screens = [
     HomeScreen(),
     SearchScreen(),
-    Container(),
+    Container(), // Placeholder for create button
     FilesPage(),
     ProfileScreen(),
   ];
@@ -37,6 +38,9 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   void _showCreateOptions() {
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    final isDarkMode = themeProvider.isDarkMode;
+
     _overlayEntry = OverlayEntry(
       builder: (context) => Stack(
         children: [
@@ -61,15 +65,9 @@ class _MainScreenState extends State<MainScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    Flexible(
-                        child: _buildCreateOption(
-                            context.loc.gallery, Icons.image)),
-                    Flexible(
-                        child: _buildCreateOption(
-                            context.loc.template, Icons.grid_view)),
-                    Flexible(
-                        child: _buildCreateOption(
-                            context.loc.downloads, Icons.folder)),
+                    Flexible(child: _buildCreateOption(context.loc.gallery, Icons.image, isDarkMode)),
+                    Flexible(child: _buildCreateOption(context.loc.template, Icons.grid_view, isDarkMode)),
+                    Flexible(child: _buildCreateOption(context.loc.downloads, Icons.folder, isDarkMode)),
                   ],
                 ),
               ),
@@ -89,7 +87,7 @@ class _MainScreenState extends State<MainScreen> {
     setState(() => isCreateExpanded = false);
   }
 
-  Widget _buildCreateOption(String label, IconData icon) {
+  Widget _buildCreateOption(String label, IconData icon, bool isDarkMode) {
     return GestureDetector(
       onTap: () {
         _hideCreateOptions();
@@ -101,9 +99,7 @@ class _MainScreenState extends State<MainScreen> {
         } else if (label == context.loc.gallery) {
           Navigator.push(
             context,
-            MaterialPageRoute(
-                builder: (context) =>
-                    EditScreen(title: context.loc.imageeditor)),
+            MaterialPageRoute(builder: (context) => EditScreen(title: context.loc.imageeditor)),
           );
         } else if (label == context.loc.downloads) {
           Navigator.push(
@@ -119,14 +115,7 @@ class _MainScreenState extends State<MainScreen> {
             width: 60,
             height: 60,
             decoration: BoxDecoration(
-              color: Colors.blue,
-              gradient: LinearGradient(
-                colors: [Color(0xFF2897FF), Color(0xFF00D1A7)],
-                begin:
-                    Alignment.topLeft, // Optional: specify gradient direction
-                end: Alignment
-                    .bottomRight, // Optional: specify gradient direction
-              ),
+              color: AppColors.primaryBlue,
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: Colors.white, size: 30),
@@ -135,10 +124,11 @@ class _MainScreenState extends State<MainScreen> {
           Text(
             label,
             style: TextStyle(
-                color: Colors.blue,
+                color: AppColors.primaryBlue,
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
-                decoration: TextDecoration.none),
+                decoration: TextDecoration.none
+            ),
           ),
         ],
       ),
@@ -147,52 +137,50 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDarkMode = themeProvider.isDarkMode;
+
     return Scaffold(
       body: _screens[_currentIndex],
-      bottomNavigationBar: GradientCurvedNavigationBar(
-        
-       useGradientButton: true,
-        backgroundColor: Colors.transparent,
-        gradientColors: [
-          const Color(0xFF2897FF),
-          const Color(0xFF00D1A7)
-        ], // Define your gradient colors
-        gradientBegin: Alignment.centerLeft,
-        gradientEnd: Alignment.centerRight,
-        index: _currentIndex,
-        onTap: (index) {
+      bottomNavigationBar: NavigationBar(
+        onDestinationSelected: (int index) {
           if (index == 2) {
             _toggleCreateOptions();
           } else {
             _hideCreateOptions();
-            setState(() => _currentIndex = index);
+            setState(() {
+              _currentIndex = index;
+            });
           }
         },
-        items: [
-          CurvedNavigationBarItem(
-            child: Icon(Icons.home, color: Colors.white),
+        selectedIndex: _currentIndex,
+        backgroundColor: AppColors.getBackgroundColor(isDarkMode),
+        indicatorColor: AppColors.primaryBlue.withOpacity(0.2),
+        destinations: [
+          NavigationDestination(
+            icon: Icon(Icons.home_outlined, color: AppColors.getIconColor(isDarkMode)),
+            selectedIcon: Icon(Icons.home, color: AppColors.primaryBlue),
             label: context.loc.home,
-            labelStyle: TextStyle(color: Colors.white),
           ),
-          CurvedNavigationBarItem(
-            child: Icon(Icons.search, color: Colors.white),
+          NavigationDestination(
+            icon: Icon(Icons.search, color: AppColors.getIconColor(isDarkMode)),
+            selectedIcon: Icon(Icons.search, color: AppColors.primaryBlue),
             label: context.loc.search,
-            labelStyle: TextStyle(color: Colors.white),
           ),
-          CurvedNavigationBarItem(
-            child: Icon(Icons.add, color: Colors.white),
+          NavigationDestination(
+            icon: Icon(Icons.add_circle_outline, color: AppColors.getIconColor(isDarkMode)),
+            selectedIcon: Icon(Icons.add_circle, color: AppColors.primaryBlue),
             label: context.loc.create,
-            labelStyle: TextStyle(color: Colors.white),
           ),
-          CurvedNavigationBarItem(
-            child: Icon(Icons.folder, color: Colors.white),
+          NavigationDestination(
+            icon: Icon(Icons.folder_outlined, color: AppColors.getIconColor(isDarkMode)),
+            selectedIcon: Icon(Icons.folder, color: AppColors.primaryBlue),
             label: context.loc.files,
-            labelStyle: TextStyle(color: Colors.white),
           ),
-          CurvedNavigationBarItem(
-            child: Icon(Icons.person, color: Colors.white),
+          NavigationDestination(
+            icon: Icon(Icons.person_outline, color: AppColors.getIconColor(isDarkMode)),
+            selectedIcon: Icon(Icons.person, color: AppColors.primaryBlue),
             label: context.loc.profile,
-            labelStyle: TextStyle(color: Colors.white),
           ),
         ],
       ),

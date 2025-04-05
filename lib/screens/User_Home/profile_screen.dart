@@ -12,9 +12,9 @@ import 'package:mtquotes/screens/User_Home/components/Settings/about_us.dart';
 import 'package:mtquotes/screens/User_Home/components/Notifications/notifications.dart';
 import 'package:mtquotes/screens/User_Home/components/Settings/support.dart';
 import 'package:mtquotes/screens/User_Home/components/refferral_screen.dart';
-import 'package:mtquotes/screens/User_Home/files_screen.dart';
-import 'package:mtquotes/utils/app_colors.dart';
 import 'package:provider/provider.dart';
+import '../../utils/app_colors.dart';
+import '../../utils/theme_provider.dart';
 import 'components/Notifications/notification_service.dart';
 import 'components/Settings/settings.dart';
 import 'package:share_plus/share_plus.dart';
@@ -99,13 +99,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _showUserProfileDialog() {
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    final isDarkMode = themeProvider.isDarkMode;
+
     // Don't store the dialog context for later use
     showDialog(
       context: context,
       barrierDismissible: false, // Prevent closing without completing
       builder: (dialogContext) {
         TextEditingController nameController =
-            TextEditingController(text: _userDisplayName);
+        TextEditingController(text: _userDisplayName);
         TextEditingController bioController = TextEditingController();
         File? selectedImage;
         bool isImageLoading = false; // Flag to track image loading state
@@ -124,7 +127,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              title: Text("Edit Your Profile"),
+              backgroundColor: AppColors.getBackgroundColor(isDarkMode),
+              title: Text(
+                "Edit Your Profile",
+                style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+              ),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -132,29 +139,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     onTap: isImageLoading
                         ? null // Disable tap when loading
                         : () async {
-                            final pickedImage = await _pickImage();
-                            if (pickedImage != null) {
-                              setState(() {
-                                selectedImage = pickedImage;
-                              });
-                            }
-                          },
+                      final pickedImage = await _pickImage();
+                      if (pickedImage != null) {
+                        setState(() {
+                          selectedImage = pickedImage;
+                        });
+                      }
+                    },
                     child: Stack(
                       alignment: Alignment.center,
                       children: [
                         CircleAvatar(
                           radius: 40,
+                          backgroundColor: isDarkMode ? Colors.grey[700] : Colors.grey[300],
                           backgroundImage: selectedImage != null
                               ? FileImage(selectedImage!)
                               : (_profileImageUrl != null &&
-                                      _profileImageUrl!.isNotEmpty
-                                  ? NetworkImage(_profileImageUrl!)
-                                      as ImageProvider
-                                  : null),
+                              _profileImageUrl!.isNotEmpty
+                              ? NetworkImage(_profileImageUrl!)
+                          as ImageProvider
+                              : null),
                           child: (selectedImage == null &&
-                                  (_profileImageUrl == null ||
-                                      _profileImageUrl!.isEmpty))
-                              ? Icon(Icons.camera_alt, size: 40)
+                              (_profileImageUrl == null ||
+                                  _profileImageUrl!.isEmpty))
+                              ? Icon(Icons.camera_alt, size: 40, color: AppColors.getIconColor(isDarkMode))
                               : null,
                         ),
                         // Overlay a loading indicator when image is being processed
@@ -169,7 +177,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             child: Center(
                               child: CircularProgressIndicator(
                                 valueColor:
-                                    AlwaysStoppedAnimation<Color>(Colors.white),
+                                AlwaysStoppedAnimation<Color>(Colors.white),
                               ),
                             ),
                           ),
@@ -178,11 +186,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   TextField(
                     controller: nameController,
-                    decoration: InputDecoration(labelText: "Name"),
+                    style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+                    decoration: InputDecoration(
+                      labelText: "Name",
+                      labelStyle: TextStyle(color: AppColors.getTextColor(isDarkMode).withOpacity(0.7)),
+                      enabledBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(color: AppColors.getTextColor(isDarkMode).withOpacity(0.3)),
+                      ),
+                      focusedBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(color: AppColors.primaryBlue),
+                      ),
+                    ),
                   ),
                   TextField(
                     controller: bioController,
-                    decoration: InputDecoration(labelText: "Bio"),
+                    style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+                    decoration: InputDecoration(
+                      labelText: "Bio",
+                      labelStyle: TextStyle(color: AppColors.getTextColor(isDarkMode).withOpacity(0.7)),
+                      enabledBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(color: AppColors.getTextColor(isDarkMode).withOpacity(0.3)),
+                      ),
+                      focusedBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(color: AppColors.primaryBlue),
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -191,83 +219,90 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   onPressed: isImageLoading
                       ? null // Disable cancel button when loading
                       : () {
-                          Navigator.pop(dialogContext);
-                        },
-                  child: Text("Cancel"),
+                    Navigator.pop(dialogContext);
+                  },
+                  child: Text(
+                    "Cancel",
+                    style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+                  ),
                 ),
                 ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryBlue,
+                    foregroundColor: Colors.white,
+                  ),
                   onPressed: isImageLoading
                       ? null // Disable save button when loading
                       : () async {
-                          // 1. Validate input synchronously
-                          if (nameController.text.isEmpty) {
-                            ScaffoldMessenger.of(dialogContext).showSnackBar(
-                              const SnackBar(
-                                  content: Text("Name cannot be empty")),
-                            );
-                            return;
-                          }
+                    // 1. Validate input synchronously
+                    if (nameController.text.isEmpty) {
+                      ScaffoldMessenger.of(dialogContext).showSnackBar(
+                        const SnackBar(
+                            content: Text("Name cannot be empty")),
+                      );
+                      return;
+                    }
 
-                          // 2. Capture all data needed BEFORE any async operation
-                          final User? currentUser =
-                              FirebaseAuth.instance.currentUser;
-                          if (currentUser == null) {
-                            ScaffoldMessenger.of(dialogContext).showSnackBar(
-                              const SnackBar(
-                                  content: Text("Error: User not logged in")),
-                            );
-                            return;
-                          }
+                    // 2. Capture all data needed BEFORE any async operation
+                    final User? currentUser =
+                        FirebaseAuth.instance.currentUser;
+                    if (currentUser == null) {
+                      ScaffoldMessenger.of(dialogContext).showSnackBar(
+                        const SnackBar(
+                            content: Text("Error: User not logged in")),
+                      );
+                      return;
+                    }
 
-                          // 3. If there's a selected image, start loading state and upload it right away
-                          if (selectedImage != null) {
-                            setState(() {
-                              isImageLoading = true;
-                            });
+                    // 3. If there's a selected image, start loading state and upload it right away
+                    if (selectedImage != null) {
+                      setState(() {
+                        isImageLoading = true;
+                      });
 
-                            try {
-                              // Upload the image while dialog is still open
-                              String? imageUrl =
-                                  await _uploadImage(selectedImage!);
+                      try {
+                        // Upload the image while dialog is still open
+                        String? imageUrl =
+                        await _uploadImage(selectedImage!);
 
-                              // If upload failed, show error but don't close dialog
-                              if (imageUrl == null) {
-                                setState(() {
-                                  isImageLoading = false;
-                                });
-                                ScaffoldMessenger.of(dialogContext)
-                                    .showSnackBar(
-                                  const SnackBar(
-                                      content: Text("Failed to upload image")),
-                                );
-                                return;
-                              }
+                        // If upload failed, show error but don't close dialog
+                        if (imageUrl == null) {
+                          setState(() {
+                            isImageLoading = false;
+                          });
+                          ScaffoldMessenger.of(dialogContext)
+                              .showSnackBar(
+                            const SnackBar(
+                                content: Text("Failed to upload image")),
+                          );
+                          return;
+                        }
 
-                              // Update profile image URL
-                              _profileImageUrl = imageUrl;
-                            } catch (e) {
-                              setState(() {
-                                isImageLoading = false;
-                              });
-                              ScaffoldMessenger.of(dialogContext).showSnackBar(
-                                SnackBar(
-                                    content: Text("Error uploading image: $e")),
-                              );
-                              return;
-                            }
-                          }
+                        // Update profile image URL
+                        _profileImageUrl = imageUrl;
+                      } catch (e) {
+                        setState(() {
+                          isImageLoading = false;
+                        });
+                        ScaffoldMessenger.of(dialogContext).showSnackBar(
+                          SnackBar(
+                              content: Text("Error uploading image: $e")),
+                        );
+                        return;
+                      }
+                    }
 
-                          final String userDocId =
-                              currentUser.email!.replaceAll('.', '_');
-                          final String newName = nameController.text;
-                          final String newBio = bioController.text;
+                    final String userDocId =
+                    currentUser.email!.replaceAll('.', '_');
+                    final String newName = nameController.text;
+                    final String newBio = bioController.text;
 
-                          // 4. Close the dialog after image upload completes
-                          Navigator.of(dialogContext).pop();
+                    // 4. Close the dialog after image upload completes
+                    Navigator.of(dialogContext).pop();
 
-                          // 5. Complete the profile update
-                          _saveProfileData(userDocId, newName, newBio, null);
-                        },
+                    // 5. Complete the profile update
+                    _saveProfileData(userDocId, newName, newBio, null);
+                  },
                   child: Text("Save"),
                 ),
               ],
@@ -314,6 +349,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _saveProfileData(
       String userDocId, String name, String bio, File? image) async {
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    final isDarkMode = themeProvider.isDarkMode;
+
     try {
       // Show loading indicator for the main screen
       if (mounted) {
@@ -322,7 +360,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           barrierDismissible: false,
           builder: (BuildContext context) {
             return Center(
-              child: CircularProgressIndicator(),
+              child: CircularProgressIndicator(
+                color: AppColors.primaryBlue,
+              ),
             );
           },
         );
@@ -378,230 +418,307 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final textSizeProvider = Provider.of<TextSizeProvider>(context);
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDarkMode = themeProvider.isDarkMode;
     double fontSize = textSizeProvider.fontSize;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.getBackgroundColor(isDarkMode),
       body: _userName == null
-          ? Center(child: CircularProgressIndicator())
+          ? Center(child: CircularProgressIndicator(color: AppColors.primaryBlue))
           : Column(
+        children: [
+          const SizedBox(height: 50),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const SizedBox(height: 50),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.arrow_back_ios, size: 24),
-                        onPressed: () {
-                          Navigator.pushReplacementNamed(context, '/nav_bar');
-                        },
-                      ),
-                      const Spacer(),
-                      IconButton(
-                        icon: Icon(LucideIcons.bellRing, color: Colors.black),
-                        onPressed: () {
-                          showModalBottomSheet(
-                            context: context,
-                            isScrollControlled: true,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.vertical(
-                                  top: Radius.circular(16)),
-                            ),
-                            builder: (context) => NotificationsSheet(),
-                          );
-                        },
-                      ),
-                    ],
+                IconButton(
+                  icon: Icon(
+                    Icons.arrow_back_ios,
+                    size: 24,
+                    color: AppColors.getIconColor(isDarkMode),
                   ),
+                  onPressed: () {
+                    Navigator.pushReplacementNamed(context, '/nav_bar');
+                  },
                 ),
-                // Profile image - now using the stored URL
-                GestureDetector(
-                  onTap: _showUserProfileDialog,
-                  child: CircleAvatar(
-                    radius: 40,
-                    backgroundColor: Colors.grey.shade300,
-                    backgroundImage:
-                        _profileImageUrl != null && _profileImageUrl!.isNotEmpty
-                            ? NetworkImage(_profileImageUrl!)
-                            : null,
-                    child: _profileImageUrl == null || _profileImageUrl!.isEmpty
-                        ? const Icon(Icons.person,
-                            size: 50, color: Colors.black54)
-                        : null,
+                const Spacer(),
+                IconButton(
+                  icon: Icon(
+                    LucideIcons.bellRing,
+                    color: AppColors.getIconColor(isDarkMode),
                   ),
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      _userDisplayName,
-                      style: TextStyle(
-                          fontSize: fontSize + 2, fontWeight: FontWeight.w600),
-                    ),
-                    const SizedBox(width: 5),
-                    GestureDetector(
-                      onTap: () {
-                        _showUserProfileDialog();
-                      },
-                      child: const Icon(
-                        Icons.edit,
-                        size: 18,
-                        color: Colors.grey,
+                  onPressed: () {
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.vertical(
+                            top: Radius.circular(16)),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade200,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text.rich(
-                    TextSpan(
-                      text: "${context.loc.earncredits} : ",
-                      style: TextStyle(fontSize: fontSize, color: Colors.black),
-                      children: [
-                        TextSpan(
-                          text: "$_rewardPoints ${context.loc.points}",
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold, color: Colors.green),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                GestureDetector(
-                  onTap: () => _shareReferralCode(context),
-                  child: Text.rich(
-                    TextSpan(
-                      text: "Referral Code : ",
-                      style: TextStyle(fontSize: 14, color: Colors.black),
-                      children: [
-                        TextSpan(
-                          text: " $_referralCode",
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold, color: Colors.green),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Expanded(
-                  child: ListView(
-                    padding: EdgeInsets.zero,
-                    children: [
-                      _buildMenuItem(Icons.workspace_premium,
-                          context.loc.subscriptions, fontSize, () {
-                        Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => SubscriptionScreen()));
-                      }),
-                      _buildMenuItem(Icons.share_rounded,
-                          context.loc.shareapplication, fontSize, () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => ReferralPage()),
-                        );
-                      }),
-                      // _buildMenuItem(Icons.drafts_outlined, context.loc.downloads,
-                      //     fontSize, () {
-                      //       Navigator.push(context, MaterialPageRoute(builder: (context)=> FilesPage()));
-                      //     }),
-                      _buildMenuItem(Icons.support_agent_outlined,
-                          context.loc.support, fontSize, () {
-                        Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => SupportScreen()));
-                      }),
-                      _buildMenuItem(
-                          Icons.question_mark, context.loc.aboutus, fontSize,
-                          () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => const AboutUsScreen()),
-                        );
-                      }),
-                      _buildMenuItem(
-                        Icons.settings,
-                        context.loc.settings,
-                        fontSize,
-                        () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => SettingsPage()),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 30),
-                  child: SizedBox(
-                    width: 180,
-                    child: ElevatedButton(
-                      onPressed: _logout,
-                      style: ElevatedButton.styleFrom(
-                        padding: EdgeInsets
-                            .zero, // Remove default padding for the gradient
-                        backgroundColor: Colors
-                            .transparent, // Make button background transparent
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        elevation: 0, // Optional: Remove elevation shadow
-                      ),
-                      child: Ink(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: AppColors.primaryGradient,
-                            begin: Alignment.centerLeft,
-                            end: Alignment.centerRight,
-                          ),
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        child: Container(
-                          width: double
-                              .infinity, // Make button expand to full width
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          alignment: Alignment.center, // Center the text
-                          child: Text(
-                            context.loc.logout,
-                            style: TextStyle(
-                              fontSize: fontSize + 2,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
+                      builder: (context) => NotificationsSheet(),
+                    );
+                  },
                 ),
               ],
             ),
+          ),
+          // Profile image - now using the stored URL
+          GestureDetector(
+            onTap: _showUserProfileDialog,
+            child: CircleAvatar(
+              radius: 40,
+              backgroundColor: isDarkMode ? Colors.grey.shade700 : Colors.grey.shade300,
+              backgroundImage:
+              _profileImageUrl != null && _profileImageUrl!.isNotEmpty
+                  ? NetworkImage(_profileImageUrl!)
+                  : null,
+              child: _profileImageUrl == null || _profileImageUrl!.isEmpty
+                  ? Icon(
+                Icons.person,
+                size: 50,
+                color: AppColors.getIconColor(isDarkMode),
+              )
+                  : null,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                _userDisplayName,
+                style: TextStyle(
+                  fontSize: fontSize + 2,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.getTextColor(isDarkMode),
+                ),
+              ),
+              const SizedBox(width: 5),
+              GestureDetector(
+                onTap: () {
+                  _showUserProfileDialog();
+                },
+                child: Icon(
+                  Icons.edit,
+                  size: 18,
+                  color: AppColors.getIconColor(isDarkMode).withOpacity(0.7),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Container(
+            padding:
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: isDarkMode ? Colors.grey.shade800 : Colors.grey.shade200,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text.rich(
+              TextSpan(
+                text: "${context.loc.earncredits} : ",
+                style: TextStyle(
+                  fontSize: fontSize,
+                  color: AppColors.getTextColor(isDarkMode),
+                ),
+                children: [
+                  TextSpan(
+                    text: "$_rewardPoints ${context.loc.points}",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          GestureDetector(
+            onTap: () => _shareReferralCode(context),
+            child: Text.rich(
+              TextSpan(
+                text: "Referral Code : ",
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.getTextColor(isDarkMode),
+                ),
+                children: [
+                  TextSpan(
+                    text: " $_referralCode",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Expanded(
+            child: ListView(
+              padding: EdgeInsets.zero,
+              children: [
+                _buildMenuItem(
+                    Icons.workspace_premium,
+                    context.loc.subscriptions,
+                    fontSize,
+                    isDarkMode,
+                        () {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => SubscriptionScreen()
+                          )
+                      );
+                    }
+                ),
+                _buildMenuItem(
+                    Icons.share_rounded,
+                    context.loc.shareapplication,
+                    fontSize,
+                    isDarkMode,
+                        () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => ReferralPage()
+                        ),
+                      );
+                    }
+                ),
+                // _buildMenuItem(
+                //   Icons.drafts_outlined,
+                //   context.loc.downloads,
+                //   fontSize,
+                //   isDarkMode,
+                //   () {
+                //     Navigator.push(
+                //       context,
+                //       MaterialPageRoute(
+                //         builder: (context) => FilesPage()
+                //       )
+                //     );
+                //   }
+                // ),
+                _buildMenuItem(
+                    Icons.support_agent_outlined,
+                    context.loc.support,
+                    fontSize,
+                    isDarkMode,
+                        () {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => SupportScreen()
+                          )
+                      );
+                    }
+                ),
+                _buildMenuItem(
+                    Icons.question_mark,
+                    context.loc.aboutus,
+                    fontSize,
+                    isDarkMode,
+                        () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const AboutUsScreen()
+                        ),
+                      );
+                    }
+                ),
+                _buildMenuItem(
+                  Icons.settings,
+                  context.loc.settings,
+                  fontSize,
+                  isDarkMode,
+                      () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => SettingsPage()
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 30),
+            child: SizedBox(
+              width: 180,
+              child: ElevatedButton(
+                onPressed: _logout,
+                style: ElevatedButton.styleFrom(
+                  padding: EdgeInsets.zero, // Remove default padding for the gradient
+                  backgroundColor: Colors.transparent, // Make button background transparent
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  elevation: 0, // Optional: Remove elevation shadow
+                ),
+                child: Ink(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: AppColors.primaryGradient,
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                    ),
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  child: Container(
+                    width: double.infinity, // Make button expand to full width
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    alignment: Alignment.center, // Center the text
+                    child: Text(
+                      context.loc.logout,
+                      style: TextStyle(
+                        fontSize: fontSize + 2,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildMenuItem(
-      IconData icon, String title, double textSize, VoidCallback onTap) {
+      IconData icon,
+      String title,
+      double textSize,
+      bool isDarkMode,
+      VoidCallback onTap
+      ) {
     return ListTile(
-      leading: Icon(icon, color: Colors.black87),
-      title: Text(title, style: TextStyle(fontSize: textSize)),
-      trailing:
-          const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+      leading: Icon(
+        icon,
+        color: AppColors.getIconColor(isDarkMode),
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          fontSize: textSize,
+          color: AppColors.getTextColor(isDarkMode),
+        ),
+      ),
+      trailing: Icon(
+        Icons.arrow_forward_ios,
+        size: 16,
+        color: AppColors.getIconColor(isDarkMode).withOpacity(0.7),
+      ),
       onTap: onTap,
     );
   }

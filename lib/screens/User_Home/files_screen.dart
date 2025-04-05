@@ -8,6 +8,8 @@ import 'package:provider/provider.dart';
 import 'package:mtquotes/providers/text_size_provider.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../utils/app_colors.dart';
+import '../../utils/theme_provider.dart';
 import '../Create_Screen/edit_screen_create.dart';
 
 class FilesPage extends StatefulWidget {
@@ -193,13 +195,18 @@ class _FilesPageState extends State<FilesPage> {
   // Method to navigate to template editing
   Future<void> _navigateToTemplateSharing(File imageFile) async {
     try {
+      final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+      final isDarkMode = themeProvider.isDarkMode;
+
       // Show loading indicator
       showDialog(
         context: context,
         barrierDismissible: false,
         builder: (BuildContext context) {
           return Center(
-            child: CircularProgressIndicator(),
+            child: CircularProgressIndicator(
+              color: AppColors.primaryBlue,
+            ),
           );
         },
       );
@@ -237,25 +244,27 @@ class _FilesPageState extends State<FilesPage> {
   @override
   Widget build(BuildContext context) {
     final textSizeProvider = Provider.of<TextSizeProvider>(context);
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDarkMode = themeProvider.isDarkMode;
     double fontSize = textSizeProvider.fontSize;
-    //final isUserLoggedIn = _auth.currentUser != null;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.getBackgroundColor(isDarkMode),
       appBar: AppBar(
         title: Text(
           context.loc.files,
           style: GoogleFonts.poppins(
-              fontSize: fontSize + 4,
-              fontWeight: FontWeight.w600,
-              color: Colors.black),
+            fontSize: fontSize + 4,
+            fontWeight: FontWeight.w600,
+            color: AppColors.getTextColor(isDarkMode),
+          ),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.getBackgroundColor(isDarkMode),
         elevation: 0,
         actions: [
           // Refresh button to reload
           IconButton(
-            icon: Icon(Icons.refresh, color: Colors.black),
+            icon: Icon(Icons.refresh, color: AppColors.getIconColor(isDarkMode)),
             onPressed: () {
               loadDownloadedImages();
             },
@@ -267,48 +276,60 @@ class _FilesPageState extends State<FilesPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Container(
-            //   decoration: BoxDecoration(
-            //     color: Colors.grey[100],
-            //     borderRadius: BorderRadius.circular(12),
-            //   ),
-            //   child: TextField(
-            //     controller: _searchController,
-            //     style: TextStyle(fontSize: fontSize),
-            //     decoration: InputDecoration(
-            //       hintText: context.loc.searchfiles,
-            //       hintStyle: GoogleFonts.poppins(
-            //           fontSize: fontSize, color: Colors.grey[500]),
-            //       prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
-            //       suffixIcon: IconButton(
-            //         icon: Icon(
-            //           _isListening ? Icons.mic : Icons.mic_none,
-            //           color: _isListening ? Colors.blue : Colors.grey[600],
-            //         ),
-            //         onPressed: _toggleListening,
-            //       ),
-            //       border: InputBorder.none,
-            //       contentPadding:
-            //       EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            //     ),
-            //     onChanged: (value) {
-            //       setState(() {
-            //         _searchQuery = value;
-            //       });
-            //     },
-            //   ),
-            // ),
+            // Uncomment and update this if you want to include search box
+            /*
+            Container(
+              decoration: BoxDecoration(
+                color: isDarkMode ? Colors.grey[800] : Colors.grey[100],
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: TextField(
+                controller: _searchController,
+                style: TextStyle(
+                  fontSize: fontSize,
+                  color: AppColors.getTextColor(isDarkMode),
+                ),
+                decoration: InputDecoration(
+                  hintText: context.loc.searchfiles,
+                  hintStyle: GoogleFonts.poppins(
+                    fontSize: fontSize,
+                    color: isDarkMode ? Colors.grey[400] : Colors.grey[500],
+                  ),
+                  prefixIcon: Icon(
+                    Icons.search,
+                    color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                  ),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _isListening ? Icons.mic : Icons.mic_none,
+                      color: _isListening ? AppColors.primaryBlue :
+                             isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                    ),
+                    onPressed: _toggleListening,
+                  ),
+                  border: InputBorder.none,
+                  contentPadding:
+                  EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                ),
+                onChanged: (value) {
+                  setState(() {
+                    _searchQuery = value;
+                  });
+                },
+              ),
+            ),
+            */
             SizedBox(height: 20),
             Text(
               'Downloaded Images',
               style: GoogleFonts.poppins(
                 fontSize: fontSize + 2,
-                // fontWeight: FontWeight.w600,
+                color: AppColors.getTextColor(isDarkMode),
               ),
             ),
             SizedBox(height: 10),
             Expanded(
-              child: _buildDownloadedImagesContent(fontSize),
+              child: _buildDownloadedImagesContent(fontSize, isDarkMode),
             ),
           ],
         ),
@@ -316,10 +337,12 @@ class _FilesPageState extends State<FilesPage> {
     );
   }
 
-  Widget _buildDownloadedImagesContent(double textSize) {
+  Widget _buildDownloadedImagesContent(double textSize, bool isDarkMode) {
     if (_isLoading) {
       return Center(
-        child: CircularProgressIndicator(),
+        child: CircularProgressIndicator(
+          color: AppColors.primaryBlue,
+        ),
       );
     }
 
@@ -330,14 +353,17 @@ class _FilesPageState extends State<FilesPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.image_not_supported,
-                  size: 80, color: Colors.grey[400]),
+              Icon(
+                Icons.image_not_supported,
+                size: 80,
+                color: isDarkMode ? Colors.grey[600] : Colors.grey[400],
+              ),
               SizedBox(height: 16),
               Text(
                 'No downloaded images found',
                 style: GoogleFonts.poppins(
                   fontSize: textSize + 2,
-                  color: Colors.grey[600],
+                  color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
                 ),
               ),
             ],
@@ -378,10 +404,15 @@ class _FilesPageState extends State<FilesPage> {
                     width: 100,
                     height: 80,
                     decoration: BoxDecoration(
-                      color: Colors.grey[100],
+                      color: isDarkMode ? Colors.grey[800] : Colors.grey[100],
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
-                        BoxShadow(color: Colors.grey.shade300, blurRadius: 3)
+                        BoxShadow(
+                            color: isDarkMode ?
+                            Colors.black.withOpacity(0.3) :
+                            Colors.grey.shade300,
+                            blurRadius: 3
+                        )
                       ],
                     ),
                     child: ClipRRect(
@@ -392,20 +423,29 @@ class _FilesPageState extends State<FilesPage> {
                         errorBuilder: (context, error, stackTrace) {
                           print("Error loading image: $error");
                           return Container(
-                            color: Colors.grey[300],
-                            child: Icon(Icons.error),
+                            color: isDarkMode ? Colors.grey[700] : Colors.grey[300],
+                            child: Icon(
+                              Icons.error,
+                              color: isDarkMode ? Colors.grey[500] : Colors.grey[600],
+                            ),
                           );
                         },
                       ),
                     ),
                   ),
                 ),
-                // SizedBox(height: 5),
-                // Text(
-                //   dateStr,
-                //   style: TextStyle(fontSize: 12),
-                //   textAlign: TextAlign.center,
-                // ),
+                // Uncomment if you want to show date
+                /*
+                SizedBox(height: 5),
+                Text(
+                  dateStr,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.getTextColor(isDarkMode),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                */
               ],
             ),
           ),

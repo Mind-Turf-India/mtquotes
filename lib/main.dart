@@ -9,6 +9,8 @@ import 'package:mtquotes/screens/Templates/components/template/template_handler.
 import 'package:mtquotes/screens/Payment_Screen/subscription_service.dart';
 import 'package:mtquotes/screens/User_Home/components/Notifications/notification_service.dart';
 import 'package:mtquotes/screens/User_Home/home_screen.dart';
+import 'package:mtquotes/utils/app_theme.dart';
+import 'package:mtquotes/utils/theme_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -31,7 +33,7 @@ void main() async {
 
   User? currentUser = FirebaseAuth.instance.currentUser;
 
-   // Initialize notification service
+  // Initialize notification service
   await NotificationService.instance.initialize();
 
   FirebaseAuth.instance.authStateChanges().listen((User? user) {
@@ -46,6 +48,7 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => FontSizeProvider()),
         ChangeNotifierProvider(create: (_) => TextSizeProvider()),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
       ],
       child: MyApp(
         startScreen: currentUser != null
@@ -87,25 +90,30 @@ class MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<FontSizeProvider>(
-      builder: (context, fontSizeProvider, child) {
+    return Consumer2<FontSizeProvider, ThemeProvider>(
+      builder: (context, fontSizeProvider, themeProvider, child) {
         return MaterialApp(
           title: 'Vaky',
-          
           debugShowCheckedModeBanner: false,
           home: widget.startScreen,
           locale: _locale,
           supportedLocales: supportedLocales,
           localizationsDelegates: localizationDelegates,
-          theme: ThemeData(
-              visualDensity: VisualDensity.adaptivePlatformDensity,
+          theme: AppTheme.getLightTheme().copyWith(
             textTheme: TextTheme(
               bodyLarge: TextStyle(fontSize: fontSizeProvider.fontSize),
               bodyMedium: TextStyle(fontSize: fontSizeProvider.fontSize * 0.9),
               bodySmall: TextStyle(fontSize: fontSizeProvider.fontSize * 0.8),
-              
             ),
           ),
+          darkTheme: AppTheme.getDarkTheme().copyWith(
+            textTheme: TextTheme(
+              bodyLarge: TextStyle(fontSize: fontSizeProvider.fontSize),
+              bodyMedium: TextStyle(fontSize: fontSizeProvider.fontSize * 0.9),
+              bodySmall: TextStyle(fontSize: fontSizeProvider.fontSize * 0.8),
+            ),
+          ),
+          themeMode: themeProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
           routes: {
             'onboarding': (context) => OnboardingScreen(),
             'login': (context) => LoginScreen(),
@@ -122,7 +130,8 @@ class MyAppState extends State<MyApp> {
                 isPaidUser: args['isPaidUser'] as bool,
               );
             },
-          });
+          },
+        );
       },
     );
   }

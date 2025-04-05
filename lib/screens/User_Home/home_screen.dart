@@ -16,7 +16,6 @@ import 'package:mtquotes/screens/User_Home/components/daily_check_in.dart';
 import 'package:mtquotes/screens/User_Home/components/Notifications/notifications.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mtquotes/screens/User_Home/profile_screen.dart';
-import 'package:mtquotes/utils/app_colors.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -28,6 +27,8 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:mtquotes/screens/Templates/components/festivals/festival_post.dart';
 import 'package:mtquotes/screens/Templates/components/festivals/festival_service.dart';
 import 'package:mtquotes/screens/Templates/components/festivals/festival_handler.dart';
+import '../../utils/app_colors.dart';
+import '../../utils/theme_provider.dart';
 import '../Templates/components/festivals/festival_card.dart';
 import '../Templates/components/recent/recent_section.dart';
 import '../Templates/components/recent/recent_service.dart';
@@ -51,11 +52,13 @@ class _HomeScreenState extends State<HomeScreen> {
   final FestivalService _festivalService = FestivalService();
   List<FestivalPost> _festivalPosts = [];
   bool _loadingFestivals = false;
+
   //totd
   final TimeOfDayService _timeOfDayService = TimeOfDayService();
   List<TimeOfDayPost> _timeOfDayPosts = [];
   bool _loadingTimeOfDay = false;
   String _currentTimeOfDay = '';
+
   //daily check in impl
   bool isCheckingReward = false;
   bool isLoadingPoints = false;
@@ -64,8 +67,10 @@ class _HomeScreenState extends State<HomeScreen> {
   int checkInStreak = 0;
   List<QuoteTemplate> _recentTemplates = [];
   bool _loadingRecentTemplates = false;
+
   // Firebase auth for user-specific templates
   final FirebaseAuth _auth = FirebaseAuth.instance;
+
   // Stream to listen for auth state changes
   late Stream<User?> _authStateChanges;
 
@@ -487,6 +492,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Update your _showUserProfileDialog method with fixes
   void _showUserProfileDialog() {
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    final isDarkMode = themeProvider.isDarkMode;
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -500,7 +508,11 @@ class _HomeScreenState extends State<HomeScreen> {
           builder: (dialogContext, setDialogState) {
             // Rename setState to setDialogState to avoid confusion
             return AlertDialog(
-              title: Text("Complete Your Profile"),
+              backgroundColor: AppColors.getBackgroundColor(isDarkMode),
+              title: Text(
+                "Complete Your Profile",
+                style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+              ),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -524,17 +536,29 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: (selectedImage == null &&
                               (profileImageUrl == null ||
                                   profileImageUrl!.isEmpty))
-                          ? Icon(Icons.camera_alt, size: 40)
+                          ? Icon(Icons.camera_alt,
+                              size: 40,
+                              color: AppColors.getIconColor(isDarkMode))
                           : null,
                     ),
                   ),
                   TextField(
                     controller: nameController,
-                    decoration: InputDecoration(labelText: "Name",),
+                    decoration: InputDecoration(
+                      labelText: "Name",
+                      labelStyle:
+                          TextStyle(color: AppColors.getTextColor(isDarkMode)),
+                    ),
+                    style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
                   ),
                   TextField(
                     controller: bioController,
-                    decoration: InputDecoration(labelText: "Bio"),
+                    decoration: InputDecoration(
+                      labelText: "Bio",
+                      labelStyle:
+                          TextStyle(color: AppColors.getTextColor(isDarkMode)),
+                    ),
+                    style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
                   ),
                 ],
               ),
@@ -543,10 +567,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   onPressed: () {
                     Navigator.pop(dialogContext);
                   },
-                  child: Text("Cancel",
-                  style: TextStyle(color: Colors.black),),
+                  child: Text(
+                    "Cancel",
+                    style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+                  ),
                 ),
                 ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryBlue,
+                    foregroundColor: Colors.white,
+                  ),
                   onPressed: () async {
                     try {
                       // Validate input before proceeding
@@ -602,8 +632,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       }
                     }
                   },
-                  child: Text("Save",
-                  style: TextStyle(color: Colors.black),),
+                  child: Text("Save"),
                 ),
               ],
             );
@@ -769,6 +798,10 @@ class _HomeScreenState extends State<HomeScreen> {
   void shareImage(BuildContext context, String? qotdImageUrl) async {
     if (qotdImageUrl != null && qotdImageUrl.isNotEmpty) {
       try {
+        final themeProvider =
+            Provider.of<ThemeProvider>(context, listen: false);
+        final isDarkMode = themeProvider.isDarkMode;
+
         // Show loading indicator dialog
         showDialog(
           context: context,
@@ -778,15 +811,23 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Container(
                 padding: EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppColors.getBackgroundColor(isDarkMode),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    CircularProgressIndicator(),
+                    CircularProgressIndicator(
+                      color: AppColors.primaryBlue,
+                    ),
                     SizedBox(height: 15),
-                    Text("Preparing image...", style: TextStyle(fontSize: 16)),
+                    Text(
+                      "Preparing image...",
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: AppColors.getTextColor(isDarkMode),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -837,6 +878,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDarkMode = themeProvider.isDarkMode;
+
     greetings = _getGreeting(context);
     final textSizeProvider = Provider.of<TextSizeProvider>(context);
     double fontSize = textSizeProvider.fontSize; // Get font size
@@ -845,11 +889,11 @@ class _HomeScreenState extends State<HomeScreen> {
         onWillPop: () async =>
             false, // Prevents navigating back to the login screen
         child: Scaffold(
-            backgroundColor: Colors.white,
+            backgroundColor: AppColors.getBackgroundColor(isDarkMode),
             appBar: AppBar(
               toolbarHeight: 65,
               automaticallyImplyLeading: false,
-              backgroundColor: Colors.white,
+              backgroundColor: AppColors.getBackgroundColor(isDarkMode),
               elevation: 0,
               title: Row(
                 children: [
@@ -887,7 +931,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     onTap: showNotificationsSheet,
                     child: Icon(
                       LucideIcons.bellRing,
-                      color: Colors.black,
+                      color: AppColors.getTextColor(
+                          isDarkMode),
                     ),
                   ),
                 ],
@@ -932,11 +977,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                               .grey[300], // Fallback background
                                           alignment: Alignment.center,
                                           child: Text(
-                                            "No quote available today",
-                                            textAlign: TextAlign.center,
+                                            'No quote available for today',
                                             style: GoogleFonts.poppins(
-                                                fontSize: fontSize,
-                                                fontWeight: FontWeight.w600),
+                                              fontSize: fontSize,
+                                              color: AppColors.getTextColor(
+                                                  isDarkMode), // Ensure text color respects theme
+                                            ),
                                           ),
                                         ),
                                 ),
@@ -945,10 +991,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                 bottom: 20,
                                 child: ElevatedButton(
                                   style: ElevatedButton.styleFrom(
-                                    padding: EdgeInsets
-                                        .zero, // Important for the gradient to fill the button
-                                    backgroundColor: Colors
-                                        .transparent, // Make the button background transparent
+                                    padding: EdgeInsets.zero,
+                                    // Important for the gradient to fill the button
+                                    backgroundColor: Colors.transparent,
+                                    // Make the button background transparent
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(8),
                                     ),
@@ -960,8 +1006,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                   child: Ink(
                                     decoration: BoxDecoration(
                                       gradient: LinearGradient(
-                                        colors: AppColors
-                                            .primaryGradient, // Using the gradient from AppColors
+                                        colors: AppColors.primaryGradient,
+                                        // Using the gradient from AppColors
                                         begin: Alignment.centerLeft,
                                         end: Alignment.centerRight,
                                       ),
@@ -1003,10 +1049,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                   Text(
                                     context.loc.recents,
                                     style: GoogleFonts.poppins(
-                                        fontSize: fontSize,
-                                        fontWeight: FontWeight.bold),
+                                      fontSize: fontSize,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.getTextColor(
+                                          isDarkMode), // Ensure text color respects theme
+                                    ),
                                   ),
-                                  // Optional: Add a refresh button for testing
                                   IconButton(
                                     icon: Icon(Icons.refresh),
                                     onPressed: refreshRecentTemplates,
@@ -1024,7 +1072,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                             child: Text(
                                               "No recent templates",
                                               style: GoogleFonts.poppins(
-                                                  fontSize: fontSize - 2),
+                                                fontSize: fontSize - 2,
+                                                color: AppColors.getTextColor(
+                                                    isDarkMode), // Add theme-aware text color
+                                              ),
                                             ),
                                           )
                                         : ListView.builder(
@@ -1144,8 +1195,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                                     'PRO',
                                                                     style:
                                                                         TextStyle(
-                                                                      color: Colors
-                                                                          .white,
+                                                                          color: AppColors.getTextColor(isDarkMode),
                                                                       fontSize:
                                                                           10,
                                                                       fontWeight:
@@ -1205,8 +1255,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                   Text(
                                     context.loc.categories,
                                     style: GoogleFonts.poppins(
-                                        fontSize: fontSize,
-                                        fontWeight: FontWeight.bold),
+                                      fontSize: fontSize,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.getTextColor(isDarkMode), // Ensure text color respects theme
+                                    ),
                                   ),
                                 ],
                               ),
@@ -1216,31 +1268,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                 child: ListView(
                                   scrollDirection: Axis.horizontal,
                                   children: [
-                                    categoryCard(
-                                      Icons.lightbulb,
-                                      context.loc.motivational,
-                                      Colors.green,
-                                    ),
-                                    categoryCard(
-                                      Icons.favorite,
-                                      context.loc.love,
-                                      Colors.red,
-                                    ),
-                                    categoryCard(
-                                      Icons.emoji_emotions,
-                                      context.loc.funny,
-                                      Colors.orange,
-                                    ),
-                                    categoryCard(
-                                      Icons.people,
-                                      context.loc.friendship,
-                                      Colors.blue,
-                                    ),
-                                    categoryCard(
-                                      Icons.self_improvement,
-                                      context.loc.life,
-                                      Colors.purple,
-                                    ),
+                                    categoryCard(Icons.lightbulb, context.loc.motivational, Colors.green, isDarkMode),
+                                    categoryCard(Icons.favorite, context.loc.love, Colors.red, isDarkMode),
+                                    categoryCard(Icons.emoji_emotions, context.loc.funny, Colors.orange, isDarkMode),
+                                    categoryCard(Icons.people, context.loc.friendship, Colors.blue, isDarkMode),
+                                    categoryCard(Icons.self_improvement, context.loc.life, Colors.purple, isDarkMode),
                                   ],
                                 ),
                               ),
@@ -1259,8 +1291,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                     Text(
                                       context.loc.trendingQuotes,
                                       style: GoogleFonts.poppins(
-                                          fontSize: fontSize,
-                                          fontWeight: FontWeight.bold),
+                                        fontSize: fontSize,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.getTextColor(isDarkMode), // Ensure text color respects theme
+                                      ),
                                     ),
                                     GestureDetector(
                                       onTap: () {
@@ -1306,8 +1340,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                           Text(
                                             context.loc.newtemplate,
                                             style: GoogleFonts.poppins(
-                                                fontSize: fontSize,
-                                                fontWeight: FontWeight.bold),
+                                              fontSize: fontSize,
+                                              fontWeight: FontWeight.bold,
+                                              color: AppColors.getTextColor(isDarkMode), // Ensure text color respects theme
+                                            ),
                                           ),
                                           GestureDetector(
                                             onTap: () {
@@ -1337,8 +1373,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                       ),
                                       SizedBox(height: 20),
                                       SizedBox(
-                                        height:
-                                            150, // Changed from 200 to 100 to match other card sections
+                                        height: 150,
+                                        // Changed from 200 to 100 to match other card sections
                                         child: _loadingFestivals
                                             ? Center(
                                                 child:
@@ -1347,10 +1383,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                                 ? Center(
                                                     child: Text(
                                                       "No festival posts available",
-                                                      style:
-                                                          GoogleFonts.poppins(
-                                                              fontSize:
-                                                                  fontSize - 2),
+                                                      style: GoogleFonts.poppins(
+                                                        fontSize: fontSize,
+                                                        fontWeight: FontWeight.bold,
+                                                        color: AppColors.getTextColor(isDarkMode), // Ensure text color respects theme
+                                                      ),
                                                     ),
                                                   )
                                                 : ListView.builder(
@@ -1388,13 +1425,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                                   children: [
                                                     Text(
                                                       context.loc.foryou,
-                                                      style:
-                                                          GoogleFonts.poppins(
-                                                              fontSize:
-                                                                  fontSize,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold),
+                                                      style: GoogleFonts.poppins(
+                                                        fontSize: fontSize,
+                                                        fontWeight: FontWeight.bold,
+                                                        color: AppColors.getTextColor(isDarkMode), // Ensure text color respects theme
+                                                      ),
                                                     ),
                                                     SizedBox(width: 8),
                                                     Text(
@@ -1490,40 +1525,40 @@ class _HomeScreenState extends State<HomeScreen> {
             )));
   }
 
-  Widget buildCategoriesSection(BuildContext context, double fontSize) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              context.loc.categories,
-              style: GoogleFonts.poppins(
-                  fontSize: fontSize, fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-        SizedBox(height: 10),
-        SizedBox(
-          height: 100,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            children: [
-              categoryCard(
-                  Icons.lightbulb, context.loc.motivational, Colors.green),
-              categoryCard(Icons.favorite, context.loc.love, Colors.red),
-              categoryCard(
-                  Icons.emoji_emotions, context.loc.funny, Colors.orange),
-              categoryCard(Icons.people, context.loc.friendship, Colors.blue),
-              categoryCard(
-                  Icons.self_improvement, context.loc.life, Colors.purple),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
+  // Widget buildCategoriesSection(BuildContext context, double fontSize) {
+  //   return Column(
+  //     crossAxisAlignment: CrossAxisAlignment.start,
+  //     children: [
+  //       Row(
+  //         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //         children: [
+  //           Text(
+  //             context.loc.categories,
+  //             style: GoogleFonts.poppins(
+  //                 fontSize: fontSize, fontWeight: FontWeight.bold),
+  //           ),
+  //         ],
+  //       ),
+  //       //SizedBox(height: 10),
+  //       // SizedBox(
+  //       //   height: 100,
+  //       //   child: ListView(
+  //       //     scrollDirection: Axis.horizontal,
+  //       //     children: [
+  //       //       categoryCard(
+  //       //           Icons.lightbulb, context.loc.motivational, Colors.green),
+  //       //       categoryCard(Icons.favorite, context.loc.love, Colors.red),
+  //       //       categoryCard(
+  //       //           Icons.emoji_emotions, context.loc.funny, Colors.orange),
+  //       //       categoryCard(Icons.people, context.loc.friendship, Colors.blue),
+  //       //       categoryCard(
+  //       //           Icons.self_improvement, context.loc.life, Colors.purple),
+  //       //     ],
+  //       //   ),
+  //       // ),
+  //     ],
+  //   );
+  // }
 
   Widget _buildRecentTemplatesSection() {
     return RecentTemplatesSection(
@@ -1555,8 +1590,10 @@ class _HomeScreenState extends State<HomeScreen> {
     return GestureDetector(
       onTap: () => _handleFestivalPostSelection(festival),
       child: Container(
-        width: 100, // Match other cards width
-        height: 80, // Match other cards height
+        width: 100,
+        // Match other cards width
+        height: 80,
+        // Match other cards height
         margin: EdgeInsets.only(right: 10),
         decoration: BoxDecoration(
           color: Colors.white,
@@ -1628,7 +1665,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // Update the categoryCard function in your HomeScreen class
-  Widget categoryCard(IconData icon, String title, Color color) {
+  Widget categoryCard(IconData icon, String title, Color color, bool isDarkMode) {
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -1650,7 +1687,7 @@ class _HomeScreenState extends State<HomeScreen> {
               width: 60,
               height: 60,
               decoration: BoxDecoration(
-                color: color.withOpacity(0.2),
+                color: color.withOpacity(isDarkMode ? 0.3 : 0.2),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: color, size: 30),
@@ -1659,9 +1696,14 @@ class _HomeScreenState extends State<HomeScreen> {
               height: 5,
               width: 10,
             ),
-            Text(title,
-                style: GoogleFonts.poppins(
-                    fontSize: 13, fontWeight: FontWeight.w500)),
+            Text(
+              title,
+              style: GoogleFonts.poppins(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: AppColors.getTextColor(isDarkMode),
+              ),
+            ),
           ],
         ),
       ),

@@ -4,11 +4,14 @@ import 'package:mtquotes/screens/Templates/components/template/quote_template.da
 import 'package:mtquotes/screens/Templates/components/template/template_card.dart';
 import 'package:mtquotes/screens/Templates/components/template/template_handler.dart';
 
+import '../../../../utils/app_colors.dart';
+
 class TemplateSection extends StatelessWidget {
   final String title;
   final Future<List<QuoteTemplate>> Function() fetchTemplates;
   final double fontSize;
   final Function(QuoteTemplate) onTemplateSelected;
+  final bool isDarkMode;
 
   const TemplateSection({
     Key? key,
@@ -16,6 +19,7 @@ class TemplateSection extends StatelessWidget {
     required this.fetchTemplates,
     required this.fontSize,
     required this.onTemplateSelected,
+    this.isDarkMode = false,
   }) : super(key: key);
 
   @override
@@ -28,6 +32,7 @@ class TemplateSection extends StatelessWidget {
           style: GoogleFonts.poppins(
             fontSize: fontSize,
             fontWeight: FontWeight.bold,
+            color: AppColors.getTextColor(isDarkMode),
           ),
         ),
         SizedBox(height: 10),

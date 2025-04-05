@@ -9,13 +9,14 @@ import 'package:mtquotes/screens/Templates/components/totd/totd_service.dart';
 import 'package:mtquotes/screens/Templates/components/festivals/festival_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
-
 import '../../../../providers/text_size_provider.dart';
+import '../../../utils/app_colors.dart';
+import '../../../utils/theme_provider.dart';
 import '../../Templates/components/festivals/festival_post.dart';
 
 enum TemplateListType {
   trending,
-  festival,  // Changed from newTemplates to just festival
+  festival,
   timeOfDay
 }
 
@@ -204,32 +205,40 @@ class _TemplatesListScreenState extends State<TemplatesListScreen> {
   @override
   Widget build(BuildContext context) {
     final textSizeProvider = Provider.of<TextSizeProvider>(context);
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDarkMode = themeProvider.isDarkMode;
     double fontSize = textSizeProvider.fontSize;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.getBackgroundColor(isDarkMode),
       appBar: AppBar(
-          leading: GestureDetector(child: Icon(Icons.arrow_back_ios),
-      onTap: () {
-        Navigator.pop(context);
-      },),
+        leading: GestureDetector(
+          child: Icon(
+            Icons.arrow_back_ios,
+            color: AppColors.getIconColor(isDarkMode),
+          ),
+          onTap: () {
+            Navigator.pop(context);
+          },
+        ),
         title: Text(
           widget.title,
           style: GoogleFonts.poppins(
             fontSize: fontSize + 2,
             fontWeight: FontWeight.w600,
+            color: AppColors.getTextColor(isDarkMode),
           ),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.getBackgroundColor(isDarkMode),
         elevation: 0,
-        iconTheme: IconThemeData(color: Colors.black),
+        iconTheme: IconThemeData(color: AppColors.getIconColor(isDarkMode)),
       ),
       body: Column(
         children: [
           // Templates Grid
           Expanded(
             child: _isLoading
-                ? Center(child: CircularProgressIndicator())
+                ? Center(child: CircularProgressIndicator(color: AppColors.primaryBlue))
                 : _errorMessage.isNotEmpty
                 ? Center(
               child: Padding(
@@ -248,7 +257,10 @@ class _TemplatesListScreenState extends State<TemplatesListScreen> {
                 ? Center(
               child: Text(
                 'No templates available',
-                style: GoogleFonts.poppins(fontSize: fontSize),
+                style: GoogleFonts.poppins(
+                  fontSize: fontSize,
+                  color: AppColors.getTextColor(isDarkMode),
+                ),
                 textAlign: TextAlign.center,
               ),
             )
@@ -276,19 +288,27 @@ class _TemplatesListScreenState extends State<TemplatesListScreen> {
                           imageUrl: template.imageUrl,
                           fit: BoxFit.cover,
                           placeholder: (context, url) => Container(
-                            color: Colors.grey[300],
+                            color: isDarkMode ? Colors.grey[700] : Colors.grey[300],
                             child: Center(
-                              child: CircularProgressIndicator(),
+                              child: CircularProgressIndicator(
+                                color: AppColors.primaryBlue,
+                              ),
                             ),
                           ),
                           errorWidget: (context, url, error) => Container(
-                            color: Colors.grey[300],
-                            child: Icon(Icons.error),
+                            color: isDarkMode ? Colors.grey[700] : Colors.grey[300],
+                            child: Icon(
+                              Icons.error,
+                              color: AppColors.getIconColor(isDarkMode),
+                            ),
                           ),
                         )
                             : Container(
-                          color: Colors.grey[300],
-                          child: Icon(Icons.image_not_supported),
+                          color: isDarkMode ? Colors.grey[700] : Colors.grey[300],
+                          child: Icon(
+                            Icons.image_not_supported,
+                            color: AppColors.getIconColor(isDarkMode),
+                          ),
                         ),
 
                         // PRO badge for paid templates
