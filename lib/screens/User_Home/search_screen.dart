@@ -383,10 +383,31 @@ import 'package:mtquotes/screens/User_Home/components/templates_list.dart';
                         ),
                         if (template.isPaid)
                           Positioned(
-                            bottom: 8,
-                            right: 8,
-                            child: Icon(Icons.lock, color: Colors.amber, size: 16),
+                  top: 5,
+                  right: 5,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.7),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.lock, color: Colors.amber, size: 12),
+                        SizedBox(width: 2),
+                        Text(
+                          'PRO',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
                           ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
                       ],
                     ),
                   ),

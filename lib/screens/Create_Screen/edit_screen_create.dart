@@ -116,7 +116,7 @@ class _EditScreenState extends State<EditScreen> {
 
         if (userDoc.exists && userDoc.data() is Map<String, dynamic>) {
           Map<String, dynamic> userData =
-          userDoc.data() as Map<String, dynamic>;
+              userDoc.data() as Map<String, dynamic>;
 
           setState(() {
             showInfoBox = userData['showInfoBox'] ?? true;
@@ -187,19 +187,23 @@ class _EditScreenState extends State<EditScreen> {
         break;
       case 'white':
       default:
-        bgColor = isDarkMode ? Theme.of(context).colorScheme.surface : Colors.white;
+        bgColor =
+            isDarkMode ? Theme.of(context).colorScheme.surface : Colors.white;
     }
 
     // Get text color based on theme
-    final textColor = Theme.of(context).textTheme.bodyMedium?.color ?? (isDarkMode ? AppColors.darkText : AppColors.lightText);
-    final secondaryTextColor = isDarkMode ? AppColors.darkSecondaryText : AppColors.lightSecondaryText;
+    final textColor = Theme.of(context).textTheme.bodyMedium?.color ??
+        (isDarkMode ? AppColors.darkText : AppColors.lightText);
+    final secondaryTextColor =
+        isDarkMode ? AppColors.darkSecondaryText : AppColors.lightSecondaryText;
 
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: bgColor,
-        border: Border.all(color: isDarkMode ? AppColors.darkDivider : AppColors.lightDivider),
+        border: Border.all(
+            color: isDarkMode ? AppColors.darkDivider : AppColors.lightDivider),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -211,20 +215,20 @@ class _EditScreenState extends State<EditScreen> {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               image:
-              userProfileImageUrl != null && userProfileImageUrl!.isNotEmpty
-                  ? DecorationImage(
-                image: NetworkImage(userProfileImageUrl!),
-                fit: BoxFit.cover,
-              )
-                  : null,
+                  userProfileImageUrl != null && userProfileImageUrl!.isNotEmpty
+                      ? DecorationImage(
+                          image: NetworkImage(userProfileImageUrl!),
+                          fit: BoxFit.cover,
+                        )
+                      : null,
               color: isDarkMode ? Colors.grey[700] : Colors.grey[300],
             ),
             child: userProfileImageUrl == null || userProfileImageUrl!.isEmpty
                 ? Icon(
-              Icons.person,
-              color: isDarkMode ? Colors.grey[500] : Colors.grey[400],
-              size: 30,
-            )
+                    Icons.person,
+                    color: isDarkMode ? Colors.grey[500] : Colors.grey[400],
+                    size: 30,
+                  )
                 : null,
           ),
           SizedBox(width: 12),
@@ -282,7 +286,9 @@ class _EditScreenState extends State<EditScreen> {
                   if (userSocialMedia.isNotEmpty)
                     Text(
                       userSocialMedia,
-                      style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.primary),
+                      style: TextStyle(
+                          fontSize: 14,
+                          color: Theme.of(context).colorScheme.primary),
                     ),
                   if (userDescription.isNotEmpty)
                     Text(
@@ -306,7 +312,7 @@ class _EditScreenState extends State<EditScreen> {
           .findRenderObject() as RenderRepaintBoundary;
       final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
       final ByteData? byteData =
-      await image.toByteData(format: ui.ImageByteFormat.png);
+          await image.toByteData(format: ui.ImageByteFormat.png);
 
       if (byteData != null) {
         return byteData.buffer.asUint8List();
@@ -330,7 +336,7 @@ class _EditScreenState extends State<EditScreen> {
       // Get the image with higher quality
       ui.Image image = await boundary.toImage(pixelRatio: 3.0);
       ByteData? byteData =
-      await image.toByteData(format: ui.ImageByteFormat.png);
+          await image.toByteData(format: ui.ImageByteFormat.png);
 
       if (byteData != null) {
         setState(() {
@@ -360,7 +366,8 @@ class _EditScreenState extends State<EditScreen> {
           ),
           content: Text(
             'Please select an image from gallery first.',
-            style: TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode)),
+            style:
+                TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode)),
           ),
           actions: [
             TextButton(
@@ -394,7 +401,8 @@ class _EditScreenState extends State<EditScreen> {
           ),
           content: Text(
             'Please sign in to download images. This helps keep your downloads organized.',
-            style: TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode)),
+            style:
+                TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode)),
           ),
           actions: [
             TextButton(
@@ -463,7 +471,8 @@ class _EditScreenState extends State<EditScreen> {
 
       // Show error dialog
       if (mounted) {
-        final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+        final themeProvider =
+            Provider.of<ThemeProvider>(context, listen: false);
         final isDarkMode = themeProvider.isDarkMode;
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -509,7 +518,8 @@ class _EditScreenState extends State<EditScreen> {
         MaterialPageRoute(
           builder: (context) => TemplateSharingPage(
             // Use a timestamp to ensure uniqueness in the key
-            key: ValueKey("template_sharing_custom_${DateTime.now().millisecondsSinceEpoch}"),
+            key: ValueKey(
+                "template_sharing_custom_${DateTime.now().millisecondsSinceEpoch}"),
             template: QuoteTemplate(
               id: 'custom',
               imageUrl: widget.templateImageUrl ?? 'custom_image',
@@ -531,7 +541,8 @@ class _EditScreenState extends State<EditScreen> {
 
       // Show error dialog
       if (context.mounted) {
-        final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+        final themeProvider =
+            Provider.of<ThemeProvider>(context, listen: false);
         final isDarkMode = themeProvider.isDarkMode;
 
         showDialog(
@@ -545,7 +556,8 @@ class _EditScreenState extends State<EditScreen> {
               ),
               content: Text(
                 'Failed to share image: ${e.toString()}',
-                style: TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode)),
+                style: TextStyle(
+                    color: AppColors.getSecondaryTextColor(isDarkMode)),
               ),
               actions: [
                 TextButton(
@@ -585,7 +597,8 @@ class _EditScreenState extends State<EditScreen> {
               children: [
                 Text(
                   'How would you rate your experience with this template?',
-                  style: TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode)),
+                  style: TextStyle(
+                      color: AppColors.getSecondaryTextColor(isDarkMode)),
                 ),
                 SizedBox(height: 20),
                 FittedBox(
@@ -595,7 +608,11 @@ class _EditScreenState extends State<EditScreen> {
                       return IconButton(
                         icon: Icon(
                           index < rating ? Icons.star : Icons.star_border,
-                          color: index < rating ? Colors.amber : isDarkMode ? Colors.grey[600] : Colors.grey[400],
+                          color: index < rating
+                              ? Colors.amber
+                              : isDarkMode
+                                  ? Colors.grey[600]
+                                  : Colors.grey[400],
                           size: 36,
                         ),
                         onPressed: () {
@@ -625,7 +642,7 @@ class _EditScreenState extends State<EditScreen> {
                   Navigator.pushAndRemoveUntil(
                     context,
                     MaterialPageRoute(builder: (context) => MainScreen()),
-                        (route) => false,
+                    (route) => false,
                   );
                 },
                 child: Text(
@@ -703,7 +720,7 @@ class _EditScreenState extends State<EditScreen> {
 
       // Get reference to the template document
       final templateRef =
-      FirebaseFirestore.instance.collection('templates').doc(templateId);
+          FirebaseFirestore.instance.collection('templates').doc(templateId);
 
       // Run this as a transaction to ensure data consistency
       await FirebaseFirestore.instance.runTransaction((transaction) async {
@@ -836,7 +853,9 @@ class _EditScreenState extends State<EditScreen> {
         SnackBar(
           content: Text("Image saved to your gallery and downloads"),
           duration: Duration(seconds: 3),
-          backgroundColor: isDarkMode ? AppColors.primaryGreen.withOpacity(0.7) : AppColors.primaryGreen,
+          backgroundColor: isDarkMode
+              ? AppColors.primaryGreen.withOpacity(0.7)
+              : AppColors.primaryGreen,
           action: SnackBarAction(
             label: 'VIEW ALL',
             textColor: Colors.white,
@@ -983,11 +1002,12 @@ class _EditScreenState extends State<EditScreen> {
                 padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               ),
               onPressed: () {
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => MainScreen(),
-                    ));
+                //   Navigator.push(
+                //       context,
+                //       MaterialPageRoute(
+                //         builder: (context) => MainScreen(),
+                //       ));
+                Navigator.pop(context);
               },
               child: Text(
                 "Cancel",
@@ -1029,67 +1049,74 @@ class _EditScreenState extends State<EditScreen> {
               else
                 imageData == null
                     ? GestureDetector(
-                  onTap: pickImageFromGallery,
-                  child: Container(
-                    height: 400,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                          color: borderColor,
-                          style: BorderStyle.solid),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          width: 80,
-                          height: 80,
+                        onTap: pickImageFromGallery,
+                        child: Container(
+                          height: 400,
+                          width: double.infinity,
                           decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: isDarkMode ? Colors.grey[700] : Colors.grey[300],
+                            border: Border.all(
+                                color: borderColor, style: BorderStyle.solid),
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          child: Icon(
-                            Icons.add,
-                            size: 40,
-                            color: isDarkMode ? Colors.grey[500] : Colors.grey[400],
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                width: 80,
+                                height: 80,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: isDarkMode
+                                      ? Colors.grey[700]
+                                      : Colors.grey[300],
+                                ),
+                                child: Icon(
+                                  Icons.add,
+                                  size: 40,
+                                  color: isDarkMode
+                                      ? Colors.grey[500]
+                                      : Colors.grey[400],
+                                ),
+                              ),
+                              SizedBox(height: 16),
+                              Text(
+                                'Tap to upload from gallery',
+                                style: TextStyle(
+                                  color: isDarkMode
+                                      ? Colors.grey[400]
+                                      : Colors.grey[600],
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        SizedBox(height: 16),
-                        Text(
-                          'Tap to upload from gallery',
-                          style: TextStyle(
-                            color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                            fontSize: 16,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                )
+                      )
                     : RepaintBoundary(
-                  key: imageContainerKey,
-                  child: Column(
-                    children: [
-                      Image.memory(imageData!),
-                      if (showInfoBox && isPaidUser) _buildInfoBox(),
-                    ],
-                  ),
-                ),
+                        key: imageContainerKey,
+                        child: Column(
+                          children: [
+                            Image.memory(imageData!),
+                            if (showInfoBox && isPaidUser) _buildInfoBox(),
+                          ],
+                        ),
+                      ),
               SizedBox(height: 100),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   ElevatedButton.icon(
                     onPressed: pickImageFromGallery,
-                    icon: Icon(Icons.photo_library,
-                      color: Colors.white,),
+                    icon: Icon(
+                      Icons.photo_library,
+                      color: Colors.white,
+                    ),
                     label: Text('Change Image'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: primaryColor,
                       foregroundColor: Colors.white,
                       padding:
-                      EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                          EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                     ),
                   ),
                   ElevatedButton.icon(
@@ -1123,13 +1150,16 @@ class _EditScreenState extends State<EditScreen> {
                         }
                       }
                     },
-                    icon: Icon(Icons.edit, color: Colors.white,),
+                    icon: Icon(
+                      Icons.edit,
+                      color: Colors.white,
+                    ),
                     label: Text('Edit Image'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: primaryColor,
                       foregroundColor: Colors.white,
                       padding:
-                      EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                          EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                     ),
                   ),
                 ],

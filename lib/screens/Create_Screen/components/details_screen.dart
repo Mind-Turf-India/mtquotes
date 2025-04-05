@@ -7,26 +7,27 @@ import 'package:image_picker/image_picker.dart';
 import 'package:mtquotes/screens/Create_Screen/edit_screen_create.dart';
 import 'package:mtquotes/screens/Payment_Screen/subscription_screen.dart';
 import 'package:mtquotes/screens/Templates/components/template/quote_template.dart';
+
 import 'package:mtquotes/utils/app_colors.dart';
 import 'package:mtquotes/utils/theme_provider.dart';
 import 'package:provider/provider.dart';
+
 
 class DetailsScreen extends StatefulWidget {
   final QuoteTemplate template;
   final bool isPaidUser;
 
   const DetailsScreen({
-    super.key,
+    Key? key,
     required this.template,
     required this.isPaidUser,
-  });
+  }) : super(key: key);
 
   @override
   State<DetailsScreen> createState() => _DetailsScreenState();
 }
 
-class _DetailsScreenState extends State<DetailsScreen>
-    with SingleTickerProviderStateMixin {
+class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProviderStateMixin {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _mobileController = TextEditingController();
   final TextEditingController _locationController = TextEditingController();
@@ -39,11 +40,11 @@ class _DetailsScreenState extends State<DetailsScreen>
   String? _profileImageUrl;
   bool _showInfoBox = true;
   bool _isLoading = false;
-  String _selectedBackground = 'red'; // Default background
+  String _selectedBackground = 'white'; // Default background
 
   // Background options
   final List<Map<String, dynamic>> _backgroundOptions = [
-    {'name': 'Red', 'value': 'red', 'color': Colors.red[100]},
+    {'name': 'White', 'value': 'white', 'color': Colors.white},
     {'name': 'Light Gray', 'value': 'lightGray', 'color': Colors.grey[200]},
     {'name': 'Light Blue', 'value': 'lightBlue', 'color': Colors.blue[100]},
     {'name': 'Light Green', 'value': 'lightGreen', 'color': Colors.green[100]},
@@ -72,8 +73,7 @@ class _DetailsScreenState extends State<DetailsScreen>
             .get();
 
         if (userDoc.exists && userDoc.data() is Map<String, dynamic>) {
-          Map<String, dynamic> userData =
-              userDoc.data() as Map<String, dynamic>;
+          Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
 
           setState(() {
             _nameController.text = userData['name'] ?? '';
@@ -84,7 +84,7 @@ class _DetailsScreenState extends State<DetailsScreen>
             _socialMediaController.text = userData['socialMedia'] ?? '';
             _profileImageUrl = userData['profileImage'];
             _showInfoBox = userData['showInfoBox'] ?? true;
-            _selectedBackground = userData['infoBoxBackground'] ?? 'red';
+            _selectedBackground = userData['infoBoxBackground'] ?? 'white';
 
             // Set the tab based on the lastActiveProfileTab if available
             if (userData['lastActiveProfileTab'] == 'business') {
@@ -180,8 +180,7 @@ class _DetailsScreenState extends State<DetailsScreen>
         'socialMedia': _socialMediaController.text,
         'showInfoBox': _showInfoBox,
         'infoBoxBackground': _selectedBackground,
-        'lastActiveProfileTab':
-            _tabController.index == 0 ? 'personal' : 'business',
+        'lastActiveProfileTab': _tabController.index == 0 ? 'personal' : 'business',
       };
 
       if (newProfileImageUrl != null) {
@@ -249,16 +248,14 @@ class _DetailsScreenState extends State<DetailsScreen>
         return Colors.green[100]!;
       case 'white':
       default:
-        return Colors.red[100]!;
+        return Colors.white;
     }
   }
 
   // Build the template preview with user details in info box
   Widget _buildTemplatePreview({required bool isPersonal}) {
     final isDarkMode = Provider.of<ThemeProvider>(context).isDarkMode;
-    final textColor = isDarkMode
-        ? Colors.black
-        : Colors.black; // Info box text is always black regardless of theme
+    final textColor = isDarkMode ? Colors.black : Colors.black;  // Info box text is always black regardless of theme
 
     return Container(
       width: double.infinity,
@@ -303,9 +300,7 @@ class _DetailsScreenState extends State<DetailsScreen>
                       children: [
                         if (isPersonal)
                           Text(
-                            _nameController.text.isNotEmpty
-                                ? _nameController.text
-                                : 'Your Name',
+                            _nameController.text.isNotEmpty ? _nameController.text : 'Your Name',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
@@ -318,9 +313,7 @@ class _DetailsScreenState extends State<DetailsScreen>
                             children: [
                               // Company name first for business cards
                               Text(
-                                _companyNameController.text.isNotEmpty
-                                    ? _companyNameController.text
-                                    : 'Company Name',
+                                _companyNameController.text.isNotEmpty ? _companyNameController.text : 'Company Name',
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 16,
@@ -330,9 +323,7 @@ class _DetailsScreenState extends State<DetailsScreen>
                               SizedBox(height: 2),
                               // Then person's name
                               Text(
-                                _nameController.text.isNotEmpty
-                                    ? _nameController.text
-                                    : 'Your Name',
+                                _nameController.text.isNotEmpty ? _nameController.text : 'Your Name',
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: textColor,
@@ -355,8 +346,7 @@ class _DetailsScreenState extends State<DetailsScreen>
                           if (_socialMediaController.text.isNotEmpty)
                             Text(
                               _socialMediaController.text,
-                              style: TextStyle(
-                                  fontSize: 14, color: AppColors.primaryBlue),
+                              style: TextStyle(fontSize: 14, color: AppColors.primaryBlue),
                             ),
                           if (_descriptionController.text.isNotEmpty)
                             Text(
@@ -385,7 +375,7 @@ class _DetailsScreenState extends State<DetailsScreen>
   // Build circular image widget for both profile and preview
   Widget _buildCircularImage({required double size}) {
     final isDarkMode = Provider.of<ThemeProvider>(context).isDarkMode;
-
+    
     return Container(
       width: size,
       height: size,
@@ -405,8 +395,7 @@ class _DetailsScreenState extends State<DetailsScreen>
                 : null,
         color: isDarkMode ? Colors.grey.shade800 : Colors.grey.shade200,
       ),
-      child: _profileImage == null &&
-              (_profileImageUrl == null || _profileImageUrl!.isEmpty)
+      child: _profileImage == null && (_profileImageUrl == null || _profileImageUrl!.isEmpty)
           ? Icon(
               Icons.person,
               color: isDarkMode ? Colors.grey.shade600 : Colors.grey.shade400,
@@ -424,7 +413,7 @@ class _DetailsScreenState extends State<DetailsScreen>
     TextInputType keyboardType = TextInputType.text,
   }) {
     final isDarkMode = Provider.of<ThemeProvider>(context).isDarkMode;
-
+    
     if (widget.isPaidUser) {
       // Normal text field for paid users
       return TextField(
@@ -442,13 +431,11 @@ class _DetailsScreenState extends State<DetailsScreen>
           ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
-            borderSide:
-                BorderSide(color: AppColors.getDividerColor(isDarkMode)),
+            borderSide: BorderSide(color: AppColors.getDividerColor(isDarkMode)),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
-            borderSide:
-                BorderSide(color: AppColors.getDividerColor(isDarkMode)),
+            borderSide: BorderSide(color: AppColors.getDividerColor(isDarkMode)),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
@@ -456,8 +443,7 @@ class _DetailsScreenState extends State<DetailsScreen>
           ),
           contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
           filled: true,
-          fillColor:
-              isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
+          fillColor: isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
         ),
       );
     } else {
@@ -502,7 +488,7 @@ class _DetailsScreenState extends State<DetailsScreen>
   Widget build(BuildContext context) {
     final isDarkMode = Provider.of<ThemeProvider>(context).isDarkMode;
     final theme = Theme.of(context);
-
+    
     return Scaffold(
       backgroundColor: AppColors.getBackgroundColor(isDarkMode),
       appBar: AppBar(
@@ -526,8 +512,7 @@ class _DetailsScreenState extends State<DetailsScreen>
         elevation: 0,
       ),
       body: _isLoading
-          ? Center(
-              child: CircularProgressIndicator(color: AppColors.primaryBlue))
+          ? Center(child: CircularProgressIndicator(color: AppColors.primaryBlue))
           : Column(
               children: [
                 // Tab Bar
@@ -540,8 +525,7 @@ class _DetailsScreenState extends State<DetailsScreen>
                       Tab(text: 'Business'),
                     ],
                     labelColor: AppColors.primaryBlue,
-                    unselectedLabelColor:
-                        AppColors.getSecondaryTextColor(isDarkMode),
+                    unselectedLabelColor: AppColors.getSecondaryTextColor(isDarkMode),
                     indicatorColor: AppColors.primaryBlue,
                     indicatorSize: TabBarIndicatorSize.tab,
                   ),
@@ -567,7 +551,7 @@ class _DetailsScreenState extends State<DetailsScreen>
 
   Widget _buildPersonalTab() {
     final isDarkMode = Provider.of<ThemeProvider>(context).isDarkMode;
-
+    
     return SingleChildScrollView(
       padding: EdgeInsets.all(16),
       child: Column(
@@ -634,13 +618,13 @@ class _DetailsScreenState extends State<DetailsScreen>
               SizedBox(width: 16),
               TextButton(
                 onPressed: _pickImage,
+                child: Text('Change photo'),
                 style: TextButton.styleFrom(
                   foregroundColor: AppColors.primaryBlue,
                   textStyle: TextStyle(
                     decoration: TextDecoration.underline,
                   ),
                 ),
-                child: Text('Change photo'),
               ),
               if (!widget.isPaidUser)
                 Icon(Icons.lock, color: Colors.yellow, size: 16),
@@ -742,28 +726,26 @@ class _DetailsScreenState extends State<DetailsScreen>
               Expanded(
                 child: ElevatedButton(
                   onPressed: _saveUserData,
+                  child: Text('Save'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                        isDarkMode ? AppColors.darkSurface : Colors.white,
+                    backgroundColor: isDarkMode ? AppColors.darkSurface : Colors.white,
                     foregroundColor: AppColors.getTextColor(isDarkMode),
                     elevation: 1,
-                    side: BorderSide(
-                        color: AppColors.getDividerColor(isDarkMode)),
+                    side: BorderSide(color: AppColors.getDividerColor(isDarkMode)),
                     padding: EdgeInsets.symmetric(vertical: 12),
                   ),
-                  child: Text('Save'),
                 ),
               ),
               SizedBox(width: 16),
               Expanded(
                 child: ElevatedButton(
                   onPressed: _navigateToEditScreen,
+                  child: Text('Next'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryBlue,
                     foregroundColor: Colors.white,
                     padding: EdgeInsets.symmetric(vertical: 12),
                   ),
-                  child: Text('Next'),
                 ),
               ),
             ],
@@ -775,7 +757,7 @@ class _DetailsScreenState extends State<DetailsScreen>
 
   Widget _buildBusinessTab() {
     final isDarkMode = Provider.of<ThemeProvider>(context).isDarkMode;
-
+    
     return SingleChildScrollView(
       padding: EdgeInsets.all(16),
       child: Column(
@@ -888,13 +870,13 @@ class _DetailsScreenState extends State<DetailsScreen>
               SizedBox(width: 16),
               TextButton(
                 onPressed: _pickImage,
+                child: Text('Change logo'),
                 style: TextButton.styleFrom(
                   foregroundColor: AppColors.primaryBlue,
                   textStyle: TextStyle(
                     decoration: TextDecoration.underline,
                   ),
                 ),
-                child: Text('Change logo'),
               ),
               if (!widget.isPaidUser)
                 Icon(Icons.lock, color: Colors.yellow, size: 16),
@@ -996,28 +978,26 @@ class _DetailsScreenState extends State<DetailsScreen>
               Expanded(
                 child: ElevatedButton(
                   onPressed: _saveUserData,
+                  child: Text('Save'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                        isDarkMode ? AppColors.darkSurface : Colors.white,
+                    backgroundColor: isDarkMode ? AppColors.darkSurface : Colors.white,
                     foregroundColor: AppColors.getTextColor(isDarkMode),
                     elevation: 1,
-                    side: BorderSide(
-                        color: AppColors.getDividerColor(isDarkMode)),
+                    side: BorderSide(color: AppColors.getDividerColor(isDarkMode)),
                     padding: EdgeInsets.symmetric(vertical: 12),
                   ),
-                  child: Text('Save'),
                 ),
               ),
               SizedBox(width: 16),
               Expanded(
                 child: ElevatedButton(
                   onPressed: _navigateToEditScreen,
+                  child: Text('Next'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryBlue,
                     foregroundColor: Colors.white,
                     padding: EdgeInsets.symmetric(vertical: 12),
                   ),
-                  child: Text('Next'),
                 ),
               ),
             ],
