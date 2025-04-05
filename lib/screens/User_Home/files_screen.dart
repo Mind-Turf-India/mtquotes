@@ -251,6 +251,7 @@ class _FilesPageState extends State<FilesPage> {
     return Scaffold(
       backgroundColor: AppColors.getBackgroundColor(isDarkMode),
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: Text(
           context.loc.files,
           style: GoogleFonts.poppins(

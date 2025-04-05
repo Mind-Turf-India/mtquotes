@@ -16,12 +16,12 @@ class RecentTemplatesSection extends StatelessWidget {
   final VoidCallback? onViewAll;
 
   const RecentTemplatesSection({
-    Key? key,
+    super.key,
     required this.recentTemplates,
     required this.onTemplateSelected,
     this.isLoading = false,
     this.onViewAll,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -63,39 +63,40 @@ class RecentTemplatesSection extends StatelessWidget {
         SizedBox(
           height: 180,
           child: isLoading
-              ? Center(child: CircularProgressIndicator(color: theme.primaryColor))
+              ? Center(
+                  child: CircularProgressIndicator(color: theme.primaryColor))
               : !isUserLoggedIn
-              ? Center(
-                  child: Text(
-                    "Sign in to view recent templates",
-                    style: GoogleFonts.poppins(
-                      fontSize: fontSize - 2,
-                      color: theme.textTheme.bodyMedium?.color,
-                    ),
-                  ),
-                )
-              : recentTemplates.isEmpty
-              ? Center(
-                  child: Text(
-                    "No recent templates",
-                    style: GoogleFonts.poppins(
-                      fontSize: fontSize - 2,
-                      color: theme.textTheme.bodyMedium?.color,
-                    ),
-                  ),
-                )
-              : ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: recentTemplates.length,
-                  itemBuilder: (context, index) {
-                    return recentTemplateCard(
-                      context,
-                      recentTemplates[index],
-                      fontSize,
-                      isDarkMode,
-                    );
-                  },
-                ),
+                  ? Center(
+                      child: Text(
+                        "Sign in to view recent templates",
+                        style: GoogleFonts.poppins(
+                          fontSize: fontSize - 2,
+                          color: theme.textTheme.bodyMedium?.color,
+                        ),
+                      ),
+                    )
+                  : recentTemplates.isEmpty
+                      ? Center(
+                          child: Text(
+                            "No recent templates",
+                            style: GoogleFonts.poppins(
+                              fontSize: fontSize - 2,
+                              color: theme.textTheme.bodyMedium?.color,
+                            ),
+                          ),
+                        )
+                      : ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: recentTemplates.length,
+                          itemBuilder: (context, index) {
+                            return recentTemplateCard(
+                              context,
+                              recentTemplates[index],
+                              fontSize,
+                              isDarkMode,
+                            );
+                          },
+                        ),
         ),
       ],
     );
@@ -108,7 +109,7 @@ class RecentTemplatesSection extends StatelessWidget {
     bool isDarkMode,
   ) {
     final theme = Theme.of(context);
-    
+
     return GestureDetector(
       onTap: () => onTemplateSelected(template),
       child: Container(
@@ -120,11 +121,8 @@ class RecentTemplatesSection extends StatelessWidget {
           borderRadius: BorderRadius.circular(8),
           boxShadow: [
             BoxShadow(
-              color: isDarkMode 
-                ? Colors.black26 
-                : Colors.grey.shade300,
-              blurRadius: 5
-            )
+                color: isDarkMode ? Colors.black26 : Colors.grey.shade300,
+                blurRadius: 5)
           ],
         ),
         child: ClipRRect(
@@ -145,7 +143,8 @@ class RecentTemplatesSection extends StatelessWidget {
                       errorWidget: (context, url, error) {
                         print("Image loading error: $error for URL: $url");
                         return Container(
-                          color: isDarkMode ? Colors.grey[800] : Colors.grey[300],
+                          color:
+                              isDarkMode ? Colors.grey[800] : Colors.grey[300],
                           child: Icon(
                             Icons.error,
                             color: theme.iconTheme.color,
@@ -153,7 +152,7 @@ class RecentTemplatesSection extends StatelessWidget {
                         );
                       },
                       fit: BoxFit.cover,
-                      cacheKey: template.id + "_recent_image",
+                      cacheKey: "${template.id}_recent_image",
                       maxHeightDiskCache: 500,
                       maxWidthDiskCache: 500,
                     )
@@ -196,7 +195,7 @@ class RecentTemplatesSection extends StatelessWidget {
                   ),
                 ),
 
-              // Optional title overlay at bottom
+              // Optional title overlay at bottomR
               Positioned(
                 bottom: 0,
                 left: 0,

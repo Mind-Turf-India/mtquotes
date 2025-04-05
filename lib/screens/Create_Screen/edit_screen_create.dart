@@ -969,6 +969,7 @@ class _EditScreenState extends State<EditScreen> {
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         backgroundColor: backgroundColor,
         elevation: 0,
         title: Row(

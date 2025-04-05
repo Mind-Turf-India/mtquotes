@@ -931,8 +931,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     onTap: showNotificationsSheet,
                     child: Icon(
                       LucideIcons.bellRing,
-                      color: AppColors.getTextColor(
-                          isDarkMode),
+                      color: AppColors.getTextColor(isDarkMode),
                     ),
                   ),
                 ],
@@ -979,10 +978,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                           child: Text(
                                             'No quote available for today',
                                             style: GoogleFonts.poppins(
-                                              fontSize: fontSize,
-                                              color: AppColors.getTextColorWhite(
-                                                  isDarkMode), // Ensure text color respects theme
-                                            ),
+
+                                                fontSize: fontSize,
+                                                color: Colors
+                                                    .black // Ensure text color respects theme
+                                                ),
+
                                           ),
                                         ),
                                 ),
@@ -1195,7 +1196,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                                                     'PRO',
                                                                     style:
                                                                         TextStyle(
-                                                                          color: AppColors.getTextColor(isDarkMode),
+                                                                      color: AppColors
+                                                                          .getTextColor(
+                                                                              isDarkMode),
                                                                       fontSize:
                                                                           10,
                                                                       fontWeight:
@@ -1257,7 +1260,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                     style: GoogleFonts.poppins(
                                       fontSize: fontSize,
                                       fontWeight: FontWeight.bold,
-                                      color: AppColors.getTextColor(isDarkMode), // Ensure text color respects theme
+                                      color: AppColors.getTextColor(
+                                          isDarkMode), // Ensure text color respects theme
                                     ),
                                   ),
                                 ],
@@ -1268,11 +1272,31 @@ class _HomeScreenState extends State<HomeScreen> {
                                 child: ListView(
                                   scrollDirection: Axis.horizontal,
                                   children: [
-                                    categoryCard(Icons.lightbulb, context.loc.motivational, Colors.green, isDarkMode),
-                                    categoryCard(Icons.favorite, context.loc.love, Colors.red, isDarkMode),
-                                    categoryCard(Icons.emoji_emotions, context.loc.funny, Colors.orange, isDarkMode),
-                                    categoryCard(Icons.people, context.loc.friendship, Colors.blue, isDarkMode),
-                                    categoryCard(Icons.self_improvement, context.loc.life, Colors.purple, isDarkMode),
+                                    categoryCard(
+                                        Icons.lightbulb,
+                                        context.loc.motivational,
+                                        Colors.green,
+                                        isDarkMode),
+                                    categoryCard(
+                                        Icons.favorite,
+                                        context.loc.love,
+                                        Colors.red,
+                                        isDarkMode),
+                                    categoryCard(
+                                        Icons.emoji_emotions,
+                                        context.loc.funny,
+                                        Colors.orange,
+                                        isDarkMode),
+                                    categoryCard(
+                                        Icons.people,
+                                        context.loc.friendship,
+                                        Colors.blue,
+                                        isDarkMode),
+                                    categoryCard(
+                                        Icons.self_improvement,
+                                        context.loc.life,
+                                        Colors.purple,
+                                        isDarkMode),
                                   ],
                                 ),
                               ),
@@ -1293,7 +1317,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                       style: GoogleFonts.poppins(
                                         fontSize: fontSize,
                                         fontWeight: FontWeight.bold,
-                                        color: AppColors.getTextColor(isDarkMode), // Ensure text color respects theme
+                                        color: AppColors.getTextColor(
+                                            isDarkMode), // Ensure text color respects theme
                                       ),
                                     ),
                                     GestureDetector(
@@ -1342,7 +1367,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                             style: GoogleFonts.poppins(
                                               fontSize: fontSize,
                                               fontWeight: FontWeight.bold,
-                                              color: AppColors.getTextColor(isDarkMode), // Ensure text color respects theme
+                                              color: AppColors.getTextColor(
+                                                  isDarkMode), // Ensure text color respects theme
                                             ),
                                           ),
                                           GestureDetector(
@@ -1383,10 +1409,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                                 ? Center(
                                                     child: Text(
                                                       "No festival posts available",
-                                                      style: GoogleFonts.poppins(
+                                                      style:
+                                                          GoogleFonts.poppins(
                                                         fontSize: fontSize,
-                                                        fontWeight: FontWeight.bold,
-                                                        color: AppColors.getTextColor(isDarkMode), // Ensure text color respects theme
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        color: AppColors
+                                                            .getTextColor(
+                                                                isDarkMode), // Ensure text color respects theme
                                                       ),
                                                     ),
                                                   )
@@ -1425,10 +1455,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                                   children: [
                                                     Text(
                                                       context.loc.foryou,
-                                                      style: GoogleFonts.poppins(
+                                                      style:
+                                                          GoogleFonts.poppins(
                                                         fontSize: fontSize,
-                                                        fontWeight: FontWeight.bold,
-                                                        color: AppColors.getTextColor(isDarkMode), // Ensure text color respects theme
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        color: AppColors
+                                                            .getTextColor(
+                                                                isDarkMode), // Ensure text color respects theme
                                                       ),
                                                     ),
                                                     SizedBox(width: 8),
@@ -1665,7 +1699,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // Update the categoryCard function in your HomeScreen class
-  Widget categoryCard(IconData icon, String title, Color color, bool isDarkMode) {
+  Widget categoryCard(
+      IconData icon, String title, Color color, bool isDarkMode) {
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -1704,7 +1739,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 color: AppColors.getTextColor(isDarkMode),
               ),
             ),
-
           ],
         ),
       ),

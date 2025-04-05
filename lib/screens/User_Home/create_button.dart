@@ -88,15 +88,18 @@ class _CreateBottomSheetState extends State<CreateBottomSheet> {
     );
   }
 
-  void _navigateToScreen(BuildContext context, Widget screen) {
-    setState(() {
-      isExpanded = false; // Close the menu when an option is selected
-    });
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => screen),
-    );
-  }
+ void _navigateToScreen(BuildContext context, Widget screen) {
+  setState(() {
+    isExpanded = false; // Close the menu when an option is selected
+  });
+  
+  // Replace the current route and remove all previous routes
+  Navigator.pushAndRemoveUntil(
+  context,
+  MaterialPageRoute(builder: (context) => screen),
+  (route) => route.isFirst, // This keeps only the first route
+);
+}
 
   Widget _buildOptionItem(BuildContext context, String label, IconData icon, double fontSize) {
     return GestureDetector(
