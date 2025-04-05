@@ -19,6 +19,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:uuid/uuid.dart';
 import 'package:mtquotes/screens/Create_Screen/components/drafts_service.dart';
 import 'package:mtquotes/screens/Create_Screen/components/imageEditDraft.dart';
+import '../../utils/app_colors.dart';
 import '../Templates/components/template/quote_template.dart';
 import '../Templates/components/template/template_service.dart';
 import '../Templates/components/template/template_sharing.dart';
@@ -113,7 +114,7 @@ class _EditScreenState extends State<EditScreen> {
 
         if (userDoc.exists && userDoc.data() is Map<String, dynamic>) {
           Map<String, dynamic> userData =
-              userDoc.data() as Map<String, dynamic>;
+          userDoc.data() as Map<String, dynamic>;
 
           setState(() {
             showInfoBox = userData['showInfoBox'] ?? true;
@@ -168,28 +169,35 @@ class _EditScreenState extends State<EditScreen> {
   Widget _buildInfoBox() {
     if (!showInfoBox) return SizedBox();
 
+    // Get theme-aware colors for info box
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     Color bgColor;
     switch (infoBoxBackground) {
       case 'lightGray':
-        bgColor = Colors.grey[200]!;
+        bgColor = isDarkMode ? Colors.grey[800]! : Colors.grey[200]!;
         break;
       case 'lightBlue':
-        bgColor = Colors.blue[100]!;
+        bgColor = isDarkMode ? Colors.blue[900]! : Colors.blue[100]!;
         break;
       case 'lightGreen':
-        bgColor = Colors.green[100]!;
+        bgColor = isDarkMode ? Colors.green[900]! : Colors.green[100]!;
         break;
       case 'white':
       default:
-        bgColor = Colors.white;
+        bgColor = isDarkMode ? Theme.of(context).colorScheme.surface : Colors.white;
     }
+
+    // Get text color based on theme
+    final textColor = Theme.of(context).textTheme.bodyMedium?.color ?? (isDarkMode ? AppColors.darkText : AppColors.lightText);
+    final secondaryTextColor = isDarkMode ? AppColors.darkSecondaryText : AppColors.lightSecondaryText;
 
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: bgColor,
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: isDarkMode ? AppColors.darkDivider : AppColors.lightDivider),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -201,20 +209,20 @@ class _EditScreenState extends State<EditScreen> {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               image:
-                  userProfileImageUrl != null && userProfileImageUrl!.isNotEmpty
-                      ? DecorationImage(
-                          image: NetworkImage(userProfileImageUrl!),
-                          fit: BoxFit.cover,
-                        )
-                      : null,
-              color: Colors.grey[300],
+              userProfileImageUrl != null && userProfileImageUrl!.isNotEmpty
+                  ? DecorationImage(
+                image: NetworkImage(userProfileImageUrl!),
+                fit: BoxFit.cover,
+              )
+                  : null,
+              color: isDarkMode ? Colors.grey[700] : Colors.grey[300],
             ),
             child: userProfileImageUrl == null || userProfileImageUrl!.isEmpty
                 ? Icon(
-                    Icons.person,
-                    color: Colors.grey[400],
-                    size: 30,
-                  )
+              Icons.person,
+              color: isDarkMode ? Colors.grey[500] : Colors.grey[400],
+              size: 30,
+            )
                 : null,
           ),
           SizedBox(width: 12),
@@ -230,6 +238,7 @@ class _EditScreenState extends State<EditScreen> {
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
+                      color: textColor,
                     ),
                   ),
                 if (isBusinessProfile) // Business profile - show both name and company
@@ -242,6 +251,7 @@ class _EditScreenState extends State<EditScreen> {
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
+                          color: textColor,
                         ),
                       ),
                       SizedBox(height: 2),
@@ -250,6 +260,7 @@ class _EditScreenState extends State<EditScreen> {
                         userName.isNotEmpty ? userName : 'Your Name',
                         style: TextStyle(
                           fontSize: 14,
+                          color: textColor,
                         ),
                       ),
                     ],
@@ -257,24 +268,24 @@ class _EditScreenState extends State<EditScreen> {
                 if (userLocation.isNotEmpty)
                   Text(
                     userLocation,
-                    style: TextStyle(fontSize: 14),
+                    style: TextStyle(fontSize: 14, color: textColor),
                   ),
                 if (userMobile.isNotEmpty)
                   Text(
                     userMobile,
-                    style: TextStyle(fontSize: 14),
+                    style: TextStyle(fontSize: 14, color: textColor),
                   ),
                 // Only show social media and description for business profile
                 if (isBusinessProfile) ...[
                   if (userSocialMedia.isNotEmpty)
                     Text(
                       userSocialMedia,
-                      style: TextStyle(fontSize: 14, color: Colors.blue),
+                      style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.primary),
                     ),
                   if (userDescription.isNotEmpty)
                     Text(
                       userDescription,
-                      style: TextStyle(fontSize: 14),
+                      style: TextStyle(fontSize: 14, color: textColor),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -293,7 +304,7 @@ class _EditScreenState extends State<EditScreen> {
           .findRenderObject() as RenderRepaintBoundary;
       final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
       final ByteData? byteData =
-          await image.toByteData(format: ui.ImageByteFormat.png);
+      await image.toByteData(format: ui.ImageByteFormat.png);
 
       if (byteData != null) {
         return byteData.buffer.asUint8List();
@@ -317,7 +328,7 @@ class _EditScreenState extends State<EditScreen> {
       // Get the image with higher quality
       ui.Image image = await boundary.toImage(pixelRatio: 3.0);
       ByteData? byteData =
-          await image.toByteData(format: ui.ImageByteFormat.png);
+      await image.toByteData(format: ui.ImageByteFormat.png);
 
       if (byteData != null) {
         setState(() {
@@ -381,7 +392,9 @@ class _EditScreenState extends State<EditScreen> {
       barrierDismissible: false,
       builder: (BuildContext context) {
         return Center(
-          child: CircularProgressIndicator(),
+          child: CircularProgressIndicator(
+            color: Theme.of(context).colorScheme.primary,
+          ),
         );
       },
     );
@@ -523,7 +536,7 @@ class _EditScreenState extends State<EditScreen> {
                       return IconButton(
                         icon: Icon(
                           index < rating ? Icons.star : Icons.star_border,
-                          color: index < rating ? Colors.amber : Colors.grey,
+                          color: index < rating ? Colors.amber : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                           size: 36,
                         ),
                         onPressed: () {
@@ -550,7 +563,7 @@ class _EditScreenState extends State<EditScreen> {
                   Navigator.pushAndRemoveUntil(
                     context,
                     MaterialPageRoute(builder: (context) => MainScreen()),
-                    (route) => false,
+                        (route) => false,
                   );
                 },
                 child: Text('Submit'),
@@ -569,7 +582,7 @@ class _EditScreenState extends State<EditScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Thanks for your rating!'),
-              backgroundColor: Colors.green,
+              backgroundColor: AppColors.primaryGreen,
             ),
           );
         }
@@ -625,7 +638,7 @@ class _EditScreenState extends State<EditScreen> {
 
       // Get reference to the template document
       final templateRef =
-          FirebaseFirestore.instance.collection('templates').doc(templateId);
+      FirebaseFirestore.instance.collection('templates').doc(templateId);
 
       // Run this as a transaction to ensure data consistency
       await FirebaseFirestore.instance.runTransaction((transaction) async {
@@ -755,8 +768,12 @@ class _EditScreenState extends State<EditScreen> {
         SnackBar(
           content: Text("Image saved to your gallery and downloads"),
           duration: Duration(seconds: 3),
+          backgroundColor: Theme.of(context).brightness == Brightness.dark
+              ? AppColors.primaryGreen.withOpacity(0.7)
+              : AppColors.primaryGreen,
           action: SnackBarAction(
             label: 'VIEW ALL',
+            textColor: Colors.white,
             onPressed: () {
               // Navigate to FilesPage
               Navigator.push(
@@ -873,10 +890,13 @@ class _EditScreenState extends State<EditScreen> {
     }
   }
 
-  // Other existing methods...
-
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final textColor = Theme.of(context).textTheme.bodyMedium?.color;
+    final borderColor = isDarkMode ? AppColors.darkDivider : AppColors.lightDivider;
+    final primaryColor = Theme.of(context).colorScheme.primary;
+
     return Scaffold(
       appBar: AppBar(
         elevation: 0,
@@ -887,7 +907,7 @@ class _EditScreenState extends State<EditScreen> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
-                side: BorderSide(color: Colors.grey),
+                side: BorderSide(color: isDarkMode ? AppColors.darkDivider : Colors.grey),
                 padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               ),
               onPressed: () {
@@ -899,23 +919,17 @@ class _EditScreenState extends State<EditScreen> {
               },
               child: Text(
                 "Cancel",
-                style: TextStyle(color: Colors.black, fontSize: 16),
+                style: TextStyle(color: textColor, fontSize: 16),
               ),
             ),
             Spacer(),
-            // IconButton(
-            //   icon: Icon(Icons.save_outlined, color: Colors.blue),
-            //   // onPressed: _showSaveToDraftsDialog,
-            //   tooltip: 'Save to Drafts',
-            // ),
-
             IconButton(
-              icon: Icon(Icons.share, color: Colors.blue),
+              icon: Icon(Icons.share, color: primaryColor),
               onPressed: shareImage,
             ),
             TextButton(
               onPressed: downloadImage,
-              child: Text("Download", style: TextStyle(color: Colors.black)),
+              child: Text("Download", style: TextStyle(color: textColor)),
             ),
           ],
         ),

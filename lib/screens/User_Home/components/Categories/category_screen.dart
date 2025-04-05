@@ -8,6 +8,8 @@ import 'package:mtquotes/screens/Templates/components/template/template_service.
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 import '../../../../providers/text_size_provider.dart';
+import '../../../../utils/app_colors.dart';
+import '../../../../utils/theme_provider.dart';
 
 class CategoryScreen extends StatefulWidget {
   final String categoryName;
@@ -87,7 +89,6 @@ class _CategoryScreenState extends State<CategoryScreen> {
     }
   }
 
-
   void _handleTemplateSelection(QuoteTemplate template) async {
     // Use the TemplateHandler to handle template selection
     TemplateHandler.handleTemplateSelection(
@@ -112,35 +113,44 @@ class _CategoryScreenState extends State<CategoryScreen> {
   @override
   Widget build(BuildContext context) {
     final textSizeProvider = Provider.of<TextSizeProvider>(context);
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDarkMode = themeProvider.isDarkMode;
     double fontSize = textSizeProvider.fontSize;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.getBackgroundColor(isDarkMode),
       appBar: AppBar(
-      leading: GestureDetector(child: Icon(Icons.arrow_back_ios),
-      onTap: () {
-        Navigator.pop(context);
-      },),
+        leading: GestureDetector(
+          child: Icon(
+            Icons.arrow_back_ios,
+            color: AppColors.getIconColor(isDarkMode),
+          ),
+          onTap: () {
+            Navigator.pop(context);
+          },
+        ),
         title: Text(
-          
           widget.categoryName,
           style: GoogleFonts.poppins(
             fontSize: fontSize + 2,
             fontWeight: FontWeight.w600,
+            color: AppColors.getTextColor(isDarkMode),
           ),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.getBackgroundColor(isDarkMode),
         elevation: 0,
-        iconTheme: IconThemeData(color: Colors.black),
-  
+        iconTheme: IconThemeData(color: AppColors.getIconColor(isDarkMode)),
       ),
       body: CustomScrollView(
-        slivers:[
-
+        slivers: [
           // Templates Grid
           _isLoading
               ? SliverFillRemaining(
-            child: Center(child: CircularProgressIndicator()),
+            child: Center(
+              child: CircularProgressIndicator(
+                color: AppColors.primaryBlue,
+              ),
+            ),
           )
               : _errorMessage.isNotEmpty
               ? SliverFillRemaining(
@@ -163,7 +173,10 @@ class _CategoryScreenState extends State<CategoryScreen> {
             child: Center(
               child: Text(
                 'No templates available for ${widget.categoryName}',
-                style: GoogleFonts.poppins(fontSize: fontSize),
+                style: GoogleFonts.poppins(
+                  fontSize: fontSize,
+                  color: AppColors.getTextColor(isDarkMode),
+                ),
                 textAlign: TextAlign.center,
               ),
             ),
@@ -193,19 +206,27 @@ class _CategoryScreenState extends State<CategoryScreen> {
                             imageUrl: template.imageUrl,
                             fit: BoxFit.cover,
                             placeholder: (context, url) => Container(
-                              color: Colors.grey[300],
+                              color: isDarkMode ? Colors.grey[700] : Colors.grey[300],
                               child: Center(
-                                child: CircularProgressIndicator(),
+                                child: CircularProgressIndicator(
+                                  color: AppColors.primaryBlue,
+                                ),
                               ),
                             ),
                             errorWidget: (context, url, error) => Container(
-                              color: Colors.grey[300],
-                              child: Icon(Icons.error),
+                              color: isDarkMode ? Colors.grey[700] : Colors.grey[300],
+                              child: Icon(
+                                Icons.error,
+                                color: AppColors.getIconColor(isDarkMode),
+                              ),
                             ),
                           )
                               : Container(
-                            color: Colors.grey[300],
-                            child: Icon(Icons.image_not_supported),
+                            color: isDarkMode ? Colors.grey[700] : Colors.grey[300],
+                            child: Icon(
+                              Icons.image_not_supported,
+                              color: AppColors.getIconColor(isDarkMode),
+                            ),
                           ),
 
                           // PRO badge for paid templates
@@ -244,7 +265,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                               ),
                             ),
 
-                          // // Rating display
+                          // // Rating display - Commented out in original code
                           // if (template.ratingCount > 0)
                           //   Positioned(
                           //     bottom: 8,

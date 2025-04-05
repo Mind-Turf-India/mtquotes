@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mtquotes/l10n/app_localization.dart';
+import 'package:provider/provider.dart';
 import '../../../../main.dart';
+import '../../../../utils/app_colors.dart';
+import '../../../../utils/theme_provider.dart';
 
 class SettingsLanguage extends StatefulWidget {
   const SettingsLanguage({Key? key}) : super(key: key);
@@ -42,17 +45,28 @@ class _SettingsLanguageState extends State<SettingsLanguage> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDarkMode = themeProvider.isDarkMode;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.getBackgroundColor(isDarkMode),
       appBar: AppBar(
-          leading: GestureDetector(child: Icon(Icons.arrow_back_ios),
-      onTap: () {
-        Navigator.pop(context);
-      },),
-        title: Text(context.loc.chooseLanguage, style: TextStyle(color: Colors.black)),
-        backgroundColor: Colors.white,
+        leading: GestureDetector(
+          child: Icon(
+            Icons.arrow_back_ios,
+            color: AppColors.getIconColor(isDarkMode),
+          ),
+          onTap: () {
+            Navigator.pop(context);
+          },
+        ),
+        title: Text(
+          context.loc.chooseLanguage,
+          style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+        ),
+        backgroundColor: AppColors.getBackgroundColor(isDarkMode),
         elevation: 0,
-        iconTheme: IconThemeData(color: Colors.black),
+        iconTheme: IconThemeData(color: AppColors.getIconColor(isDarkMode)),
       ),
       body: SafeArea(
         child: Padding(
@@ -66,7 +80,7 @@ class _SettingsLanguageState extends State<SettingsLanguage> {
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black,
+                  color: AppColors.getTextColor(isDarkMode),
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -85,6 +99,7 @@ class _SettingsLanguageState extends State<SettingsLanguage> {
                       topSymbol: 'अ',
                       languageCode: 'hi',
                       isSelected: _currentLanguage == 'hi',
+                      isDarkMode: isDarkMode,
                     ),
                     _buildLanguageCard(
                       context: context,
@@ -93,6 +108,7 @@ class _SettingsLanguageState extends State<SettingsLanguage> {
                       topSymbol: 'a',
                       languageCode: 'en',
                       isSelected: _currentLanguage == 'en',
+                      isDarkMode: isDarkMode,
                     ),
                     _buildLanguageCard(
                       context: context,
@@ -101,6 +117,7 @@ class _SettingsLanguageState extends State<SettingsLanguage> {
                       topSymbol: 'অ',
                       languageCode: 'bn',
                       isSelected: _currentLanguage == 'bn',
+                      isDarkMode: isDarkMode,
                     ),
                     _buildLanguageCard(
                       context: context,
@@ -109,6 +126,7 @@ class _SettingsLanguageState extends State<SettingsLanguage> {
                       topSymbol: 'తె',
                       languageCode: 'te',
                       isSelected: _currentLanguage == 'te',
+                      isDarkMode: isDarkMode,
                     ),
                     _buildLanguageCard(
                       context: context,
@@ -117,6 +135,7 @@ class _SettingsLanguageState extends State<SettingsLanguage> {
                       topSymbol: 'ગુ',
                       languageCode: 'gu',
                       isSelected: _currentLanguage == 'gu',
+                      isDarkMode: isDarkMode,
                     ),
                   ],
                 ),
@@ -135,6 +154,7 @@ class _SettingsLanguageState extends State<SettingsLanguage> {
     required String topSymbol,
     required String languageCode,
     required bool isSelected,
+    required bool isDarkMode,
   }) {
     return InkWell(
       onTap: () {
@@ -157,11 +177,19 @@ class _SettingsLanguageState extends State<SettingsLanguage> {
       child: Container(
         decoration: BoxDecoration(
           border: Border.all(
-            color: isSelected ? Colors.black : Colors.grey.shade300,
+            color: isSelected
+                ? AppColors.getTextColor(isDarkMode)
+                : isDarkMode ? Colors.grey.shade700 : Colors.grey.shade300,
             width: isSelected ? 2.0 : 1.0,
           ),
           borderRadius: BorderRadius.circular(12),
-          color: isSelected ? Colors.black.withOpacity(0.1) : Colors.white,
+          color: isSelected
+              ? (isDarkMode
+              ? AppColors.getTextColor(isDarkMode).withOpacity(0.15)
+              : Colors.black.withOpacity(0.1))
+              : (isDarkMode
+              ? Colors.grey.shade800
+              : Colors.white),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -174,7 +202,7 @@ class _SettingsLanguageState extends State<SettingsLanguage> {
                   style: TextStyle(
                     fontSize: 56,
                     fontWeight: FontWeight.bold,
-                    color: Colors.blue,
+                    color: AppColors.primaryBlue,
                   ),
                 ),
                 Positioned(
@@ -184,7 +212,7 @@ class _SettingsLanguageState extends State<SettingsLanguage> {
                     topSymbol,
                     style: TextStyle(
                       fontSize: 24,
-                      color: Colors.blue.withOpacity(0.7),
+                      color: AppColors.primaryBlue.withOpacity(0.7),
                     ),
                   ),
                 ),
@@ -196,7 +224,7 @@ class _SettingsLanguageState extends State<SettingsLanguage> {
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: Colors.blue,
+                color: AppColors.primaryBlue,
               ),
             ),
           ],

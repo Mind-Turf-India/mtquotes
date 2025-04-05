@@ -2,6 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import '../../../utils/app_colors.dart';
+import '../../../utils/theme_provider.dart';
 
 class DailyCheckInService {
   static const int _rewardPoints = 10;
@@ -18,7 +21,7 @@ class DailyCheckInService {
 
       String userEmail = user.email!.replaceAll(".", "_");
       print('Checking eligibility for user: $userEmail');
-      
+
       // Get the user document from Firestore
       DocumentSnapshot doc = await FirebaseFirestore.instance
           .collection('users')
@@ -33,7 +36,7 @@ class DailyCheckInService {
       // Get the last check-in timestamp
       final data = doc.data() as Map<String, dynamic>;
       Timestamp? lastCheckIn = data['lastCheckIn'] as Timestamp?;
-      
+
       if (lastCheckIn == null) {
         print('No previous check-in found - eligible');
         return true;
@@ -42,7 +45,7 @@ class DailyCheckInService {
       // Convert timestamp to local date
       final lastCheckInDate = DateFormat('yyyy-MM-dd').format(lastCheckIn.toDate());
       final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
-      
+
       // Debug prints
       print('Last check-in date from Firestore: $lastCheckInDate');
       print('Today: $today');
@@ -78,12 +81,12 @@ class DailyCheckInService {
 
       // Reference to user document
       DocumentReference userRef = FirebaseFirestore.instance.collection('users').doc(userEmail);
-      
+
       // Use a transaction for more reliable updates
       bool success = await FirebaseFirestore.instance.runTransaction<bool>(
-        (transaction) async {
+            (transaction) async {
           DocumentSnapshot userDoc = await transaction.get(userRef);
-          
+
           if (!userDoc.exists) {
             // Create new document if it doesn't exist
             transaction.set(userRef, {
@@ -101,16 +104,16 @@ class DailyCheckInService {
             // Get current points value
             final data = userDoc.data() as Map<String, dynamic>;
             final currentPoints = data['rewardPoints'] ?? 0;
-            
+
             // Get existing check-in history or create empty list
             List<dynamic> checkInHistory = data['checkInHistory'] ?? [];
-            
+
             // Add new check-in to history
             checkInHistory.add({
               'date': Timestamp.now(),
               'points': _rewardPoints
             });
-            
+
             // Update existing document
             transaction.update(userRef, {
               'rewardPoints': currentPoints + _rewardPoints,
@@ -119,7 +122,7 @@ class DailyCheckInService {
               'checkInHistory': checkInHistory
             });
           }
-          
+
           return true;
         },
         timeout: const Duration(seconds: 10),
@@ -148,9 +151,13 @@ class DailyCheckInService {
     }
   }
 
-  // Improved notification display function
+  // Improved notification display function with theme support
   static void _showRewardNotification(BuildContext context) {
     try {
+      // Get the current theme
+      final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+      final isDarkMode = themeProvider.isDarkMode;
+
       // First try to use a more reliable SnackBar approach
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -169,15 +176,19 @@ class DailyCheckInService {
                       'Daily Check-in Reward!',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
+                        color: Colors.white, // Always white for good contrast on snackbar
                       ),
                     ),
-                    Text('+$_rewardPoints points'),
+                    Text(
+                      '+$_rewardPoints points',
+                      style: TextStyle(color: Colors.white), // Always white for good contrast on snackbar
+                    ),
                   ],
                 ),
               ],
             ),
           ),
-          backgroundColor: Colors.blueAccent,
+          backgroundColor: AppColors.primaryBlue, // Use your brand's primary color
           duration: const Duration(seconds: 3),
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
@@ -194,16 +205,37 @@ class DailyCheckInService {
       print('Error showing reward notification: $e');
       // Fallback method if the first approach fails
       try {
+        // Get theme if possible
+        ThemeProvider? themeProvider;
+        try {
+          themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+        } catch (e) {
+          // If we can't get the provider, continue without it
+          print('Could not access theme provider: $e');
+        }
+
+        final isDarkMode = themeProvider?.isDarkMode ?? false;
+
         showDialog(
           context: context,
           barrierDismissible: true,
           builder: (context) => AlertDialog(
-            title: const Text('Daily Check-in Reward!'),
-            content: Text('You earned +$_rewardPoints points.'),
+            backgroundColor: AppColors.getBackgroundColor(isDarkMode),
+            title: Text(
+              'Daily Check-in Reward!',
+              style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+            ),
+            content: Text(
+              'You earned +$_rewardPoints points.',
+              style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+            ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
-                child: const Text('OK'),
+                child: Text(
+                  'OK',
+                  style: TextStyle(color: AppColors.primaryBlue),
+                ),
               ),
             ],
           ),
@@ -225,7 +257,7 @@ class DailyCheckInService {
 
       String userEmail = user.email!.replaceAll(".", "_");
       print('Fetching points for user: $userEmail');
-      
+
       DocumentSnapshot doc = await FirebaseFirestore.instance
           .collection('users')
           .doc(userEmail)
@@ -246,7 +278,7 @@ class DailyCheckInService {
       return 0;
     }
   }
-  
+
   // Function to get check-in history
   static Future<List<Map<String, dynamic>>> getCheckInHistory() async {
     try {
@@ -264,7 +296,7 @@ class DailyCheckInService {
       if (doc.exists) {
         final data = doc.data() as Map<String, dynamic>;
         final List<dynamic> history = data['checkInHistory'] ?? [];
-        
+
         // Convert to List<Map<String, dynamic>>
         return history.map((item) => item as Map<String, dynamic>).toList();
       }
@@ -275,7 +307,7 @@ class DailyCheckInService {
       return [];
     }
   }
-  
+
   // Get streak count (consecutive days checked in)
   static Future<int> getCheckInStreak() async {
     try {
@@ -293,20 +325,20 @@ class DailyCheckInService {
       if (doc.exists) {
         final data = doc.data() as Map<String, dynamic>;
         final List<dynamic> history = data['checkInHistory'] ?? [];
-        
+
         if (history.isEmpty) {
           return 0;
         }
-        
+
         // Sort history by date
         history.sort((a, b) => (b['date'] as Timestamp).compareTo(a['date'] as Timestamp));
-        
+
         int streak = 1;
         DateTime currentDate = (history[0]['date'] as Timestamp).toDate();
-        
+
         for (int i = 1; i < history.length; i++) {
           DateTime previousDate = (history[i]['date'] as Timestamp).toDate();
-          
+
           // Check if dates are consecutive
           final difference = currentDate.difference(previousDate).inDays;
           if (difference == 1) {
@@ -316,7 +348,7 @@ class DailyCheckInService {
             break;
           }
         }
-        
+
         return streak;
       }
 
