@@ -1007,7 +1007,8 @@ class _EditScreenState extends State<EditScreen> {
                 children: [
                   ElevatedButton.icon(
                     onPressed: pickImageFromGallery,
-                    icon: Icon(Icons.photo_library),
+                    icon: Icon(Icons.photo_library,
+                    color: Colors.white,),
                     label: Text('Change Image'),
                     style: ElevatedButton.styleFrom(
                       padding:
@@ -1045,7 +1046,7 @@ class _EditScreenState extends State<EditScreen> {
                         }
                       }
                     },
-                    icon: Icon(Icons.edit),
+                    icon: Icon(Icons.edit,color: Colors.white,),
                     label: Text('Edit Image'),
                     style: ElevatedButton.styleFrom(
                       padding:

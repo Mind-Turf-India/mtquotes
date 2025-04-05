@@ -337,18 +337,18 @@ class _TemplatePageState extends State<TemplatePage> {
           icon: Icon(Icons.arrow_back_ios, color: iconColor),
           onPressed: () => Navigator.pop(context),
         ),
-        actions: [
-          // Theme toggle button
-          IconButton(
-            icon: Icon(
-              isDarkMode ? Icons.light_mode : Icons.dark_mode,
-              color: iconColor,
-            ),
-            onPressed: () {
-              themeProvider.toggleTheme();
-            },
-          ),
-        ],
+        // actions: [
+        //   // Theme toggle button
+        //   IconButton(
+        //     icon: Icon(
+        //       isDarkMode ? Icons.light_mode : Icons.dark_mode,
+        //       color: iconColor,
+        //     ),
+        //     onPressed: () {
+        //       themeProvider.toggleTheme();
+        //     },
+        //   ),
+        // ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),

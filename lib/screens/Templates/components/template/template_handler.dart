@@ -327,201 +327,201 @@ class TemplateHandler {
     }
   }
 
-  static Future<void> shareTemplate(
-    BuildContext context,
-    QuoteTemplate template, {
-    String? userName,
-    String? userProfileImageUrl,
-    bool isPaidUser = false,
-  }) async {
-    // Capture context early
-    final capturedContext = context;
+  // static Future<void> shareTemplate(
+  //   BuildContext context,
+  //   QuoteTemplate template, {
+  //   String? userName,
+  //   String? userProfileImageUrl,
+  //   bool isPaidUser = false,
+  // }) async {
+  //   // Capture context early
+  //   final capturedContext = context;
 
-    try {
-      // Add to recent templates when sharing
-      try {
-        await RecentTemplateService.addRecentTemplate(template);
-        print('Added template to recents when sharing: ${template.id}');
-      } catch (e) {
-        print('Error adding template to recents when sharing: $e');
-      }
+  //   try {
+  //     // Add to recent templates when sharing
+  //     try {
+  //       await RecentTemplateService.addRecentTemplate(template);
+  //       print('Added template to recents when sharing: ${template.id}');
+  //     } catch (e) {
+  //       print('Error adding template to recents when sharing: $e');
+  //     }
 
-      // If userName or userProfileImageUrl are null, get them from Firebase
-      if (userName == null || userProfileImageUrl == null) {
-        User? currentUser = FirebaseAuth.instance.currentUser;
-        String defaultUserName = currentUser?.displayName ?? context.loc.user;
-        String defaultProfileImageUrl = currentUser?.photoURL ?? '';
+  //     // If userName or userProfileImageUrl are null, get them from Firebase
+  //     if (userName == null || userProfileImageUrl == null) {
+  //       User? currentUser = FirebaseAuth.instance.currentUser;
+  //       String defaultUserName = currentUser?.displayName ?? context.loc.user;
+  //       String defaultProfileImageUrl = currentUser?.photoURL ?? '';
 
-        // Fetch user data from users collection if available
-        if (currentUser?.email != null) {
-          try {
-            // Convert email to document ID format (replace . with _)
-            String docId = currentUser!.email!.replaceAll('.', '_');
+  //       // Fetch user data from users collection if available
+  //       if (currentUser?.email != null) {
+  //         try {
+  //           // Convert email to document ID format (replace . with _)
+  //           String docId = currentUser!.email!.replaceAll('.', '_');
 
-            // Fetch user document from Firestore
-            DocumentSnapshot userDoc = await FirebaseFirestore.instance
-                .collection('users')
-                .doc(docId)
-                .get();
+  //           // Fetch user document from Firestore
+  //           DocumentSnapshot userDoc = await FirebaseFirestore.instance
+  //               .collection('users')
+  //               .doc(docId)
+  //               .get();
 
-            // Check if document exists and has required fields
-            if (userDoc.exists && userDoc.data() is Map<String, dynamic>) {
-              Map<String, dynamic> userData =
-                  userDoc.data() as Map<String, dynamic>;
+  //           // Check if document exists and has required fields
+  //           if (userDoc.exists && userDoc.data() is Map<String, dynamic>) {
+  //             Map<String, dynamic> userData =
+  //                 userDoc.data() as Map<String, dynamic>;
 
-              // Get name from Firestore with fallback
-              if (userData.containsKey('name') &&
-                  userData['name'] != null &&
-                  userData['name'].toString().isNotEmpty) {
-                userName = userData['name'];
-              } else {
-                userName = defaultUserName;
-              }
+  //             // Get name from Firestore with fallback
+  //             if (userData.containsKey('name') &&
+  //                 userData['name'] != null &&
+  //                 userData['name'].toString().isNotEmpty) {
+  //               userName = userData['name'];
+  //             } else {
+  //               userName = defaultUserName;
+  //             }
 
-              // Get profile image from Firestore with fallback
-              if (userData.containsKey('profileImage') &&
-                  userData['profileImage'] != null &&
-                  userData['profileImage'].toString().isNotEmpty) {
-                userProfileImageUrl = userData['profileImage'];
-              } else {
-                userProfileImageUrl = defaultProfileImageUrl;
-              }
-            } else {
-              userName = defaultUserName;
-              userProfileImageUrl = defaultProfileImageUrl;
-            }
-          } catch (e) {
-            print('Error fetching user data: $e');
-            userName = defaultUserName;
-            userProfileImageUrl = defaultProfileImageUrl;
-          }
-        } else {
-          userName = defaultUserName;
-          userProfileImageUrl = defaultProfileImageUrl;
-        }
-      }
+  //             // Get profile image from Firestore with fallback
+  //             if (userData.containsKey('profileImage') &&
+  //                 userData['profileImage'] != null &&
+  //                 userData['profileImage'].toString().isNotEmpty) {
+  //               userProfileImageUrl = userData['profileImage'];
+  //             } else {
+  //               userProfileImageUrl = defaultProfileImageUrl;
+  //             }
+  //           } else {
+  //             userName = defaultUserName;
+  //             userProfileImageUrl = defaultProfileImageUrl;
+  //           }
+  //         } catch (e) {
+  //           print('Error fetching user data: $e');
+  //           userName = defaultUserName;
+  //           userProfileImageUrl = defaultProfileImageUrl;
+  //         }
+  //       } else {
+  //         userName = defaultUserName;
+  //         userProfileImageUrl = defaultProfileImageUrl;
+  //       }
+  //     }
 
-      // Check if we're coming from the sharing page - if not, navigate to it
-      if (capturedContext.mounted) {
-        bool isOnSharingPage = false;
+  //     // Check if we're coming from the sharing page - if not, navigate to it
+  //     if (capturedContext.mounted) {
+  //       bool isOnSharingPage = false;
 
-        try {
-          // This is more reliable than using is operator which can cause issues
-          isOnSharingPage = Navigator.of(capturedContext)
-              .widget
-              .toString()
-              .contains('TemplateSharingPage');
-        } catch (e) {
-          print('Error checking current page: $e');
-        }
+  //       try {
+  //         // This is more reliable than using is operator which can cause issues
+  //         isOnSharingPage = Navigator.of(capturedContext)
+  //             .widget
+  //             .toString()
+  //             .contains('TemplateSharingPage');
+  //       } catch (e) {
+  //         print('Error checking current page: $e');
+  //       }
 
-        if (!isOnSharingPage) {
-          Navigator.of(capturedContext).push(
-            MaterialPageRoute(
-              builder: (context) => TemplateSharingPage(
-                template: template,
-                userName: userName ?? 'User', // Default value if null
-                userProfileImageUrl: userProfileImageUrl ?? '',
-                isPaidUser: isPaidUser,
-              ),
-            ),
-          );
-          return;
-        }
-      } else {
-        return; // Context is no longer mounted, can't proceed
-      }
+  //       if (!isOnSharingPage) {
+  //         Navigator.of(capturedContext).push(
+  //           MaterialPageRoute(
+  //             builder: (context) => TemplateSharingPage(
+  //               template: template,
+  //               userName: userName ?? 'User', // Default value if null
+  //               userProfileImageUrl: userProfileImageUrl ?? '',
+  //               isPaidUser: isPaidUser,
+  //             ),
+  //           ),
+  //         );
+  //         return;
+  //       }
+  //     } else {
+  //       return; // Context is no longer mounted, can't proceed
+  //     }
 
-      // If we're already on the sharing page, perform the actual sharing
-      // Show loading indicator
-      if (capturedContext.mounted) {
-        showDialog(
-          context: capturedContext,
-          barrierDismissible: false,
-          builder: (BuildContext dialogContext) {
-            return Center(
-              child: CircularProgressIndicator(),
-            );
-          },
-        );
-      } else {
-        return; // Context is no longer mounted, can't proceed
-      }
+  //     // If we're already on the sharing page, perform the actual sharing
+  //     // Show loading indicator
+  //     if (capturedContext.mounted) {
+  //       showDialog(
+  //         context: capturedContext,
+  //         barrierDismissible: false,
+  //         builder: (BuildContext dialogContext) {
+  //           return Center(
+  //             child: CircularProgressIndicator(),
+  //           );
+  //         },
+  //       );
+  //     } else {
+  //       return; // Context is no longer mounted, can't proceed
+  //     }
 
-      Uint8List? imageBytes;
+  //     Uint8List? imageBytes;
 
-      if (isPaidUser) {
-        // For paid users, capture the whole template including profile details
-        imageBytes = await captureTemplateImage();
-      } else {
-        // For free users, just download the original template image
-        final response = await http.get(Uri.parse(template.imageUrl));
+  //     if (isPaidUser) {
+  //       // For paid users, capture the whole template including profile details
+  //       imageBytes = await captureTemplateImage();
+  //     } else {
+  //       // For free users, just download the original template image
+  //       final response = await http.get(Uri.parse(template.imageUrl));
 
-        if (response.statusCode != 200) {
-          throw Exception('Failed to load image');
-        }
-        imageBytes = response.bodyBytes;
-      }
+  //       if (response.statusCode != 200) {
+  //         throw Exception('Failed to load image');
+  //       }
+  //       imageBytes = response.bodyBytes;
+  //     }
 
-      // Close loading dialog
-      if (capturedContext.mounted) {
-        Navigator.of(capturedContext, rootNavigator: true).pop();
-      } else {
-        return; // Context is no longer mounted, can't proceed
-      }
+  //     // Close loading dialog
+  //     if (capturedContext.mounted) {
+  //       Navigator.of(capturedContext, rootNavigator: true).pop();
+  //     } else {
+  //       return; // Context is no longer mounted, can't proceed
+  //     }
 
-      if (imageBytes == null) {
-        throw Exception('Failed to process image');
-      }
+  //     if (imageBytes == null) {
+  //       throw Exception('Failed to process image');
+  //     }
 
-      // Get temp directory
-      final tempDir = await getTemporaryDirectory();
-      final tempFile = File('${tempDir.path}/shared_template.png');
+  //     // Get temp directory
+  //     final tempDir = await getTemporaryDirectory();
+  //     final tempFile = File('${tempDir.path}/shared_template.png');
 
-      // Save image as file
-      await tempFile.writeAsBytes(imageBytes);
+  //     // Save image as file
+  //     await tempFile.writeAsBytes(imageBytes);
 
-      // Share directly based on user type
-      if (isPaidUser) {
-        // For paid users, share with full branding
-        await Share.shareXFiles(
-          [XFile(tempFile.path)],
-          text: 'Check out this amazing quote template by $userName!',
-        );
-      } else {
-        // For free users, share without branding
-        await Share.shareXFiles(
-          [XFile(tempFile.path)],
-          text: 'Check out this amazing quote template!',
-        );
-      }
+  //     // Share directly based on user type
+  //     if (isPaidUser) {
+  //       // For paid users, share with full branding
+  //       await Share.shareXFiles(
+  //         [XFile(tempFile.path)],
+  //         text: 'Check out this amazing quote template by $userName!',
+  //       );
+  //     } else {
+  //       // For free users, share without branding
+  //       await Share.shareXFiles(
+  //         [XFile(tempFile.path)],
+  //         text: 'Check out this amazing quote template!',
+  //       );
+  //     }
 
-      // Show rating dialog after sharing
-      await Future.delayed(Duration(milliseconds: 500));
-      if (capturedContext.mounted) {
-        await _showRatingDialog(capturedContext, template);
-      }
-    } catch (e) {
-      print('Error sharing template: $e');
+  //     // Show rating dialog after sharing
+  //     await Future.delayed(Duration(milliseconds: 500));
+  //     if (capturedContext.mounted) {
+  //       await _showRatingDialog(capturedContext, template);
+  //     }
+  //   } catch (e) {
+  //     print('Error sharing template: $e');
 
-      // Close loading dialog if open
-      if (capturedContext.mounted) {
-        try {
-          Navigator.of(capturedContext, rootNavigator: true).pop();
-        } catch (dialogError) {
-          print('Error closing dialog: $dialogError');
-        }
+  //     // Close loading dialog if open
+  //     if (capturedContext.mounted) {
+  //       try {
+  //         Navigator.of(capturedContext, rootNavigator: true).pop();
+  //       } catch (dialogError) {
+  //         print('Error closing dialog: $dialogError');
+  //       }
 
-        // Show error message
-        ScaffoldMessenger.of(capturedContext).showSnackBar(
-          SnackBar(
-            content: Text('Failed to share image: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
+  //       // Show error message
+  //       ScaffoldMessenger.of(capturedContext).showSnackBar(
+  //         SnackBar(
+  //           content: Text('Failed to share image: ${e.toString()}'),
+  //           backgroundColor: Colors.red,
+  //         ),
+  //       );
+  //     }
+  //   }
+  // }
 
 // Method to show the template confirmation dialog
   static void showTemplateConfirmationDialog(
@@ -652,7 +652,7 @@ class TemplateHandler {
                                   child: ElevatedButton(
                                     onPressed: () {
                                       Navigator.of(context).pop();
-                                      _navigateToProfileDetailsScreen(
+                                      _handleShareTemplate(
                                           context, template, isPaidUser);
                                     },
                                     style: ElevatedButton.styleFrom(

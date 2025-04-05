@@ -322,7 +322,7 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                             context,
                             isPaid: false,
                           ),
-                          icon: Icon(Icons.share),
+                          icon: Icon(Icons.share, color: Colors.white,),
                           label: Text('Share Basic'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.blue,
@@ -462,7 +462,7 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                               width: double.infinity,
                               child: ElevatedButton.icon(
                                 onPressed: () => _shareTemplate(context, isPaid: true),
-                                icon: Icon(Icons.share),
+                                icon: Icon(Icons.share, color: Colors.white,),
                                 label: Text('Share Now'),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.blue,

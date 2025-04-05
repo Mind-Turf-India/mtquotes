@@ -107,26 +107,26 @@ class TimeOfDayPostComponent extends StatelessWidget {
                 ),
                 
               // Optional title overlay at bottom for consistency with other components
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: Container(
-                  padding: EdgeInsets.symmetric(vertical: 3, horizontal: 4),
-                  color: Colors.black.withOpacity(0.5),
-                  child: Text(
-                    post.title.isNotEmpty ? post.title : "Post",
-                    style: GoogleFonts.poppins(
-                      color: Colors.white,
-                      fontSize: fontSize - 4,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ),
+              // Positioned(
+              //   bottom: 0,
+              //   left: 0,
+              //   right: 0,
+              //   child: Container(
+              //     padding: EdgeInsets.symmetric(vertical: 3, horizontal: 4),
+              //     color: Colors.black.withOpacity(0.5),
+              //     child: Text(
+              //       post.title.isNotEmpty ? post.title : "Post",
+              //       style: GoogleFonts.poppins(
+              //         color: Colors.white,
+              //         fontSize: fontSize - 4,
+              //         fontWeight: FontWeight.w500,
+              //       ),
+              //       overflow: TextOverflow.ellipsis,
+              //       maxLines: 1,
+              //       textAlign: TextAlign.center,
+              //     ),
+              //   ),
+              // ),
             ],
           ),
         ),
