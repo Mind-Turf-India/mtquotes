@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'dart:ui';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
@@ -455,12 +456,14 @@ class TimeOfDayHandler {
   // Add these methods to your TimeOfDayHandler class
 
   static void _showTemplateConfirmationDialog(
-      BuildContext context, TimeOfDayPost post, bool isPaidUser,
-      [Function?
-      onConfirm] // Optional callback parameter with default value null
+      BuildContext context,
+      TimeOfDayPost post,
+      bool isPaidUser,
+      [Function? onConfirm] // Optional callback parameter with default value null
       ) {
     final ThemeProvider themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     final bool isDarkMode = themeProvider.isDarkMode;
+    final Color textColor = AppColors.getTextColor(isDarkMode);
 
     showDialog(
       context: context,
@@ -486,7 +489,7 @@ class TimeOfDayHandler {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          // TOTD Image with RepaintBoundary for capture
+                          // TOTD Image with RepaintBoundary for capture and loading indicator
                           RepaintBoundary(
                             key: totdImageKey,
                             child: Container(
@@ -494,23 +497,97 @@ class TimeOfDayHandler {
                               width: double.infinity,
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(8),
-                                image: DecorationImage(
-                                  image: NetworkImage(post.imageUrl),
-                                  fit: BoxFit.cover,
-                                ),
+                                color: isDarkMode ? Colors.grey.shade800 : Colors.grey.shade200,
                               ),
-                              child: isPaidUser
-                                  ? Align(
-                                alignment: Alignment.bottomRight,
-                                child: Padding(
-                                  padding: const EdgeInsets.all(10.0),
-                                  child: Container(
-                                    padding: EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 4),
+                              child: Stack(
+                                fit: StackFit.expand,
+                                children: [
+                                  // Main image with loading state
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: CachedNetworkImage(
+                                      imageUrl: post.imageUrl,
+                                      fit: BoxFit.cover,
+                                      placeholder: (context, url) => Center(
+                                        child: Column(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            CircularProgressIndicator(
+                                              color: AppColors.primaryBlue,
+                                              backgroundColor: isDarkMode
+                                                  ? Colors.grey.shade700
+                                                  : Colors.grey.shade300,
+                                            ),
+                                            SizedBox(height: 16),
+                                            Text(
+                                              'Loading...',
+                                              style: TextStyle(
+                                                color: textColor,
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      errorWidget: (context, url, error) => Center(
+                                        child: Column(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              Icons.error_outline,
+                                              color: Colors.red,
+                                              size: 48,
+                                            ),
+                                            SizedBox(height: 16),
+                                            Text(
+                                              'Failed to load image',
+                                              style: TextStyle(
+                                                color: textColor,
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      // Add these options for better caching behavior
+                                      cacheKey: '${post.id}_dialog',
+                                      memCacheWidth: 600, // Optimize memory cache size
+                                      maxHeightDiskCache: 800, // Optimize disk cache size
+                                    ),
                                   ),
-                                ),
-                              )
-                                  : null,
+
+                                  // PRO badge (only for paid users)
+                                  if (post.isPaid)
+                                    Positioned(
+                                      top: 10,
+                                      right: 10,
+                                      child: Container(
+                                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: Colors.black.withOpacity(0.7),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(Icons.lock, color: Colors.amber, size: 14),
+                                            SizedBox(width: 4),
+                                            Text(
+                                              'PRO',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
                             ),
                           ),
                           SizedBox(height: 24),
@@ -519,7 +596,7 @@ class TimeOfDayHandler {
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w500,
-                              color: AppColors.getTextColor(isDarkMode),
+                              color: textColor,
                             ),
                           ),
                           SizedBox(height: 16),
@@ -574,7 +651,7 @@ class TimeOfDayHandler {
                                           Navigator.of(context).pop(),
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: AppColors.getSurfaceColor(isDarkMode),
-                                        foregroundColor: AppColors.getTextColor(isDarkMode),
+                                        foregroundColor: textColor,
                                         elevation: 0,
                                         side: BorderSide(color: AppColors.getDividerColor(isDarkMode)),
                                         shape: RoundedRectangleBorder(

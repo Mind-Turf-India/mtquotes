@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'dart:ui';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -498,23 +499,111 @@ class FestivalHandler {
                               width: double.infinity,
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(8),
-                                image: DecorationImage(
-                                  image: NetworkImage(festival.imageUrl),
-                                  fit: BoxFit.cover,
-                                ),
+                                // Remove the DecorationImage to use CachedNetworkImage instead
+                                color: isDarkMode ? Colors.grey.shade800 : Colors.grey.shade200,
                               ),
-                              child: isPaidUser
-                                  ? Align(
-                                alignment: Alignment.bottomRight,
-                                child: Padding(
-                                  padding: const EdgeInsets.all(10.0),
-                                  child: Container(
-                                    padding: EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 4),
+                              child: Stack(
+                                fit: StackFit.expand,
+                                children: [
+                                  // Main image with loading state
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: CachedNetworkImage(
+                                      imageUrl: festival.imageUrl,
+                                      fit: BoxFit.cover,
+                                      placeholder: (context, url) => Center(
+                                        child: Column(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            CircularProgressIndicator(
+                                              color: AppColors.primaryBlue,
+                                              backgroundColor: isDarkMode
+                                                  ? Colors.grey.shade700
+                                                  : Colors.grey.shade300,
+                                            ),
+                                            SizedBox(height: 16),
+                                            Text(
+                                              'Loading...',
+                                              style: TextStyle(
+                                                color: textColor,
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      errorWidget: (context, url, error) => Center(
+                                        child: Column(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              Icons.error_outline,
+                                              color: Colors.red,
+                                              size: 48,
+                                            ),
+                                            SizedBox(height: 16),
+                                            Text(
+                                              'Failed to load image',
+                                              style: TextStyle(
+                                                color: textColor,
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      // Add these options for better caching behavior
+                                      cacheKey: '${festival.id}_dialog',
+                                      memCacheWidth: 600, // Optimize memory cache size
+                                      maxHeightDiskCache: 800, // Optimize disk cache size
+                                    ),
                                   ),
-                                ),
-                              )
-                                  : null,
+
+                                  // PRO badge for paid content
+                                  if (festival.isPaid)
+                                    Positioned(
+                                      top: 10,
+                                      right: 10,
+                                      child: Container(
+                                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: Colors.black.withOpacity(0.7),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(Icons.lock, color: Colors.amber, size: 14),
+                                            SizedBox(width: 4),
+                                            Text(
+                                              'PRO',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+
+                                  // Bottom-right watermark for paid users
+                                  if (isPaidUser)
+                                    Align(
+                                      alignment: Alignment.bottomRight,
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(10.0),
+                                        child: Container(
+                                          padding: EdgeInsets.symmetric(
+                                              horizontal: 8, vertical: 4),
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
                             ),
                           ),
                           SizedBox(height: 24),

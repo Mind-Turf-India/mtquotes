@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'dart:ui';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
@@ -364,6 +365,7 @@ class TemplateHandler {
   }
 
   // Method to show the template confirmation dialog
+  // Advanced version using CachedNetworkImage for better performance
   static void showTemplateConfirmationDialog(
       BuildContext context,
       QuoteTemplate template,
@@ -399,15 +401,101 @@ class TemplateHandler {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          // Template Image
+                          // Template Image with Loading Indicator
                           Container(
                             height: 400,
                             width: double.infinity,
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(8),
-                              image: DecorationImage(
-                                image: NetworkImage(template.imageUrl),
-                                fit: BoxFit.cover,
+                              color: isDarkMode ? Colors.grey.shade800 : Colors.grey.shade200,
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Stack(
+                                fit: StackFit.expand,
+                                children: [
+                                  // Image with loading state
+                                  CachedNetworkImage(
+                                    imageUrl: template.imageUrl,
+                                    fit: BoxFit.cover,
+                                    placeholder: (context, url) => Center(
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          CircularProgressIndicator(
+                                            color: AppColors.primaryBlue,
+                                            backgroundColor: isDarkMode
+                                                ? Colors.grey.shade700
+                                                : Colors.grey.shade300,
+                                          ),
+                                          SizedBox(height: 16),
+                                          Text(
+                                            'Loading...',
+                                            style: TextStyle(
+                                              color: textColor,
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    errorWidget: (context, url, error) => Center(
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            Icons.error_outline,
+                                            color: Colors.red,
+                                            size: 48,
+                                          ),
+                                          SizedBox(height: 16),
+                                          Text(
+                                            'Failed to load image',
+                                            style: TextStyle(
+                                              color: textColor,
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    // Add these options for better caching behavior
+                                    cacheKey: '${template.id}_confirmation',
+                                    memCacheWidth: 600, // Optimize memory cache size
+                                    maxHeightDiskCache: 800, // Optimize disk cache size
+                                  ),
+
+                                  // PRO badge (only if template is paid)
+                                  if (template.isPaid)
+                                    Positioned(
+                                      top: 10,
+                                      right: 10,
+                                      child: Container(
+                                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: Colors.black.withOpacity(0.7),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(Icons.lock, color: Colors.amber, size: 14),
+                                            SizedBox(width: 4),
+                                            Text(
+                                              'PRO',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                ],
                               ),
                             ),
                           ),

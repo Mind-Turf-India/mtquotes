@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -40,6 +41,7 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
   String? _profileImageUrl;
   bool _showInfoBox = true;
   bool _isLoading = false;
+  bool _isTemplateImageLoading = true;
   String _selectedBackground = 'white'; // Default background
 
   // Background options
@@ -252,7 +254,7 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
     }
   }
 
-  // Build the template preview with user details in info box
+// 2. Replace your _buildTemplatePreview method with this implementation
   Widget _buildTemplatePreview({required bool isPersonal}) {
     final isDarkMode = Provider.of<ThemeProvider>(context).isDarkMode;
     final textColor = isDarkMode ? Colors.black : Colors.black;  // Info box text is always black regardless of theme
@@ -265,20 +267,158 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
       ),
       child: Column(
         children: [
-          // Template image
+          // Template image with loading indicator inside
           Container(
             height: 300,
             width: double.infinity,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
-              image: DecorationImage(
-                image: NetworkImage(widget.template.imageUrl),
-                fit: BoxFit.cover,
-              ),
+              color: isDarkMode ? Colors.grey.shade800 : Colors.grey.shade200,
+            ),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                // Network image
+                ClipRRect(
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+                  child: Image.network(
+                    widget.template.imageUrl,
+                    fit: BoxFit.cover,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      // Use post-frame callback to safely update state
+                      if (loadingProgress == null && _isTemplateImageLoading) {
+                        // Image loaded, schedule state update
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          if (mounted) {
+                            setState(() {
+                              _isTemplateImageLoading = false;
+                            });
+                          }
+                        });
+                        return child;
+                      } else if (loadingProgress != null && !_isTemplateImageLoading) {
+                        // Still loading, schedule state update if needed
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          if (mounted) {
+                            setState(() {
+                              _isTemplateImageLoading = true;
+                            });
+                          }
+                        });
+                      }
+
+                      // Return the appropriate widget based on current state
+                      return loadingProgress == null ? child : Container(color: Colors.transparent);
+                    },
+                    errorBuilder: (context, error, stackTrace) {
+                      // Error loading image, schedule state update
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (mounted) {
+                          setState(() {
+                            _isTemplateImageLoading = false;
+                          });
+                        }
+                      });
+
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.error_outline, color: Colors.red, size: 40),
+                            SizedBox(height: 8),
+                            Text(
+                              'Failed to load image',
+                              style: TextStyle(
+                                color: AppColors.getTextColor(isDarkMode),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+
+                // Overlay loading indicator (shows only when loading)
+                if (_isTemplateImageLoading)
+                  Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircularProgressIndicator(
+                          color: AppColors.primaryBlue,
+                          backgroundColor: isDarkMode
+                              ? Colors.grey.shade700.withOpacity(0.3)
+                              : Colors.grey.shade300.withOpacity(0.3),
+                        ),
+                        SizedBox(height: 16),
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: isDarkMode
+                                ? Colors.grey.shade800.withOpacity(0.7)
+                                : Colors.grey.shade200.withOpacity(0.7),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            'Loading template...',
+                            style: TextStyle(
+                              color: AppColors.getTextColor(isDarkMode),
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                // PRO badge overlay for premium templates (maintain your existing code)
+                if (widget.template.isPaid && !widget.isPaidUser)
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        color: Colors.black.withOpacity(0.5),
+                      ),
+                      child: Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.lock, color: Colors.amber, size: 40),
+                            SizedBox(height: 8),
+                            Text(
+                              'Premium Template',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            ElevatedButton(
+                              onPressed: () {
+                                Navigator.pushNamed(context, '/subscription');
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primaryBlue,
+                                foregroundColor: Colors.white,
+                                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              ),
+                              child: Text('Upgrade'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
 
-          // Info box
+          // Info box (your existing code)
           if (_showInfoBox)
             Container(
               width: double.infinity,
