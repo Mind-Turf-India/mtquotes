@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -452,90 +453,117 @@ class _TemplatePageState extends State<TemplatePage> {
   }
 
   Widget _buildSearchResultsSection(double fontSize, Color textColor, Color surfaceColor, bool isDarkMode) {
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Search Results (${_searchResults.length})',
-            style: GoogleFonts.poppins(
-              fontSize: fontSize + 2,
-              fontWeight: FontWeight.bold,
-              color: textColor,
-            ),
+  return SingleChildScrollView(
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Search Results (${_searchResults.length})',
+          style: GoogleFonts.poppins(
+            fontSize: fontSize + 2,
+            fontWeight: FontWeight.bold,
+            color: textColor,
           ),
-          SizedBox(height: 10),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: NeverScrollableScrollPhysics(),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
-              childAspectRatio: 0.7,
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
-            ),
-            itemCount: _searchResults.length,
-            itemBuilder: (context, index) {
-              final template = _searchResults[index];
-      
-              if (template.imageUrl.isEmpty) {
-                return SizedBox.shrink();
-              }
-      
-              return GestureDetector(
-                onTap: () => _handleTemplateSelection(template),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: surfaceColor,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: isDarkMode ? Colors.black26 : Colors.grey.shade300,
-                        blurRadius: 5,
-                        offset: Offset(0, 3),
-                      ),
-                    ],
-                  ),
+        ),
+        SizedBox(height: 10),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            childAspectRatio: 0.7,
+            crossAxisSpacing: 10,
+            mainAxisSpacing: 10,
+          ),
+          itemCount: _searchResults.length,
+          itemBuilder: (context, index) {
+            final template = _searchResults[index];
+    
+            if (template.imageUrl.isEmpty) {
+              return SizedBox.shrink();
+            }
+    
+            return GestureDetector(
+              onTap: () => _handleTemplateSelection(template),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: surfaceColor,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: isDarkMode ? Colors.black26 : Colors.grey.shade300,
+                      blurRadius: 5,
+                      offset: Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
                   child: Stack(
+                    fit: StackFit.expand,
                     children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Image.network(
-                          template.imageUrl,
-                          height: double.infinity,
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            print('Error loading image for template ${template.id}: $error');
-                            return Container(
-                              color: isDarkMode ? Colors.grey[800] : Colors.grey[200],
-                              child: Center(
-                                child: Icon(
-                                  Icons.error, 
-                                  color: isDarkMode ? Colors.grey[600] : Colors.grey[500],
-                                ),
-                              ),
-                            );
-                          },
+                      // Using CachedNetworkImage for better performance and loading indicators
+                      CachedNetworkImage(
+                        imageUrl: template.imageUrl,
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => Center(
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.primaryBlue,
+                          ),
                         ),
+                        errorWidget: (context, url, error) {
+                          print('Error loading image for template ${template.id}: $error');
+                          return Container(
+                            color: isDarkMode ? Colors.grey[800] : Colors.grey[200],
+                            child: Center(
+                              child: Icon(
+                                Icons.image_not_supported,
+                                color: isDarkMode ? Colors.grey[600] : Colors.grey[400],
+                              ),
+                            ),
+                          );
+                        },
                       ),
+                      // PRO badge
                       if (template.isPaid)
                         Positioned(
-                          bottom: 8,
-                          right: 8,
-                          child: Icon(Icons.lock, color: Colors.amber, size: 16),
+                          top: 5,
+                          right: 5,
+                          child: Container(
+                            padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.7),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.lock, color: Colors.amber, size: 12),
+                                SizedBox(width: 2),
+                                Text(
+                                  'PRO',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                     ],
                   ),
                 ),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
+              ),
+            );
+          },
+        ),
+      ],
+    ),
+  );
+}
   Widget _buildTabContent(int index, Color textColor, Color surfaceColor, bool isDarkMode) {
     final textSizeProvider = Provider.of<TextSizeProvider>(context);
     double fontSize = textSizeProvider.fontSize;
