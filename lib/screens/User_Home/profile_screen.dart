@@ -11,7 +11,7 @@ import 'package:mtquotes/screens/Payment_Screen/subscription_screen.dart';
 import 'package:mtquotes/screens/User_Home/components/Settings/about_us.dart';
 import 'package:mtquotes/screens/User_Home/components/Notifications/notifications.dart';
 import 'package:mtquotes/screens/User_Home/components/Settings/support.dart';
-import 'package:mtquotes/screens/User_Home/components/refferral_screen.dart';
+import 'package:mtquotes/screens/User_Home/components/Settings/refferral_screen.dart';
 import 'package:provider/provider.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/theme_provider.dart';
@@ -129,7 +129,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             return AlertDialog(
               backgroundColor: AppColors.getBackgroundColor(isDarkMode),
               title: Text(
-                "Edit Your Profile",
+                context.loc.edityourprofile,
                 style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
               ),
               content: Column(
@@ -222,7 +222,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Navigator.pop(dialogContext);
                   },
                   child: Text(
-                    "Cancel",
+                    context.loc.cancel,
                     style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
                   ),
                 ),
@@ -303,7 +303,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     // 5. Complete the profile update
                     _saveProfileData(userDocId, newName, newBio, null);
                   },
-                  child: Text("Save"),
+                  child: Text(context.loc.save),
                 ),
               ],
             );

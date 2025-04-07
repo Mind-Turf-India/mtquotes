@@ -322,7 +322,7 @@ class _FilesPageState extends State<FilesPage> {
             */
             SizedBox(height: 20),
             Text(
-              'Downloaded Images',
+              context.loc.downloadedimages,
               style: GoogleFonts.poppins(
                 fontSize: fontSize + 2,
                 color: AppColors.getTextColor(isDarkMode),
@@ -361,7 +361,7 @@ class _FilesPageState extends State<FilesPage> {
               ),
               SizedBox(height: 16),
               Text(
-                'No downloaded images found',
+                context.loc.nodownloadedimages,
                 style: GoogleFonts.poppins(
                   fontSize: textSize + 2,
                   color: isDarkMode ? Colors.grey[400] : Colors.grey[600],

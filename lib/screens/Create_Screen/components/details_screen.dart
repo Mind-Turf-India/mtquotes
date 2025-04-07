@@ -8,11 +8,11 @@ import 'package:image_picker/image_picker.dart';
 import 'package:mtquotes/screens/Create_Screen/edit_screen_create.dart';
 import 'package:mtquotes/screens/Payment_Screen/subscription_screen.dart';
 import 'package:mtquotes/screens/Templates/components/template/quote_template.dart';
-
 import 'package:mtquotes/utils/app_colors.dart';
 import 'package:mtquotes/utils/theme_provider.dart';
 import 'package:provider/provider.dart';
-
+import '../../../../providers/text_size_provider.dart';
+import '../../../../l10n/app_localization.dart';
 
 class DetailsScreen extends StatefulWidget {
   final QuoteTemplate template;
@@ -28,7 +28,8 @@ class DetailsScreen extends StatefulWidget {
   State<DetailsScreen> createState() => _DetailsScreenState();
 }
 
-class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProviderStateMixin {
+class _DetailsScreenState extends State<DetailsScreen>
+    with SingleTickerProviderStateMixin {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _mobileController = TextEditingController();
   final TextEditingController _locationController = TextEditingController();
@@ -75,7 +76,8 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
             .get();
 
         if (userDoc.exists && userDoc.data() is Map<String, dynamic>) {
-          Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+          Map<String, dynamic> userData =
+              userDoc.data() as Map<String, dynamic>;
 
           setState(() {
             _nameController.text = userData['name'] ?? '';
@@ -99,7 +101,7 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
       print('Error loading user data: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load user data')),
+          SnackBar(content: Text(context.loc.failedToLoadUserData)),
         );
       }
     } finally {
@@ -167,7 +169,7 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
     try {
       User? currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser?.email == null) {
-        throw Exception('User not logged in');
+        throw Exception(context.loc.userNotLoggedIn);
       }
 
       String docId = currentUser!.email!.replaceAll('.', '_');
@@ -182,7 +184,8 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
         'socialMedia': _socialMediaController.text,
         'showInfoBox': _showInfoBox,
         'infoBoxBackground': _selectedBackground,
-        'lastActiveProfileTab': _tabController.index == 0 ? 'personal' : 'business',
+        'lastActiveProfileTab':
+            _tabController.index == 0 ? 'personal' : 'business',
       };
 
       if (newProfileImageUrl != null) {
@@ -196,7 +199,7 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Profile details saved successfully'),
+          content: Text(context.loc.profileDetailsSavedSuccessfully),
           backgroundColor: AppColors.primaryBlue,
         ),
       );
@@ -204,7 +207,7 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
       print('Error saving user data: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to save profile details'),
+          content: Text(context.loc.failedToSaveProfileDetails),
           backgroundColor: Colors.red,
         ),
       );
@@ -220,7 +223,7 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
       context,
       MaterialPageRoute(
         builder: (context) => EditScreen(
-          title: 'Edit Template',
+          title: context.loc.editTemplate,
           templateImageUrl: widget.template.imageUrl,
         ),
       ),
@@ -254,10 +257,13 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
     }
   }
 
-// 2. Replace your _buildTemplatePreview method with this implementation
   Widget _buildTemplatePreview({required bool isPersonal}) {
     final isDarkMode = Provider.of<ThemeProvider>(context).isDarkMode;
-    final textColor = isDarkMode ? Colors.black : Colors.black;  // Info box text is always black regardless of theme
+    final textColor = isDarkMode
+        ? Colors.black
+        : Colors.black; // Info box text is always black regardless of theme
+    final textSizeProvider = Provider.of<TextSizeProvider>(context);
+    final fontSize = textSizeProvider.fontSize;
 
     return Container(
       width: double.infinity,
@@ -296,7 +302,8 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
                           }
                         });
                         return child;
-                      } else if (loadingProgress != null && !_isTemplateImageLoading) {
+                      } else if (loadingProgress != null &&
+                          !_isTemplateImageLoading) {
                         // Still loading, schedule state update if needed
                         WidgetsBinding.instance.addPostFrameCallback((_) {
                           if (mounted) {
@@ -308,7 +315,9 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
                       }
 
                       // Return the appropriate widget based on current state
-                      return loadingProgress == null ? child : Container(color: Colors.transparent);
+                      return loadingProgress == null
+                          ? child
+                          : Container(color: Colors.transparent);
                     },
                     errorBuilder: (context, error, stackTrace) {
                       // Error loading image, schedule state update
@@ -324,12 +333,14 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.error_outline, color: Colors.red, size: 40),
+                            Icon(Icons.error_outline,
+                                color: Colors.red, size: 40),
                             SizedBox(height: 8),
                             Text(
-                              'Failed to load image',
+                              context.loc.failedToLoadImage,
                               style: TextStyle(
                                 color: AppColors.getTextColor(isDarkMode),
+                                fontSize: fontSize - 2,
                               ),
                             ),
                           ],
@@ -353,7 +364,8 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
                         ),
                         SizedBox(height: 16),
                         Container(
-                          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          padding:
+                              EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           decoration: BoxDecoration(
                             color: isDarkMode
                                 ? Colors.grey.shade800.withOpacity(0.7)
@@ -361,10 +373,10 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
-                            'Loading template...',
+                            context.loc.loadingTemplate,
                             style: TextStyle(
                               color: AppColors.getTextColor(isDarkMode),
-                              fontSize: 14,
+                              fontSize: fontSize - 2,
                             ),
                           ),
                         ),
@@ -391,10 +403,11 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
                             Icon(Icons.lock, color: Colors.amber, size: 40),
                             SizedBox(height: 8),
                             Text(
-                              'Premium Template',
+                              context.loc.premiumTemplate,
                               style: TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
+                                fontSize: fontSize,
                               ),
                             ),
                             SizedBox(height: 8),
@@ -405,9 +418,13 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.primaryBlue,
                                 foregroundColor: Colors.white,
-                                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 8),
                               ),
-                              child: Text('Upgrade'),
+                              child: Text(
+                                context.loc.upgrade,
+                                style: TextStyle(fontSize: fontSize - 2),
+                              ),
                             ),
                           ],
                         ),
@@ -440,10 +457,12 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
                       children: [
                         if (isPersonal)
                           Text(
-                            _nameController.text.isNotEmpty ? _nameController.text : 'Your Name',
+                            _nameController.text.isNotEmpty
+                                ? _nameController.text
+                                : context.loc.yourName,
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
-                              fontSize: 16,
+                              fontSize: fontSize,
                               color: textColor,
                             ),
                           )
@@ -453,19 +472,23 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
                             children: [
                               // Company name first for business cards
                               Text(
-                                _companyNameController.text.isNotEmpty ? _companyNameController.text : 'Company Name',
+                                _companyNameController.text.isNotEmpty
+                                    ? _companyNameController.text
+                                    : context.loc.companyName,
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 16,
+                                  fontSize: fontSize,
                                   color: textColor,
                                 ),
                               ),
                               SizedBox(height: 2),
                               // Then person's name
                               Text(
-                                _nameController.text.isNotEmpty ? _nameController.text : 'Your Name',
+                                _nameController.text.isNotEmpty
+                                    ? _nameController.text
+                                    : context.loc.yourName,
                                 style: TextStyle(
-                                  fontSize: 14,
+                                  fontSize: fontSize - 2,
                                   color: textColor,
                                 ),
                               ),
@@ -474,24 +497,29 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
                         if (_locationController.text.isNotEmpty)
                           Text(
                             _locationController.text,
-                            style: TextStyle(fontSize: 14, color: textColor),
+                            style: TextStyle(
+                                fontSize: fontSize - 2, color: textColor),
                           ),
                         if (_mobileController.text.isNotEmpty)
                           Text(
                             _mobileController.text,
-                            style: TextStyle(fontSize: 14, color: textColor),
+                            style: TextStyle(
+                                fontSize: fontSize - 2, color: textColor),
                           ),
                         // Only show social media and description in business profile
                         if (!isPersonal) ...[
                           if (_socialMediaController.text.isNotEmpty)
                             Text(
                               _socialMediaController.text,
-                              style: TextStyle(fontSize: 14, color: AppColors.primaryBlue),
+                              style: TextStyle(
+                                  fontSize: fontSize - 2,
+                                  color: AppColors.primaryBlue),
                             ),
                           if (_descriptionController.text.isNotEmpty)
                             Text(
                               _descriptionController.text,
-                              style: TextStyle(fontSize: 14, color: textColor),
+                              style: TextStyle(
+                                  fontSize: fontSize - 2, color: textColor),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -515,7 +543,7 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
   // Build circular image widget for both profile and preview
   Widget _buildCircularImage({required double size}) {
     final isDarkMode = Provider.of<ThemeProvider>(context).isDarkMode;
-    
+
     return Container(
       width: size,
       height: size,
@@ -535,7 +563,8 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
                 : null,
         color: isDarkMode ? Colors.grey.shade800 : Colors.grey.shade200,
       ),
-      child: _profileImage == null && (_profileImageUrl == null || _profileImageUrl!.isEmpty)
+      child: _profileImage == null &&
+              (_profileImageUrl == null || _profileImageUrl!.isEmpty)
           ? Icon(
               Icons.person,
               color: isDarkMode ? Colors.grey.shade600 : Colors.grey.shade400,
@@ -553,29 +582,36 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
     TextInputType keyboardType = TextInputType.text,
   }) {
     final isDarkMode = Provider.of<ThemeProvider>(context).isDarkMode;
-    
+    final textSizeProvider = Provider.of<TextSizeProvider>(context);
+    final fontSize = textSizeProvider.fontSize;
+
     if (widget.isPaidUser) {
       // Normal text field for paid users
       return TextField(
         controller: controller,
         maxLines: maxLines,
         keyboardType: keyboardType,
-        onChanged: (_) => setState(() {}), // Update preview in real-time
+        onChanged: (_) => setState(() {}),
+        // Update preview in real-time
         style: TextStyle(
           color: AppColors.getTextColor(isDarkMode),
+          fontSize: fontSize - 1,
         ),
         decoration: InputDecoration(
           hintText: hintText,
           hintStyle: TextStyle(
             color: AppColors.getSecondaryTextColor(isDarkMode),
+            fontSize: fontSize - 1,
           ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(color: AppColors.getDividerColor(isDarkMode)),
+            borderSide:
+                BorderSide(color: AppColors.getDividerColor(isDarkMode)),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(color: AppColors.getDividerColor(isDarkMode)),
+            borderSide:
+                BorderSide(color: AppColors.getDividerColor(isDarkMode)),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
@@ -583,7 +619,8 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
           ),
           contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
           filled: true,
-          fillColor: isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
+          fillColor:
+              isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
         ),
       );
     } else {
@@ -606,6 +643,7 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
                   hintText,
                   style: TextStyle(
                     color: AppColors.getSecondaryTextColor(isDarkMode),
+                    fontSize: fontSize - 1,
                   ),
                 ),
               ),
@@ -627,8 +665,10 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Provider.of<ThemeProvider>(context).isDarkMode;
+    final textSizeProvider = Provider.of<TextSizeProvider>(context);
+    final fontSize = textSizeProvider.fontSize;
     final theme = Theme.of(context);
-    
+
     return Scaffold(
       backgroundColor: AppColors.getBackgroundColor(isDarkMode),
       appBar: AppBar(
@@ -644,15 +684,17 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
           },
         ),
         title: Text(
-          'Profile Details',
+          context.loc.profileDetails,
           style: TextStyle(
             color: AppColors.getTextColor(isDarkMode),
+            fontSize: fontSize,
           ),
         ),
         elevation: 0,
       ),
       body: _isLoading
-          ? Center(child: CircularProgressIndicator(color: AppColors.primaryBlue))
+          ? Center(
+              child: CircularProgressIndicator(color: AppColors.primaryBlue))
           : Column(
               children: [
                 // Tab Bar
@@ -661,11 +703,22 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
                   child: TabBar(
                     controller: _tabController,
                     tabs: [
-                      Tab(text: 'Personal'),
-                      Tab(text: 'Business'),
+                      Tab(
+                        child: Text(
+                          context.loc.personal,
+                          style: TextStyle(fontSize: fontSize - 2),
+                        ),
+                      ),
+                      Tab(
+                        child: Text(
+                          context.loc.business,
+                          style: TextStyle(fontSize: fontSize - 2),
+                        ),
+                      ),
                     ],
                     labelColor: AppColors.primaryBlue,
-                    unselectedLabelColor: AppColors.getSecondaryTextColor(isDarkMode),
+                    unselectedLabelColor:
+                        AppColors.getSecondaryTextColor(isDarkMode),
                     indicatorColor: AppColors.primaryBlue,
                     indicatorSize: TabBarIndicatorSize.tab,
                   ),
@@ -691,64 +744,70 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
 
   Widget _buildPersonalTab() {
     final isDarkMode = Provider.of<ThemeProvider>(context).isDarkMode;
-    
+    final textSizeProvider = Provider.of<TextSizeProvider>(context);
+    final fontSize = textSizeProvider.fontSize;
+
     return SingleChildScrollView(
       padding: EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Name',
+            context.loc.name,
             style: TextStyle(
               fontWeight: FontWeight.bold,
               color: AppColors.getTextColor(isDarkMode),
+              fontSize: fontSize - 1,
             ),
           ),
           SizedBox(height: 8),
           _buildTextField(
             controller: _nameController,
-            hintText: 'Enter your name',
+            hintText: context.loc.enterYourName,
           ),
 
           SizedBox(height: 16),
 
           Text(
-            'Mobile',
+            context.loc.mobile,
             style: TextStyle(
               fontWeight: FontWeight.bold,
               color: AppColors.getTextColor(isDarkMode),
+              fontSize: fontSize - 1,
             ),
           ),
           SizedBox(height: 8),
           _buildTextField(
             controller: _mobileController,
-            hintText: 'Enter your mobile number',
+            hintText: context.loc.enterYourMobileNumber,
             keyboardType: TextInputType.phone,
           ),
 
           SizedBox(height: 16),
 
           Text(
-            'Location',
+            context.loc.location,
             style: TextStyle(
               fontWeight: FontWeight.bold,
               color: AppColors.getTextColor(isDarkMode),
+              fontSize: fontSize - 1,
             ),
           ),
           SizedBox(height: 8),
           _buildTextField(
             controller: _locationController,
-            hintText: 'Enter your location',
+            hintText: context.loc.enterYourLocation,
           ),
 
           SizedBox(height: 24),
 
           // Profile Photo Section
           Text(
-            'Profile Photo',
+            context.loc.profilePhoto,
             style: TextStyle(
               fontWeight: FontWeight.bold,
               color: AppColors.getTextColor(isDarkMode),
+              fontSize: fontSize - 1,
             ),
           ),
           SizedBox(height: 12),
@@ -758,7 +817,10 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
               SizedBox(width: 16),
               TextButton(
                 onPressed: _pickImage,
-                child: Text('Change photo'),
+                child: Text(
+                  context.loc.changePhoto,
+                  style: TextStyle(fontSize: fontSize - 2),
+                ),
                 style: TextButton.styleFrom(
                   foregroundColor: AppColors.primaryBlue,
                   textStyle: TextStyle(
@@ -775,10 +837,11 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
 
           // Template Preview
           Text(
-            'Template Preview',
+            context.loc.templatePreview,
             style: TextStyle(
               fontWeight: FontWeight.bold,
               color: AppColors.getTextColor(isDarkMode),
+              fontSize: fontSize - 1,
             ),
           ),
           SizedBox(height: 12),
@@ -789,10 +852,11 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
           // Display Options - Only for paid users
           if (widget.isPaidUser) ...[
             Text(
-              'Display Options',
+              context.loc.displayOptions,
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 color: AppColors.getTextColor(isDarkMode),
+                fontSize: fontSize - 1,
               ),
             ),
             SizedBox(height: 12),
@@ -801,9 +865,10 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
             Row(
               children: [
                 Text(
-                  'Show Info Box',
+                  context.loc.showInfoBox,
                   style: TextStyle(
                     color: AppColors.getTextColor(isDarkMode),
+                    fontSize: fontSize - 2,
                   ),
                 ),
                 Spacer(),
@@ -823,9 +888,10 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
             if (_showInfoBox) ...[
               SizedBox(height: 8),
               Text(
-                'Background Color',
+                context.loc.backgroundColor,
                 style: TextStyle(
                   color: AppColors.getTextColor(isDarkMode),
+                  fontSize: fontSize - 2,
                 ),
               ),
               SizedBox(height: 8),
@@ -866,12 +932,17 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
               Expanded(
                 child: ElevatedButton(
                   onPressed: _saveUserData,
-                  child: Text('Save'),
+                  child: Text(
+                    context.loc.save,
+                    style: TextStyle(fontSize: fontSize - 2),
+                  ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: isDarkMode ? AppColors.darkSurface : Colors.white,
+                    backgroundColor:
+                        isDarkMode ? AppColors.darkSurface : Colors.white,
                     foregroundColor: AppColors.getTextColor(isDarkMode),
                     elevation: 1,
-                    side: BorderSide(color: AppColors.getDividerColor(isDarkMode)),
+                    side: BorderSide(
+                        color: AppColors.getDividerColor(isDarkMode)),
                     padding: EdgeInsets.symmetric(vertical: 12),
                   ),
                 ),
@@ -880,7 +951,10 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
               Expanded(
                 child: ElevatedButton(
                   onPressed: _navigateToEditScreen,
-                  child: Text('Next'),
+                  child: Text(
+                    context.loc.next,
+                    style: TextStyle(fontSize: fontSize - 2),
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryBlue,
                     foregroundColor: Colors.white,
@@ -897,110 +971,119 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
 
   Widget _buildBusinessTab() {
     final isDarkMode = Provider.of<ThemeProvider>(context).isDarkMode;
-    
+    final textSizeProvider = Provider.of<TextSizeProvider>(context);
+    final fontSize = textSizeProvider.fontSize;
+
     return SingleChildScrollView(
       padding: EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Name',
+            context.loc.name,
             style: TextStyle(
               fontWeight: FontWeight.bold,
               color: AppColors.getTextColor(isDarkMode),
+              fontSize: fontSize - 1,
             ),
           ),
           SizedBox(height: 8),
           _buildTextField(
             controller: _nameController,
-            hintText: 'Enter your name',
+            hintText: context.loc.enterYourName,
           ),
 
           SizedBox(height: 16),
 
           Text(
-            'Company Name',
+            context.loc.companyName,
             style: TextStyle(
               fontWeight: FontWeight.bold,
               color: AppColors.getTextColor(isDarkMode),
+              fontSize: fontSize - 1,
             ),
           ),
           SizedBox(height: 8),
           _buildTextField(
             controller: _companyNameController,
-            hintText: 'Enter your company name',
+            hintText: context.loc.enterYourCompanyName,
           ),
 
           SizedBox(height: 16),
 
           Text(
-            'Mobile',
+            context.loc.mobile,
             style: TextStyle(
               fontWeight: FontWeight.bold,
               color: AppColors.getTextColor(isDarkMode),
+              fontSize: fontSize - 1,
             ),
           ),
           SizedBox(height: 8),
           _buildTextField(
             controller: _mobileController,
-            hintText: 'Enter your mobile number',
+            hintText: context.loc.enterYourMobileNumber,
             keyboardType: TextInputType.phone,
           ),
 
           SizedBox(height: 16),
 
           Text(
-            'Location',
+            context.loc.location,
             style: TextStyle(
               fontWeight: FontWeight.bold,
               color: AppColors.getTextColor(isDarkMode),
+              fontSize: fontSize - 1,
             ),
           ),
           SizedBox(height: 8),
           _buildTextField(
             controller: _locationController,
-            hintText: 'Enter your business location',
+            hintText: context.loc.enterYourBusinessLocation,
           ),
 
           SizedBox(height: 16),
 
           // New Social Media field
           Text(
-            'Social Media Handle',
+            context.loc.socialMediaHandle,
             style: TextStyle(
               fontWeight: FontWeight.bold,
               color: AppColors.getTextColor(isDarkMode),
+              fontSize: fontSize - 1,
             ),
           ),
           SizedBox(height: 8),
           _buildTextField(
             controller: _socialMediaController,
-            hintText: 'Enter your social media handle',
+            hintText: context.loc.enterYourSocialMediaHandle,
           ),
 
           SizedBox(height: 16),
 
           Text(
-            'Product Description',
+            context.loc.productDescription,
             style: TextStyle(
               fontWeight: FontWeight.bold,
               color: AppColors.getTextColor(isDarkMode),
+              fontSize: fontSize - 1,
             ),
           ),
           SizedBox(height: 8),
           _buildTextField(
             controller: _descriptionController,
-            hintText: 'Enter a business description or tagline',
+            hintText: context.loc.enterBusinessDescription,
             maxLines: 3,
           ),
 
           SizedBox(height: 24),
 
           Text(
-            'Logo',
+            context.loc.logo,
             style: TextStyle(
               fontWeight: FontWeight.bold,
               color: AppColors.getTextColor(isDarkMode),
+              fontSize: fontSize - 1,
             ),
           ),
           SizedBox(height: 12),
@@ -1010,7 +1093,10 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
               SizedBox(width: 16),
               TextButton(
                 onPressed: _pickImage,
-                child: Text('Change logo'),
+                child: Text(
+                  context.loc.changeLogo,
+                  style: TextStyle(fontSize: fontSize - 2),
+                ),
                 style: TextButton.styleFrom(
                   foregroundColor: AppColors.primaryBlue,
                   textStyle: TextStyle(
@@ -1027,10 +1113,11 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
 
           // Template Preview
           Text(
-            'Template Preview',
+            context.loc.templatePreview,
             style: TextStyle(
               fontWeight: FontWeight.bold,
               color: AppColors.getTextColor(isDarkMode),
+              fontSize: fontSize - 1,
             ),
           ),
           SizedBox(height: 12),
@@ -1041,10 +1128,11 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
           // Display Options - Only for paid users
           if (widget.isPaidUser) ...[
             Text(
-              'Display Options',
+              context.loc.displayOptions,
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 color: AppColors.getTextColor(isDarkMode),
+                fontSize: fontSize - 1,
               ),
             ),
             SizedBox(height: 12),
@@ -1053,9 +1141,10 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
             Row(
               children: [
                 Text(
-                  'Show Info Box',
+                  context.loc.showInfoBox,
                   style: TextStyle(
                     color: AppColors.getTextColor(isDarkMode),
+                    fontSize: fontSize - 2,
                   ),
                 ),
                 Spacer(),
@@ -1075,9 +1164,10 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
             if (_showInfoBox) ...[
               SizedBox(height: 8),
               Text(
-                'Background Color',
+                context.loc.backgroundColor,
                 style: TextStyle(
                   color: AppColors.getTextColor(isDarkMode),
+                  fontSize: fontSize - 2,
                 ),
               ),
               SizedBox(height: 8),
@@ -1118,12 +1208,17 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
               Expanded(
                 child: ElevatedButton(
                   onPressed: _saveUserData,
-                  child: Text('Save'),
+                  child: Text(
+                    context.loc.save,
+                    style: TextStyle(fontSize: fontSize - 2),
+                  ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: isDarkMode ? AppColors.darkSurface : Colors.white,
+                    backgroundColor:
+                        isDarkMode ? AppColors.darkSurface : Colors.white,
                     foregroundColor: AppColors.getTextColor(isDarkMode),
                     elevation: 1,
-                    side: BorderSide(color: AppColors.getDividerColor(isDarkMode)),
+                    side: BorderSide(
+                        color: AppColors.getDividerColor(isDarkMode)),
                     padding: EdgeInsets.symmetric(vertical: 12),
                   ),
                 ),
@@ -1132,7 +1227,10 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
               Expanded(
                 child: ElevatedButton(
                   onPressed: _navigateToEditScreen,
-                  child: Text('Next'),
+                  child: Text(
+                    context.loc.next,
+                    style: TextStyle(fontSize: fontSize - 2),
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryBlue,
                     foregroundColor: Colors.white,

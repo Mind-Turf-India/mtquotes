@@ -330,7 +330,7 @@ class _TemplatePageState extends State<TemplatePage> {
       appBar: AppBar(
         title: Text(
           context.loc.template,
-          style: TextStyle(color: textColor),
+          style: TextStyle(color: textColor,fontSize: fontSize),
         ),
         backgroundColor: backgroundColor,
         elevation: 0,
@@ -364,7 +364,7 @@ class _TemplatePageState extends State<TemplatePage> {
               ),
               child: TextField(
                 controller: _searchController,
-                style: GoogleFonts.poppins(color: textColor),
+                style: GoogleFonts.poppins(color: textColor,fontSize: fontSize),
                 decoration: InputDecoration(
                   hintText: context.loc.searchquotes,
                   hintStyle: GoogleFonts.poppins(
@@ -578,7 +578,7 @@ class _TemplatePageState extends State<TemplatePage> {
             Text(
               context.loc.categories,
               style: GoogleFonts.poppins(
-                fontSize: 16,
+                fontSize: fontSize,
                 fontWeight: FontWeight.bold,
                 color: textColor,
               ),

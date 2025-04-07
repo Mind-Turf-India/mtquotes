@@ -311,7 +311,7 @@ import 'package:mtquotes/screens/User_Home/components/templates_list.dart';
             );
           },
           child: Text(
-            'View All',
+            context.loc.viewall,
             style: GoogleFonts.poppins(
               fontSize: fontSize - 2,
               color: Colors.blue,

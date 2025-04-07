@@ -50,7 +50,7 @@ class RecentTemplatesSection extends StatelessWidget {
               TextButton(
                 onPressed: onViewAll,
                 child: Text(
-                  'View All',
+                  context.loc.viewall,
                   style: GoogleFonts.poppins(
                     fontSize: fontSize - 2,
                     color: theme.primaryColor,
@@ -78,7 +78,7 @@ class RecentTemplatesSection extends StatelessWidget {
                   : recentTemplates.isEmpty
                       ? Center(
                           child: Text(
-                            "No recent templates",
+                            context.loc.norecenttemplates,
                             style: GoogleFonts.poppins(
                               fontSize: fontSize - 2,
                               color: theme.textTheme.bodyMedium?.color,
@@ -208,7 +208,7 @@ class RecentTemplatesSection extends StatelessWidget {
                         ? template.title
                         : template.category.isNotEmpty
                             ? template.category
-                            : "Template",
+                            : context.loc.template,
                     style: GoogleFonts.poppins(
                       color: Colors.white,
                       fontSize: fontSize - 4,

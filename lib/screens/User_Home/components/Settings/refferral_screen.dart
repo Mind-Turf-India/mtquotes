@@ -3,8 +3,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
-import '../../../utils/app_colors.dart';
-import '../../../utils/theme_provider.dart';
+import '../../../../utils/app_colors.dart';
+import '../../../../utils/theme_provider.dart';
+import '../../../../providers/text_size_provider.dart';
+import '../../../../l10n/app_localization.dart';
 
 class ReferralPage extends StatefulWidget {
   const ReferralPage({Key? key}) : super(key: key);
@@ -71,12 +73,12 @@ class _ReferralPageState extends State<ReferralPage> {
   void _shareReferralCode() {
     if (_referralCode != "Not Assigned" && _referralCode != "Loading...") {
       final String message =
-          "Join this amazing app using my referral code: $_referralCode.\n"
-          "Get rewards when you sign up!\nDownload now: $_appPlayStoreLink";
+          "${context.loc.joinAppMessage}: $_referralCode.\n"
+          "${context.loc.getRewardsMessage}\n${context.loc.downloadNowMessage}: $_appPlayStoreLink";
       Share.share(message);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Referral code not available.")),
+        SnackBar(content: Text(context.loc.referralCodeNotAvailable)),
       );
     }
   }
@@ -85,6 +87,8 @@ class _ReferralPageState extends State<ReferralPage> {
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDarkMode = themeProvider.isDarkMode;
+    final textSizeProvider = Provider.of<TextSizeProvider>(context);
+    final fontSize = textSizeProvider.fontSize;
 
     return Scaffold(
       backgroundColor: AppColors.getBackgroundColor(isDarkMode),
@@ -96,8 +100,11 @@ class _ReferralPageState extends State<ReferralPage> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-            'Share',
-            style: TextStyle(color: AppColors.getTextColor(isDarkMode))
+            context.loc.share,
+            style: TextStyle(
+              color: AppColors.getTextColor(isDarkMode),
+              fontSize: fontSize,
+            )
         ),
       ),
       body: _isLoading
@@ -139,19 +146,19 @@ class _ReferralPageState extends State<ReferralPage> {
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        'Refer Friend & Earn',
+                        context.loc.referFriendAndEarn,
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: fontSize,
                           fontWeight: FontWeight.bold,
                           color: AppColors.getTextColor(isDarkMode),
                         ),
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        'Ask your friends to sign up with your referral code. Once done both you and your friend each earn rewards.',
+                        context.loc.referralDescription,
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: fontSize - 2,
                           color: AppColors.getTextColor(isDarkMode),
                         ),
                       ),
@@ -174,14 +181,14 @@ class _ReferralPageState extends State<ReferralPage> {
                             const SizedBox(width: 8),
                             Text.rich(
                               TextSpan(
-                                text: "Your Points: ",
+                                text: "${context.loc.yourPoints}: ",
                                 style: TextStyle(
-                                  fontSize: 14,
+                                  fontSize: fontSize - 2,
                                   color: AppColors.getTextColor(isDarkMode),
                                 ),
                                 children: [
                                   TextSpan(
-                                    text: "$_rewardPoints points",
+                                    text: "$_rewardPoints ${context.loc.points}",
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       color: Colors.green,
@@ -195,9 +202,9 @@ class _ReferralPageState extends State<ReferralPage> {
                       ),
                       const SizedBox(height: 20),
                       Text(
-                        'YOUR REFERRAL CODE',
+                        context.loc.yourReferralCode,
                         style: TextStyle(
-                          fontSize: 13,
+                          fontSize: fontSize - 3,
                           fontWeight: FontWeight.bold,
                           color: AppColors.getTextColor(isDarkMode),
                         ),
@@ -216,7 +223,7 @@ class _ReferralPageState extends State<ReferralPage> {
                           _referralCode,
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: fontSize,
                             fontWeight: FontWeight.w500,
                             letterSpacing: 1,
                             color: AppColors.getTextColor(isDarkMode),
@@ -243,17 +250,17 @@ class _ReferralPageState extends State<ReferralPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'How it works:',
+                              context.loc.howItWorks,
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
-                                fontSize: 14,
+                                fontSize: fontSize - 2,
                                 color: AppColors.getTextColor(isDarkMode),
                               ),
                             ),
                             const SizedBox(height: 8),
-                            _buildStep('1. Share your referral code with friends', isDarkMode),
-                            _buildStep('2. Friend signs up using your code', isDarkMode),
-                            _buildStep('3. Both of you earn reward points', isDarkMode),
+                            _buildStep(context.loc.shareReferralWithFriends, isDarkMode, fontSize),
+                            _buildStep(context.loc.friendSignsUp, isDarkMode, fontSize),
+                            _buildStep(context.loc.bothEarnRewards, isDarkMode, fontSize),
                           ],
                         ),
                       ),
@@ -288,8 +295,11 @@ class _ReferralPageState extends State<ReferralPage> {
                                 Icon(Icons.share, color: Colors.white),
                                 SizedBox(width: 8),
                                 Text(
-                                  'Share',
-                                  style: TextStyle(color: Colors.white),
+                                  context.loc.share,
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: fontSize - 2,
+                                  ),
                                 ),
                               ],
                             ),
@@ -308,7 +318,7 @@ class _ReferralPageState extends State<ReferralPage> {
     );
   }
 
-  Widget _buildStep(String text, bool isDarkMode) {
+  Widget _buildStep(String text, bool isDarkMode, double fontSize) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
@@ -320,7 +330,7 @@ class _ReferralPageState extends State<ReferralPage> {
             child: Text(
               text,
               style: TextStyle(
-                fontSize: 13,
+                fontSize: fontSize - 3,
                 color: AppColors.getTextColor(isDarkMode),
               ),
             ),

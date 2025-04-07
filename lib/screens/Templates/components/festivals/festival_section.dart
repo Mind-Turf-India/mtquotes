@@ -6,12 +6,12 @@ import 'package:mtquotes/screens/Templates/components/festivals/festival_post.da
 import 'package:mtquotes/utils/app_colors.dart';
 import 'package:mtquotes/utils/theme_provider.dart';
 import 'package:provider/provider.dart';
-
+import '../../../../providers/text_size_provider.dart';
+import '../../../../l10n/app_localization.dart';
 
 class FestivalSection extends StatelessWidget {
   final String title;
   final Future<List<FestivalPost>> Function() fetchFestivals;
-  final double fontSize;
   final Function(FestivalPost) onFestivalSelected;
   final VoidCallback? onSeeAllPressed;
 
@@ -19,7 +19,6 @@ class FestivalSection extends StatelessWidget {
     Key? key,
     required this.title,
     required this.fetchFestivals,
-    required this.fontSize,
     required this.onFestivalSelected,
     this.onSeeAllPressed,
   }) : super(key: key);
@@ -30,7 +29,11 @@ class FestivalSection extends StatelessWidget {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDarkMode = themeProvider.isDarkMode;
     final theme = Theme.of(context);
-    
+
+    // Get font size from TextSizeProvider
+    final textSizeProvider = Provider.of<TextSizeProvider>(context);
+    final fontSize = textSizeProvider.fontSize;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -38,7 +41,7 @@ class FestivalSection extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              title,
+              title, // This is already a parameter, so we don't use context.loc here
               style: GoogleFonts.poppins(
                 fontSize: fontSize,
                 fontWeight: FontWeight.bold,
@@ -49,7 +52,7 @@ class FestivalSection extends StatelessWidget {
               GestureDetector(
                 onTap: onSeeAllPressed,
                 child: Text(
-                  'See all',
+                  context.loc.seeAll,
                   style: GoogleFonts.poppins(
                     fontSize: fontSize - 2,
                     fontWeight: FontWeight.w500,
@@ -76,9 +79,10 @@ class FestivalSection extends StatelessWidget {
               if (snapshot.hasError) {
                 return Center(
                   child: Text(
-                    'Error loading festivals',
+                    context.loc.errorLoadingFestivals,
                     style: TextStyle(
                       color: AppColors.getSecondaryTextColor(isDarkMode),
+                      fontSize: fontSize - 2,
                     ),
                   ),
                 );
@@ -87,9 +91,10 @@ class FestivalSection extends StatelessWidget {
               if (!snapshot.hasData || snapshot.data!.isEmpty) {
                 return Center(
                   child: Text(
-                    'No festivals available',
+                    context.loc.noFestivalsAvailable,
                     style: TextStyle(
                       color: AppColors.getSecondaryTextColor(isDarkMode),
+                      fontSize: fontSize - 2,
                     ),
                   ),
                 );
@@ -101,7 +106,7 @@ class FestivalSection extends StatelessWidget {
                 itemBuilder: (context, index) {
                   return FestivalCard(
                     festival: snapshot.data![index],
-                    fontSize: fontSize,
+                    fontSize: fontSize, // Pass the dynamic fontSize from provider to FestivalCard
                     onTap: () {
                       // Use the festival handler to check access and handle selection
                       FestivalHandler.handleFestivalSelection(

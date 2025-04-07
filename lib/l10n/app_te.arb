@@ -63,9 +63,38 @@
   "premium_sharing_features": "ప్రీమియం పంచుకునే ఫీచర్లు",
   "upgrade_now": "ఇప్పుడే అప్‌గ్రేడ్ చేయండి",
   "foryou": "మీ కోసం",
+  "edityourprofile": "మీ ప్రొఫైల్‌ను సవరించండి",
+  "save": "సేవ్ చేయండి",
+  "downloadedimages": "డౌన్లోడ్ చేసిన చిత్రాలు",
+  "nodownloadedimages": "డౌన్లోడ్ చేసిన చిత్రం లేదు",
+  "joinAppMessage": "అప్లో చేరండి",
+  "getRewardsMessage": "ఇనామాలను పొందండి",
+  "downloadNowMessage": "ఇప్పుడే డౌన్లోడ్ చేయండి",
+  "referralCodeNotAvailable": "రెఫరల్ కోడ్ అందుబాటులో లేదు",
+  "yourPoints": "మీ పాయింట్లు",
+  "yourReferralCode": "మీ రెఫరల్ కోడ్",
+  "howItWorks": "ఇది ఎలా పనిచేస్తుంది",
+  "shareReferralWithFriends": "స్నేహితులతో రెఫరల్‌ను పంచుకోండి",
+  "friendSignsUp": "స్నేహితుడు సైన్ అప్ చేస్తాడు",
+  "bothEarnRewards": "ఇద్దరు ఇనామాలను పొందండి",
+  "referFriendAndEarn": "స్నేహితుడిని సూచించి సంపాదించండి",
+  "referralDescription": "మీ రిఫెరల్ కోడ్\u200Cతో సైన్ అప్ చేయమని మీ స్నేహితులను అడగండి. పూర్తయిన తర్వాత మీరు మరియు మీ స్నేహితుడు ఇద్దరూ రివార్డ్\u200Cలను పొందుతారు.",
+  "changeimage": "చిత్రాన్ని మార్చండి",
+  "taptoupload": "గ్యాలరీ నుండి అప్లోడ్ చేయడానికి ట్యాప్ చేయండి",
+  "viewall": "అన్నింటిని చూడండి",
+  "notifications": "ప్రకటనలు",
+  "clearAllNotifications": "అన్ని ప్రకటనలను తొలగించండి",
+  "confirmClearNotifications": "మీరు ఖచ్చితంగా అన్ని ప్రకటనలను తొలగించాలనుకుంటున్నారా?",
+  "noNotificationsYet": "ఇప్పటి వరకు ఎటువంటి ప్రకటనలు లేవు",
+  "clearAll": "అన్నీ క్లియర్ చేయండి",
+  "clear": "క్లియర్ చేయండి",
+
+
   "@languageChanged": {
     "placeholders": {
-      "language": {}
+      "language": {
+        "type": "Object"
+      }
     }
   }
 }

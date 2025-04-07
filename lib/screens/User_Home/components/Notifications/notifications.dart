@@ -7,6 +7,8 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../../../utils/app_colors.dart';
 import '../../../../utils/theme_provider.dart';
+import '../../../../providers/text_size_provider.dart';
+import '../../../../l10n/app_localization.dart';
 
 class NotificationsSheet extends StatefulWidget {
   @override
@@ -83,6 +85,8 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDarkMode = themeProvider.isDarkMode;
+    final textSizeProvider = Provider.of<TextSizeProvider>(context);
+    final fontSize = textSizeProvider.fontSize;
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.6,
@@ -113,9 +117,9 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  "Notifications",
+                  context.loc.notifications,
                   style: GoogleFonts.poppins(
-                    fontSize: 16,
+                    fontSize: fontSize,
                     fontWeight: FontWeight.w600,
                     color: AppColors.getTextColor(isDarkMode),
                   ),
@@ -129,19 +133,28 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
                         builder: (context) => AlertDialog(
                           backgroundColor: AppColors.getBackgroundColor(isDarkMode),
                           title: Text(
-                            "Clear All Notifications",
-                            style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+                            context.loc.clearAllNotifications,
+                            style: TextStyle(
+                              color: AppColors.getTextColor(isDarkMode),
+                              fontSize: fontSize,
+                            ),
                           ),
                           content: Text(
-                            "Are you sure you want to clear all notifications?",
-                            style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+                            context.loc.confirmClearNotifications,
+                            style: TextStyle(
+                              color: AppColors.getTextColor(isDarkMode),
+                              fontSize: fontSize - 2,
+                            ),
                           ),
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.pop(context),
                               child: Text(
-                                "CANCEL",
-                                style: TextStyle(color: AppColors.primaryBlue),
+                                context.loc.cancel,
+                                style: TextStyle(
+                                  color: AppColors.primaryBlue,
+                                  fontSize: fontSize - 2,
+                                ),
                               ),
                             ),
                             TextButton(
@@ -150,8 +163,11 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
                                 Navigator.pop(context);
                               },
                               child: Text(
-                                "CLEAR",
-                                style: TextStyle(color: Colors.red[400]),
+                                context.loc.clear,
+                                style: TextStyle(
+                                  color: Colors.red[400],
+                                  fontSize: fontSize - 2,
+                                ),
                               ),
                             ),
                           ],
@@ -163,8 +179,11 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
                     PopupMenuItem(
                       value: 'clear',
                       child: Text(
-                        "Clear All",
-                        style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+                        context.loc.clearAll,
+                        style: TextStyle(
+                          color: AppColors.getTextColor(isDarkMode),
+                          fontSize: fontSize - 2,
+                        ),
                       ),
                     ),
                   ],
@@ -190,9 +209,9 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
                   ),
                   SizedBox(height: 16),
                   Text(
-                    "No notifications yet",
+                    context.loc.noNotificationsYet,
                     style: GoogleFonts.poppins(
-                      fontSize: 16,
+                      fontSize: fontSize,
                       color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
                     ),
                   ),
@@ -264,7 +283,7 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
                                     return Text(
                                       _getInitials(notification.title),
                                       style: GoogleFonts.poppins(
-                                        fontSize: 16,
+                                        fontSize: fontSize - 2,
                                         fontWeight: FontWeight.bold,
                                         color: Colors.white,
                                       ),
@@ -275,7 +294,7 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
                                   : Text(
                                 _getInitials(notification.title),
                                 style: GoogleFonts.poppins(
-                                  fontSize: 16,
+                                  fontSize: fontSize - 2,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.white,
                                 ),
@@ -291,7 +310,7 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
                                   Text(
                                     notification.title,
                                     style: GoogleFonts.poppins(
-                                      fontSize: 14,
+                                      fontSize: fontSize - 2,
                                       fontWeight: FontWeight.w600,
                                       color: AppColors.getTextColor(isDarkMode),
                                     ),
@@ -300,7 +319,7 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
                                   Text(
                                     notification.body,
                                     style: GoogleFonts.poppins(
-                                      fontSize: 14,
+                                      fontSize: fontSize - 2,
                                       color: isDarkMode ? Colors.grey[300] : Colors.grey[800],
                                     ),
                                     maxLines: 2,
@@ -310,7 +329,7 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
                                   Text(
                                     _getFormattedTime(notification.timestamp),
                                     style: GoogleFonts.poppins(
-                                      fontSize: 12,
+                                      fontSize: fontSize - 4,
                                       color: isDarkMode ? Colors.grey[500] : Colors.grey[600],
                                     ),
                                   ),

@@ -25,8 +25,11 @@ class SettingsPage extends StatelessWidget {
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
-          'Settings',
-          style: TextStyle(color: AppColors.getTextColor(isDarkMode), fontSize: 18),
+          context.loc.settings,
+          style: TextStyle(
+              fontSize: fontSize,
+              color: AppColors.getTextColor(isDarkMode)
+          ),
         ),
         centerTitle: false,
       ),

@@ -63,9 +63,38 @@
   "premium_sharing_features": "પ્રીમિયમ શેરિંગ સુવિધાઓ",
   "upgrade_now": "હવે અપગ્રેડ કરો",
   "foryou": "તમારા માટે",
+  "edityourprofile": "તમારી પ્રોફાઇલ સંપાદિત કરો",
+  "save": "સંગ્રહો",
+  "downloadedimages": "ડાઉનલોડ કરેલ છબીઓ",
+  "nodownloadedimages": "કોઈ ડાઉનલોડ કરેલ છબી મળી નથી",
+  "joinAppMessage": "એપમાં જોડાઓ",
+  "getRewardsMessage": "ઈનામ મેળવો",
+  "downloadNowMessage": "હમણાં ડાઉનલોડ કરો",
+  "referralCodeNotAvailable": "રેફરલ કોડ ઉપલબ્ધ નથી",
+  "yourPoints": "તમારા પોઈન્ટ્સ",
+  "yourReferralCode": "તમારો રેફરલ કોડ",
+  "howItWorks": "આ કેવી રીતે કામ કરે છે",
+  "shareReferralWithFriends": "મિત્રો સાથે રેફરલ શેર કરો",
+  "friendSignsUp": "મિત્ર સાઇન અપ કરે",
+  "bothEarnRewards": "બન્ને ઈનામ મેળવે",
+  "referFriendAndEarn": "મિત્રને રેફર કરો અને કમાવો",
+  "referralDescription": "તમારા મિત્રોને તમારા રેફરલ કોડ સાથે સાઇન અપ કરવા કહેવું. એકવાર પૂર્ણ થવાથી, તમે અને તમારો મિત્ર બંને ઇનામો મેળવશો",
+  "changeimage": "છબી બદલો",
+  "taptoupload": "ગેલેરીમાંથી અપલોડ કરવા માટે ટૅપ કરો",
+  "viewall": "બધા જુઓ",
+  "notifications": "સૂચનાઓ",
+  "clearAllNotifications": "બધી સૂચનાઓ સાફ કરો",
+  "confirmClearNotifications": "શું તમે ખરેખર બધી સૂચનાઓ સાફ કરવા માંગો છો?",
+  "noNotificationsYet": "હજી સુધી કોઈ સૂચના નથી",
+  "clearAll": "બધું સાફ કરો",
+  "clear": "સાફ કરો",
+
+
   "@languageChanged": {
     "placeholders": {
-      "language": {}
+      "language": {
+        "type": "Object"
+      }
     }
   }
 }

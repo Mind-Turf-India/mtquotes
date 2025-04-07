@@ -1336,7 +1336,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         );
                                       },
                                       child: Text(
-                                        'View All',
+                                        context.loc.viewall,
                                         style: GoogleFonts.poppins(
                                           fontSize: fontSize - 2,
                                           color: Colors.blue,
@@ -1387,7 +1387,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                               );
                                             },
                                             child: Text(
-                                              'View All',
+                                              context.loc.viewall,
                                               style: GoogleFonts.poppins(
                                                 fontSize: fontSize - 2,
                                                 color: Colors.blue,
@@ -1500,7 +1500,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                   );
                                                 },
                                                 child: Text(
-                                                  'View All',
+                                                  context.loc.viewall,
                                                   style: GoogleFonts.poppins(
                                                     fontSize: fontSize - 2,
                                                     color: Colors.blue,

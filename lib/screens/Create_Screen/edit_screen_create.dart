@@ -10,6 +10,7 @@ import 'package:flutter/services.dart';
 import 'package:image_editor_plus/image_editor_plus.dart';
 import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:mtquotes/l10n/app_localization.dart';
 import 'package:mtquotes/screens/navbar_mainscreen.dart';
 import 'package:mtquotes/utils/theme_provider.dart';
 import 'package:provider/provider.dart';
@@ -1010,7 +1011,7 @@ class _EditScreenState extends State<EditScreen> {
                 Navigator.pop(context);
               },
               child: Text(
-                "Cancel",
+                context.loc.cancel,
                 style: TextStyle(color: textColor, fontSize: 16),
               ),
             ),
@@ -1021,7 +1022,7 @@ class _EditScreenState extends State<EditScreen> {
             ),
             TextButton(
               onPressed: downloadImage,
-              child: Text("Download", style: TextStyle(color: textColor)),
+              child: Text(context.loc.downloads, style: TextStyle(color: textColor)),
             ),
           ],
         ),
@@ -1080,7 +1081,7 @@ class _EditScreenState extends State<EditScreen> {
                               ),
                               SizedBox(height: 16),
                               Text(
-                                'Tap to upload from gallery',
+                                context.loc.taptoupload,
                                 style: TextStyle(
                                   color: isDarkMode
                                       ? Colors.grey[400]
@@ -1111,7 +1112,7 @@ class _EditScreenState extends State<EditScreen> {
                       Icons.photo_library,
                       color: Colors.white,
                     ),
-                    label: Text('Change Image'),
+                    label: Text(context.loc.changeimage),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: primaryColor,
                       foregroundColor: Colors.white,
@@ -1154,7 +1155,7 @@ class _EditScreenState extends State<EditScreen> {
                       Icons.edit,
                       color: Colors.white,
                     ),
-                    label: Text('Edit Image'),
+                    label: Text(context.loc.editimage),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: primaryColor,
                       foregroundColor: Colors.white,

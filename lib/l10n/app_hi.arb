@@ -63,9 +63,41 @@
   "premium_sharing_features": "प्रीमियम साझा करने की विशेषताएँ",
   "upgrade_now": "अभी अपग्रेड करें",
   "foryou": "आपके लिए",
+  "edityourprofile": "अपनी प्रोफ़ाइल संपादित करें",
+  "save": "सहेजें",
+  "downloadedimages": "डाउनलोड की गई छवियाँ",
+  "nodownloadedimages": "कोई डाउनलोड की गई छवि नहीं मिली",
+  "joinAppMessage": "ऐप में शामिल हों",
+  "getRewardsMessage": "पुरस्कार प्राप्त करें",
+  "downloadNowMessage": "अभी डाउनलोड करें",
+  "referralCodeNotAvailable": "रेफरल कोड उपलब्ध नहीं",
+  "yourPoints": "आपके अंक",
+  "yourReferralCode": "आपका रेफरल कोड",
+  "howItWorks": "यह कैसे काम करता है",
+  "shareReferralWithFriends": "दोस्तों के साथ रेफरल साझा करें",
+  "friendSignsUp": "दोस्त साइन अप करता है",
+  "bothEarnRewards": "दोनों पुरस्कार अर्जित करें",
+  "referFriendAndEarn": "दोस्त को रेफर करें और कमाएं",
+  "referralDescription": "अपने दोस्तों से अपने रेफरल कोड के साथ साइन अप करने के लिए कहें। एक बार पूरा होने पर, आप और आपका दोस्त दोनों पुरस्कार अर्जित करेंगे",
+  "taptoupload": "गैलरी से अपलोड करने के लिए टैप करें",
+  "viewall": "सभी देखें",
+  "notifications": "सूचनाएँ",
+  "clearAllNotifications": "सभी सूचनाएँ हटाएँ",
+  "confirmClearNotifications": "क्या आप सुनिश्चित हैं कि सभी सूचनाएँ हटाना चाहते हैं?",
+  "noNotificationsYet": "अभी तक कोई सूचना नहीं",
+  "clearAll": "सब साफ करें",
+  "clear": "साफ करें",
+
+
+
+
+
+
   "@languageChanged": {
     "placeholders": {
-      "language": {}
+      "language": {
+        "type": "Object"
+      }
     }
   }
 

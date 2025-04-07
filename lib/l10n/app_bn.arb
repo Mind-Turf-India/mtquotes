@@ -63,9 +63,164 @@
   "premium_sharing_features": "প্রিমিয়াম শেয়ারিং বৈশিষ্ট্য",
   "upgrade_now": "এখনই আপগ্রেড করুন",
   "foryou": "তোমার জন্য",
+  "edityourprofile": "আপনার প্রোফাইল সম্পাদনা করুন",
+  "save": "সংরক্ষণ করুন",
+  "downloadedimages": "ডাউনলোড করা ছবি",
+  "nodownloadedimages": "কোনো ডাউনলোড করা ছবি পাওয়া যায়নি",
+  "joinAppMessage": "অ্যাপে যোগ দিন",
+  "getRewardsMessage": "পুরস্কার পান",
+  "downloadNowMessage": "এখনই ডাউনলোড করুন",
+  "referralCodeNotAvailable": "রেফারেল কোড উপলব্ধ নেই",
+  "yourPoints": "আপনার পয়েন্ট",
+  "yourReferralCode": "আপনার রেফারেল কোড",
+  "howItWorks": "এটি কীভাবে কাজ করে",
+  "shareReferralWithFriends": "বন্ধুদের সাথে রেফারেল শেয়ার করুন",
+  "friendSignsUp": "বন্ধু সাইন আপ করে",
+  "bothEarnRewards": "দুজনেই পুরস্কার পান",
+  "referFriendAndEarn": "বন্ধুকে রেফার করুন এবং উপার্জন করুন",
+  "referralDescription": "আপনার বন্ধুদের আপনার রেফারেল কোড দিয়ে সাইন আপ করতে বলুন। একবার সম্পন্ন হলে, আপনি এবং আপনার বন্ধু উভয়েই পুরস্কার অর্জন করবেন",
+  "changeimage": "ছবি পরিবর্তন করুন",
+  "taptoupload": "গ্যালারি থেকে আপলোড করতে ট্যাপ করুন",
+  "viewall": "সব দেখুন",
+  "notifications": "বিজ্ঞপ্তি",
+  "clearAllNotifications": "সমস্ত বিজ্ঞপ্তি মুছে ফেলুন",
+  "confirmClearNotifications": "আপনি কি নিশ্চিত যে সমস্ত বিজ্ঞপ্তি মুছে ফেলতে চান?",
+  "noNotificationsYet": "এখনও কোনো বিজ্ঞপ্তি নেই",
+  "clearAll": "সব পরিষ্কার করুন",
+  "clear": "পরিষ্কার করুন",
+  "Profile Details": "প্রোফাইল বিবরণ",
+  "Name": "নাম",
+  "Enter your name": "আপনার নাম লিখুন",
+  "Mobile": "মোবাইল",
+  "Enter your mobile number": "আপনার মোবাইল নম্বর লিখুন",
+  "Location": "অবস্থান",
+  "Enter your location": "আপনার অবস্থান লিখুন",
+
+  "Enter your business location": "আপনার ব্যবসার অবস্থান লিখুন",
+
+  "Profile Photo": "প্রোফাইল ছবি",
+
+  "Change photo": "ছবি পরিবর্তন করুন",
+
+  "Change logo": "লোগো পরিবর্তন করুন",
+
+  "Template Preview": "টেমপ্লেট প্রিভিউ",
+
+  "Display Options": "প্রদর্শন বিকল্প",
+
+  "Show Info Box": "তথ্য বাক্স দেখান",
+
+  "Background Color": "পটভূমির রঙ",
+
+  "Next": "পরবর্তী",
+
+  "Personal": "ব্যক্তিগত",
+
+  "Business": "ব্যবসা",
+
+  "Company Name": "কোম্পানির নাম",
+
+  "Enter your company name": "আপনার কোম্পানির নাম লিখুন",
+
+  "Social Media Handle": "সোশ্যাল মিডিয়া হ্যান্ডেল",
+
+  "Enter your social media handle": "আপনার সোশ্যাল মিডিয়া হ্যান্ডেল লিখুন",
+
+  "Product Description": "পণ্যের বিবরণ",
+
+  "Enter a business description or tagline": "একটি ব্যবসার বিবরণ বা ট্যাগলাইন লিখুন",
+
+  "Logo": "লোগো",
+
+  "Premium Template": "প্রিমিয়াম টেমপ্লেট",
+
+  "Upgrade": "আপগ্রেড করুন",
+
+  "Loading template...": "টেমপ্লেট লোড হচ্ছে...",
+
+  "Failed to load image": "ছবি লোড করতে ব্যর্থ",
+
+  "Your Name": "আপনার নাম",
+
+  "Failed to load user data": "ব্যবহারকারীর ডেটা লোড করতে ব্যর্থ",
+
+  "Failed to save profile details": "প্রোফাইল বিবরণ সংরক্ষণ করতে ব্যর্থ",
+
+  "Profile details saved successfully": "প্রোফাইল বিবরণ সফলভাবে সংরক্ষিত হয়েছে",
+
+  "User not logged in": "ব্যবহারকারী লগ ইন করেননি",
+
+  "Edit Template": "টেমপ্লেট সম্পাদনা করুন",
+
+  "Rate This Festival Post": "এই উৎসব পোস্টটি রেট করুন",
+
+  "How would you rate your experience with this festival post?": "এই উৎসব পোস্টের সাথে আপনার অভিজ্ঞতা কেমন রেট করবেন?",
+
+  "Skip": "এড়িয়ে যান",
+
+  "Submit": "জমা দিন",
+
+  "Thanks for your rating!": "আপনার রেটিংয়ের জন্য ধন্যবাদ!",
+
+  "Failed to submit rating": "রেটিং জমা দিতে ব্যর্থ",
+
+  "Loading...": "লোড হচ্ছে...",
+
+  "Do you wish to continue?": "আপনি কি চালিয়ে যেতে চান?",
+
+  "This template requires a subscription. Subscribe to access all premium templates.": "এই টেমপ্লেটের জন্য একটি সাবস্ক্রিপশন প্রয়োজন। সমস্ত প্রিমিয়াম টেমপ্লেট অ্যাক্সেস করতে সাবস্ক্রাইব করুন।",
+
+  "Subscribe": "সাবস্ক্রাইব করুন",
+
+  "Error initializing festivals": "উৎসবগুলি আরম্ভ করতে ত্রুটি",
+
+  "Failed to share image": "ছবি ভাগ করতে ব্যর্থ",
+
+  "No Recent Templates": "কোনও সাম্প্রতিক টেমপ্লেট নেই",
+
+  "See all": "সব দেখুন",
+
+  "Error loading festivals": "উৎসব লোড করতে ত্রুটি",
+
+  "No festivals available": "কোনও উৎসব উপলব্ধ নেই",
+
+  "Share Festival Post": "উৎসব পোস্ট ভাগ করুন",
+
+  "Free Sharing": "বিনামূল্যে ভাগ",
+
+  "Premium Sharing": "প্রিমিয়াম ভাগ",
+
+  "Basic sharing": "মৌলিক ভাগ",
+
+  "Share the festival post without personal branding": "ব্যক্তিগত ব্র্যান্ডিং ছাড়া উৎসব পোস্ট ভাগ করুন",
+
+  "No personal branding or watermark": "কোনও ব্যক্তিগত ব্র্যান্ডিং বা ওয়াটারমার্ক নেই",
+
+  "Standard quality export": "স্ট্যান্ডার্ড মানের রপ্তানি",
+
+  "Share Basic": "মৌলিক ভাগ করুন",
+
+  "OR": "অথবা",
+
+  "Share with your branding": "আপনার ব্র্যান্ডিং সহ ভাগ করুন",
+
+  "Include your name and profile picture on the festival post": "উৎসব পোস্টে আপনার নাম এবং প্রোফাইল ছবি অন্তর্ভুক্ত করুন",
+
+  "Personalized sharing message": "ব্যক্তিগতকৃত ভাগ করার বার্তা",
+
+  "No watermark - clean professional look": "কোনও ওয়াটারমার্ক নেই - পরিষ্কার পেশাদার চেহারা",
+
+  "High quality image export": "উচ্চ মানের ছবি রপ্তানি",
+
+  "Share Now": "এখন ভাগ করুন",
+
+  "Upgrade to Pro": "প্রোতে আপগ্রেড করুন",
+
   "@languageChanged": {
     "placeholders": {
-      "language": {}
+      "language": {
+        "type": "Object"
+      }
     }
   }
 }

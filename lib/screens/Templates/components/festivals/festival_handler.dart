@@ -16,8 +16,10 @@ import 'package:mtquotes/screens/Templates/components/festivals/festival_sharing
 import 'package:mtquotes/screens/Payment_Screen/subscription_popup.dart';
 import 'package:mtquotes/utils/app_colors.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:mtquotes/screens/Templates/components/template/quote_template.dart';
+import '../../../../providers/text_size_provider.dart';
 import '../../../Create_Screen/components/details_screen.dart';
 import '../recent/recent_service.dart';
 
@@ -30,6 +32,7 @@ class FestivalHandler {
   static void showLoadingIndicator(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final bool isDarkMode = theme.brightness == Brightness.dark;
+
 
     showDialog(
       context: context,
@@ -78,6 +81,8 @@ class FestivalHandler {
     final Color backgroundColor = isDarkMode ? AppColors.darkSurface : AppColors.lightSurface;
     final Color textColor = isDarkMode ? AppColors.darkText : AppColors.lightText;
     final Color secondaryTextColor = isDarkMode ? AppColors.darkSecondaryText : AppColors.lightSecondaryText;
+    final textSizeProvider = Provider.of<TextSizeProvider>(context, listen: false);
+    final fontSize = textSizeProvider.fontSize;
 
     return showDialog<double>(
       context: context,
@@ -86,15 +91,22 @@ class FestivalHandler {
           return AlertDialog(
             backgroundColor: backgroundColor,
             title: Text(
-              'Rate This Festival Post',
-              style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
+              context.loc.rateThisFestivalPost,
+              style: TextStyle(
+                color: textColor,
+                fontWeight: FontWeight.bold,
+                fontSize: fontSize,
+              ),
             ),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'How would you rate your experience with this festival post?',
-                  style: TextStyle(color: secondaryTextColor),
+                  context.loc.howWouldYouRateExperience,
+                  style: TextStyle(
+                    color: secondaryTextColor,
+                    fontSize: fontSize - 2,
+                  ),
                 ),
                 SizedBox(height: 20),
                 FittedBox(
@@ -124,8 +136,11 @@ class FestivalHandler {
                   Navigator.of(dialogContext).pop(null);
                 },
                 child: Text(
-                  'Skip',
-                  style: TextStyle(color: AppColors.primaryBlue),
+                  context.loc.skip,
+                  style: TextStyle(
+                    color: AppColors.primaryBlue,
+                    fontSize: fontSize - 2,
+                  ),
                 ),
               ),
               TextButton(
@@ -134,8 +149,11 @@ class FestivalHandler {
                   Navigator.of(context).pushReplacementNamed('/home');
                 },
                 child: Text(
-                  'Submit',
-                  style: TextStyle(color: AppColors.primaryBlue),
+                  context.loc.submit,
+                  style: TextStyle(
+                    color: AppColors.primaryBlue,
+                    fontSize: fontSize - 2,
+                  ),
                 ),
               ),
             ],
@@ -156,7 +174,7 @@ class FestivalHandler {
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('Thanks for your rating!'),
+                content: Text(context.loc.thanksForYourRating),
                 backgroundColor: AppColors.primaryGreen,
               ),
             );
@@ -169,7 +187,7 @@ class FestivalHandler {
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('Failed to submit rating: ${error.toString()}'),
+                content: Text(context.loc.failedToSubmitRating + ': ${error.toString()}'),
                 backgroundColor: Colors.red,
               ),
             );
@@ -466,6 +484,8 @@ class FestivalHandler {
     final Color textColor = isDarkMode ? AppColors.darkText : AppColors.lightText;
     final Color secondaryTextColor = isDarkMode ? AppColors.darkSecondaryText : AppColors.lightSecondaryText;
     final Color dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.lightDivider;
+    final textSizeProvider = Provider.of<TextSizeProvider>(context, listen: false);
+    final fontSize = textSizeProvider.fontSize;
 
     showDialog(
       context: context,
@@ -522,15 +542,14 @@ class FestivalHandler {
                                                   : Colors.grey.shade300,
                                             ),
                                             SizedBox(height: 16),
-                                            Text(
-                                              'Loading...',
-                                              style: TextStyle(
-                                                color: textColor,
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                            ),
-                                          ],
+                                        Text(
+                                          context.loc.loading,
+                                          style: TextStyle(
+                                            color: textColor,
+                                            fontSize: fontSize - 2,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),]
                                         ),
                                       ),
                                       errorWidget: (context, url, error) => Center(
@@ -544,10 +563,10 @@ class FestivalHandler {
                                             ),
                                             SizedBox(height: 16),
                                             Text(
-                                              'Failed to load image',
+                                              context.loc.failedToLoadImage,
                                               style: TextStyle(
                                                 color: textColor,
-                                                fontSize: 14,
+                                                fontSize: fontSize - 2,
                                                 fontWeight: FontWeight.w500,
                                               ),
                                             ),
@@ -606,11 +625,12 @@ class FestivalHandler {
                               ),
                             ),
                           ),
+
                           SizedBox(height: 24),
                           Text(
-                            'Do you wish to continue?',
+                            context.loc.doYouWishToContinue,
                             style: TextStyle(
-                              fontSize: 16,
+                              fontSize: fontSize,
                               fontWeight: FontWeight.w500,
                               color: textColor,
                             ),
@@ -653,7 +673,12 @@ class FestivalHandler {
                                         child: Container(
                                           padding: EdgeInsets.symmetric(
                                               vertical: 10, horizontal: 26),
-                                          child: Text('Create'),
+                                          child: Text(
+                                            context.loc.create,
+                                            style: TextStyle(
+                                              fontSize: fontSize - 2,
+                                            ),
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -678,7 +703,12 @@ class FestivalHandler {
                                           vertical: 12,
                                         ),
                                       ),
-                                      child: Text('Cancel'),
+                                      child: Text(
+                                        context.loc.cancel,
+                                        style: TextStyle(
+                                          fontSize: fontSize - 2,
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -721,7 +751,12 @@ class FestivalHandler {
                                           children: [
                                             Icon(Icons.share, color: Colors.white),
                                             SizedBox(width: 8),
-                                            Text('Share'),
+                                            Text(
+                                              context.loc.share,
+                                              style: TextStyle(
+                                                fontSize: fontSize - 2,
+                                              ),
+                                            ),
                                           ],
                                         ),
                                       ),
@@ -906,25 +941,37 @@ class FestivalHandler {
         final bool isDarkMode = theme.brightness == Brightness.dark;
         final Color backgroundColor = isDarkMode ? AppColors.darkSurface : AppColors.lightSurface;
         final Color textColor = isDarkMode ? AppColors.darkText : AppColors.lightText;
+        final textSizeProvider = Provider.of<TextSizeProvider>(context, listen: false);
+        final fontSize = textSizeProvider.fontSize;
 
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
             backgroundColor: backgroundColor,
             title: Text(
-              'Premium Template',
-              style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
+              context.loc.premiumTemplate,
+              style: TextStyle(
+                color: textColor,
+                fontWeight: FontWeight.bold,
+                fontSize: fontSize,
+              ),
             ),
             content: Text(
-              'This template requires a subscription. Subscribe to access all premium templates.',
-              style: TextStyle(color: textColor),
+              context.loc.thisTemplateRequiresSubscription,
+              style: TextStyle(
+                color: textColor,
+                fontSize: fontSize - 2,
+              ),
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
                 child: Text(
-                  'Cancel',
-                  style: TextStyle(color: AppColors.primaryBlue),
+                  context.loc.cancel,
+                  style: TextStyle(
+                    color: AppColors.primaryBlue,
+                    fontSize: fontSize - 2,
+                  ),
                 ),
               ),
               TextButton(
@@ -934,8 +981,11 @@ class FestivalHandler {
                   Navigator.pushNamed(context, '/subscription');
                 },
                 child: Text(
-                  'Subscribe',
-                  style: TextStyle(color: AppColors.primaryBlue),
+                  context.loc.subscribe,
+                  style: TextStyle(
+                    color: AppColors.primaryBlue,
+                    fontSize: fontSize - 2,
+                  ),
                 ),
               ),
             ],
@@ -981,7 +1031,7 @@ class FestivalHandler {
       // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error initializing festivals: ${e.toString()}'),
+          content: Text(context.loc.errorInitializingFestivals + ': ${e.toString()}'),
           backgroundColor: Colors.red,
         ),
       );
