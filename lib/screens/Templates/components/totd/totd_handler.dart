@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 import 'dart:io';
 import 'dart:ui' as ui;
@@ -258,9 +259,18 @@ class TimeOfDayHandler {
         String? userProfileImageUrl,
         bool isPaidUser = false,
       }) async {
+    // Use a flag to track if dialog is dismissed
+    bool dialogDismissed = false;
+    BuildContext? dialogContext;
+
     try {
+      // Capture theme values early to avoid accessing Provider during disposal
       final ThemeProvider themeProvider = Provider.of<ThemeProvider>(context, listen: false);
       final bool isDarkMode = themeProvider.isDarkMode;
+      final Color indicatorColor = AppColors.primaryBlue;
+      final Color backgroundColor = AppColors.getSurfaceColor(isDarkMode);
+      final Color errorColor = Colors.red;
+      final Color successColor = AppColors.primaryGreen;
 
       // Add to recent templates when sharing
       try {
@@ -344,37 +354,43 @@ class TimeOfDayHandler {
       }
 
       // If we're already on the sharing page, perform the actual sharing
-      // Show loading indicator
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) {
-          return Center(
+      // Create a simple loading indicator directly in this context without using showDialog
+      final overlay = OverlayEntry(
+        builder: (context) => Material(
+          color: Colors.black.withOpacity(0.5),
+          child: Center(
             child: CircularProgressIndicator(
-              color: AppColors.primaryBlue,
-              backgroundColor: AppColors.getSurfaceColor(isDarkMode),
+              color: indicatorColor,
+              backgroundColor: backgroundColor,
             ),
-          );
-        },
+          ),
+        ),
       );
+
+      // Insert the overlay rather than using a dialog
+      if (context.mounted) {
+        Overlay.of(context).insert(overlay);
+      }
 
       Uint8List? imageBytes;
 
-      if (isPaidUser) {
-        // For paid users, capture the whole post including profile details
-        imageBytes = await captureTOTDImage();
-      } else {
-        // For free users, just download the original post image
-        final response = await http.get(Uri.parse(post.imageUrl));
+      try {
+        if (isPaidUser) {
+          // For paid users, capture the whole post including profile details
+          imageBytes = await captureTOTDImage();
+        } else {
+          // For free users, just download the original post image
+          final response = await http.get(Uri.parse(post.imageUrl));
 
-        if (response.statusCode != 200) {
-          throw Exception('Failed to load image');
+          if (response.statusCode != 200) {
+            throw Exception('Failed to load image');
+          }
+          imageBytes = response.bodyBytes;
         }
-        imageBytes = response.bodyBytes;
+      } finally {
+        // Always remove the overlay when done, regardless of success or failure
+        overlay.remove();
       }
-
-      // Close loading dialog
-      Navigator.of(context, rootNavigator: true).pop();
 
       if (imageBytes == null) {
         throw Exception('Failed to process image');
@@ -402,31 +418,36 @@ class TimeOfDayHandler {
         );
       }
 
-      // Show rating dialog after sharing
-      await Future.delayed(Duration(milliseconds: 500));
+      // After sharing, navigate back to home screen to prevent context issues
       if (context.mounted) {
-        await _showRatingDialog(context, post);
+        // Use pushNamedAndRemoveUntil to clear the navigation stack and return to home
+        Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
+
+        // Show rating dialog after a short delay
+        await Future.delayed(Duration(milliseconds: 500));
+        if (context.mounted) {
+          await _showRatingDialog(context, post);
+        }
       }
     } catch (e) {
-      // Close loading dialog if open
-      if (Navigator.of(context).canPop()) {
-        Navigator.of(context, rootNavigator: true).pop();
-      }
+      // Log error
       print('Error sharing TOTD post: $e');
 
-      // Show error message
-      final ThemeProvider themeProvider = Provider.of<ThemeProvider>(context, listen: false);
-      final bool isDarkMode = themeProvider.isDarkMode;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: Colors.red,
-          content: Text(
-            'Failed to share image: ${e.toString()}',
-            style: TextStyle(color: Colors.white),
+      // Show error message - only if context is still valid
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.red,
+            content: Text(
+              'Failed to share image: ${e.toString()}',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
-        ),
-      );
+        );
+
+        // Navigate back to home screen on error to prevent being stuck
+        Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
+      }
     }
   }
 
@@ -672,26 +693,19 @@ class TimeOfDayHandler {
       String userName, String userProfileImageUrl, bool isPaidUser) {
     // Check if context is still mounted before navigating
     if (context.mounted) {
+      // Capture theme values before starting async operations
       final ThemeProvider themeProvider = Provider.of<ThemeProvider>(context, listen: false);
       final bool isDarkMode = themeProvider.isDarkMode;
+      final Color indicatorColor = AppColors.primaryBlue;
+      final Color backgroundColor = AppColors.getSurfaceColor(isDarkMode);
 
-      // Show loading indicator first
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) {
-          return Center(
-            child: CircularProgressIndicator(
-              color: AppColors.primaryBlue,
-              backgroundColor: AppColors.getSurfaceColor(isDarkMode),
-            ),
-          );
-        },
-      );
+      // First, close any existing dialogs to ensure clean navigation
+      if (Navigator.canPop(context)) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
 
-      // Navigate to sharing page
-      Navigator.of(context)
-          .push(
+      // Then immediately navigate to sharing page without showing a loading dialog first
+      Navigator.of(context).push(
         MaterialPageRoute(
           builder: (context) => TOTDSharingPage(
             post: post,
@@ -700,13 +714,7 @@ class TimeOfDayHandler {
             isPaidUser: isPaidUser,
           ),
         ),
-      )
-          .then((_) {
-        // Ensure the loading dialog is dismissed if user presses back
-        if (Navigator.of(context).canPop()) {
-          Navigator.of(context).pop();
-        }
-      });
+      );
     }
   }
 
@@ -779,27 +787,48 @@ class TimeOfDayHandler {
   }
 
 // Integration method for handleTimeOfDayPostSelection
-  static Future<void> handleTimeOfDayPostSelection(
+    static Future<void> handleTimeOfDayPostSelection(
       BuildContext context,
       TimeOfDayPost post,
       Function(TimeOfDayPost) onAccessGranted,
       ) async {
+    // Capture theme values early
     final ThemeProvider themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     final bool isDarkMode = themeProvider.isDarkMode;
+    final Color indicatorColor = AppColors.primaryBlue;
+    final Color backgroundColor = AppColors.getSurfaceColor(isDarkMode);
+    final Color textColor = AppColors.getTextColor(isDarkMode);
+    final Color secondaryTextColor = AppColors.getSecondaryTextColor(isDarkMode);
 
-    // Show loading indicator
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return Center(
-          child: CircularProgressIndicator(
-            color: AppColors.primaryBlue,
-            backgroundColor: AppColors.getSurfaceColor(isDarkMode),
-          ),
-        );
-      },
-    );
+    // Use a stateful flag to track if we've already dismissed the dialog
+    bool dialogDismissed = false;
+
+    // Create a completer to handle dialog dismissal
+    final completer = Completer<void>();
+
+    // Show a loading indicator that we can reliably dismiss
+    if (context.mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext dialogContext) {
+          // When the dialog builds, store its context
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            completer.complete();
+          });
+
+          return Center(
+            child: CircularProgressIndicator(
+              color: indicatorColor,
+              backgroundColor: backgroundColor,
+            ),
+          );
+        },
+      );
+    }
+
+    // Wait for dialog to be fully built
+    await completer.future;
 
     try {
       // Check if user is subscribed
@@ -813,25 +842,31 @@ class TimeOfDayHandler {
         print('Added TOTD to recents on selection: ${post.id}');
       }
 
-      // Close loading indicator
-      Navigator.of(context, rootNavigator: true).pop();
+      // Dismiss dialog safely
+      if (context.mounted && !dialogDismissed) {
+        dialogDismissed = true;
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+
+      // Check if context is still mounted before proceeding
+      if (!context.mounted) return;
 
       if (post.isPaid && !isSubscribed) {
         // Show subscription dialog/prompt
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
-            backgroundColor: AppColors.getSurfaceColor(isDarkMode),
+            backgroundColor: backgroundColor,
             title: Text(
               'Premium Content',
               style: TextStyle(
-                color: AppColors.getTextColor(isDarkMode),
+                color: textColor,
                 fontWeight: FontWeight.bold,
               ),
             ),
             content: Text(
               'This content requires a subscription. Subscribe to access all premium time of day posts.',
-              style: TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode)),
+              style: TextStyle(color: secondaryTextColor),
             ),
             actions: [
               TextButton(
@@ -865,18 +900,21 @@ class TimeOfDayHandler {
         );
       }
     } catch (e) {
-      // Close loading indicator in case of error
-      if (Navigator.of(context, rootNavigator: true).canPop()) {
+      // Dismiss dialog safely in case of error
+      if (context.mounted && !dialogDismissed) {
+        dialogDismissed = true;
         Navigator.of(context, rootNavigator: true).pop();
       }
 
-      // Show error message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      // Show error message if context is still valid
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
