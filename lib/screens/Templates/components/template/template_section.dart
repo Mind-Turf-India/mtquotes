@@ -3,7 +3,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:mtquotes/screens/Templates/components/template/quote_template.dart';
 import 'package:mtquotes/screens/Templates/components/template/template_card.dart';
 import 'package:mtquotes/screens/Templates/components/template/template_handler.dart';
-
 import '../../../../utils/app_colors.dart';
 
 class TemplateSection extends StatelessWidget {

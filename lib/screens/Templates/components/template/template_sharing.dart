@@ -247,7 +247,7 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
             children: [
               // Free sharing option
               Text(
-                'Free Sharing',
+                context.loc.freeSharing,
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
@@ -267,7 +267,7 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Basic sharing',
+                        context.loc.basicSharing,
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
@@ -307,7 +307,7 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                           SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'Standard quality export',
+                              context.loc.standardQualityExport,
                               style: TextStyle(color: textColor),
                             ),
                           ),
@@ -361,7 +361,7 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                             isPaid: false,
                           ),
                           icon: Icon(Icons.share, color: Colors.white),
-                          label: Text('Share Basic'),
+                          label: Text(context.loc.shareBasic),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primaryBlue,
                             foregroundColor: Colors.white,
@@ -386,7 +386,7 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16.0),
                       child: Text(
-                        'OR',
+                        context.loc.or,
                         style: TextStyle(
                           color: secondaryTextColor,
                           fontWeight: FontWeight.bold,
@@ -401,7 +401,7 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
               SizedBox(height: 10),
               // Premium sharing option
               Text(
-                'Premium Sharing',
+                context.loc.premiumSharing,
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
@@ -425,7 +425,7 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Share with your branding',
+                        context.loc.shareWithYourBranding,
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
@@ -452,7 +452,7 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                           SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'Personalized sharing message',
+                              context.loc.personalizedSharingMessage,
                               style: TextStyle(color: textColor),
                             ),
                           ),
@@ -465,7 +465,7 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                           SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'No watermark - clean professional look',
+                              context.loc.noWatermarkCleanLook, 
                               style: TextStyle(color: textColor),
                             ),
                           ),
@@ -478,7 +478,7 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                           SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'High quality image export',
+                              context.loc.highQualityExport,
                               style: TextStyle(color: textColor),
                             ),
                           ),
@@ -1077,14 +1077,14 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                 onPressed: () {
                   Navigator.of(dialogContext).pop(null);
                 },
-                child: Text('Skip'),
+                child: Text(context.loc.skip),
               ),
               TextButton(
                 onPressed: () {
                   Navigator.of(dialogContext).pop(rating); // Close the dialog
                   Navigator.of(context).pushReplacementNamed('/nav_bar');
                 },
-                child: Text('Submit'),
+                child: Text(context.loc.submit),
               ),
             ],
           );
@@ -1099,7 +1099,7 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Thanks for your rating!'),
+              content: Text(context.loc.thanksForYourRating),
               backgroundColor: Colors.green,
             ),
           );

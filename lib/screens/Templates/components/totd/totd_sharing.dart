@@ -6,6 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:mtquotes/l10n/app_localization.dart';
 import 'package:mtquotes/screens/Templates/components/totd/totd_service.dart';
 import 'package:mtquotes/screens/Templates/components/totd/totd_handler.dart';
 import 'package:mtquotes/utils/app_colors.dart';
@@ -167,7 +168,7 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
             children: [
               // Free sharing option (moved to the top)
               Text(
-                'Free Sharing',
+                context.loc.freeSharing,
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
@@ -187,7 +188,7 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Basic sharing',
+                        context.loc.basicSharing,
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
@@ -214,7 +215,8 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
                           SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'No personal branding or watermark',
+                            
+                              context.loc.noPersonalBranding,
                               style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
                             ),
                           ),
@@ -227,7 +229,7 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
                           SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'Standard quality export',
+                              context.loc.standardQualityExport,
                               style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
                             ),
                           ),
@@ -310,7 +312,7 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16.0),
                       child: Text(
-                        'OR',
+                        context.loc.or,
                         style: TextStyle(
                           color: AppColors.getSecondaryTextColor(isDarkMode),
                           fontWeight: FontWeight.bold,
@@ -324,7 +326,7 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
 
               // Premium sharing option
               Text(
-                'Premium Sharing',
+                context.loc.premiumSharing,
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
@@ -348,7 +350,7 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Share with your branding',
+                        context.loc.shareWithYourBranding,
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
@@ -362,7 +364,7 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
                           SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'Include your name and profile picture on the content',
+                              context.loc.includeNameAndProfilePicture,
                               style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
                             ),
                           ),
@@ -375,7 +377,7 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
                           SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'Personalized sharing message',
+                              context.loc.personalizedSharingMessage,
                               style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
                             ),
                           ),
@@ -388,7 +390,7 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
                           SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'No watermark - clean professional look',
+                              context.loc.noWatermarkCleanLook,
                               style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
                             ),
                           ),
@@ -401,7 +403,7 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
                           SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'High quality image export',
+                              context.loc.highQualityExport,
                               style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
                             ),
                           ),
@@ -573,7 +575,7 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
             SizedBox(height: 8),
 
             Text(
-              'Do you wish to continue?',
+              context.loc.doYouWishToContinue,
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
@@ -601,7 +603,7 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
                             borderRadius: BorderRadius.circular(24),
                           ),
                         ),
-                        child: Text('Create'),
+                        child: Text(context.loc.create),
                       ),
                     ),
                     SizedBox(width: 40),
@@ -619,7 +621,7 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
                           ),
                           padding: EdgeInsets.symmetric(vertical: 12),
                         ),
-                        child: Text('Cancel'),
+                        child: Text(context.loc.cancel),
                       ),
                     ),
                   ],
@@ -632,7 +634,7 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
                     child: ElevatedButton.icon(
                       onPressed: onSharePressed,
                       icon: Icon(Icons.share),
-                      label: Text('Share'),
+                      label: Text(context.loc.share),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryBlue,
                         foregroundColor: Colors.white,
@@ -1116,14 +1118,14 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
                 onPressed: () {
                   Navigator.of(dialogContext).pop(null);
                 },
-                child: Text('Skip'),
+                child: Text(context.loc.skip),
               ),
               TextButton(
                 onPressed: () {
                   Navigator.of(dialogContext).pop(rating); // Close the dialog
                   Navigator.of(context).pushReplacementNamed('/nav_bar');
                 },
-                child: Text('Submit'),
+                child: Text(context.loc.submit),
               ),
             ],
           );
@@ -1138,7 +1140,7 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Thanks for your rating!'),
+              content: Text(context.loc.thanksForYourRating),
               backgroundColor: Colors.green,
             ),
           );

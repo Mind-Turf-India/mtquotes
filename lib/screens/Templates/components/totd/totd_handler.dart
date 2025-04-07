@@ -949,7 +949,7 @@ class TimeOfDayHandler {
               TextButton(
                 onPressed: () => Navigator.pop(context),
                 child: Text(
-                  'Cancel',
+                  context.loc.cancel,
                   style: TextStyle(color: AppColors.primaryBlue),
                 ),
               ),
@@ -960,7 +960,7 @@ class TimeOfDayHandler {
                   Navigator.pushNamed(context, '/subscription');
                 },
                 child: Text(
-                  'Subscribe',
+                  context.loc.subscribe,
                   style: TextStyle(color: AppColors.primaryBlue),
                 ),
               ),

@@ -58,18 +58,18 @@ class TemplateHandler {
           builder: (context) => AlertDialog(
             backgroundColor: backgroundColor,
             title: Text(
-              'Premium Template',
+              context.loc.premiumTemplate,
               style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
             ),
             content: Text(
-              'This template requires a subscription. Subscribe to access all premium templates.',
+              context.loc.thisTemplateRequiresSubscription,
               style: TextStyle(color: textColor),
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
                 child: Text(
-                  'Cancel',
+                  context.loc.cancel,
                   style: TextStyle(color: AppColors.primaryBlue),
                 ),
               ),
@@ -80,7 +80,7 @@ class TemplateHandler {
                   Navigator.pushNamed(context, '/subscription');
                 },
                 child: Text(
-                  'Subscribe',
+                  context.loc.subscribe,
                   style: TextStyle(color: AppColors.primaryBlue),
                 ),
               ),
@@ -205,7 +205,7 @@ class TemplateHandler {
                   Navigator.of(dialogContext).pop(null);
                 },
                 child: Text(
-                  'Skip',
+                  context.loc.skip,
                   style: TextStyle(color: AppColors.primaryBlue),
                 ),
               ),
@@ -215,7 +215,7 @@ class TemplateHandler {
                   Navigator.of(context).pushReplacementNamed('/home');
                 },
                 child: Text(
-                  'Submit',
+                  context.loc.submit,
                   style: TextStyle(color: AppColors.primaryBlue),
                 ),
               ),
@@ -232,7 +232,7 @@ class TemplateHandler {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Thanks for your rating!'),
+              content: Text(context.loc.thanksForYourRating),
               backgroundColor: AppColors.primaryGreen,
             ),
           );
@@ -430,7 +430,7 @@ class TemplateHandler {
                                           ),
                                           SizedBox(height: 16),
                                           Text(
-                                            'Loading...',
+                                            context.loc.loading,
                                             style: TextStyle(
                                               color: textColor,
                                               fontSize: 14,
@@ -451,7 +451,7 @@ class TemplateHandler {
                                           ),
                                           SizedBox(height: 16),
                                           Text(
-                                            'Failed to load image',
+                                            context.loc.failedToLoadImage,
                                             style: TextStyle(
                                               color: textColor,
                                               fontSize: 14,
@@ -501,7 +501,7 @@ class TemplateHandler {
                           ),
                           SizedBox(height: 24),
                           Text(
-                            'Do you wish to continue?',
+                            context.loc.doYouWishToContinue,
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w500,
@@ -546,7 +546,7 @@ class TemplateHandler {
                                         child: Container(
                                           padding: EdgeInsets.symmetric(
                                               vertical: 10, horizontal: 26),
-                                          child: Text('Create'),
+                                          child: Text(context.loc.create),
                                         ),
                                       ),
                                     ),
@@ -571,7 +571,7 @@ class TemplateHandler {
                                           vertical: 12,
                                         ),
                                       ),
-                                      child: Text('Cancel'),
+                                      child: Text(context.loc.cancel),
                                     ),
                                   ),
                                 ],
@@ -614,7 +614,7 @@ class TemplateHandler {
                                           children: [
                                             Icon(Icons.share, color: Colors.white),
                                             SizedBox(width: 8),
-                                            Text('Share'),
+                                            Text(context.loc.share),
                                           ],
                                         ),
                                       ),
@@ -764,7 +764,6 @@ class TemplateHandler {
       );
       return;
     }
-
     // For paid users, directly share using Share.shareFiles
     try {
       // Show loading indicator
@@ -802,7 +801,6 @@ class TemplateHandler {
       }
     }
   }
-
   // Method to initialize templates if none exist
   static Future<void> initializeTemplatesIfNeeded() async {
     final templateService = TemplateService();
