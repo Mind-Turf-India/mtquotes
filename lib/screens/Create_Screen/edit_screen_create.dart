@@ -362,11 +362,11 @@ class _EditScreenState extends State<EditScreen> {
         return AlertDialog(
           backgroundColor: AppColors.getSurfaceColor(isDarkMode),
           title: Text(
-            'No Image Selected',
+            context.loc.noimageselected,
             style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
           ),
           content: Text(
-            'Please select an image from gallery first.',
+            context.loc.selectimagefromgallery,
             style:
                 TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode)),
           ),
@@ -376,7 +376,7 @@ class _EditScreenState extends State<EditScreen> {
                 Navigator.of(context).pop();
               },
               child: Text(
-                'OK',
+                context.loc.ok,
                 style: TextStyle(color: AppColors.primaryBlue),
               ),
             ),
@@ -566,7 +566,7 @@ class _EditScreenState extends State<EditScreen> {
                     Navigator.of(context).pop();
                   },
                   child: Text(
-                    'OK',
+                    context.loc.ok,
                     style: TextStyle(color: AppColors.primaryBlue),
                   ),
                 ),
@@ -590,14 +590,14 @@ class _EditScreenState extends State<EditScreen> {
           return AlertDialog(
             backgroundColor: AppColors.getSurfaceColor(isDarkMode),
             title: Text(
-              'Rate This Content',
+              context.loc.rateThisContent,
               style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
             ),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'How would you rate your experience with this template?',
+                  context.loc.howWouldYouRateExperience,
                   style: TextStyle(
                       color: AppColors.getSecondaryTextColor(isDarkMode)),
                 ),
@@ -633,7 +633,7 @@ class _EditScreenState extends State<EditScreen> {
                   Navigator.of(dialogContext).pop(null);
                 },
                 child: Text(
-                  'Skip',
+                  context.loc.skip,
                   style: TextStyle(color: AppColors.primaryBlue),
                 ),
               ),
@@ -647,7 +647,7 @@ class _EditScreenState extends State<EditScreen> {
                   );
                 },
                 child: Text(
-                  'Submit',
+                  context.loc.submit,
                   style: TextStyle(color: AppColors.primaryBlue),
                 ),
               ),

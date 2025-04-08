@@ -10,6 +10,7 @@ import 'package:provider/provider.dart';
 import '../../../../providers/text_size_provider.dart';
 import '../../../../utils/app_colors.dart';
 import '../../../../utils/theme_provider.dart';
+import 'package:mtquotes/l10n/app_localization.dart';
 
 class CategoryScreen extends StatefulWidget {
   final String categoryName;
@@ -33,10 +34,31 @@ class _CategoryScreenState extends State<CategoryScreen> {
   String _errorMessage = '';
   final TemplateService _templateService = TemplateService();
 
+  // Map to convert localized category names to database document IDs
+  Map<String, String> getCategoryDbMap(BuildContext context) {
+    return {
+      context.loc.love: 'love',
+      context.loc.life: 'life',
+      context.loc.motivational: 'motivation',
+      context.loc.friendship: 'friendship',
+      context.loc.funny: 'funny',
+      // Add all your categories here with their English database keys
+    };
+  }
+
+  // Get the English database key for the current localized category name
+  String getDatabaseCategoryId(BuildContext context, String localizedCategoryName) {
+    final categoryMap = getCategoryDbMap(context);
+    return categoryMap[localizedCategoryName] ?? localizedCategoryName.toLowerCase();
+  }
+
   @override
   void initState() {
     super.initState();
-    _fetchCategoryTemplates();
+    // We need to delay the fetch until after build to access context
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchCategoryTemplates();
+    });
   }
 
   Future<void> _fetchCategoryTemplates() async {
@@ -46,10 +68,13 @@ class _CategoryScreenState extends State<CategoryScreen> {
     });
 
     try {
-      // Get templates from Firestore based on category
+      // Get the English database ID for the current localized category name
+      final dbCategoryId = getDatabaseCategoryId(context, widget.categoryName);
+
+      // Now use this ID to query Firestore
       final QuerySnapshot snapshot = await FirebaseFirestore.instance
           .collection('categories')
-          .doc(widget.categoryName.toLowerCase())
+          .doc(dbCategoryId)
           .collection('templates')
           .orderBy('createdAt', descending: true)
           .get();
@@ -264,41 +289,6 @@ class _CategoryScreenState extends State<CategoryScreen> {
                                 ),
                               ),
                             ),
-
-                          // // Rating display - Commented out in original code
-                          // if (template.ratingCount > 0)
-                          //   Positioned(
-                          //     bottom: 8,
-                          //     right: 8,
-                          //     child: Container(
-                          //       padding: EdgeInsets.symmetric(
-                          //         horizontal: 8,
-                          //         vertical: 4,
-                          //       ),
-                          //       decoration: BoxDecoration(
-                          //         color: Colors.black.withOpacity(0.7),
-                          //         borderRadius: BorderRadius.circular(12),
-                          //       ),
-                          //       child: Row(
-                          //         mainAxisSize: MainAxisSize.min,
-                          //         children: [
-                          //           Icon(
-                          //             Icons.star,
-                          //             color: Colors.amber,
-                          //             size: 14,
-                          //           ),
-                          //           SizedBox(width: 4),
-                          //           Text(
-                          //             template.avgRating.toStringAsFixed(1),
-                          //             style: TextStyle(
-                          //               color: Colors.white,
-                          //               fontSize: 12,
-                          //             ),
-                          //           ),
-                          //         ],
-                          //       ),
-                          //     ),
-                          //   ),
                         ],
                       ),
                     ),

@@ -278,11 +278,7 @@ class _ReferralPageState extends State<ReferralPage> {
                         onPressed: _shareReferralCode,
                         child: Ink(
                           decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: AppColors.primaryGradient,
-                              begin: Alignment.centerLeft,
-                              end: Alignment.centerRight,
-                            ),
+                            color: AppColors.primaryBlue,
                             borderRadius: BorderRadius.circular(25),
                           ),
                           child: Container(

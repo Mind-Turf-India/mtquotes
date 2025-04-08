@@ -122,15 +122,12 @@
   "profileDetailsSavedSuccessfully": "प्रोफ़ाइल विवरण सफलतापूर्वक सहेजा गया",
   "userNotLoggedIn": "उपयोगकर्ता लॉग इन नहीं है",
   "editTemplate": "टेम्पलेट संपादित करें",
-  "rateThisFestivalPost": "इस त्योहार पोस्ट को रेट करें",
-  "howWouldYouRateExperience": "आप इस त्योहार पोस्ट के साथ अपने अनुभव को कैसे रेट करेंगे?",
   "skip": "छोड़ें",
   "submit": "जमा करें",
   "thanksForYourRating": "आपकी रेटिंग के लिए धन्यवाद!",
   "failedToSubmitRating": "रेटिंग जमा करने में विफल",
   "loading": "लोड हो रहा है...",
   "doYouWishToContinue": "क्या आप जारी रखना चाहते हैं?",
-  "thisTemplateRequiresSubscription": "इस टेम्पलेट के लिए सदस्यता की आवश्यकता है। सभी प्रीमियम टेम्पलेट्स का उपयोग करने के लिए सदस्यता लें।",
   "subscribe": "सदस्यता लें",
   "errorInitializingFestivals": "त्योहारों को शुरू करने में त्रुटि",
   "failedToShareImage": "छवि साझा करने में विफल",
@@ -138,7 +135,6 @@
   "seeAll": "सभी देखें",
   "errorLoadingFestivals": "त्योहार लोड करने में त्रुटि",
   "noFestivalsAvailable": "कोई त्योहार उपलब्ध नहीं",
-  "shareFestivalPost": "त्योहार पोस्ट साझा करें",
   "freeSharing": "मुफ्त शेयरिंग",
   "premiumSharing": "प्रीमियम शेयरिंग",
   "basicSharing": "बुनियादी शेयरिंग",
@@ -148,19 +144,25 @@
   "shareBasic": "बेसिक शेयर करें",
   "or": "या",
   "shareWithYourBranding": "अपनी ब्रांडिंग के साथ साझा करें",
-  "includeNameAndProfilePicture": "त्योहार पोस्ट पर अपना नाम और प्रोफ़ाइल चित्र शामिल करें",
   "personalizedSharingMessage": "व्यक्तिगत साझाकरण संदेश",
   "noWatermarkCleanLook": "कोई वॉटरमार्क नहीं - साफ पेशेवर रूप",
   "highQualityExport": "उच्च गुणवत्ता वाला छवि निर्यात",
   "shareNow": "अभी शेयर करें",
   "upgradeToPro": "प्रो में अपग्रेड करें",
+  "shareContent": "सामग्री साझा करें",
+  "sharewithoutpersonal": "व्यक्तिगत ब्रांडिंग के बिना टेम्पलेट साझा करें",
+  "includename": "टेम्पलेट पर अपना नाम और प्रोफ़ाइल चित्र शामिल करें",
+  "noimageselected": "कोई छवि चयनित नहीं",
+  "selectimagefromgallery": "कृपया पहले गैलरी से एक छवि चुनें।",
+  "ok": "ठीक है",
+  "rateThisContent": "इस सामग्री को रेट करें",
+  "howWouldYouRateExperience": "आप इस टेम्पलेट के अनुभव को कैसे रेट करेंगे?",
+  "thisRequiresSubscription": "इस सामग्री के लिए सदस्यता आवश्यक है। सभी प्रीमियम सुविधाओं तक पहुंचने के लिए सदस्यता लें।",
+  "setuptextslider": "स्लाइडर का उपयोग करके अपने टेक्स्ट का आकार सेट करें",
+  "textsizeadjuster": "टेक्स्ट आकार समायोजक",
+  "ab": "अआ",
 
-
-
-
-
-
-  "@languageChanged": {
+"@languageChanged": {
     "placeholders": {
       "language": {
         "type": "Object"

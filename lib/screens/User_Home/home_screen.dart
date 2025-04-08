@@ -1006,12 +1006,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       shareImage(context, qotdImageUrl),
                                   child: Ink(
                                     decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        colors: AppColors.primaryGradient,
-                                        // Using the gradient from AppColors
-                                        begin: Alignment.centerLeft,
-                                        end: Alignment.centerRight,
-                                      ),
+                                      color: AppColors.primaryBlue,
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Container(
@@ -1028,7 +1023,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                           Icon(Icons.share,
                                               color: Colors.white),
                                           SizedBox(width: 6),
-                                          Text("Share",
+                                          Text(context.loc.share,
                                               style: TextStyle(
                                                   color: Colors.white)),
                                         ],

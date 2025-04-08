@@ -122,15 +122,12 @@
   "profileDetailsSavedSuccessfully": "প্রোফাইল বিবরণ সফলভাবে সংরক্ষণ করা হয়েছে",
   "userNotLoggedIn": "ব্যবহারকারী লগ ইন করেননি",
   "editTemplate": "টেমপ্লেট সম্পাদনা করুন",
-  "rateThisFestivalPost": "এই উৎসব পোস্টটি রেট করুন",
-  "howWouldYouRateExperience": "আপনি এই উৎসব পোস্টের সাথে আপনার অভিজ্ঞতা কীভাবে রেট করবেন?",
   "skip": "এড়িয়ে যান",
   "submit": "জমা দিন",
   "thanksForYourRating": "আপনার রেটিংয়ের জন্য ধন্যবাদ!",
   "failedToSubmitRating": "রেটিং জমা দিতে ব্যর্থ হয়েছে",
   "loading": "লোড হচ্ছে...",
   "doYouWishToContinue": "আপনি কি চালিয়ে যেতে চান?",
-  "thisTemplateRequiresSubscription": "এই টেমপ্লেটের জন্য সাবস্ক্রিপশন প্রয়োজন। সমস্ত প্রিমিয়াম টেমপ্লেট অ্যাক্সেস করতে সাবস্ক্রাইব করুন।",
   "subscribe": "সাবস্ক্রাইব করুন",
   "errorInitializingFestivals": "উৎসবগুলি আরম্ভ করতে ত্রুটি",
   "failedToShareImage": "ছবি শেয়ার করতে ব্যর্থ হয়েছে",
@@ -138,7 +135,6 @@
   "seeAll": "সব দেখুন",
   "errorLoadingFestivals": "উৎসবগুলি লোড করতে ত্রুটি",
   "noFestivalsAvailable": "কোনো উৎসব উপলব্ধ নেই",
-  "shareFestivalPost": "উৎসব পোস্ট শেয়ার করুন",
   "freeSharing": "ফ্রি শেয়ারিং",
   "premiumSharing": "প্রিমিয়াম শেয়ারিং",
   "basicSharing": "বেসিক শেয়ারিং",
@@ -148,14 +144,25 @@
   "shareBasic": "বেসিক শেয়ার করুন",
   "or": "অথবা",
   "shareWithYourBranding": "আপনার ব্র্যান্ডিং সহ শেয়ার করুন",
-  "includeNameAndProfilePicture": "উৎসব পোস্টে আপনার নাম এবং প্রোফাইল ছবি অন্তর্ভুক্ত করুন",
   "personalizedSharingMessage": "ব্যক্তিগতকৃত শেয়ারিং বার্তা",
   "noWatermarkCleanLook": "কোনো ওয়াটারমার্ক নেই - পরিষ্কার পেশাদার লুক",
   "highQualityExport": "উচ্চ মানের ছবি এক্সপোর্ট",
   "shareNow": "এখনই শেয়ার করুন",
   "upgradeToPro": "প্রো-তে আপগ্রেড করুন",
-  
-  "@languageChanged":{
+  "shareContent": "বিষয়বস্তু শেয়ার করুন",
+  "sharewithoutpersonal": "ব্যক্তিগত ব্র্যান্ডিং ছাড়া টেমপ্লেট শেয়ার করুন",
+  "includename": "টেমপ্লেটে আপনার নাম ও প্রোফাইল ছবি অন্তর্ভুক্ত করুন",
+  "noimageselected": "কোনও ছবি নির্বাচন করা হয়নি",
+  "selectimagefromgallery": "অনুগ্রহ করে প্রথমে গ্যালারি থেকে একটি ছবি নির্বাচন করুন।",
+  "ok": "ঠিক আছে",
+  "rateThisContent": "এই বিষয়বস্তুটি রেট করুন",
+  "howWouldYouRateExperience": "এই টেমপ্লেট ব্যবহারে আপনার অভিজ্ঞতা কেমন ছিল?",
+  "thisRequiresSubscription": "এই বিষয়বস্তুটি অ্যাক্সেস করতে সাবস্ক্রিপশন প্রয়োজন। সমস্ত প্রিমিয়াম ফিচার ব্যবহার করতে সাবস্ক্রাইব করুন।",
+  "setuptextslider": "স্লাইডার ব্যবহার করে আপনার টেক্সট সাইজ সেট করুন",
+  "textsizeadjuster": "টেক্সট সাইজ অ্যাডজাস্টার",
+  "ab": "অআ",
+
+"@languageChanged":{
     "placeholders": {
       "language": {
         "type": "Object"

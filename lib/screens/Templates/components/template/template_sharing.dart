@@ -10,10 +10,12 @@ import 'package:mtquotes/screens/Templates/components/template/quote_template.da
 import 'package:mtquotes/screens/Templates/components/template/template_handler.dart';
 import 'package:mtquotes/utils/app_colors.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../../../../providers/text_size_provider.dart';
 import '../recent/recent_service.dart';
 
 class TemplateSharingPage extends StatefulWidget {
@@ -200,6 +202,7 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
     // Get the current theme and determine if we're in dark mode
     final ThemeData theme = Theme.of(context);
     final bool isDarkMode = theme.brightness == Brightness.dark;
+    final textSizeProvider = Provider.of<TextSizeProvider>(context);
 
     // Theme colors
     final Color backgroundColor = isDarkMode ? AppColors.darkBackground : AppColors.lightBackground;
@@ -208,112 +211,121 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
     final Color secondaryTextColor = isDarkMode ? AppColors.darkSecondaryText : AppColors.lightSecondaryText;
     final Color dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.lightDivider;
     final Color iconColor = isDarkMode ? AppColors.darkIcon : AppColors.lightIcon;
+    final Color cardBackgroundColor = isDarkMode ? AppColors.darkSurface : AppColors.lightSurface;
+
 
     // Force rebuild when template changes by using these in widget tree
     final String currentTemplateId = widget.template.id;
     final String currentImageUrl = widget.template.imageUrl;
     final bool hasCustomImage = _customImageData != null;
+    double fontSize = textSizeProvider.fontSize;
 
     print('Building sharing UI with template: $currentTemplateId, imageUrl: $currentImageUrl, hasCustomImage: $hasCustomImage');
 
-    return Scaffold(
-      backgroundColor: backgroundColor,
-      appBar: AppBar(
+
+      return Scaffold(
         backgroundColor: backgroundColor,
-        title: Text(
-          'Share Template',
-          style: TextStyle(color: textColor),
+        appBar: AppBar(
+          backgroundColor: backgroundColor,
+          title: Text(
+            context.loc.shareContent,
+            style: TextStyle(
+              color: textColor,
+              fontSize: fontSize,
+            ),
+          ),
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back_ios, color: iconColor),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          systemOverlayStyle: isDarkMode
+              ? SystemUiOverlayStyle.light
+              : SystemUiOverlayStyle.dark,
         ),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios, color: iconColor),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        systemOverlayStyle: isDarkMode
-            ? SystemUiOverlayStyle.light
-            : SystemUiOverlayStyle.dark,
-      ),
-      body: _isLoading
-          ? Center(
-        child: CircularProgressIndicator(
-          color: AppColors.primaryBlue,
-          backgroundColor: isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
-        ),
-      )
-          : SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Free sharing option
-              Text(
-                context.loc.freeSharing,
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: textColor,
+        body: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Free sharing option (moved to the top)
+                Text(
+                  context.loc.freeSharing,
+                  style: TextStyle(
+                    fontSize: fontSize + 2,
+                    fontWeight: FontWeight.bold,
+                    color: textColor,
+                  ),
                 ),
-              ),
-              SizedBox(height: 16),
-              Card(
-                elevation: 2,
-                color: cardColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        context.loc.basicSharing,
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: textColor,
+                SizedBox(height: 16),
+                Card(
+                  elevation: 2,
+                  color: cardBackgroundColor,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          context.loc.basicSharing,
+                          style: TextStyle(
+                            fontSize: fontSize,
+                            fontWeight: FontWeight.w600,
+                            color: textColor,
+                          ),
                         ),
-                      ),
-                      SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Icon(Icons.check_circle, color: AppColors.primaryGreen),
-                          SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Share the template without personal branding',
-                              style: TextStyle(color: textColor),
+                        SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Icon(Icons.check_circle, color: AppColors.primaryGreen),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                context.loc.shareWithoutPersonalBranding,
+                                style: TextStyle(
+                                  color: textColor,
+                                  fontSize: fontSize - 2,
+                                ),
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Icon(Icons.close, color: Colors.red),
-                          SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'No personal branding or watermark',
-                              style: TextStyle(color: textColor),
+                          ],
+                        ),
+                        SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Icon(Icons.close, color: Colors.red),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                context.loc.noPersonalBranding,
+                                style: TextStyle(
+                                  color: textColor,
+                                  fontSize: fontSize - 2,
+                                ),
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Icon(Icons.close, color: Colors.red),
-                          SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              context.loc.standardQualityExport,
-                              style: TextStyle(color: textColor),
+                          ],
+                        ),
+                        SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Icon(Icons.close, color: Colors.red),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                context.loc.standardQualityExport,
+                                style: TextStyle(
+                                  color: textColor,
+                                  fontSize: fontSize - 2,
+                                ),
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 16),
+                          ],
+                        ),
+                        SizedBox(height: 16),
 
                       // Preview of template without branding but with watermark - FIXED
                       _buildImageContainer(
@@ -378,113 +390,125 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
               ),
 
               // Divider
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 24.0),
-                child: Row(
-                  children: [
-                    Expanded(child: Divider(color: dividerColor)),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Text(
-                        context.loc.or,
-                        style: TextStyle(
-                          color: secondaryTextColor,
-                          fontWeight: FontWeight.bold,
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 24.0),
+                  child: Row(
+                    children: [
+                      Expanded(child: Divider(color: dividerColor)),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: Text(
+                          context.loc.or,
+                          style: TextStyle(
+                            color: secondaryTextColor,
+                            fontWeight: FontWeight.bold,
+                            fontSize: fontSize - 2,
+                          ),
                         ),
                       ),
-                    ),
-                    Expanded(child: Divider(color: dividerColor)),
-                  ],
-                ),
-              ),
-
-              SizedBox(height: 10),
-              // Premium sharing option
-              Text(
-                context.loc.premiumSharing,
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: textColor,
-                ),
-              ),
-              SizedBox(height: 16),
-              Card(
-                elevation: 2,
-                color: cardColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  side: BorderSide(
-                    color: widget.isPaidUser ? AppColors.primaryBlue : dividerColor,
-                    width: 2,
+                      Expanded(child: Divider(color: dividerColor)),
+                    ],
                   ),
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        context.loc.shareWithYourBranding,
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: textColor,
+
+                // Premium sharing option
+                Text(
+                  context.loc.premiumSharing,
+                  style: TextStyle(
+                    fontSize: fontSize + 2,
+                    fontWeight: FontWeight.bold,
+                    color: textColor,
+                  ),
+                ),
+                SizedBox(height: 16),
+                Card(
+                  elevation: 2,
+                  color: cardBackgroundColor,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(
+                      color: widget.isPaidUser ? AppColors.primaryBlue : dividerColor,
+                      width: 2,
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          context.loc.shareWithYourBranding,
+                          style: TextStyle(
+                            fontSize: fontSize,
+                            fontWeight: FontWeight.w600,
+                            color: textColor,
+                          ),
                         ),
-                      ),
-                      SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Icon(Icons.check_circle, color: AppColors.primaryGreen),
-                          SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Include your name and profile picture on the template',
-                              style: TextStyle(color: textColor),
+                        SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Icon(Icons.check_circle, color: AppColors.primaryGreen),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                context.loc.includename,
+                                style: TextStyle(
+                                  color: textColor,
+                                  fontSize: fontSize - 2,
+                                ),
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Icon(Icons.check_circle, color: AppColors.primaryGreen),
-                          SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              context.loc.personalizedSharingMessage,
-                              style: TextStyle(color: textColor),
+                          ],
+                        ),
+                        SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Icon(Icons.check_circle, color: AppColors.primaryGreen),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                context.loc.personalizedSharingMessage,
+                                style: TextStyle(
+                                  color: textColor,
+                                  fontSize: fontSize - 2,
+                                ),
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Icon(Icons.check_circle, color: AppColors.primaryGreen),
-                          SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              context.loc.noWatermarkCleanLook, 
-                              style: TextStyle(color: textColor),
+                          ],
+                        ),
+                        SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Icon(Icons.check_circle, color: AppColors.primaryGreen),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                context.loc.noWatermarkCleanLook,
+                                style: TextStyle(
+                                  color: textColor,
+                                  fontSize: fontSize - 2,
+                                ),
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Icon(Icons.check_circle, color: AppColors.primaryGreen),
-                          SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              context.loc.highQualityExport,
-                              style: TextStyle(color: textColor),
+                          ],
+                        ),
+                        SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Icon(Icons.check_circle, color: AppColors.primaryGreen),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                context.loc.highQualityExport,
+                                style: TextStyle(
+                                  color: textColor,
+                                  fontSize: fontSize - 2,
+                                ),
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 16),
+                          ],
+                        ),
+                        SizedBox(height: 16),
 
                       // If we have custom image data, show just the image for paid users
                       if (_customImageData != null && widget.isPaidUser)
@@ -513,7 +537,7 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                               child: ElevatedButton.icon(
                                 onPressed: () => _shareTemplate(context, isPaid: true),
                                 icon: Icon(Icons.share, color: Colors.white),
-                                label: Text('Share Now'),
+                                label: Text(context.loc.shareNow),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: AppColors.primaryBlue,
                                   foregroundColor: Colors.white,
@@ -621,7 +645,7 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                                                         companyName,
                                                         style: TextStyle(
                                                           fontWeight: FontWeight.bold,
-                                                          fontSize: 16,
+                                                          fontSize: fontSize,
                                                           color: textColor,
                                                         ),
                                                       ),
@@ -641,7 +665,7 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                                                       Text(
                                                         userLocation,
                                                         style: TextStyle(
-                                                          fontSize: 14,
+                                                          fontSize: fontSize,
                                                           color: secondaryTextColor,
                                                         ),
                                                       ),
@@ -651,7 +675,7 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                                                       Text(
                                                         userSocialMedia,
                                                         style: TextStyle(
-                                                          fontSize: 14,
+                                                          fontSize: fontSize,
                                                           color: AppColors.primaryBlue,
                                                         ),
                                                       ),
@@ -661,7 +685,7 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                                                       Text(
                                                         userDescription,
                                                         style: TextStyle(
-                                                          fontSize: 14,
+                                                          fontSize: fontSize,
                                                           color: secondaryTextColor,
                                                         ),
                                                         maxLines: 2,
@@ -674,7 +698,7 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                                                       userName.isNotEmpty ? userName : widget.userName,
                                                       style: TextStyle(
                                                         fontWeight: FontWeight.bold,
-                                                        fontSize: 16,
+                                                        fontSize: fontSize,
                                                         color: textColor,
                                                       ),
                                                     ),
@@ -1039,17 +1063,36 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
   // Rating dialog implementation
   Future<void> _showRatingDialog(BuildContext context) async {
     double rating = 0;
+    final ThemeData theme = Theme.of(context);
+    final bool isDarkMode = theme.brightness == Brightness.dark;
+    final Color backgroundColor = isDarkMode ? AppColors.darkSurface : AppColors.lightSurface;
+    final Color textColor = isDarkMode ? AppColors.darkText : AppColors.lightText;
+
+    // Get font size from TextSizeProvider
+    final textSizeProvider = Provider.of<TextSizeProvider>(context, listen: false);
+    final fontSize = textSizeProvider.fontSize;
 
     return showDialog<double>(
       context: context,
       builder: (BuildContext dialogContext) {
         return StatefulBuilder(builder: (context, setState) {
           return AlertDialog(
-            title: Text('Rate This Template'),
+            title: Text(context.loc.rateThisContent,
+            style: TextStyle(
+              fontSize: fontSize,
+              fontWeight: FontWeight.bold,
+              color: textColor,
+            ),),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('How would you rate your experience with this template?'),
+                Text(
+                  context.loc.howWouldYouRateExperience,
+                  style: TextStyle(
+                    fontSize: fontSize - 2,
+                    color: textColor,
+                  ),
+                ),
                 SizedBox(height: 20),
                 FittedBox(
                   child: Row(

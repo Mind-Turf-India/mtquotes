@@ -123,15 +123,12 @@
   "profileDetailsSavedSuccessfully": "પ્રોફાઇલ વિગતો સફળતાપૂર્વક સાચવી",
   "userNotLoggedIn": "વપરાશકર્તા લૉગ ઇન નથી",
   "editTemplate": "ટેમ્પલેટ સંપાદિત કરો",
-  "rateThisFestivalPost": "આ તહેવાર પોસ્ટને રેટ કરો",
-  "howWouldYouRateExperience": "તમે આ તહેવાર પોસ્ટ સાથેના તમારા અનુભવને કેવી રીતે રેટ કરશો?",
   "skip": "છોડો",
   "submit": "સબમિટ કરો",
   "thanksForYourRating": "તમારા રેટિંગ માટે આભાર!",
   "failedToSubmitRating": "રેટિંગ સબમિટ કરવામાં નિષ્ફળ",
   "loading": "લોડ થઈ રહ્યું છે...",
   "doYouWishToContinue": "શું તમે ચાલુ રાખવા માંગો છો?",
-  "thisTemplateRequiresSubscription": "આ ટેમ્પલેટને સબ્સ્ક્રિપ્શનની જરૂર છે. બધા પ્રીમિયમ ટેમ્પલેટ્સ ઍક્સેસ કરવા માટે સબ્સ્ક્રાઇબ કરો.",
   "subscribe": "સબ્સ્ક્રાઇબ કરો",
   "errorInitializingFestivals": "તહેવારો શરૂ કરવામાં ભૂલ",
   "failedToShareImage": "છબી શેર કરવામાં નિષ્ફળ",
@@ -139,7 +136,6 @@
   "seeAll": "બધું જુઓ",
   "errorLoadingFestivals": "તહેવારો લોડ કરવામાં ભૂલ",
   "noFestivalsAvailable": "કોઈ તહેવારો ઉપલબ્ધ નથી",
-  "shareFestivalPost": "તહેવાર પોસ્ટ શેર કરો",
   "freeSharing": "ફ્રી શેરિંગ",
   "premiumSharing": "પ્રીમિયમ શેરિંગ",
   "basicSharing": "બેઝિક શેરિંગ",
@@ -149,15 +145,25 @@
   "shareBasic": "બેઝિક શેર કરો",
   "or": "અથવા",
   "shareWithYourBranding": "તમારા બ્રાન્ડિંગ સાથે શેર કરો",
-  "includeNameAndProfilePicture": "તહેવાર પોસ્ટ પર તમારું નામ અને પ્રોફાઇલ ચિત્ર શામિલ કરો",
   "personalizedSharingMessage": "વ્યક્તિગત શેરિંગ સંદેશ",
   "noWatermarkCleanLook": "વોટરમાર્ક વિના - સ્વચ્છ વ્યાવસાયિક દેખાવ",
   "highQualityExport": "ઉચ્ચ ગુણવત્તાની છબી નિકાસ",
   "shareNow": "હમણાં શેર કરો",
   "upgradeToPro": "પ્રો માં અપગ્રેડ કરો",
+  "shareContent": "સામગ્રી શેર કરો",
+  "sharewithoutpersonal": "વ્યક્તિગત બ્રાન્ડિંગ વિના ટેમ્પલેટ શેર કરો",
+  "includename": "ટેમ્પલેટમાં તમારું નામ અને પ્રોફાઇલ તસ્વીર ઉમેરો",
+  "noimageselected": "કોઈ છબી પસંદ કરવામાં આવી નથી",
+  "selectimagefromgallery": "મહેરબાની કરીને પ્રથમ ગેલેરીમાંથી છબી પસંદ કરો.",
+  "ok": "બરાબર",
+  "rateThisContent": "આ સામગ્રીને રેટ કરો",
+  "howWouldYouRateExperience": "આ ટેમ્પલેટ સાથેનો તમારો અનુભવ કેટલો રહ્યો?",
+  "thisRequiresSubscription": "આ સામગ્રી માટે સબ્સ્ક્રિપ્શન જરૂરી છે. તમામ પ્રીમિયમ સુવિધાઓ માટે સબ્સ્ક્રાઇબ કરો.",
+  "setuptextslider": "સ્લાઈડર વડે તમારું લખાણનું કદ સેટ કરો",
+  "textsizeadjuster": "ટેક્સ્ટ સાઈઝ એડજસ્ટર",
+  "ab": "અઆ",
 
-
-  "@languageChanged":{
+"@languageChanged":{
     "placeholders": {
       "language": {
         "type": "Object"

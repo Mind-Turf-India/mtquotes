@@ -91,11 +91,10 @@ class FestivalHandler {
           return AlertDialog(
             backgroundColor: backgroundColor,
             title: Text(
-              context.loc.rateThisFestivalPost,
+              context.loc.rateThisContent,
               style: TextStyle(
                 color: textColor,
                 fontWeight: FontWeight.bold,
-                fontSize: fontSize,
               ),
             ),
             content: Column(
@@ -105,7 +104,6 @@ class FestivalHandler {
                   context.loc.howWouldYouRateExperience,
                   style: TextStyle(
                     color: secondaryTextColor,
-                    fontSize: fontSize - 2,
                   ),
                 ),
                 SizedBox(height: 20),
@@ -139,7 +137,7 @@ class FestivalHandler {
                   context.loc.skip,
                   style: TextStyle(
                     color: AppColors.primaryBlue,
-                    fontSize: fontSize - 2,
+
                   ),
                 ),
               ),
@@ -152,7 +150,7 @@ class FestivalHandler {
                   context.loc.submit,
                   style: TextStyle(
                     color: AppColors.primaryBlue,
-                    fontSize: fontSize - 2,
+
                   ),
                 ),
               ),
@@ -630,7 +628,7 @@ class FestivalHandler {
                           Text(
                             context.loc.doYouWishToContinue,
                             style: TextStyle(
-                              fontSize: fontSize,
+                              fontSize: 16,
                               fontWeight: FontWeight.w500,
                               color: textColor,
                             ),
@@ -675,9 +673,6 @@ class FestivalHandler {
                                               vertical: 10, horizontal: 26),
                                           child: Text(
                                             context.loc.create,
-                                            style: TextStyle(
-                                              fontSize: fontSize - 2,
-                                            ),
                                           ),
                                         ),
                                       ),
@@ -705,9 +700,6 @@ class FestivalHandler {
                                       ),
                                       child: Text(
                                         context.loc.cancel,
-                                        style: TextStyle(
-                                          fontSize: fontSize - 2,
-                                        ),
                                       ),
                                     ),
                                   ),
@@ -753,9 +745,6 @@ class FestivalHandler {
                                             SizedBox(width: 8),
                                             Text(
                                               context.loc.share,
-                                              style: TextStyle(
-                                                fontSize: fontSize - 2,
-                                              ),
                                             ),
                                           ],
                                         ),
@@ -957,7 +946,7 @@ class FestivalHandler {
               ),
             ),
             content: Text(
-              context.loc.thisTemplateRequiresSubscription,
+              context.loc.thisRequiresSubscription,
               style: TextStyle(
                 color: textColor,
                 fontSize: fontSize - 2,

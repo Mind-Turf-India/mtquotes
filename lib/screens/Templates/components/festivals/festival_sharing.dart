@@ -218,7 +218,7 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
       appBar: AppBar(
         backgroundColor: backgroundColor,
         title: Text(
-          context.loc.shareFestivalPost,
+          context.loc.shareContent,
           style: TextStyle(
             color: textColor,
             fontSize: fontSize,
@@ -411,7 +411,7 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
                           SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              context.loc.includeNameAndProfilePicture,
+                              context.loc.includename,
                               style: TextStyle(
                                 color: textColor,
                                 fontSize: fontSize - 2,
@@ -1208,7 +1208,7 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
             builder: (context, setState) {
               return AlertDialog(
                 title: Text(
-                  context.loc.rateThisFestivalPost,
+                  context.loc.rateThisContent,
                   style: TextStyle(
                     fontSize: fontSize,
                     fontWeight: FontWeight.bold,

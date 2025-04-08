@@ -17,6 +17,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mtquotes/screens/Templates/components/template/quote_template.dart';
+import '../../../../providers/text_size_provider.dart';
 import '../../../Create_Screen/components/details_screen.dart';
 import '../../../Create_Screen/edit_screen_create.dart';
 import '../recent/recent_service.dart';
@@ -133,34 +134,38 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
 
   @override
   Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
-    final isDarkMode = themeProvider.isDarkMode;
+    final ThemeData theme = Theme.of(context);
+    final bool isDarkMode = theme.brightness == Brightness.dark;
+    final Color backgroundColor = isDarkMode ? AppColors.darkBackground : AppColors.lightBackground;
+    final Color cardBackgroundColor = isDarkMode ? AppColors.darkSurface : AppColors.lightSurface;
+    final Color textColor = isDarkMode ? AppColors.darkText : AppColors.lightText;
+    final Color secondaryTextColor = isDarkMode ? AppColors.darkSecondaryText : AppColors.lightSecondaryText;
+    final Color dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.lightDivider;
+    final Color iconColor = isDarkMode ? AppColors.darkIcon : AppColors.lightIcon;
+
+    final textSizeProvider = Provider.of<TextSizeProvider>(context);
+    final fontSize = textSizeProvider.fontSize;
 
     return Scaffold(
-      backgroundColor: AppColors.getBackgroundColor(isDarkMode),
+      backgroundColor: backgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.getBackgroundColor(isDarkMode),
-        elevation: 0,
+        backgroundColor: backgroundColor,
         title: Text(
-          'Share Content',
-          style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+          context.loc.shareContent,
+          style: TextStyle(
+            color: textColor,
+            fontSize: fontSize,
+          ),
         ),
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios, color: AppColors.getIconColor(isDarkMode)),
+          icon: Icon(Icons.arrow_back_ios, color: iconColor),
           onPressed: () => Navigator.of(context).pop(),
         ),
         systemOverlayStyle: isDarkMode
             ? SystemUiOverlayStyle.light
             : SystemUiOverlayStyle.dark,
       ),
-      body: _isImageLoading
-          ? Center(
-        child: CircularProgressIndicator(
-          color: AppColors.primaryBlue,
-          backgroundColor: AppColors.getSurfaceColor(isDarkMode),
-        ),
-      )
-          : SingleChildScrollView(
+      body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
@@ -170,15 +175,15 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
               Text(
                 context.loc.freeSharing,
                 style: TextStyle(
-                  fontSize: 22,
+                  fontSize: fontSize + 2,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.getTextColor(isDarkMode),
+                  color: textColor,
                 ),
               ),
               SizedBox(height: 16),
               Card(
                 elevation: 2,
-                color: AppColors.getSurfaceColor(isDarkMode),
+                color: cardBackgroundColor,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -190,9 +195,9 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
                       Text(
                         context.loc.basicSharing,
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: fontSize,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.getTextColor(isDarkMode),
+                          color: textColor,
                         ),
                       ),
                       SizedBox(height: 12),
@@ -202,8 +207,11 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
                           SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'Share the content without personal branding',
-                              style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+                              context.loc.shareWithoutPersonalBranding,
+                              style: TextStyle(
+                                color: textColor,
+                                fontSize: fontSize - 2,
+                              ),
                             ),
                           ),
                         ],
@@ -215,9 +223,11 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
                           SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                            
                               context.loc.noPersonalBranding,
-                              style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+                              style: TextStyle(
+                                color: textColor,
+                                fontSize: fontSize - 2,
+                              ),
                             ),
                           ),
                         ],
@@ -230,7 +240,10 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
                           Expanded(
                             child: Text(
                               context.loc.standardQualityExport,
-                              style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+                              style: TextStyle(
+                                color: textColor,
+                                fontSize: fontSize - 2,
+                              ),
                             ),
                           ),
                         ],
@@ -287,7 +300,8 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
                             isPaid: false,
                           ),
                           icon: Icon(Icons.share),
-                          label: Text('Share Basic'),
+                          label: Text( context.loc.shareBasic,
+                            ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primaryBlue,
                             foregroundColor: Colors.white,
@@ -308,18 +322,19 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
                 padding: const EdgeInsets.symmetric(vertical: 24.0),
                 child: Row(
                   children: [
-                    Expanded(child: Divider(color: AppColors.getDividerColor(isDarkMode))),
+                    Expanded(child: Divider(color: dividerColor)),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16.0),
                       child: Text(
                         context.loc.or,
                         style: TextStyle(
-                          color: AppColors.getSecondaryTextColor(isDarkMode),
+                          color: secondaryTextColor,
                           fontWeight: FontWeight.bold,
+                          fontSize: fontSize - 2,
                         ),
                       ),
                     ),
-                    Expanded(child: Divider(color: AppColors.getDividerColor(isDarkMode))),
+                    Expanded(child: Divider(color: dividerColor)),
                   ],
                 ),
               ),
@@ -328,19 +343,19 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
               Text(
                 context.loc.premiumSharing,
                 style: TextStyle(
-                  fontSize: 22,
+                  fontSize: fontSize + 2,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.getTextColor(isDarkMode),
+                  color: textColor,
                 ),
               ),
               SizedBox(height: 16),
               Card(
                 elevation: 2,
-                color: AppColors.getSurfaceColor(isDarkMode),
+                color: cardBackgroundColor,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                   side: BorderSide(
-                    color: widget.isPaidUser ? AppColors.primaryBlue : AppColors.getDividerColor(isDarkMode),
+                    color: widget.isPaidUser ? AppColors.primaryBlue : dividerColor,
                     width: 2,
                   ),
                 ),
@@ -352,9 +367,9 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
                       Text(
                         context.loc.shareWithYourBranding,
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: fontSize,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.getTextColor(isDarkMode),
+                          color: textColor,
                         ),
                       ),
                       SizedBox(height: 12),
@@ -364,8 +379,11 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
                           SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              context.loc.includeNameAndProfilePicture,
-                              style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+                              context.loc.includename,
+                              style: TextStyle(
+                                color: textColor,
+                                fontSize: fontSize - 2,
+                              ),
                             ),
                           ),
                         ],
@@ -378,7 +396,10 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
                           Expanded(
                             child: Text(
                               context.loc.personalizedSharingMessage,
-                              style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+                              style: TextStyle(
+                                color: textColor,
+                                fontSize: fontSize - 2,
+                              ),
                             ),
                           ),
                         ],
@@ -391,7 +412,10 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
                           Expanded(
                             child: Text(
                               context.loc.noWatermarkCleanLook,
-                              style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+                              style: TextStyle(
+                                color: textColor,
+                                fontSize: fontSize - 2,
+                              ),
                             ),
                           ),
                         ],
@@ -404,7 +428,10 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
                           Expanded(
                             child: Text(
                               context.loc.highQualityExport,
-                              style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+                              style: TextStyle(
+                                color: textColor,
+                                fontSize: fontSize - 2,
+                              ),
                             ),
                           ),
                         ],
@@ -486,7 +513,7 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
                                                   userName.isNotEmpty ? userName : widget.userName,
                                                   style: TextStyle(
                                                     fontWeight: FontWeight.bold,
-                                                    fontSize: 16,
+                                                    fontSize: fontSize,
                                                     color: AppColors.getTextColor(isDarkMode),
                                                   ),
                                                 ),
@@ -514,7 +541,8 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
                           )
                               : () => Navigator.pushNamed(context, '/subscription'),
                           icon: Icon(widget.isPaidUser ? Icons.share : Icons.lock),
-                          label: Text(widget.isPaidUser ? 'Share Now' : 'Upgrade to Pro'),
+                          label: Text(widget.isPaidUser ? context.loc.shareNow
+                              : context.loc.upgradeToPro,),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primaryBlue,
                             foregroundColor: Colors.white,
@@ -547,6 +575,8 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
   }) {
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     final isDarkMode = themeProvider.isDarkMode;
+    final textSizeProvider = Provider.of<TextSizeProvider>(context);
+    final fontSize = textSizeProvider.fontSize;
 
     return Container(
       width: double.infinity,
@@ -567,88 +597,88 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
             Text(
               title,
               style: TextStyle(
-                fontSize: 18,
+                fontSize: fontSize,
                 fontWeight: FontWeight.bold,
                 color: AppColors.getTextColor(isDarkMode),
               ),
             ),
-            SizedBox(height: 8),
-
-            Text(
-              context.loc.doYouWishToContinue,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                color: AppColors.getTextColor(isDarkMode),
-              ),
-            ),
-            SizedBox(height: 16),
+            // SizedBox(height: 8),
+            //
+            // Text(
+            //   context.loc.doYouWishToContinue,
+            //   style: TextStyle(
+            //     fontSize: fontSize,
+            //     fontWeight: FontWeight.w500,
+            //     color: AppColors.getTextColor(isDarkMode),
+            //   ),
+            // ),
+            // SizedBox(height: 16),
 
             // Buttons
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SizedBox(
-                      width: 100,
-                      child: ElevatedButton(
-                        onPressed: onCreatePressed,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryBlue,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(24),
-                          ),
-                        ),
-                        child: Text(context.loc.create),
-                      ),
-                    ),
-                    SizedBox(width: 40),
-                    SizedBox(
-                      width: 100,
-                      child: ElevatedButton(
-                        onPressed: onCancelPressed,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.getSurfaceColor(isDarkMode),
-                          foregroundColor: AppColors.getTextColor(isDarkMode),
-                          elevation: 0,
-                          side: BorderSide(color: AppColors.getDividerColor(isDarkMode)),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(24),
-                          ),
-                          padding: EdgeInsets.symmetric(vertical: 12),
-                        ),
-                        child: Text(context.loc.cancel),
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 12),
-                // Share Button
-                Center(
-                  child: SizedBox(
-                    width: 140,
-                    child: ElevatedButton.icon(
-                      onPressed: onSharePressed,
-                      icon: Icon(Icons.share),
-                      label: Text(context.loc.share),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryBlue,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(24),
-                        ),
-                        padding: EdgeInsets.symmetric(vertical: 12),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+            // Column(
+            //   mainAxisAlignment: MainAxisAlignment.center,
+            //   children: [
+            //     Row(
+            //       mainAxisAlignment: MainAxisAlignment.center,
+            //       children: [
+            //         SizedBox(
+            //           width: 100,
+            //           child: ElevatedButton(
+            //             onPressed: onCreatePressed,
+            //             style: ElevatedButton.styleFrom(
+            //               backgroundColor: AppColors.primaryBlue,
+            //               foregroundColor: Colors.white,
+            //               elevation: 0,
+            //               shape: RoundedRectangleBorder(
+            //                 borderRadius: BorderRadius.circular(24),
+            //               ),
+            //             ),
+            //             child: Text(context.loc.create),
+            //           ),
+            //         ),
+            //         SizedBox(width: 40),
+            //         SizedBox(
+            //           width: 100,
+            //           child: ElevatedButton(
+            //             onPressed: onCancelPressed,
+            //             style: ElevatedButton.styleFrom(
+            //               backgroundColor: AppColors.getSurfaceColor(isDarkMode),
+            //               foregroundColor: AppColors.getTextColor(isDarkMode),
+            //               elevation: 0,
+            //               side: BorderSide(color: AppColors.getDividerColor(isDarkMode)),
+            //               shape: RoundedRectangleBorder(
+            //                 borderRadius: BorderRadius.circular(24),
+            //               ),
+            //               padding: EdgeInsets.symmetric(vertical: 12),
+            //             ),
+            //             child: Text(context.loc.cancel),
+            //           ),
+            //         ),
+            //       ],
+            //     ),
+            //     SizedBox(height: 12),
+            //     // Share Button
+            //     Center(
+            //       child: SizedBox(
+            //         width: 140,
+            //         child: ElevatedButton.icon(
+            //           onPressed: onSharePressed,
+            //           icon: Icon(Icons.share),
+            //           label: Text(context.loc.share),
+            //           style: ElevatedButton.styleFrom(
+            //             backgroundColor: AppColors.primaryBlue,
+            //             foregroundColor: Colors.white,
+            //             elevation: 0,
+            //             shape: RoundedRectangleBorder(
+            //               borderRadius: BorderRadius.circular(24),
+            //             ),
+            //             padding: EdgeInsets.symmetric(vertical: 12),
+            //           ),
+            //         ),
+            //       ),
+            //     ),
+            //   ],
+            // ),
           ],
         ),
       ),
@@ -659,6 +689,8 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
   void showTOTDInfoBox(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     final isDarkMode = themeProvider.isDarkMode;
+    final textSizeProvider = Provider.of<TextSizeProvider>(context);
+    final fontSize = textSizeProvider.fontSize;
 
     showDialog(
       context: context,
@@ -745,7 +777,7 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
                                   Text(
                                     widget.userName,
                                     style: TextStyle(
-                                      fontSize: 10,
+                                      fontSize: fontSize,
                                       color: Colors.white,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -1080,17 +1112,36 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
   // Rating dialog implementation
   Future<void> _showRatingDialog(BuildContext context) async {
     double rating = 0;
+    final ThemeData theme = Theme.of(context);
+    final bool isDarkMode = theme.brightness == Brightness.dark;
+    final Color backgroundColor = isDarkMode ? AppColors.darkSurface : AppColors.lightSurface;
+    final Color textColor = isDarkMode ? AppColors.darkText : AppColors.lightText;
+
+    // Get font size from TextSizeProvider
+    final textSizeProvider = Provider.of<TextSizeProvider>(context, listen: false);
+    final fontSize = textSizeProvider.fontSize;
 
     return showDialog<double>(
       context: context,
       builder: (BuildContext dialogContext) {
         return StatefulBuilder(builder: (context, setState) {
           return AlertDialog(
-            title: Text('Rate This Content'),
+            title: Text(context.loc.rateThisContent,
+            style: TextStyle(
+              fontSize: fontSize,
+              fontWeight: FontWeight.bold,
+              color: textColor,
+            ),),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('How would you rate your experience with this content?'),
+                Text(
+                  context.loc.howWouldYouRateExperience,
+                  style: TextStyle(
+                    fontSize: fontSize - 2,
+                    color: textColor,
+                  ),
+                ),
                 SizedBox(height: 20),
                 FittedBox(
                   child: Row(
@@ -1118,7 +1169,13 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
                 onPressed: () {
                   Navigator.of(dialogContext).pop(null);
                 },
-                child: Text(context.loc.skip),
+                child: Text(
+                  context.loc.skip,
+                  style: TextStyle(
+                    fontSize: fontSize - 2,
+                    color: AppColors.primaryBlue,
+                  ),
+                ),
               ),
               TextButton(
                 onPressed: () {

@@ -666,11 +666,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 child: Ink(
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: AppColors.primaryGradient,
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
-                    ),
+                    color: AppColors.primaryBlue,
                     borderRadius: BorderRadius.circular(30),
                   ),
                   child: Container(

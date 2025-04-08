@@ -639,7 +639,7 @@ class _TemplatePageState extends State<TemplatePage> {
                                       );
                                     },
                                     child: Text(
-                                      'View All',
+                                      context.loc.viewall,
                                       style: GoogleFonts.poppins(
                                         fontSize: fontSize - 2,
                                         color: AppColors.primaryBlue,

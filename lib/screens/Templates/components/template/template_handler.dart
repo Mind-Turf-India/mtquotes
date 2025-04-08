@@ -62,7 +62,7 @@ class TemplateHandler {
               style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
             ),
             content: Text(
-              context.loc.thisTemplateRequiresSubscription,
+              context.loc.thisRequiresSubscription,
               style: TextStyle(color: textColor),
             ),
             actions: [
@@ -167,14 +167,14 @@ class TemplateHandler {
           return AlertDialog(
             backgroundColor: backgroundColor,
             title: Text(
-              'Rate This Template',
+              context.loc.rateThisContent,
               style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
             ),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'How would you rate your experience with this template?',
+                  context.loc.howWouldYouRateExperience,
                   style: TextStyle(color: secondaryTextColor),
                 ),
                 SizedBox(height: 20),

@@ -89,17 +89,16 @@ class TimeOfDayHandler {
           return AlertDialog(
             backgroundColor: AppColors.getSurfaceColor(isDarkMode),
             title: Text(
-              'Rate This Content',
+                context.loc.howWouldYouRateExperience,
               style: TextStyle(
                 color: AppColors.getTextColor(isDarkMode),
-                fontWeight: FontWeight.bold,
               ),
             ),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'How would you rate your experience with this content?',
+                  context.loc.howWouldYouRateExperience,
                   style: TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode)),
                 ),
                 SizedBox(height: 20),
@@ -130,7 +129,7 @@ class TimeOfDayHandler {
                   Navigator.of(dialogContext).pop(null);
                 },
                 child: Text(
-                  'Skip',
+                  context.loc.skip,
                   style: TextStyle(color: AppColors.primaryBlue),
                 ),
               ),
@@ -140,7 +139,7 @@ class TimeOfDayHandler {
                   Navigator.of(context).pushReplacementNamed('/home');
                 },
                 child: Text(
-                  'Submit',
+                  context.loc.submit,
                   style: TextStyle(color: AppColors.primaryBlue),
                 ),
               ),
@@ -157,7 +156,7 @@ class TimeOfDayHandler {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Thanks for your rating!'),
+              content: Text(context.loc.thanksForYourRating),
               backgroundColor: AppColors.primaryGreen,
             ),
           );
@@ -520,7 +519,7 @@ class TimeOfDayHandler {
                                             ),
                                             SizedBox(height: 16),
                                             Text(
-                                              'Loading...',
+                                              context.loc.loading,
                                               style: TextStyle(
                                                 color: textColor,
                                                 fontSize: 14,
@@ -541,7 +540,7 @@ class TimeOfDayHandler {
                                             ),
                                             SizedBox(height: 16),
                                             Text(
-                                              'Failed to load image',
+                                              context.loc.failedToLoadImage,
                                               style: TextStyle(
                                                 color: textColor,
                                                 fontSize: 14,
@@ -592,7 +591,7 @@ class TimeOfDayHandler {
                           ),
                           SizedBox(height: 24),
                           Text(
-                            'Do you wish to continue?',
+                            context.loc.doYouWishToContinue,
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w500,
@@ -637,7 +636,7 @@ class TimeOfDayHandler {
                                         child: Container(
                                           padding: EdgeInsets.symmetric(
                                               vertical: 10, horizontal: 26),
-                                          child: Text('Create'),
+                                          child: Text(context.loc.create),
                                         ),
                                       ),
                                     ),
@@ -662,7 +661,7 @@ class TimeOfDayHandler {
                                           vertical: 12,
                                         ),
                                       ),
-                                      child: Text('Cancel'),
+                                      child: Text(context.loc.cancel),
                                     ),
                                   ),
                                 ],
@@ -705,7 +704,7 @@ class TimeOfDayHandler {
                                           children: [
                                             Icon(Icons.share, color: Colors.white),
                                             SizedBox(width: 8),
-                                            Text('Share'),
+                                            Text(context.loc.share),
                                           ],
                                         ),
                                       ),
@@ -935,14 +934,14 @@ class TimeOfDayHandler {
           builder: (context) => AlertDialog(
             backgroundColor: backgroundColor,
             title: Text(
-              'Premium Content',
+              context.loc.premiumTemplate,
               style: TextStyle(
                 color: textColor,
                 fontWeight: FontWeight.bold,
               ),
             ),
             content: Text(
-              'This content requires a subscription. Subscribe to access all premium time of day posts.',
+              context.loc.thisRequiresSubscription,
               style: TextStyle(color: secondaryTextColor),
             ),
             actions: [

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mtquotes/l10n/app_localization.dart';
 import 'package:provider/provider.dart';
 import '../../../../providers/text_size_provider.dart';
 import '../../../../utils/app_colors.dart';
@@ -24,7 +25,7 @@ class TextSizeScreen extends StatelessWidget {
           },
         ),
         title: Text(
-          "Text Size Adjuster",
+          context.loc.textsizeadjuster,
           style: TextStyle(
             fontSize: fontSize,
             color: AppColors.getTextColor(isDarkMode),
@@ -40,7 +41,7 @@ class TextSizeScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                "Text Size",
+                context.loc.textsize,
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
@@ -49,7 +50,7 @@ class TextSizeScreen extends StatelessWidget {
               ),
               SizedBox(height: 5),
               Text(
-                "Set up your text size using slider",
+                context.loc.setuptextslider,
                 style: TextStyle(
                   fontSize: 16,
                   color: isDarkMode ? Colors.grey[400] : Colors.black54,
@@ -57,7 +58,7 @@ class TextSizeScreen extends StatelessWidget {
               ),
               SizedBox(height: 30),
               Text(
-                "Ab",
+                context.loc.ab,
                 style: TextStyle(
                   fontSize: fontSize,
                   fontWeight: FontWeight.bold,
@@ -69,7 +70,7 @@ class TextSizeScreen extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    "Ab",
+                    context.loc.ab,
                     style: TextStyle(
                       fontSize: 14,
                       color: AppColors.getTextColor(isDarkMode),
@@ -93,7 +94,7 @@ class TextSizeScreen extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    "Ab",
+                    context.loc.ab,
                     style: TextStyle(
                       fontSize: 30,
                       color: AppColors.getTextColor(isDarkMode),

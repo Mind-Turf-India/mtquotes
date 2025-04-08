@@ -123,15 +123,12 @@
   "profileDetailsSavedSuccessfully": "ప్రొఫైల్ వివరాలు విజయవంతంగా సేవ్ చేయబడ్డాయి",
   "userNotLoggedIn": "వినియోగదారు లాగిన్ కాలేదు",
   "editTemplate": "టెంప్లేట్‌ను సవరించండి",
-  "rateThisFestivalPost": "ఈ పండుగ పోస్ట్‌కు రేటింగ్ ఇవ్వండి",
-  "howWouldYouRateExperience": "ఈ పండుగ పోస్ట్‌తో మీ అనుభవాన్ని మీరు ఎలా రేట్ చేస్తారు?",
   "skip": "దాటవేయి",
   "submit": "సమర్పించండి",
   "thanksForYourRating": "మీ రేటింగ్‌కు ధన్యవాదాలు!",
   "failedToSubmitRating": "రేటింగ్‌ను సమర్పించడంలో విఫలమైంది",
   "loading": "లోడ్ అవుతోంది...",
   "doYouWishToContinue": "మీరు కొనసాగించాలనుకుంటున్నారా?",
-  "thisTemplateRequiresSubscription": "ఈ టెంప్లేట్‌కు సబ్‌స్క్రిప్షన్ అవసరం. అన్ని ప్రీమియం టెంప్లేట్‌లను యాక్సెస్ చేయడానికి సబ్‌స్క్రైబ్ చేయండి.",
   "subscribe": "సబ్‌స్క్రైబ్ చేయండి",
   "errorInitializingFestivals": "పండుగలను ప్రారంభించడంలో లోపం",
   "failedToShareImage": "చిత్రాన్ని షేర్ చేయడంలో విఫలమైంది",
@@ -139,7 +136,6 @@
   "seeAll": "అన్నీ చూడండి",
   "errorLoadingFestivals": "పండుగలను లోడ్ చేయడంలో లోపం",
   "noFestivalsAvailable": "పండుగలు అందుబాటులో లేవు",
-  "shareFestivalPost": "పండుగ పోస్ట్‌ను షేర్ చేయండి",
   "freeSharing": "ఉచిత షేరింగ్",
   "premiumSharing": "ప్రీమియం షేరింగ్",
   "basicSharing": "ప్రాథమిక షేరింగ్",
@@ -149,15 +145,26 @@
   "shareBasic": "ప్రాథమికంగా షేర్ చేయండి",
   "or": "లేదా",
   "shareWithYourBranding": "మీ బ్రాండింగ్‌తో షేర్ చేయండి",
-  "includeNameAndProfilePicture": "పండుగ పోస్ట్‌లో మీ పేరు మరియు ప్రొఫైల్ చిత్రాన్ని చేర్చండి",
   "personalizedSharingMessage": "వ్యక్తిగతీకరించిన షేరింగ్ సందేశం",
   "noWatermarkCleanLook": "వాటర్‌మార్క్ లేదు - శుభ్రమైన వృత్తిపరమైన రూపం",
   "highQualityExport": "అధిక నాణ్యత చిత్ర ఎగుమతి",
   "shareNow": "ఇప్పుడే షేర్ చేయండి",
   "upgradeToPro": "ప్రోకి అప్‌గ్రేడ్ చేయండి",
+  "shareContent": "విషయాన్ని పంచుకోండి",
+  "sharewithoutpersonal": "వ్యక్తిగత బ్రాండింగ్ లేకుండా టెంప్లేట్‌ను పంచుకోండి",
+  "includename": "టెంప్లేట్‌లో మీ పేరు మరియు ప్రొఫైల్ చిత్రం చేర్చండి",
+  "noimageselected": "ఏ చిత్రమూ ఎంపిక చేయబడలేదు",
+  "selectimagefromgallery": "దయచేసి ముందు గ్యాలరీ నుండి చిత్రం ఎంచుకోండి.",
+  "ok": "సరే",
+  "rateThisContent": "ఈ కంటెంట్‌ను రేట్ చేయండి",
+  "howWouldYouRateExperience": "ఈ టెంప్లేట్ అనుభవాన్ని మీరు ఎలా రేట్ చేస్తారు?",
+  "thisRequiresSubscription": "ఈ కంటెంట్‌కు సభ్యత్వం అవసరం. అన్ని ప్రీమియం ఫీచర్లకు యాక్సెస్ పొందేందుకు సభ్యత్వాన్ని పొందండి.",
+  "setuptextslider": "స్లైడర్‌ని ఉపయోగించి మీ టెక్స్ట్ పరిమాణాన్ని సెట్ చేయండి",
+  "textsizeadjuster": "టెక్స్ట్ పరిమాణ సర్దుబాటు",
+  "ab": "అఆ",
 
 
-  "@languageChanged": {
+"@languageChanged": {
     "placeholders": {
       "language": {
         "type": "Object"
