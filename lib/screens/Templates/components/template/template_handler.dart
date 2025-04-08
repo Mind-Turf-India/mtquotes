@@ -25,10 +25,10 @@ class TemplateHandler {
 
   // Handle template selection with subscription check
   static Future<void> handleTemplateSelection(
-      BuildContext context,
-      QuoteTemplate template,
-      Function(QuoteTemplate) onAccessGranted,
-      ) async {
+    BuildContext context,
+    QuoteTemplate template,
+    Function(QuoteTemplate) onAccessGranted,
+  ) async {
     showLoadingIndicator(context);
     try {
       final templateService = TemplateService();
@@ -50,8 +50,10 @@ class TemplateHandler {
         // Show subscription dialog/prompt with proper theming
         final ThemeData theme = Theme.of(context);
         final bool isDarkMode = theme.brightness == Brightness.dark;
-        final Color backgroundColor = isDarkMode ? AppColors.darkSurface : AppColors.lightSurface;
-        final Color textColor = isDarkMode ? AppColors.darkText : AppColors.lightText;
+        final Color backgroundColor =
+            isDarkMode ? AppColors.darkSurface : AppColors.lightSurface;
+        final Color textColor =
+            isDarkMode ? AppColors.darkText : AppColors.lightText;
 
         showDialog(
           context: context,
@@ -118,7 +120,8 @@ class TemplateHandler {
         return Center(
           child: CircularProgressIndicator(
             color: AppColors.primaryBlue,
-            backgroundColor: isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
+            backgroundColor:
+                isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
           ),
         );
       },
@@ -138,7 +141,7 @@ class TemplateHandler {
           .findRenderObject() as RenderRepaintBoundary;
       final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
       final ByteData? byteData =
-      await image.toByteData(format: ui.ImageByteFormat.png);
+          await image.toByteData(format: ui.ImageByteFormat.png);
 
       if (byteData != null) {
         return byteData.buffer.asUint8List();
@@ -156,9 +159,12 @@ class TemplateHandler {
     double rating = 0;
     final ThemeData theme = Theme.of(context);
     final bool isDarkMode = theme.brightness == Brightness.dark;
-    final Color backgroundColor = isDarkMode ? AppColors.darkSurface : AppColors.lightSurface;
-    final Color textColor = isDarkMode ? AppColors.darkText : AppColors.lightText;
-    final Color secondaryTextColor = isDarkMode ? AppColors.darkSecondaryText : AppColors.lightSecondaryText;
+    final Color backgroundColor =
+        isDarkMode ? AppColors.darkSurface : AppColors.lightSurface;
+    final Color textColor =
+        isDarkMode ? AppColors.darkText : AppColors.lightText;
+    final Color secondaryTextColor =
+        isDarkMode ? AppColors.darkSecondaryText : AppColors.lightSecondaryText;
 
     return showDialog<double>(
       context: context,
@@ -185,7 +191,11 @@ class TemplateHandler {
                       return IconButton(
                         icon: Icon(
                           index < rating ? Icons.star : Icons.star_border,
-                          color: index < rating ? Colors.amber : isDarkMode ? Colors.grey[600] : Colors.grey[400],
+                          color: index < rating
+                              ? Colors.amber
+                              : isDarkMode
+                                  ? Colors.grey[600]
+                                  : Colors.grey[400],
                           size: 36,
                         ),
                         onPressed: () {
@@ -331,7 +341,7 @@ class TemplateHandler {
     try {
       // Get reference to the template document
       final templateRef =
-      FirebaseFirestore.instance.collection('templates').doc(templateId);
+          FirebaseFirestore.instance.collection('templates').doc(templateId);
 
       // Run this as a transaction to ensure data consistency
       await FirebaseFirestore.instance.runTransaction((transaction) async {
@@ -367,15 +377,18 @@ class TemplateHandler {
   // Method to show the template confirmation dialog
   // Advanced version using CachedNetworkImage for better performance
   static void showTemplateConfirmationDialog(
-      BuildContext context,
-      QuoteTemplate template,
-      bool isPaidUser,
-      ) {
+    BuildContext context,
+    QuoteTemplate template,
+    bool isPaidUser,
+  ) {
     final ThemeData theme = Theme.of(context);
     final bool isDarkMode = theme.brightness == Brightness.dark;
-    final Color backgroundColor = isDarkMode ? AppColors.darkSurface : AppColors.lightSurface;
-    final Color textColor = isDarkMode ? AppColors.darkText : AppColors.lightText;
-    final Color dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.lightDivider;
+    final Color backgroundColor =
+        isDarkMode ? AppColors.darkSurface : AppColors.lightSurface;
+    final Color textColor =
+        isDarkMode ? AppColors.darkText : AppColors.lightText;
+    final Color dividerColor =
+        isDarkMode ? AppColors.darkDivider : AppColors.lightDivider;
 
     showDialog(
       context: context,
@@ -407,7 +420,9 @@ class TemplateHandler {
                             width: double.infinity,
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(8),
-                              color: isDarkMode ? Colors.grey.shade800 : Colors.grey.shade200,
+                              color: isDarkMode
+                                  ? Colors.grey.shade800
+                                  : Colors.grey.shade200,
                             ),
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(8),
@@ -420,7 +435,8 @@ class TemplateHandler {
                                     fit: BoxFit.cover,
                                     placeholder: (context, url) => Center(
                                       child: Column(
-                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
                                         children: [
                                           CircularProgressIndicator(
                                             color: AppColors.primaryBlue,
@@ -440,9 +456,11 @@ class TemplateHandler {
                                         ],
                                       ),
                                     ),
-                                    errorWidget: (context, url, error) => Center(
+                                    errorWidget: (context, url, error) =>
+                                        Center(
                                       child: Column(
-                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
                                         children: [
                                           Icon(
                                             Icons.error_outline,
@@ -463,8 +481,10 @@ class TemplateHandler {
                                     ),
                                     // Add these options for better caching behavior
                                     cacheKey: '${template.id}_confirmation',
-                                    memCacheWidth: 600, // Optimize memory cache size
-                                    maxHeightDiskCache: 800, // Optimize disk cache size
+                                    memCacheWidth:
+                                        600, // Optimize memory cache size
+                                    maxHeightDiskCache:
+                                        800, // Optimize disk cache size
                                   ),
 
                                   // PRO badge (only if template is paid)
@@ -473,15 +493,18 @@ class TemplateHandler {
                                       top: 10,
                                       right: 10,
                                       child: Container(
-                                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        padding: EdgeInsets.symmetric(
+                                            horizontal: 8, vertical: 4),
                                         decoration: BoxDecoration(
                                           color: Colors.black.withOpacity(0.7),
-                                          borderRadius: BorderRadius.circular(12),
+                                          borderRadius:
+                                              BorderRadius.circular(12),
                                         ),
                                         child: Row(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
-                                            Icon(Icons.lock, color: Colors.amber, size: 14),
+                                            Icon(Icons.lock,
+                                                color: Colors.amber, size: 14),
                                             SizedBox(width: 4),
                                             Text(
                                               'PRO',
@@ -530,18 +553,14 @@ class TemplateHandler {
                                         elevation: 0,
                                         shape: RoundedRectangleBorder(
                                           borderRadius:
-                                          BorderRadius.circular(24),
+                                              BorderRadius.circular(24),
                                         ),
                                       ),
                                       child: Ink(
                                         decoration: BoxDecoration(
-                                          gradient: LinearGradient(
-                                            colors: AppColors.primaryGradient,
-                                            begin: Alignment.centerLeft,
-                                            end: Alignment.centerRight,
-                                          ),
+                                          color: isDarkMode ? AppColors.primaryBlue: AppColors.primaryBlue,
                                           borderRadius:
-                                          BorderRadius.circular(24),
+                                              BorderRadius.circular(24),
                                         ),
                                         child: Container(
                                           padding: EdgeInsets.symmetric(
@@ -565,7 +584,7 @@ class TemplateHandler {
                                         side: BorderSide(color: dividerColor),
                                         shape: RoundedRectangleBorder(
                                           borderRadius:
-                                          BorderRadius.circular(24),
+                                              BorderRadius.circular(24),
                                         ),
                                         padding: EdgeInsets.symmetric(
                                           vertical: 12,
@@ -598,21 +617,18 @@ class TemplateHandler {
                                     ),
                                     child: Ink(
                                       decoration: BoxDecoration(
-                                        gradient: LinearGradient(
-                                          colors: AppColors.primaryGradient,
-                                          begin: Alignment.centerLeft,
-                                          end: Alignment.centerRight,
-                                        ),
+                                        color: isDarkMode ? AppColors.primaryBlue: AppColors.primaryBlue,
                                         borderRadius: BorderRadius.circular(24),
                                       ),
                                       child: Container(
                                         padding:
-                                        EdgeInsets.symmetric(vertical: 12),
+                                            EdgeInsets.symmetric(vertical: 12),
                                         child: Row(
                                           mainAxisAlignment:
-                                          MainAxisAlignment.center,
+                                              MainAxisAlignment.center,
                                           children: [
-                                            Icon(Icons.share, color: Colors.white),
+                                            Icon(Icons.share,
+                                                color: Colors.white),
                                             SizedBox(width: 8),
                                             Text(context.loc.share),
                                           ],
@@ -704,7 +720,7 @@ class TemplateHandler {
 
         if (userDoc.exists && userDoc.data() is Map<String, dynamic>) {
           Map<String, dynamic> userData =
-          userDoc.data() as Map<String, dynamic>;
+              userDoc.data() as Map<String, dynamic>;
 
           // Get name from Firestore with fallback
           if (userData.containsKey('name') &&
@@ -742,7 +758,8 @@ class TemplateHandler {
       BuildContext context, Uint8List imageData, bool isPaidUser) async {
     final ThemeData theme = Theme.of(context);
     final bool isDarkMode = theme.brightness == Brightness.dark;
-    final Color textColor = isDarkMode ? AppColors.darkText : AppColors.lightText;
+    final Color textColor =
+        isDarkMode ? AppColors.darkText : AppColors.lightText;
 
     // For free users, redirect to template sharing
     if (!isPaidUser) {
@@ -801,6 +818,7 @@ class TemplateHandler {
       }
     }
   }
+
   // Method to initialize templates if none exist
   static Future<void> initializeTemplatesIfNeeded() async {
     final templateService = TemplateService();

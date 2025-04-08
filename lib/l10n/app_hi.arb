@@ -161,6 +161,9 @@
   "setuptextslider": "स्लाइडर का उपयोग करके अपने टेक्स्ट का आकार सेट करें",
   "textsizeadjuster": "टेक्स्ट आकार समायोजक",
   "ab": "अआ",
+  "noQuoteAvailableForToday": "आज के लिए कोई उद्धरण उपलब्ध नहीं है",
+  "profileUpdatedSuccessfully": "प्रोफ़ाइल सफलतापूर्वक अपडेट की गई",
+  "preparingImage": "छवि तैयार हो रही है...",
 
 "@languageChanged": {
     "placeholders": {

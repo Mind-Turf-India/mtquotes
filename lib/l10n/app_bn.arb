@@ -161,6 +161,9 @@
   "setuptextslider": "স্লাইডার ব্যবহার করে আপনার টেক্সট সাইজ সেট করুন",
   "textsizeadjuster": "টেক্সট সাইজ অ্যাডজাস্টার",
   "ab": "অআ",
+  "noQuoteAvailableForToday": "আজকের জন্য কোন উক্তি উপলব্ধ নেই",
+"profileUpdatedSuccessfully": "প্রোফাইল সফলভাবে আপডেট করা হয়েছে",
+"preparingImage": "ছবি প্রস্তুত করা হচ্ছে...",
 
 "@languageChanged":{
     "placeholders": {

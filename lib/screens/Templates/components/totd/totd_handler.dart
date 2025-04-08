@@ -625,11 +625,7 @@ class TimeOfDayHandler {
                                       ),
                                       child: Ink(
                                         decoration: BoxDecoration(
-                                          gradient: LinearGradient(
-                                            colors: AppColors.primaryGradient,
-                                            begin: Alignment.centerLeft,
-                                            end: Alignment.centerRight,
-                                          ),
+                                         color: isDarkMode ? AppColors.primaryBlue: AppColors.primaryBlue,
                                           borderRadius:
                                           BorderRadius.circular(24),
                                         ),
@@ -688,11 +684,7 @@ class TimeOfDayHandler {
                                     ),
                                     child: Ink(
                                       decoration: BoxDecoration(
-                                        gradient: LinearGradient(
-                                          colors: AppColors.primaryGradient,
-                                          begin: Alignment.centerLeft,
-                                          end: Alignment.centerRight,
-                                        ),
+                                        color: isDarkMode ? AppColors.primaryBlue: AppColors.primaryBlue,
                                         borderRadius: BorderRadius.circular(24),
                                       ),
                                       child: Container(

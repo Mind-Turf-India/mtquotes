@@ -140,7 +140,7 @@ class _ReferralPageState extends State<ReferralPage> {
                             width: 90,
                             height: 90,
                             fit: BoxFit.contain,
-                            color: isDarkMode ? Colors.white70 : null,
+                            // color: null
                           ),
                         ),
                       ),

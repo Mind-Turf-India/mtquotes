@@ -162,6 +162,9 @@
   "setuptextslider": "સ્લાઈડર વડે તમારું લખાણનું કદ સેટ કરો",
   "textsizeadjuster": "ટેક્સ્ટ સાઈઝ એડજસ્ટર",
   "ab": "અઆ",
+  "noQuoteAvailableForToday": "આજ માટે કોઈ સુવિચાર ઉપલબ્ધ નથી",
+  "profileUpdatedSuccessfully": "પ્રોફાઇલ સફળતાપૂર્વક અપડેટ થઈ",
+  "preparingImage": "છબી તૈયાર કરી રહ્યા છીએ...",
 
 "@languageChanged":{
     "placeholders": {

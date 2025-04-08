@@ -25,4 +25,6 @@ List<Locale> get supportedLocales => [
  const Locale('bn'),
  const Locale('te'),
  const Locale('gu'),
+ const Locale('od'),
+ const Locale('ma'),
 ];

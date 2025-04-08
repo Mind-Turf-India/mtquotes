@@ -162,7 +162,9 @@
   "setuptextslider": "స్లైడర్‌ని ఉపయోగించి మీ టెక్స్ట్ పరిమాణాన్ని సెట్ చేయండి",
   "textsizeadjuster": "టెక్స్ట్ పరిమాణ సర్దుబాటు",
   "ab": "అఆ",
-
+  "noQuoteAvailableForToday": "ఈరోజుకు ఎలాంటి కోట్ అందుబాటులో లేదు",
+  "profileUpdatedSuccessfully": "ప్రొఫైల్ విజయవంతంగా నవీకరించబడింది",
+  "preparingImage": "చిత్రాన్ని సిద్ధం చేస్తోంది...",
 
 "@languageChanged": {
     "placeholders": {

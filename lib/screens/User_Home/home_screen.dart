@@ -619,8 +619,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       if (canUpdateUI && mounted) {
                         _fetchUserData();
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content: Text("Profile updated successfully")),
+                           SnackBar(
+                              content: Text(context.loc.profileUpdatedSuccessfully)),
                         );
                       }
                     } catch (e) {
@@ -632,7 +632,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       }
                     }
                   },
-                  child: Text("Save"),
+                  child: Text(context.loc.save),
                 ),
               ],
             );
@@ -822,7 +822,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     SizedBox(height: 15),
                     Text(
-                      "Preparing image...",
+                      context.loc.preparingImage,
                       style: TextStyle(
                         fontSize: 16,
                         color: AppColors.getTextColor(isDarkMode),
@@ -855,7 +855,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
           // Show error message
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Failed to download image")),
+            SnackBar(content: Text(context.loc.failedToLoadImage)),
           );
           debugPrint("Failed to download image");
         }
@@ -976,14 +976,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                               .grey[300], // Fallback background
                                           alignment: Alignment.center,
                                           child: Text(
-                                            'No quote available for today',
+                                            context.loc.noQuoteAvailableForToday,
                                             style: GoogleFonts.poppins(
-
                                                 fontSize: fontSize,
                                                 color: Colors
                                                     .black // Ensure text color respects theme
                                                 ),
-
                                           ),
                                         ),
                                 ),
@@ -1066,7 +1064,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     : _recentTemplates.isEmpty
                                         ? Center(
                                             child: Text(
-                                              "No recent templates",
+                                              context.loc.norecenttemplates,
                                               style: GoogleFonts.poppins(
                                                 fontSize: fontSize - 2,
                                                 color: AppColors.getTextColor(
@@ -1191,11 +1189,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                                                     'PRO',
                                                                     style:
                                                                         TextStyle(
-                                                                      color: AppColors
-                                                                          .getTextColor(
-                                                                              isDarkMode),
+                                                                      color: Colors
+                                                                          .white,
                                                                       fontSize:
-                                                                          10,
+                                                                          12,
                                                                       fontWeight:
                                                                           FontWeight
                                                                               .bold,
@@ -1403,7 +1400,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                             : _festivalPosts.isEmpty
                                                 ? Center(
                                                     child: Text(
-                                                      "No festival posts available",
+                                                      context.loc.noFestivalsAvailable,
                                                       style:
                                                           GoogleFonts.poppins(
                                                         fontSize: fontSize,

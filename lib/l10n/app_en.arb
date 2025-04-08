@@ -161,6 +161,9 @@
   "setuptextslider": "Set up your text size using slider",
   "textsizeadjuster": "Text Size Adjuster",
   "ab": "Ab",
+  "noQuoteAvailableForToday": "No quote available for today",
+"profileUpdatedSuccessfully": "Profile updated successfully",
+"preparingImage": "Preparing image...",
   
 
   "@languageChanged":{

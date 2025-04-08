@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mtquotes/screens/Templates/components/template/quote_template.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:mtquotes/utils/app_colors.dart';
 import 'package:mtquotes/utils/theme_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:mtquotes/providers/text_size_provider.dart';
@@ -110,6 +111,12 @@ class RecentTemplatesSection extends StatelessWidget {
   ) {
     final theme = Theme.of(context);
 
+    final bool isDarkMode = theme.brightness == Brightness.dark;
+    final Color backgroundColor =
+        isDarkMode ? AppColors.darkSurface : AppColors.lightSurface;
+    final Color textColor =
+        isDarkMode ? AppColors.darkText : AppColors.darkText;
+
     return GestureDetector(
       onTap: () => onTemplateSelected(template),
       child: Container(
@@ -186,7 +193,7 @@ class RecentTemplatesSection extends StatelessWidget {
                           'PRO',
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: 10,
+                            fontSize: 12,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
