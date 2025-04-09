@@ -10,6 +10,7 @@ import 'package:mtquotes/screens/Payment_Screen/subscription_service.dart';
 import 'package:mtquotes/screens/User_Home/components/Notifications/notification_service.dart';
 import 'package:mtquotes/screens/User_Home/home_screen.dart';
 import 'package:mtquotes/utils/app_theme.dart';
+import 'package:mtquotes/utils/splash_screen.dart';
 import 'package:mtquotes/utils/theme_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -18,6 +19,7 @@ import 'package:provider/provider.dart';
 import 'package:mtquotes/screens/navbar_mainscreen.dart';
 import 'package:mtquotes/screens/Onboarding_Screen/onboarding_screen.dart';
 import 'package:mtquotes/l10n/app_localization.dart';
+// Import the splash screen
 import 'firebase_options.dart';
 
 void main() async {
@@ -39,9 +41,6 @@ void main() async {
   FirebaseAuth.instance.authStateChanges().listen((User? user) {
     NotificationService.instance.handleUserChanged(user?.uid);
   });
-  // Setup token refresh listener
-  // NotificationService.instance.setupTokenRefresh();
-  // FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
   runApp(
     MultiProvider(
@@ -51,7 +50,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
       ],
       child: MyApp(
-        startScreen: currentUser != null
+        nextScreen: currentUser != null
             ? MainScreen()
             : (hasCompletedOnboarding ? LoginScreen() : OnboardingScreen()),
         locale: Locale(savedLocale),
@@ -61,10 +60,10 @@ void main() async {
 }
 
 class MyApp extends StatefulWidget {
-  final Widget startScreen;
+  final Widget nextScreen;
   final Locale locale;
 
-  const MyApp({super.key, required this.startScreen, required this.locale});
+  const MyApp({super.key, required this.nextScreen, required this.locale});
 
   @override
   MyAppState createState() => MyAppState();
@@ -95,7 +94,8 @@ class MyAppState extends State<MyApp> {
         return MaterialApp(
           title: 'Vaky',
           debugShowCheckedModeBanner: false,
-          home: widget.startScreen,
+          // Start with the splash screen and pass the actual start screen
+          home: GifSplashScreen(nextScreen: widget.nextScreen), // Choose the splash screen type you prefer
           locale: _locale,
           supportedLocales: supportedLocales,
           localizationsDelegates: localizationDelegates,
