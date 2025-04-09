@@ -14,6 +14,7 @@ import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:transparent_image/transparent_image.dart';
 
 import '../../../../providers/text_size_provider.dart';
 import '../recent/recent_service.dart';
@@ -46,6 +47,8 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
   String _currentImageUrl = '';
   bool _isLoading = true;
   Uint8List? _customImageData;
+  bool _isImageLoading = true;
+
 
   @override
   void initState() {
@@ -53,7 +56,7 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
     print('TemplateSharingPage initState with template: ${widget.template.id}, imageUrl: ${widget.template.imageUrl}');
     _currentImageUrl = widget.template.imageUrl;
     _customImageData = widget.customImageData; // Store the custom image data
-    _loadImage();
+    _loadOriginalImage();
     _addToRecentTemplates();
   }
 
@@ -73,7 +76,7 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
         _imageLoaded = false;
         _isLoading = true;
       });
-      _loadImage();
+      _loadOriginalImage();
       _addToRecentTemplates();
     }
   }
@@ -88,78 +91,35 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
   }
 
   // Load the image based on whether we have custom image data or need to fetch from URL
-  Future<void> _loadImage() async {
-    print('Loading image. Custom data exists: ${_customImageData != null}');
+  Future<void> _loadOriginalImage() async {
     setState(() {
-      _isLoading = true;
+      _isImageLoading = true;
     });
 
     try {
-      if (_customImageData != null) {
-        // Use the custom image data directly
-        final decodedImage = await decodeImageFromList(_customImageData!);
+      final http.Response response = await http.get(
+          Uri.parse(widget.template.imageUrl));
+      if (response.statusCode == 200) {
+        final decodedImage = await decodeImageFromList(response.bodyBytes);
 
         if (mounted) {
           setState(() {
             _originalImage = decodedImage;
             _aspectRatio = decodedImage.width / decodedImage.height;
             _imageLoaded = true;
-            _isLoading = false;
+            _isImageLoading = false;
           });
         }
-      } else if (widget.template.imageUrl.startsWith('file:/')) {
-        // For local files
-        final String filePath = widget.template.imageUrl.replaceFirst('file:/', '');
-        final File imageFile = File(filePath);
-
-        if (await imageFile.exists()) {
-          final Uint8List bytes = await imageFile.readAsBytes();
-          final ui.Image decodedImage = await decodeImageFromList(bytes);
-
-          if (mounted) {
-            setState(() {
-              _originalImage = decodedImage;
-              _aspectRatio = decodedImage.width / decodedImage.height;
-              _imageLoaded = true;
-              _isLoading = false;
-            });
-          }
-        } else {
-          print('Local image file does not exist: $filePath');
-          if (mounted) {
-            setState(() {
-              _isLoading = false;
-            });
-          }
-        }
       } else {
-        // For network images
-        final http.Response response = await http.get(Uri.parse(widget.template.imageUrl));
-        if (response.statusCode == 200) {
-          final decodedImage = await decodeImageFromList(response.bodyBytes);
-
-          if (mounted) {
-            setState(() {
-              _originalImage = decodedImage;
-              _aspectRatio = decodedImage.width / decodedImage.height;
-              _imageLoaded = true;
-              _isLoading = false;
-            });
-          }
-        } else {
-          print('Failed to load image. Status code: ${response.statusCode}');
-          if (mounted) {
-            setState(() {
-              _isLoading = false;
-            });
-          }
-        }
+        setState(() {
+          _isImageLoading = false;
+        });
       }
     } catch (e) {
-      print('Error loading image: $e');
+      print('Error loading original image: $e');
       if (mounted) {
         setState(() {
-          _isLoading = false;
+          _isImageLoading = false;
         });
       }
     }
@@ -179,6 +139,75 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
         ),
         child: child,
       ),
+    );
+  }
+
+  // Helper function to create properly sized image
+  Widget _buildTrendingImage({
+    bool showWatermark = false,
+    BorderRadius? borderRadius,
+  }) {
+    final bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final Color loadingColor = AppColors.primaryBlue;
+    final Color loadingBackground = isDarkMode ? AppColors.darkSurface : AppColors.lightSurface;
+
+    if (_isImageLoading) {
+      return _buildImageContainer(
+        aspectRatio: _aspectRatio,
+        borderRadius: borderRadius,
+        child: Center(
+          child: CircularProgressIndicator(
+            color: loadingColor,
+            backgroundColor: loadingBackground,
+          ),
+        ),
+      );
+    }
+
+    // Image with proper sizing based on calculated aspect ratio
+    Widget imageWidget = Stack(
+      fit: StackFit.expand,
+      children: [
+        // FadeInImage with proper sizing
+        FadeInImage(
+          placeholder: MemoryImage(kTransparentImage),
+          image: NetworkImage(widget.template.imageUrl),
+          fit: BoxFit.contain,
+          fadeInDuration: Duration(milliseconds: 300),
+          imageErrorBuilder: (context, error, stackTrace) {
+            return Center(
+              child: Text(
+                'Error loading image',
+                style: TextStyle(
+                  color: isDarkMode ? AppColors.darkText : AppColors.lightText,
+                ),
+              ),
+            );
+          },
+        ),
+
+        // Watermark if needed
+        if (showWatermark)
+          Positioned(
+            top: 8,
+            right: 8,
+            child: Opacity(
+              opacity: 0.6,
+              child: Image.asset(
+                'assets/logo.png',
+                width: 50,
+                height: 50,
+                fit: BoxFit.contain,
+              ),
+            ),
+          ),
+      ],
+    );
+
+    return _buildImageContainer(
+      aspectRatio: _aspectRatio,
+      borderRadius: borderRadius,
+      child: imageWidget,
     );
   }
 
@@ -328,42 +357,10 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                         SizedBox(height: 16),
 
                       // Preview of template without branding but with watermark - FIXED
-                      _buildImageContainer(
-                        aspectRatio: _aspectRatio,
-                        child: Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            // Image with proper sizing
-                            Container(
-                              key: ValueKey("free_preview_${currentTemplateId}_${currentImageUrl}_${hasCustomImage}"),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(8),
-                                image: DecorationImage(
-                                  image: _getImageProvider(),
-                                  fit: BoxFit.contain,
-                                ),
-                              ),
-                            ),
+                        _buildTrendingImage(showWatermark: true),
 
-                            // Watermark in top right
-                            Positioned(
-                              top: 8,
-                              right: 8,
-                              child: Opacity(
-                                opacity: 0.6,
-                                child: Image.asset(
-                                  'assets/logo.png',
-                                  width: 50,
-                                  height: 50,
-                                  fit: BoxFit.contain,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
 
-                      SizedBox(height: 16),
+                        SizedBox(height: 16),
                       // Free share button only
                       SizedBox(
                         width: double.infinity,
@@ -600,14 +597,26 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                                     child: Column(
                                       children: [
                                         // Template image with proper aspect ratio
-                                        _buildImageContainer(
+                                        _isImageLoading
+                                            ? _buildImageContainer(
                                           aspectRatio: _aspectRatio,
                                           borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+                                          child: Center(
+                                            child: CircularProgressIndicator(
+                                              color: AppColors.primaryBlue,
+                                              backgroundColor: isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
+                                            ),
+                                          ),
+                                        )
+                                            : AspectRatio(
+                                          aspectRatio: _aspectRatio,
                                           child: Container(
                                             decoration: BoxDecoration(
-                                              borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+                                              borderRadius: BorderRadius.vertical(
+                                                  top: Radius.circular(8)),
                                               image: DecorationImage(
-                                                image: _getImageProvider(),
+                                                image: NetworkImage(
+                                                    widget.template.imageUrl),
                                                 fit: BoxFit.contain,
                                               ),
                                             ),

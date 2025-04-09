@@ -10,6 +10,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/theme_provider.dart';
+import '../../utils/shimmer.dart'; // Import the shimmer loader
 import '../Create_Screen/edit_screen_create.dart';
 
 class FilesPage extends StatefulWidget {
@@ -198,14 +199,27 @@ class _FilesPageState extends State<FilesPage> {
       final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
       final isDarkMode = themeProvider.isDarkMode;
 
-      // Show loading indicator
+      // Show loading indicator with shimmer effect
       showDialog(
         context: context,
         barrierDismissible: false,
         builder: (BuildContext context) {
           return Center(
-            child: CircularProgressIndicator(
-              color: AppColors.primaryBlue,
+            child: Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                color: AppColors.getBackgroundColor(isDarkMode),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              padding: EdgeInsets.all(20),
+              child: ShimmerLoader(
+                width: 60,
+                height: 60,
+                isDarkMode: isDarkMode,
+                type: ShimmerType.simple,
+                borderRadius: BorderRadius.circular(30),
+              ),
             ),
           );
         },
@@ -251,7 +265,7 @@ class _FilesPageState extends State<FilesPage> {
     return Scaffold(
       backgroundColor: AppColors.getBackgroundColor(isDarkMode),
       appBar: AppBar(
-        
+
         title: Text(
           context.loc.files,
           style: GoogleFonts.poppins(
@@ -340,11 +354,7 @@ class _FilesPageState extends State<FilesPage> {
 
   Widget _buildDownloadedImagesContent(double textSize, bool isDarkMode) {
     if (_isLoading) {
-      return Center(
-        child: CircularProgressIndicator(
-          color: AppColors.primaryBlue,
-        ),
-      );
+      return _buildShimmerGrid(isDarkMode);
     }
 
     if (filteredDownloadedImages.isEmpty) {
@@ -449,6 +459,39 @@ class _FilesPageState extends State<FilesPage> {
                 */
               ],
             ),
+          ),
+        );
+      },
+    );
+  }
+
+  // New method to build shimmer grid for loading state
+  Widget _buildShimmerGrid(bool isDarkMode) {
+    return GridView.builder(
+      padding: EdgeInsets.all(10),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        crossAxisSpacing: 5,
+        mainAxisSpacing: 5,
+        childAspectRatio: 0.7,
+      ),
+      itemCount: 12, // Show 12 placeholder items
+      itemBuilder: (context, index) {
+        return Padding(
+          padding: EdgeInsets.only(right: 8, bottom: 8),
+          child: Column(
+            children: [
+              Expanded(
+                child: ShimmerLoader(
+                  width: double.infinity,
+                  height: double.infinity,
+                  isDarkMode: isDarkMode,
+                  type: ShimmerType.template,
+                  margin: EdgeInsets.zero,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ],
           ),
         );
       },

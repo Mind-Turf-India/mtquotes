@@ -17,6 +17,7 @@ import 'package:mtquotes/utils/app_colors.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:mtquotes/screens/Templates/components/template/quote_template.dart';
+import '../../../../utils/shimmer.dart';
 import '../../../Create_Screen/edit_screen_create.dart';
 import '../recent/recent_service.dart';
 
@@ -377,18 +378,18 @@ class TemplateHandler {
   // Method to show the template confirmation dialog
   // Advanced version using CachedNetworkImage for better performance
   static void showTemplateConfirmationDialog(
-    BuildContext context,
-    QuoteTemplate template,
-    bool isPaidUser,
-  ) {
+      BuildContext context,
+      QuoteTemplate template,
+      bool isPaidUser,
+      ) {
     final ThemeData theme = Theme.of(context);
     final bool isDarkMode = theme.brightness == Brightness.dark;
     final Color backgroundColor =
-        isDarkMode ? AppColors.darkSurface : AppColors.lightSurface;
+    isDarkMode ? AppColors.darkSurface : AppColors.lightSurface;
     final Color textColor =
-        isDarkMode ? AppColors.darkText : AppColors.lightText;
+    isDarkMode ? AppColors.darkText : AppColors.lightText;
     final Color dividerColor =
-        isDarkMode ? AppColors.darkDivider : AppColors.lightDivider;
+    isDarkMode ? AppColors.darkDivider : AppColors.lightDivider;
 
     showDialog(
       context: context,
@@ -414,7 +415,7 @@ class TemplateHandler {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          // Template Image with Loading Indicator
+                          // Template Image with Shimmer Loading Effect
                           Container(
                             height: 400,
                             width: double.infinity,
@@ -429,62 +430,47 @@ class TemplateHandler {
                               child: Stack(
                                 fit: StackFit.expand,
                                 children: [
-                                  // Image with loading state
+                                  // Image with shimmer loading state
                                   CachedNetworkImage(
                                     imageUrl: template.imageUrl,
                                     fit: BoxFit.cover,
-                                    placeholder: (context, url) => Center(
-                                      child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          CircularProgressIndicator(
-                                            color: AppColors.primaryBlue,
-                                            backgroundColor: isDarkMode
-                                                ? Colors.grey.shade700
-                                                : Colors.grey.shade300,
-                                          ),
-                                          SizedBox(height: 16),
-                                          Text(
-                                            context.loc.loading,
-                                            style: TextStyle(
-                                              color: textColor,
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
+                                    placeholder: (context, url) => ShimmerLoader(
+                                      width: double.infinity,
+                                      height: double.infinity,
+                                      isDarkMode: isDarkMode,
+                                      type: ShimmerType.template,
+                                      margin: EdgeInsets.zero,
+                                      borderRadius: BorderRadius.circular(8),
                                     ),
                                     errorWidget: (context, url, error) =>
                                         Center(
-                                      child: Column(
-                                        mainAxisAlignment:
+                                          child: Column(
+                                            mainAxisAlignment:
                                             MainAxisAlignment.center,
-                                        children: [
-                                          Icon(
-                                            Icons.error_outline,
-                                            color: Colors.red,
-                                            size: 48,
+                                            children: [
+                                              Icon(
+                                                Icons.error_outline,
+                                                color: Colors.red,
+                                                size: 48,
+                                              ),
+                                              SizedBox(height: 16),
+                                              Text(
+                                                context.loc.failedToLoadImage,
+                                                style: TextStyle(
+                                                  color: textColor,
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                            ],
                                           ),
-                                          SizedBox(height: 16),
-                                          Text(
-                                            context.loc.failedToLoadImage,
-                                            style: TextStyle(
-                                              color: textColor,
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
+                                        ),
                                     // Add these options for better caching behavior
                                     cacheKey: '${template.id}_confirmation',
                                     memCacheWidth:
-                                        600, // Optimize memory cache size
+                                    600, // Optimize memory cache size
                                     maxHeightDiskCache:
-                                        800, // Optimize disk cache size
+                                    800, // Optimize disk cache size
                                   ),
 
                                   // PRO badge (only if template is paid)
@@ -498,7 +484,7 @@ class TemplateHandler {
                                         decoration: BoxDecoration(
                                           color: Colors.black.withOpacity(0.7),
                                           borderRadius:
-                                              BorderRadius.circular(12),
+                                          BorderRadius.circular(12),
                                         ),
                                         child: Row(
                                           mainAxisSize: MainAxisSize.min,
@@ -553,14 +539,14 @@ class TemplateHandler {
                                         elevation: 0,
                                         shape: RoundedRectangleBorder(
                                           borderRadius:
-                                              BorderRadius.circular(24),
+                                          BorderRadius.circular(24),
                                         ),
                                       ),
                                       child: Ink(
                                         decoration: BoxDecoration(
                                           color: isDarkMode ? AppColors.primaryBlue: AppColors.primaryBlue,
                                           borderRadius:
-                                              BorderRadius.circular(24),
+                                          BorderRadius.circular(24),
                                         ),
                                         child: Container(
                                           padding: EdgeInsets.symmetric(
@@ -584,7 +570,7 @@ class TemplateHandler {
                                         side: BorderSide(color: dividerColor),
                                         shape: RoundedRectangleBorder(
                                           borderRadius:
-                                              BorderRadius.circular(24),
+                                          BorderRadius.circular(24),
                                         ),
                                         padding: EdgeInsets.symmetric(
                                           vertical: 12,
@@ -622,10 +608,10 @@ class TemplateHandler {
                                       ),
                                       child: Container(
                                         padding:
-                                            EdgeInsets.symmetric(vertical: 12),
+                                        EdgeInsets.symmetric(vertical: 12),
                                         child: Row(
                                           mainAxisAlignment:
-                                              MainAxisAlignment.center,
+                                          MainAxisAlignment.center,
                                           children: [
                                             Icon(Icons.share,
                                                 color: Colors.white),

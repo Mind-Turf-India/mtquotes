@@ -1342,8 +1342,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                       _templateService.fetchRecentTemplates,
                                   fontSize: fontSize,
                                   onTemplateSelected: _handleTemplateSelection,
+                                  isDarkMode: isDarkMode,
                                 ),
                                 SizedBox(height: 20),
+                                //trending ends
+                                //festival starts
                                 Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
@@ -1435,6 +1438,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                                   ),
                                       ),
                                       SizedBox(height: 30),
+                                      //festival ends
+                                      //foryou starts
                                       Column(
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
@@ -1746,8 +1751,8 @@ class _HomeScreenState extends State<HomeScreen> {
   //shimmer widgets starts
   Widget _buildQotdShimmer(bool isDarkMode) {
     return Shimmer.fromColors(
-      baseColor: isDarkMode ? Colors.grey[800]! : Colors.grey[500]!,
-      highlightColor: isDarkMode ? Colors.grey[700]! : Colors.grey[400]!,
+      baseColor: isDarkMode ? Colors.grey[800]! : Colors.grey[300]!,
+      highlightColor: isDarkMode ? Colors.grey[700]! : Colors.grey[100]!,
       child: Container(
         height: 200,
         width: double.infinity,
@@ -1764,8 +1769,8 @@ class _HomeScreenState extends State<HomeScreen> {
     return SizedBox(
       height: 150,
       child: Shimmer.fromColors(
-        baseColor: isDarkMode ? Colors.grey[800]! : Colors.grey[500]!,
-        highlightColor: isDarkMode ? Colors.grey[700]! : Colors.grey[400]!,
+        baseColor: isDarkMode ? Colors.grey[800]! : Colors.grey[300]!,
+        highlightColor: isDarkMode ? Colors.grey[700]! : Colors.grey[100]!,
         child: ListView.builder(
           scrollDirection: Axis.horizontal,
           itemCount: 5, // Show 5 shimmer placeholders
@@ -1787,11 +1792,16 @@ class _HomeScreenState extends State<HomeScreen> {
 // Single template image shimmer
   Widget _buildTemplateImageShimmer(bool isDarkMode) {
     return Shimmer.fromColors(
-      baseColor: isDarkMode ? Colors.grey[800]! : Colors.grey[500]!,
-      highlightColor: isDarkMode ? Colors.grey[700]! : Colors.grey[400]!,
+      baseColor: isDarkMode ? Colors.grey[800]! : Colors.grey[300]!,
+      highlightColor: isDarkMode ? Colors.grey[700]! : Colors.grey[100]!,
       child: Container(
+      width: 100,
+      margin: EdgeInsets.only(right: 10),
+      decoration: BoxDecoration(
         color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
       ),
+    )
     );
   }
 }

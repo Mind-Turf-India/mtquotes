@@ -9,6 +9,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 import '../../../../providers/text_size_provider.dart';
 import '../../../../utils/app_colors.dart';
+import '../../../../utils/shimmer.dart';
 import '../../../../utils/theme_provider.dart';
 import 'package:mtquotes/l10n/app_localization.dart';
 
@@ -135,6 +136,46 @@ class _CategoryScreenState extends State<CategoryScreen> {
     );
   }
 
+  // Shimmer widget for the grid of templates
+  Widget _buildShimmerGrid(bool isDarkMode) {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: GridView.builder(
+        shrinkWrap: true,
+        physics: NeverScrollableScrollPhysics(),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 3,
+          childAspectRatio: 0.75,
+          crossAxisSpacing: 16,
+          mainAxisSpacing: 16,
+        ),
+        itemCount: 15, // Show a reasonable number of shimmer placeholders
+        itemBuilder: (context, index) {
+          return ShimmerLoader(
+            width: double.infinity,
+            height: double.infinity,
+            isDarkMode: isDarkMode,
+            type: ShimmerType.template,
+            margin: EdgeInsets.zero,
+            borderRadius: BorderRadius.circular(12),
+          );
+        },
+      ),
+    );
+  }
+
+  // Shimmer widget for individual image loading
+  Widget _buildImageShimmer(bool isDarkMode) {
+    return ShimmerLoader(
+      width: double.infinity,
+      height: double.infinity,
+      isDarkMode: isDarkMode,
+      type: ShimmerType.template,
+      margin: EdgeInsets.zero,
+      borderRadius: BorderRadius.circular(12),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final textSizeProvider = Provider.of<TextSizeProvider>(context);
@@ -170,12 +211,8 @@ class _CategoryScreenState extends State<CategoryScreen> {
         slivers: [
           // Templates Grid
           _isLoading
-              ? SliverFillRemaining(
-            child: Center(
-              child: CircularProgressIndicator(
-                color: AppColors.primaryBlue,
-              ),
-            ),
+              ? SliverToBoxAdapter(
+            child: _buildShimmerGrid(isDarkMode),
           )
               : _errorMessage.isNotEmpty
               ? SliverFillRemaining(
@@ -230,14 +267,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                               ? CachedNetworkImage(
                             imageUrl: template.imageUrl,
                             fit: BoxFit.cover,
-                            placeholder: (context, url) => Container(
-                              color: isDarkMode ? Colors.grey[700] : Colors.grey[300],
-                              child: Center(
-                                child: CircularProgressIndicator(
-                                  color: AppColors.primaryBlue,
-                                ),
-                              ),
-                            ),
+                            placeholder: (context, url) => _buildImageShimmer(isDarkMode),
                             errorWidget: (context, url, error) => Container(
                               color: isDarkMode ? Colors.grey[700] : Colors.grey[300],
                               child: Icon(

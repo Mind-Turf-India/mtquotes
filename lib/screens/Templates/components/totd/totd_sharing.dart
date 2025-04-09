@@ -115,7 +115,6 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
     }
   }
 
-  // Helper method to build consistent image containers
   Widget _buildImageContainer({
     required Widget child,
     required double aspectRatio,
@@ -129,6 +128,76 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
         ),
         child: child,
       ),
+    );
+  }
+
+  Widget _buildTotdImage({
+    bool showWatermark = false,
+    BorderRadius? borderRadius,
+  }) {
+    final bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final Color loadingColor = AppColors.primaryBlue;
+    final Color loadingBackground = isDarkMode ? AppColors.darkSurface : AppColors.lightSurface;
+
+    if (_isImageLoading) {
+      return _buildImageContainer(
+        aspectRatio: _aspectRatio,
+        borderRadius: borderRadius,
+        child: Center(
+          child: CircularProgressIndicator(
+            color: loadingColor,
+            backgroundColor: loadingBackground,
+          ),
+        ),
+      );
+    }
+
+  // Helper method to build consistent image containers
+
+
+    Widget imageWidget = Stack(
+      fit: StackFit.expand,
+      children: [
+        // FadeInImage with proper sizing
+        FadeInImage(
+          placeholder: MemoryImage(kTransparentImage),
+          image: NetworkImage(widget.post.imageUrl),
+          fit: BoxFit.contain,
+          fadeInDuration: Duration(milliseconds: 300),
+          imageErrorBuilder: (context, error, stackTrace) {
+            return Center(
+              child: Text(
+                'Error loading image',
+                style: TextStyle(
+                  color: isDarkMode ? AppColors.darkText : AppColors.lightText,
+                ),
+              ),
+            );
+          },
+        ),
+
+        // Watermark if needed
+        if (showWatermark)
+          Positioned(
+            top: 8,
+            right: 8,
+            child: Opacity(
+              opacity: 0.6,
+              child: Image.asset(
+                'assets/logo.png',
+                width: 50,
+                height: 50,
+                fit: BoxFit.contain,
+              ),
+            ),
+          ),
+      ],
+    );
+
+    return _buildImageContainer(
+      aspectRatio: _aspectRatio,
+      borderRadius: borderRadius,
+      child: imageWidget,
     );
   }
 
@@ -251,44 +320,7 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
                       SizedBox(height: 16),
 
                       // Preview of content without branding but with watermark - FIXED
-                      _buildImageContainer(
-                        aspectRatio: _aspectRatio,
-                        child: Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            // Image with proper sizing
-                            FadeInImage(
-                              placeholder: MemoryImage(kTransparentImage),
-                              image: NetworkImage(widget.post.imageUrl),
-                              fit: BoxFit.contain,
-                              fadeInDuration: Duration(milliseconds: 300),
-                              imageErrorBuilder: (context, error, stackTrace) {
-                                return Center(
-                                  child: Text(
-                                    'Error loading image',
-                                    style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
-                                  ),
-                                );
-                              },
-                            ),
-
-                            // Watermark in top right
-                            Positioned(
-                              top: 8,
-                              right: 8,
-                              child: Opacity(
-                                opacity: 0.6,
-                                child: Image.asset(
-                                  'assets/logo.png',
-                                  width: 50,
-                                  height: 50,
-                                  fit: BoxFit.contain,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      _buildTotdImage(showWatermark: true),
 
                       SizedBox(height: 16),
                       // Free share button
@@ -467,14 +499,26 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
                                 child: Column(
                                   children: [
                                     // Template image with proper aspect ratio - FIXED
-                                    _buildImageContainer(
+                                    _isImageLoading
+                                        ? _buildImageContainer(
                                       aspectRatio: _aspectRatio,
                                       borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+                                      child: Center(
+                                        child: CircularProgressIndicator(
+                                          color: AppColors.primaryBlue,
+                                          backgroundColor: isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
+                                        ),
+                                      ),
+                                    )
+                                        : AspectRatio(
+                                      aspectRatio: _aspectRatio,
                                       child: Container(
                                         decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+                                          borderRadius: BorderRadius.vertical(
+                                              top: Radius.circular(8)),
                                           image: DecorationImage(
-                                            image: NetworkImage(widget.post.imageUrl),
+                                            image: NetworkImage(
+                                                widget.post.imageUrl),
                                             fit: BoxFit.contain,
                                           ),
                                         ),

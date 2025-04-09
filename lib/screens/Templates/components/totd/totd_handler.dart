@@ -18,6 +18,7 @@ import 'package:provider/provider.dart';
 import 'package:mtquotes/utils/theme_provider.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import '../../../../utils/shimmer.dart';
 import '../../../Create_Screen/components/details_screen.dart';
 import '../../../Create_Screen/edit_screen_create.dart';
 import 'package:mtquotes/screens/Templates/components/template/quote_template.dart';
@@ -488,7 +489,7 @@ class TimeOfDayHandler {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          // TOTD Image with RepaintBoundary for capture and loading indicator
+                          // TOTD Image with RepaintBoundary for capture and shimmer loading effect
                           RepaintBoundary(
                             key: totdImageKey,
                             child: Container(
@@ -501,33 +502,19 @@ class TimeOfDayHandler {
                               child: Stack(
                                 fit: StackFit.expand,
                                 children: [
-                                  // Main image with loading state
+                                  // Main image with shimmer loading state
                                   ClipRRect(
                                     borderRadius: BorderRadius.circular(8),
                                     child: CachedNetworkImage(
                                       imageUrl: post.imageUrl,
                                       fit: BoxFit.cover,
-                                      placeholder: (context, url) => Center(
-                                        child: Column(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            CircularProgressIndicator(
-                                              color: AppColors.primaryBlue,
-                                              backgroundColor: isDarkMode
-                                                  ? Colors.grey.shade700
-                                                  : Colors.grey.shade300,
-                                            ),
-                                            SizedBox(height: 16),
-                                            Text(
-                                              context.loc.loading,
-                                              style: TextStyle(
-                                                color: textColor,
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
+                                      placeholder: (context, url) => ShimmerLoader(
+                                        width: double.infinity,
+                                        height: double.infinity,
+                                        isDarkMode: isDarkMode,
+                                        type: ShimmerType.template,
+                                        margin: EdgeInsets.zero,
+                                        borderRadius: BorderRadius.circular(8),
                                       ),
                                       errorWidget: (context, url, error) => Center(
                                         child: Column(
@@ -625,7 +612,7 @@ class TimeOfDayHandler {
                                       ),
                                       child: Ink(
                                         decoration: BoxDecoration(
-                                         color: isDarkMode ? AppColors.primaryBlue: AppColors.primaryBlue,
+                                          color: isDarkMode ? AppColors.primaryBlue: AppColors.primaryBlue,
                                           borderRadius:
                                           BorderRadius.circular(24),
                                         ),

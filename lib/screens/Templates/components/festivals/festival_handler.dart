@@ -20,6 +20,7 @@ import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:mtquotes/screens/Templates/components/template/quote_template.dart';
 import '../../../../providers/text_size_provider.dart';
+import '../../../../utils/shimmer.dart';
 import '../../../Create_Screen/components/details_screen.dart';
 import '../recent/recent_service.dart';
 
@@ -523,32 +524,19 @@ class FestivalHandler {
                               child: Stack(
                                 fit: StackFit.expand,
                                 children: [
-                                  // Main image with loading state
+                                  // Main image with shimmer loading state
                                   ClipRRect(
                                     borderRadius: BorderRadius.circular(8),
                                     child: CachedNetworkImage(
                                       imageUrl: festival.imageUrl,
                                       fit: BoxFit.cover,
-                                      placeholder: (context, url) => Center(
-                                        child: Column(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            CircularProgressIndicator(
-                                              color: AppColors.primaryBlue,
-                                              backgroundColor: isDarkMode
-                                                  ? Colors.grey.shade700
-                                                  : Colors.grey.shade300,
-                                            ),
-                                            SizedBox(height: 16),
-                                        Text(
-                                          context.loc.loading,
-                                          style: TextStyle(
-                                            color: textColor,
-                                            fontSize: fontSize - 2,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),]
-                                        ),
+                                      placeholder: (context, url) => ShimmerLoader(
+                                        width: double.infinity,
+                                        height: double.infinity,
+                                        isDarkMode: isDarkMode,
+                                        type: ShimmerType.template,
+                                        margin: EdgeInsets.zero,
+                                        borderRadius: BorderRadius.circular(8),
                                       ),
                                       errorWidget: (context, url, error) => Center(
                                         child: Column(
