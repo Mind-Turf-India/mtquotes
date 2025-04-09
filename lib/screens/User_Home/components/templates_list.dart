@@ -9,6 +9,7 @@ import 'package:mtquotes/screens/Templates/components/totd/totd_service.dart';
 import 'package:mtquotes/screens/Templates/components/festivals/festival_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
+import 'package:mtquotes/utils/shimmer.dart'; // Import the shimmer utility
 import '../../../../providers/text_size_provider.dart';
 import '../../../utils/app_colors.dart';
 import '../../../utils/theme_provider.dart';
@@ -43,7 +44,7 @@ class _TemplatesListScreenState extends State<TemplatesListScreen> {
   bool _isLoading = true;
   String _errorMessage = '';
   final TemplateService _templateService = TemplateService();
-  final FestivalService _festivalService = FestivalService(); // Add this
+  final FestivalService _festivalService = FestivalService();
   final TimeOfDayService _timeOfDayService = TimeOfDayService();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
@@ -69,7 +70,7 @@ class _TemplatesListScreenState extends State<TemplatesListScreen> {
           break;
 
         case TemplateListType.festival:
-        // Fetch all festival templates for the "New" section
+          // Fetch all festival templates for the "New" section
           _templates = await _fetchAllFestivalTemplates();
           break;
 
@@ -186,7 +187,7 @@ class _TemplatesListScreenState extends State<TemplatesListScreen> {
     TemplateHandler.handleTemplateSelection(
       context,
       template,
-          (selectedTemplate) {
+      (selectedTemplate) {
         // This callback is executed when access is granted
         // Navigate to the edit screen with the selected template
         Navigator.push(
@@ -196,6 +197,33 @@ class _TemplatesListScreenState extends State<TemplatesListScreen> {
               title: 'Edit Template',
               templateImageUrl: selectedTemplate.imageUrl,
             ),
+          ),
+        );
+      },
+    );
+  }
+
+  // Shimmer grid for loading state
+  Widget _buildShimmerGrid(bool isDarkMode) {
+    return GridView.builder(
+      padding: EdgeInsets.all(16),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        childAspectRatio: 0.75,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+      ),
+      itemCount: 15, // Show a reasonable number of shimmer items
+      itemBuilder: (context, index) {
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: ShimmerLoader(
+            width: double.infinity,
+            height: double.infinity,
+            isDarkMode: isDarkMode,
+            type: ShimmerType.template,
+            margin: EdgeInsets.zero,
+            borderRadius: BorderRadius.circular(12),
           ),
         );
       },
@@ -238,7 +266,7 @@ class _TemplatesListScreenState extends State<TemplatesListScreen> {
           // Templates Grid
           Expanded(
             child: _isLoading
-                ? Center(child: CircularProgressIndicator(color: AppColors.primaryBlue))
+                ? _buildShimmerGrid(isDarkMode) // Use shimmer grid instead of CircularProgressIndicator
                 : _errorMessage.isNotEmpty
                 ? Center(
               child: Padding(
@@ -287,13 +315,12 @@ class _TemplatesListScreenState extends State<TemplatesListScreen> {
                             ? CachedNetworkImage(
                           imageUrl: template.imageUrl,
                           fit: BoxFit.cover,
-                          placeholder: (context, url) => Container(
-                            color: isDarkMode ? Colors.grey[700] : Colors.grey[300],
-                            child: Center(
-                              child: CircularProgressIndicator(
-                                color: AppColors.primaryBlue,
-                              ),
-                            ),
+                          placeholder: (context, url) => ShimmerLoader(
+                            width: double.infinity,
+                            height: double.infinity,
+                            isDarkMode: isDarkMode,
+                            type: ShimmerType.simple,
+                            margin: EdgeInsets.zero,
                           ),
                           errorWidget: (context, url, error) => Container(
                             color: isDarkMode ? Colors.grey[700] : Colors.grey[300],

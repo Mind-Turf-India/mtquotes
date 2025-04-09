@@ -78,10 +78,10 @@ class _FestivalCardState extends State<FestivalCard> {
                 imageUrl: widget.festival.imageUrl,
                 fit: BoxFit.cover,
                 placeholder: (context, url) => Center(
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: isDarkMode ? Colors.blue : theme.primaryColor,
-                  ),
+                  // child: CircularProgressIndicator(
+                  //   strokeWidth: 2,
+                  //   color: isDarkMode ? Colors.blue : theme.primaryColor,
+                  // ),
                 ),
                 errorWidget: (context, url, error) => Container(
                   color: isDarkMode ? AppColors.darkSurface : Colors.grey.shade200,

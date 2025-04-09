@@ -52,10 +52,10 @@ class TemplateCard extends StatelessWidget {
                     imageUrl: template.imageUrl,
                     fit: BoxFit.cover,
                     placeholder: (context, url) => Center(
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: theme.primaryColor,
-                      ),
+                      // child: CircularProgressIndicator(
+                      //   strokeWidth: 2,
+                      //   color: theme.primaryColor,
+                      // ),
                     ),
                     errorWidget: (context, url, error) => Container(
                       color: isDarkMode ? Colors.grey[800] : Colors.grey[200],

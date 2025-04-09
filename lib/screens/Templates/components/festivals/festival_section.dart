@@ -5,6 +5,7 @@ import 'package:mtquotes/screens/Templates/components/festivals/festival_handler
 import 'package:mtquotes/screens/Templates/components/festivals/festival_post.dart';
 import 'package:mtquotes/utils/app_colors.dart';
 import 'package:mtquotes/utils/theme_provider.dart';
+import 'package:mtquotes/utils/shimmer.dart'; // Import the unified shimmer
 import 'package:provider/provider.dart';
 import '../../../../providers/text_size_provider.dart';
 import '../../../../l10n/app_localization.dart';
@@ -41,7 +42,7 @@ class FestivalSection extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              title, // This is already a parameter, so we don't use context.loc here
+              title,
               style: GoogleFonts.poppins(
                 fontSize: fontSize,
                 fontWeight: FontWeight.bold,
@@ -56,7 +57,7 @@ class FestivalSection extends StatelessWidget {
                   style: GoogleFonts.poppins(
                     fontSize: fontSize - 2,
                     fontWeight: FontWeight.w500,
-                    color: theme.colorScheme.primary, // Use primaryBlue from the theme
+                    color: theme.colorScheme.primary,
                   ),
                 ),
               ),
@@ -69,10 +70,13 @@ class FestivalSection extends StatelessWidget {
             future: fetchFestivals(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return Center(
-                  child: CircularProgressIndicator(
-                    color: theme.colorScheme.primary, // Use primary color from theme
-                  ),
+                // Use the unified shimmer component for horizontal lists
+                return ShimmerHorizontalList(
+                  itemCount: 5,
+                  itemWidth: 100, 
+                  itemHeight: 100,
+                  isDarkMode: isDarkMode,
+                  type: ShimmerType.festival, // Specify festival type
                 );
               }
 
@@ -106,7 +110,7 @@ class FestivalSection extends StatelessWidget {
                 itemBuilder: (context, index) {
                   return FestivalCard(
                     festival: snapshot.data![index],
-                    fontSize: fontSize, // Pass the dynamic fontSize from provider to FestivalCard
+                    fontSize: fontSize,
                     onTap: () {
                       // Use the festival handler to check access and handle selection
                       FestivalHandler.handleFestivalSelection(

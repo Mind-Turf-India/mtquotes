@@ -12,6 +12,7 @@ import 'package:mtquotes/screens/User_Home/components/Categories/category_screen
 import 'package:mtquotes/utils/app_colors.dart';
 import 'package:mtquotes/utils/theme_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:shimmer/shimmer.dart'; // Make sure to add this import
 import 'package:speech_to_text/speech_to_text.dart';
 import '../../l10n/app_localization.dart';
 import '../../providers/text_size_provider.dart';
@@ -302,6 +303,123 @@ class _TemplatePageState extends State<TemplatePage> {
     }
   }
 
+  // New methods for shimmer effects
+  Widget _buildImageShimmer(bool isDarkMode) {
+    return Shimmer.fromColors(
+      baseColor: isDarkMode ? Colors.grey[800]! : Colors.grey[300]!,
+      highlightColor: isDarkMode ? Colors.grey[700]! : Colors.grey[100]!,
+      child: Container(
+        color: Colors.white,
+      ),
+    );
+  }
+
+  Widget _buildCategoryShimmer(bool isDarkMode) {
+    return Shimmer.fromColors(
+      baseColor: isDarkMode ? Colors.grey[800]! : Colors.grey[300]!,
+      highlightColor: isDarkMode ? Colors.grey[700]! : Colors.grey[100]!,
+      child: SizedBox(
+        height: 100,
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          itemCount: 5,
+          itemBuilder: (_, __) => Padding(
+            padding: EdgeInsets.only(right: 12),
+            child: Column(
+              children: [
+                Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                SizedBox(height: 5),
+                Container(
+                  width: 40,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFestivalShimmer(bool isDarkMode) {
+    return Shimmer.fromColors(
+      baseColor: isDarkMode ? Colors.grey[800]! : Colors.grey[300]!,
+      highlightColor: isDarkMode ? Colors.grey[700]! : Colors.grey[100]!,
+      child: SizedBox(
+        height: 150,
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          itemCount: 5,
+          itemBuilder: (_, __) => Padding(
+            padding: EdgeInsets.only(right: 12),
+            child: Container(
+              width: 110,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchResultsShimmer(bool isDarkMode) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Shimmer.fromColors(
+          baseColor: isDarkMode ? Colors.grey[800]! : Colors.grey[300]!,
+          highlightColor: isDarkMode ? Colors.grey[700]! : Colors.grey[100]!,
+          child: Container(
+            width: 180,
+            height: 24,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+        ),
+        SizedBox(height: 10),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            childAspectRatio: 0.7,
+            crossAxisSpacing: 10,
+            mainAxisSpacing: 10,
+          ),
+          itemCount: 6, // Show 6 shimmer placeholders
+          itemBuilder: (context, index) {
+            return Shimmer.fromColors(
+              baseColor: isDarkMode ? Colors.grey[800]! : Colors.grey[300]!,
+              highlightColor: isDarkMode ? Colors.grey[700]! : Colors.grey[100]!,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // Get theme mode from provider
@@ -330,7 +448,7 @@ class _TemplatePageState extends State<TemplatePage> {
       appBar: AppBar(
         title: Text(
           context.loc.template,
-          style: TextStyle(color: textColor,fontSize: fontSize),
+          style: TextStyle(color: textColor, fontSize: fontSize),
         ),
         backgroundColor: backgroundColor,
         elevation: 0,
@@ -338,18 +456,6 @@ class _TemplatePageState extends State<TemplatePage> {
           icon: Icon(Icons.arrow_back_ios, color: iconColor),
           onPressed: () => Navigator.pop(context),
         ),
-        // actions: [
-        //   // Theme toggle button
-        //   IconButton(
-        //     icon: Icon(
-        //       isDarkMode ? Icons.light_mode : Icons.dark_mode,
-        //       color: iconColor,
-        //     ),
-        //     onPressed: () {
-        //       themeProvider.toggleTheme();
-        //     },
-        //   ),
-        // ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -364,19 +470,38 @@ class _TemplatePageState extends State<TemplatePage> {
               ),
               child: TextField(
                 controller: _searchController,
-                style: GoogleFonts.poppins(color: textColor,fontSize: fontSize),
+                style: GoogleFonts.poppins(color: textColor, fontSize: fontSize),
                 decoration: InputDecoration(
                   hintText: context.loc.searchquotes,
                   hintStyle: GoogleFonts.poppins(
                     color: secondaryTextColor,
                   ),
                   prefixIcon: Icon(Icons.search, color: secondaryTextColor),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _isListening ? Icons.mic : Icons.mic_none,
-                      color: _isListening ? AppColors.primaryBlue : secondaryTextColor,
-                    ),
-                    onPressed: _toggleListening,
+                  suffixIcon: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (_searchController.text.isNotEmpty)
+                        IconButton(
+                          icon: Icon(
+                            Icons.clear,
+                            color: secondaryTextColor,
+                          ),
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() {
+                              _searchResults = [];
+                              _isSearching = false;
+                            });
+                          },
+                        ),
+                      IconButton(
+                        icon: Icon(
+                          _isListening ? Icons.mic : Icons.mic_none,
+                          color: _isListening ? AppColors.primaryBlue : secondaryTextColor,
+                        ),
+                        onPressed: _toggleListening,
+                      ),
+                    ],
                   ),
                   border: InputBorder.none,
                   contentPadding:
@@ -390,11 +515,7 @@ class _TemplatePageState extends State<TemplatePage> {
             // Show search results or tabs based on search state
             if (_isSearching)
               Expanded(
-                child: Center(
-                  child: CircularProgressIndicator(
-                    color: AppColors.primaryBlue,
-                  ),
-                ),
+                child: _buildSearchResultsShimmer(isDarkMode),
               )
             else if (_searchResults.isNotEmpty)
               Expanded(
@@ -440,7 +561,7 @@ class _TemplatePageState extends State<TemplatePage> {
                     SizedBox(height: 16),
                     Expanded(
                       child: SingleChildScrollView(
-                        child: _buildTabContent(selectedTab, textColor, surfaceColor, isDarkMode),
+                        child: _buildTabContent(selectedTab, textColor, surfaceColor, isDarkMode, fontSize),
                       ),
                     ),
                   ],
@@ -453,282 +574,277 @@ class _TemplatePageState extends State<TemplatePage> {
   }
 
   Widget _buildSearchResultsSection(double fontSize, Color textColor, Color surfaceColor, bool isDarkMode) {
-  return SingleChildScrollView(
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Search Results (${_searchResults.length})',
-          style: GoogleFonts.poppins(
-            fontSize: fontSize + 2,
-            fontWeight: FontWeight.bold,
-            color: textColor,
-          ),
-        ),
-        SizedBox(height: 10),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: NeverScrollableScrollPhysics(),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3,
-            childAspectRatio: 0.7,
-            crossAxisSpacing: 10,
-            mainAxisSpacing: 10,
-          ),
-          itemCount: _searchResults.length,
-          itemBuilder: (context, index) {
-            final template = _searchResults[index];
-    
-            if (template.imageUrl.isEmpty) {
-              return SizedBox.shrink();
-            }
-    
-            return GestureDetector(
-              onTap: () => _handleTemplateSelection(template),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: surfaceColor,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: isDarkMode ? Colors.black26 : Colors.grey.shade300,
-                      blurRadius: 5,
-                      offset: Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      // Using CachedNetworkImage for better performance and loading indicators
-                      CachedNetworkImage(
-                        imageUrl: template.imageUrl,
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) => Center(
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: AppColors.primaryBlue,
-                          ),
-                        ),
-                        errorWidget: (context, url, error) {
-                          print('Error loading image for template ${template.id}: $error');
-                          return Container(
-                            color: isDarkMode ? Colors.grey[800] : Colors.grey[200],
-                            child: Center(
-                              child: Icon(
-                                Icons.image_not_supported,
-                                color: isDarkMode ? Colors.grey[600] : Colors.grey[400],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                      // PRO badge
-                      if (template.isPaid)
-                        Positioned(
-                          top: 5,
-                          right: 5,
-                          child: Container(
-                            padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.7),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.lock, color: Colors.amber, size: 12),
-                                SizedBox(width: 2),
-                                Text(
-                                  'PRO',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          },
-        ),
-      ],
-    ),
-  );
-}
-  Widget _buildTabContent(int index, Color textColor, Color surfaceColor, bool isDarkMode) {
-    final textSizeProvider = Provider.of<TextSizeProvider>(context);
-    double fontSize = textSizeProvider.fontSize;
-
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Category Tab
-          if (index == 0) ...[
-            SizedBox(height: 10),
-            Text(
-              context.loc.categories,
-              style: GoogleFonts.poppins(
-                fontSize: fontSize,
-                fontWeight: FontWeight.bold,
-                color: textColor,
-              ),
+          Text(
+            'Search Results (${_searchResults.length})',
+            style: GoogleFonts.poppins(
+              fontSize: fontSize + 2,
+              fontWeight: FontWeight.bold,
+              color: textColor,
             ),
-            SizedBox(height: 10),
-            SizedBox(
-              height: 100,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                children: [
-                  categoryCard(Icons.lightbulb, context.loc.motivational, Colors.green, textColor),
-                  categoryCard(Icons.favorite, context.loc.love, Colors.red, textColor),
-                  categoryCard(Icons.emoji_emotions, context.loc.funny, Colors.orange, textColor),
-                  categoryCard(Icons.people, context.loc.friendship, Colors.blue, textColor),
-                  categoryCard(Icons.self_improvement, context.loc.life, Colors.purple, textColor),
-                ],
-              ),
+          ),
+          SizedBox(height: 10),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              childAspectRatio: 0.7,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
             ),
-            SizedBox(height: 20),
-            _isSearching
-                ? Center(child: CircularProgressIndicator(color: AppColors.primaryBlue))
-                : _searchResults.isNotEmpty
-                    ? _buildSearchResultsSection(fontSize, textColor, surfaceColor, isDarkMode)
-                    : (_searchController.text.isNotEmpty)
-                        ? Center(
-                            child: Text(
-                              'No results found',
-                              style: GoogleFonts.poppins(
-                                fontSize: fontSize,
-                                color: textColor,
+            itemCount: _searchResults.length,
+            itemBuilder: (context, index) {
+              final template = _searchResults[index];
+      
+              if (template.imageUrl.isEmpty) {
+                return SizedBox.shrink();
+              }
+      
+              return GestureDetector(
+                onTap: () => _handleTemplateSelection(template),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: surfaceColor,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: isDarkMode ? Colors.black26 : Colors.grey.shade300,
+                        blurRadius: 5,
+                        offset: Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        // Using CachedNetworkImage for better performance and loading indicators
+                        CachedNetworkImage(
+                          imageUrl: template.imageUrl,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => _buildImageShimmer(isDarkMode),
+                          errorWidget: (context, url, error) {
+                            print('Error loading image for template ${template.id}: $error');
+                            return Container(
+                              color: isDarkMode ? Colors.grey[800] : Colors.grey[200],
+                              child: Center(
+                                child: Icon(
+                                  Icons.image_not_supported,
+                                  color: isDarkMode ? Colors.grey[600] : Colors.grey[400],
+                                ),
                               ),
-                            ),
-                          )
-                        : Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            );
+                          },
+                        ),
+                        // PRO badge
+                        if (template.isPaid)
+                          Positioned(
+                            top: 5,
+                            right: 5,
+                            child: Container(
+                              padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.7),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
+                                  Icon(Icons.lock, color: Colors.amber, size: 12),
+                                  SizedBox(width: 2),
                                   Text(
-                                    context.loc.newtemplate,
-                                    style: GoogleFonts.poppins(
-                                      fontSize: fontSize,
+                                    'PRO',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
                                       fontWeight: FontWeight.bold,
-                                      color: textColor,
-                                    ),
-                                  ),
-                                  GestureDetector(
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => TemplatesListScreen(
-                                            title: context.loc.newtemplate,
-                                            listType: TemplateListType.festival,
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                    child: Text(
-                                      context.loc.viewall,
-                                      style: GoogleFonts.poppins(
-                                        fontSize: fontSize - 2,
-                                        color: AppColors.primaryBlue,
-                                        fontWeight: FontWeight.w500,
-                                      ),
                                     ),
                                   ),
                                 ],
                               ),
-                              SizedBox(height: 10),
-                              SizedBox(
-                                height: 150,
-                                child: _loadingFestivals
-                                    ? Center(child: CircularProgressIndicator(color: AppColors.primaryBlue))
-                                    : _festivalPosts.isEmpty
-                                        ? Center(
-                                            child: Text(
-                                              "No festival posts available",
-                                              style: GoogleFonts.poppins(
-                                                fontSize: fontSize - 2,
-                                                color: textColor,
-                                              ),
-                                            ),
-                                          )
-                                        : ListView.builder(
-                                            scrollDirection: Axis.horizontal,
-                                            itemCount: _festivalPosts.length,
-                                            itemBuilder: (context, index) {
-                                              return FestivalCard(
-                                                festival: _festivalPosts[index],
-                                                fontSize: fontSize,
-                                                onTap: () => _handleFestivalPostSelection(_festivalPosts[index]),
-                                              );
-                                            },
-                                          ),
-                              ),
-                            ],
+                            ),
                           ),
-            SizedBox(height: 20),
-          ],
-
-          // Gallery Tab
-          if (index == 1) ...[
-            SizedBox(
-              width: double.infinity,
-              child: Center(
-                child: GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => EditScreen(title: ''),
-                      ),
-                    );
-                  },
-                  child: Container(
-                    padding: EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryBlue,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      context.loc.selectImageFromGallery,
-                      style: GoogleFonts.poppins(
-                        color: Colors.white,
-                        fontSize: 16,
-                      ),
+                      ],
                     ),
                   ),
                 ),
-              ),
-            ),
-            if (_image != null)
-              Padding(
-                padding: EdgeInsets.symmetric(vertical: 40),
-                child: Image.file(
-                  _image!,
-                  height: 300,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                ),
-              ),
-          ],
+              );
+            },
+          ),
         ],
       ),
     );
   }
 
-  Widget categoryCard(IconData icon, String title, Color color, Color textColor) {
+Widget _buildTabContent(int index, Color textColor, Color surfaceColor, bool isDarkMode, double fontSize) {
+  return SingleChildScrollView(
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Category Tab
+        if (index == 0) ...[
+       
+          SizedBox(height: 10),
+          //  static category section
+                Text(
+                    context.loc.categories,
+                    style: GoogleFonts.poppins(
+                      fontSize: fontSize + 2,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.getTextColor(isDarkMode),
+                    )
+                ),
+                SizedBox(height: 10),
+                SizedBox(
+                  height: 100,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    children: [
+                      categoryCard(Icons.lightbulb, context.loc.motivational, Colors.green, isDarkMode),
+                      categoryCard(Icons.favorite, context.loc.love, Colors.red, isDarkMode),
+                      categoryCard(Icons.emoji_emotions, context.loc.funny, Colors.orange, isDarkMode),
+                      categoryCard(Icons.people, context.loc.friendship, Colors.blue, isDarkMode),
+                      categoryCard(Icons.self_improvement, context.loc.life, Colors.purple, isDarkMode),
+                    ],
+                  ),
+                ),
+          SizedBox(height: 20),
+          _isSearching
+              ? _buildSearchResultsShimmer(isDarkMode)
+              : _searchResults.isNotEmpty
+                  ? _buildSearchResultsSection(fontSize, textColor, surfaceColor, isDarkMode)
+                  : (_searchController.text.isNotEmpty)
+                      ? Center(
+                          child: Text(
+                            'No results found',
+                            style: GoogleFonts.poppins(
+                              fontSize: fontSize,
+                              color: textColor,
+                            ),
+                          ),
+                        )
+                      : Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  context.loc.newtemplate,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: fontSize,
+                                    fontWeight: FontWeight.bold,
+                                    color: textColor,
+                                  ),
+                                ),
+                                GestureDetector(
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => TemplatesListScreen(
+                                          title: context.loc.newtemplate,
+                                          listType: TemplateListType.festival,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  child: Text(
+                                    context.loc.viewall,
+                                    style: GoogleFonts.poppins(
+                                      fontSize: fontSize - 2,
+                                      color: AppColors.primaryBlue,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 10),
+                            SizedBox(
+                              height: 150,
+                              child: _loadingFestivals
+                                  ? _buildFestivalShimmer(isDarkMode)
+                                  : _festivalPosts.isEmpty
+                                      ? Center(
+                                          child: Text(
+                                            "No festival posts available",
+                                            style: GoogleFonts.poppins(
+                                              fontSize: fontSize - 2,
+                                              color: textColor,
+                                            ),
+                                          ),
+                                        )
+                                      : ListView.builder(
+                                          scrollDirection: Axis.horizontal,
+                                          itemCount: _festivalPosts.length,
+                                          itemBuilder: (context, index) {
+                                            return FestivalCard(
+                                              festival: _festivalPosts[index],
+                                              fontSize: fontSize,
+                                              onTap: () => _handleFestivalPostSelection(_festivalPosts[index]),
+                                            );
+                                          },
+                                        ),
+                            ),
+                          ],
+                        ),
+          SizedBox(height: 20),
+        ],
+
+        // Gallery Tab
+        if (index == 1) ...[
+          SizedBox(
+            width: double.infinity,
+            child: Center(
+              child: GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => EditScreen(title: ''),
+                    ),
+                  );
+                },
+                child: Container(
+                  padding: EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryBlue,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    context.loc.selectImageFromGallery,
+                    style: GoogleFonts.poppins(
+                      color: Colors.white,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          if (_image != null)
+            Padding(
+              padding: EdgeInsets.symmetric(vertical: 40),
+              child: Image.file(
+                _image!,
+                height: 300,
+                width: double.infinity,
+                fit: BoxFit.cover,
+              ),
+            ),
+        ],
+      ],
+    ),
+  );
+}
+
+  Widget categoryCard(IconData icon, String title, Color color, bool isDarkMode) {
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -750,18 +866,21 @@ class _TemplatePageState extends State<TemplatePage> {
               width: 60,
               height: 60,
               decoration: BoxDecoration(
-                color: color.withOpacity(0.2),
+                color: color.withOpacity(isDarkMode ? 0.3 : 0.2),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: color, size: 30),
             ),
-            SizedBox(height: 5, width: 10),
+            SizedBox(
+              height: 5,
+              width: 10,
+            ),
             Text(
               title,
               style: GoogleFonts.poppins(
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
-                color: textColor,
+                color: AppColors.getTextColor(isDarkMode),
               ),
             ),
           ],

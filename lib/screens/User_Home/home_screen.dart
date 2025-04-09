@@ -16,9 +16,11 @@ import 'package:mtquotes/screens/User_Home/components/daily_check_in.dart';
 import 'package:mtquotes/screens/User_Home/components/Notifications/notifications.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mtquotes/screens/User_Home/profile_screen.dart';
+import 'package:mtquotes/utils/shimmer.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:shimmer/shimmer.dart';
 import '../../l10n/app_localization.dart';
 import '../../providers/text_size_provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -619,8 +621,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       if (canUpdateUI && mounted) {
                         _fetchUserData();
                         ScaffoldMessenger.of(context).showSnackBar(
-                           SnackBar(
-                              content: Text(context.loc.profileUpdatedSuccessfully)),
+                          SnackBar(
+                              content:
+                                  Text(context.loc.profileUpdatedSuccessfully)),
                         );
                       }
                     } catch (e) {
@@ -962,9 +965,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                   child: qotdImageUrl != null
                                       ? CachedNetworkImage(
                                           imageUrl: qotdImageUrl!,
-                                          placeholder: (context, url) => Center(
-                                              child:
-                                                  CircularProgressIndicator()),
+                                          placeholder: (context, url) =>
+                                              _buildQotdShimmer(isDarkMode),
                                           errorWidget: (context, url, error) =>
                                               Icon(Icons.error),
                                           fit: BoxFit.cover,
@@ -972,16 +974,19 @@ class _HomeScreenState extends State<HomeScreen> {
                                           height: double.infinity,
                                         )
                                       : Container(
-                                          color: Colors
-                                              .grey[300], // Fallback background
+                                          color: isDarkMode
+                                              ? Colors.grey[800]
+                                              : Colors.grey[
+                                                  300], // Fallback background with theme support
                                           alignment: Alignment.center,
                                           child: Text(
-                                            context.loc.noQuoteAvailableForToday,
+                                            context
+                                                .loc.noQuoteAvailableForToday,
                                             style: GoogleFonts.poppins(
-                                                fontSize: fontSize,
-                                                color: Colors
-                                                    .black // Ensure text color respects theme
-                                                ),
+                                              fontSize: fontSize,
+                                              color: AppColors.getTextColor(
+                                                  isDarkMode), // Ensure text color respects theme
+                                            ),
                                           ),
                                         ),
                                 ),
@@ -1032,7 +1037,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               )
                             ],
                           ),
-
+                          //QOTD section Finish
+                          //Recent Section starts
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -1045,8 +1051,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     style: GoogleFonts.poppins(
                                       fontSize: fontSize,
                                       fontWeight: FontWeight.bold,
-                                      color: AppColors.getTextColor(
-                                          isDarkMode), // Ensure text color respects theme
+                                      color: AppColors.getTextColor(isDarkMode),
                                     ),
                                   ),
                                   IconButton(
@@ -1060,7 +1065,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               SizedBox(
                                 height: 150,
                                 child: _loadingRecentTemplates
-                                    ? Center(child: CircularProgressIndicator())
+                                    ? _buildRecentTemplatesShimmer(isDarkMode)
                                     : _recentTemplates.isEmpty
                                         ? Center(
                                             child: Text(
@@ -1068,7 +1073,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                               style: GoogleFonts.poppins(
                                                 fontSize: fontSize - 2,
                                                 color: AppColors.getTextColor(
-                                                    isDarkMode), // Add theme-aware text color
+                                                    isDarkMode),
                                               ),
                                             ),
                                           )
@@ -1087,14 +1092,20 @@ class _HomeScreenState extends State<HomeScreen> {
                                                   margin: EdgeInsets.only(
                                                       right: 10),
                                                   decoration: BoxDecoration(
-                                                    color: Colors.white,
+                                                    color: isDarkMode
+                                                        ? Colors.grey[800]
+                                                        : Colors.white,
                                                     borderRadius:
                                                         BorderRadius.circular(
                                                             8),
                                                     boxShadow: [
                                                       BoxShadow(
-                                                          color: Colors
-                                                              .grey.shade300,
+                                                          color: isDarkMode
+                                                              ? Colors.black
+                                                                  .withOpacity(
+                                                                      0.3)
+                                                              : Colors.grey
+                                                                  .shade300,
                                                           blurRadius: 5)
                                                     ],
                                                   ),
@@ -1111,14 +1122,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                                             ? CachedNetworkImage(
                                                                 imageUrl: template
                                                                     .imageUrl,
-                                                                placeholder:
-                                                                    (context,
-                                                                            url) =>
-                                                                        Center(
-                                                                  child: CircularProgressIndicator(
-                                                                      strokeWidth:
-                                                                          2),
-                                                                ),
+                                                                placeholder: (context,
+                                                                        url) =>
+                                                                    _buildTemplateImageShimmer(
+                                                                        isDarkMode),
                                                                 errorWidget:
                                                                     (context,
                                                                         url,
@@ -1126,26 +1133,38 @@ class _HomeScreenState extends State<HomeScreen> {
                                                                   print(
                                                                       "Image error: $error for URL: $url");
                                                                   return Container(
-                                                                    color: Colors
-                                                                            .grey[
-                                                                        300],
+                                                                    color: isDarkMode
+                                                                        ? Colors.grey[
+                                                                            700]
+                                                                        : Colors
+                                                                            .grey[300],
                                                                     child: Icon(
                                                                         Icons
-                                                                            .error),
+                                                                            .error,
+                                                                        color: isDarkMode
+                                                                            ? Colors.grey[500]
+                                                                            : Colors.grey[600]),
                                                                   );
                                                                 },
                                                                 fit: BoxFit
                                                                     .cover,
                                                               )
                                                             : Container(
-                                                                color: Colors
-                                                                    .grey[200],
+                                                                color: isDarkMode
+                                                                    ? Colors.grey[
+                                                                        700]
+                                                                    : Colors.grey[
+                                                                        200],
                                                                 child: Center(
                                                                   child: Icon(
-                                                                      Icons
-                                                                          .image_not_supported,
-                                                                      color: Colors
-                                                                          .grey),
+                                                                    Icons
+                                                                        .image_not_supported,
+                                                                    color: isDarkMode
+                                                                        ? Colors.grey[
+                                                                            500]
+                                                                        : Colors
+                                                                            .grey,
+                                                                  ),
                                                                 ),
                                                               ),
 
@@ -1202,30 +1221,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                                               ),
                                                             ),
                                                           ),
-
-                                                        // // Template title
-                                                        // Positioned(
-                                                        //   bottom: 0,
-                                                        //   left: 0,
-                                                        //   right: 0,
-                                                        //   child: Container(
-                                                        //     padding: EdgeInsets.symmetric(vertical: 4, horizontal: 6),
-                                                        //     color: Colors.black.withOpacity(0.5),
-                                                        //     child: Text(
-                                                        //       template.title.isNotEmpty
-                                                        //           ? template.title
-                                                        //           : "Template",
-                                                        //       style: GoogleFonts.poppins(
-                                                        //         color: Colors.white,
-                                                        //         fontSize: fontSize - 4,
-                                                        //         fontWeight: FontWeight.w500,
-                                                        //       ),
-                                                        //       overflow: TextOverflow.ellipsis,
-                                                        //       maxLines: 1,
-                                                        //       textAlign: TextAlign.center,
-                                                        //     ),
-                                                        //   ),
-                                                        // ),
                                                       ],
                                                     ),
                                                   ),
@@ -1236,6 +1231,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             ],
                           ),
+                          // recent section ends
                           SizedBox(
                             height: 30,
                           ),
@@ -1297,6 +1293,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           SizedBox(
                             height: 20,
                           ),
+                          //category section ends
+                          //trending section starts
                           Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -1392,15 +1390,19 @@ class _HomeScreenState extends State<HomeScreen> {
                                       SizedBox(height: 20),
                                       SizedBox(
                                         height: 150,
-                                        // Changed from 200 to 100 to match other card sections
                                         child: _loadingFestivals
-                                            ? Center(
-                                                child:
-                                                    CircularProgressIndicator())
+                                            ? ShimmerHorizontalList(
+                                                itemCount: 5,
+                                                itemWidth: 100,
+                                                itemHeight: 120,
+                                                isDarkMode: isDarkMode,
+                                                type: ShimmerType.festival,
+                                              )
                                             : _festivalPosts.isEmpty
                                                 ? Center(
                                                     child: Text(
-                                                      context.loc.noFestivalsAvailable,
+                                                      context.loc
+                                                          .noFestivalsAvailable,
                                                       style:
                                                           GoogleFonts.poppins(
                                                         fontSize: fontSize,
@@ -1408,7 +1410,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                             FontWeight.bold,
                                                         color: AppColors
                                                             .getTextColor(
-                                                                isDarkMode), // Ensure text color respects theme
+                                                                isDarkMode),
                                                       ),
                                                     ),
                                                   )
@@ -1454,7 +1456,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                             FontWeight.bold,
                                                         color: AppColors
                                                             .getTextColor(
-                                                                isDarkMode), // Ensure text color respects theme
+                                                                isDarkMode),
                                                       ),
                                                     ),
                                                     SizedBox(width: 8),
@@ -1505,11 +1507,15 @@ class _HomeScreenState extends State<HomeScreen> {
                                           SizedBox(height: 20),
                                           SizedBox(
                                             height: 150,
-                                            // width: 0,
                                             child: _loadingTimeOfDay
-                                                ? Center(
-                                                    child:
-                                                        CircularProgressIndicator())
+                                                ? ShimmerHorizontalList(
+                                                    itemCount: 5,
+                                                    itemWidth: 120,
+                                                    itemHeight: 150,
+                                                    isDarkMode: isDarkMode,
+                                                    type: ShimmerType
+                                                        .template, // Assuming this is similar to templates in style
+                                                  )
                                                 : _timeOfDayPosts.isEmpty
                                                     ? Center(
                                                         child: Text(
@@ -1733,6 +1739,58 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  //shimmer widgets starts
+  Widget _buildQotdShimmer(bool isDarkMode) {
+    return Shimmer.fromColors(
+      baseColor: isDarkMode ? Colors.grey[800]! : Colors.grey[500]!,
+      highlightColor: isDarkMode ? Colors.grey[700]! : Colors.grey[400]!,
+      child: Container(
+        height: 200,
+        width: double.infinity,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          color: Colors.white,
+        ),
+      ),
+    );
+  }
+
+  // Add this widget function to your class
+  Widget _buildRecentTemplatesShimmer(bool isDarkMode) {
+    return SizedBox(
+      height: 150,
+      child: Shimmer.fromColors(
+        baseColor: isDarkMode ? Colors.grey[800]! : Colors.grey[500]!,
+        highlightColor: isDarkMode ? Colors.grey[700]! : Colors.grey[400]!,
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          itemCount: 5, // Show 5 shimmer placeholders
+          itemBuilder: (context, index) {
+            return Container(
+              width: 100,
+              margin: EdgeInsets.only(right: 10),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+// Single template image shimmer
+  Widget _buildTemplateImageShimmer(bool isDarkMode) {
+    return Shimmer.fromColors(
+      baseColor: isDarkMode ? Colors.grey[800]! : Colors.grey[500]!,
+      highlightColor: isDarkMode ? Colors.grey[700]! : Colors.grey[400]!,
+      child: Container(
+        color: Colors.white,
       ),
     );
   }

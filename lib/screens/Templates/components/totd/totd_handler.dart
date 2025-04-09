@@ -994,7 +994,7 @@ class TimeOfDayHandler {
       barrierDismissible: false,
       builder: (BuildContext context) {
         return Center(
-          child: CircularProgressIndicator(),
+          // child: CircularProgressIndicator(),
         );
       },
     );

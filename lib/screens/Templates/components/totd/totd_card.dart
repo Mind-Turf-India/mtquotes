@@ -55,10 +55,10 @@ class TimeOfDayPostComponent extends StatelessWidget {
                     placeholder: (context, url) => Container(
                       color: isDarkMode ? Colors.grey[800] : Colors.grey[200],
                       child: Center(
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: theme.primaryColor,
-                        ),
+                        // child: CircularProgressIndicator(
+                        //   strokeWidth: 2,
+                        //   color: theme.primaryColor,
+                        // ),
                       ),
                     ),
                     errorWidget: (context, url, error) => Container(

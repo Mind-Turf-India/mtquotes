@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:mtquotes/screens/Templates/components/template/quote_template.dart';
 import 'package:mtquotes/screens/Templates/components/template/template_card.dart';
 import 'package:mtquotes/screens/Templates/components/template/template_handler.dart';
+import 'package:mtquotes/utils/shimmer.dart'; // Import unified shimmer
 import '../../../../utils/app_colors.dart';
 
 class TemplateSection extends StatelessWidget {
@@ -41,7 +42,13 @@ class TemplateSection extends StatelessWidget {
             future: fetchTemplates(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return Center(child: CircularProgressIndicator());
+                return ShimmerHorizontalList(
+                  itemCount: 5,
+                  itemWidth: 100,
+                  itemHeight: 150,
+                  isDarkMode: isDarkMode,
+                  type: ShimmerType.template, // Specify template type
+                );
               }
 
               if (snapshot.hasError) {
