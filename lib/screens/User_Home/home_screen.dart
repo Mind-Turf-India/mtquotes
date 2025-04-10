@@ -325,10 +325,46 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
 // Add this method to handle template selection
-  void _handleRecentTemplateSelection(QuoteTemplate template) async {
+  void _handleRecentTemplateSelection(QuoteTemplate template,) async {
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    final isDarkMode = themeProvider.isDarkMode;
+
+    // Show loading dialog immediately
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Center(
+        child: Container(
+          padding: EdgeInsets.all(20),
+          // decoration: BoxDecoration(
+          //   color: AppColors.getBackgroundColor(isDarkMode),
+          //   borderRadius: BorderRadius.circular(10),
+          //   // boxShadow: [
+          //   //   BoxShadow(
+          //   //     color: Colors.black.withOpacity(0.2),
+          //   //     blurRadius: 10,
+          //   //   ),
+          //   // ],
+          // ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(
+                color: AppColors.primaryBlue,
+              ),
+              SizedBox(height: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+
     try {
       // Check if premium template and user is premium
       bool isUserSubscribed = await _templateService.isUserSubscribed();
+
+      // Close loading dialog regardless of outcome
+      Navigator.of(context, rootNavigator: true).pop();
 
       if (!template.isPaid || isUserSubscribed) {
         // Add to recent templates
@@ -352,6 +388,10 @@ class _HomeScreenState extends State<HomeScreen> {
         SubscriptionPopup.show(context);
       }
     } catch (e) {
+      // Close loading dialog in case of error
+      if (Navigator.canPop(context)) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
       print('Error in _handleRecentTemplateSelection: $e');
     }
   }

@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:mtquotes/l10n/app_localization.dart';
 import 'package:mtquotes/screens/User_Home/home_screen.dart';
 import 'package:mtquotes/screens/User_Home/files_screen.dart';
@@ -18,7 +19,6 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
-  OverlayEntry? _overlayEntry;
   bool isCreateExpanded = false;
 
   final List<Widget> _screens = [
@@ -30,67 +30,18 @@ class _MainScreenState extends State<MainScreen> {
   ];
 
   void _toggleCreateOptions() {
-    if (isCreateExpanded) {
-      _hideCreateOptions();
-    } else {
-      _showCreateOptions();
-    }
-  }
-
-  void _showCreateOptions() {
-    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
-    final isDarkMode = themeProvider.isDarkMode;
-
-    _overlayEntry = OverlayEntry(
-      builder: (context) => Stack(
-        children: [
-          Positioned.fill(
-            child: GestureDetector(
-              onTap: _hideCreateOptions,
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                child: Container(
-                  color: Colors.black.withOpacity(0.3),
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: 100,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    Flexible(child: _buildCreateOption(context.loc.gallery, Icons.image, isDarkMode)),
-                    Flexible(child: _buildCreateOption(context.loc.template, Icons.grid_view, isDarkMode)),
-                    Flexible(child: _buildCreateOption(context.loc.downloads, Icons.folder, isDarkMode)),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    Overlay.of(context).insert(_overlayEntry!);
-    setState(() => isCreateExpanded = true);
-  }
-
-  void _hideCreateOptions() {
-    _overlayEntry?.remove();
-    _overlayEntry = null;
-    setState(() => isCreateExpanded = false);
+    setState(() {
+      isCreateExpanded = !isCreateExpanded;
+    });
   }
 
   Widget _buildCreateOption(String label, IconData icon, bool isDarkMode) {
     return GestureDetector(
       onTap: () {
-        _hideCreateOptions();
+        setState(() {
+          isCreateExpanded = false;
+        });
+
         if (label == context.loc.template) {
           Navigator.push(
             context,
@@ -131,10 +82,10 @@ class _MainScreenState extends State<MainScreen> {
           SizedBox(height: 8),
           Text(
             label,
-            style: TextStyle(
+            style: GoogleFonts.poppins(
                 color: Colors.white,
                 fontSize: 12,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w300,
                 decoration: TextDecoration.none
             ),
           ),
@@ -150,7 +101,52 @@ class _MainScreenState extends State<MainScreen> {
     final backgroundColor = AppColors.getBackgroundColor(isDarkMode);
 
     return Scaffold(
-      body: _screens[_currentIndex],
+      body: Stack(
+        children: [
+          // Main screen content
+          _screens[_currentIndex],
+
+          // Overlay for when create is expanded
+          if (isCreateExpanded)
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  isCreateExpanded = false;
+                });
+              },
+              child: Container(
+                color: Colors.black.withOpacity(0.3),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                  child: Container(
+                    color: Colors.transparent,
+                  ),
+                ),
+              ),
+            ),
+
+          // Create options when expanded
+          if (isCreateExpanded)
+            Positioned(
+              bottom: 20,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      Flexible(child: _buildCreateOption(context.loc.gallery, Icons.image, isDarkMode)),
+                      Flexible(child: _buildCreateOption(context.loc.template, Icons.grid_view, isDarkMode)),
+                      Flexible(child: _buildCreateOption(context.loc.downloads, Icons.folder, isDarkMode)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
       bottomNavigationBar: Container(
         height: 70,
         decoration: BoxDecoration(
@@ -196,7 +192,7 @@ class _MainScreenState extends State<MainScreen> {
                     ],
                   ),
                   child: Icon(
-                    Icons.add,
+                    isCreateExpanded ? Icons.close : Icons.add,
                     color: isDarkMode ? Colors.black54 : Colors.white,
                     size: 28,
                   ),

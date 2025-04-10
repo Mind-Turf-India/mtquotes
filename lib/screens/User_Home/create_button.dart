@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:mtquotes/l10n/app_localization.dart';
 import 'package:mtquotes/screens/Create_Screen/edit_screen_create.dart';
 import 'package:mtquotes/screens/User_Home/files_screen.dart';
@@ -131,7 +132,7 @@ class _CreateBottomSheetState extends State<CreateBottomSheet> {
           SizedBox(height: 8),
           Text(
             label,
-            style: TextStyle(
+            style: GoogleFonts.poppins(
               color: Colors.blue,
               fontSize: fontSize,
               fontWeight: FontWeight.w500,

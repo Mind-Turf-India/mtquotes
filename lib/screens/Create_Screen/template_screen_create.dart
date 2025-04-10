@@ -448,7 +448,7 @@ class _TemplatePageState extends State<TemplatePage> {
       appBar: AppBar(
         title: Text(
           context.loc.template,
-          style: TextStyle(color: textColor, fontSize: fontSize),
+          style: TextStyle(color: textColor, fontSize: fontSize + 4),
         ),
         backgroundColor: backgroundColor,
         elevation: 0,

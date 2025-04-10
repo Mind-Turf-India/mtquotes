@@ -10,7 +10,7 @@ import 'package:mtquotes/screens/Payment_Screen/subscription_service.dart';
 import 'package:mtquotes/screens/User_Home/components/Notifications/notification_service.dart';
 import 'package:mtquotes/screens/User_Home/home_screen.dart';
 import 'package:mtquotes/utils/app_theme.dart';
-import 'package:mtquotes/utils/splash_screen.dart';
+import 'package:mtquotes/screens/User_Home/components/splash_screen.dart';
 import 'package:mtquotes/utils/theme_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_core/firebase_core.dart';

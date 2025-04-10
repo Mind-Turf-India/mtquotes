@@ -99,7 +99,12 @@ class _SignupScreenState extends State<SignupScreen> {
 
       // Store user info in Firestore
       await saveUserToFirestore(userCredential.user);
+
+      // Handle user change for notifications
       await NotificationService.instance.handleUserChanged(userCredential.user?.uid);
+
+      // Request notification permissions after successful signup
+      await NotificationService.instance.requestPermissions();
 
       _hideLoadingDialog();
 
@@ -120,129 +125,132 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   Future<void> saveUserToFirestore(User? user, {bool isNewSignUp = true}) async {
-  if (user != null && user.email != null) {
-    final String userEmail = user.email!.replaceAll(".", "_"); // Firestore doesn't allow '.' in document IDs
-    final userRef = FirebaseFirestore.instance.collection('users').doc(userEmail);
-    
-    // First check if the user already exists
-    DocumentSnapshot userSnapshot = await userRef.get();
-    
-    // If user exists and this is coming from signup flow, don't override data
-    if (userSnapshot.exists && !isNewSignUp) {
-      // Just update the login timestamp if needed
-      await userRef.update({
-        'lastLoginAt': FieldValue.serverTimestamp(),
-      });
-      return;
-    }
-    
-    // For new users or explicit signup flow
-    if (!userSnapshot.exists) {
-      final String referralCode = _generateReferralCode(user.uid);
-      Map<String, dynamic> userData = {
-        'uid': user.uid,
-        'email': user.email,
-        'name': null,
-        'bio': null,
-        'createdAt': FieldValue.serverTimestamp(),
-        'lastLoginAt': FieldValue.serverTimestamp(),
-        'referralCode': referralCode,
-        'referrerUid': null,
-        'rewardPoints': 100,
-        'previousRewardPoints': 0,
-        'isSubscribed': false,
-        'isPaid': false,
-        'role': 'user',
-      };
-      
-      // Handling referral codes
-      if (_referralController.text.trim().isNotEmpty) {
-        String usedReferralCode = _referralController.text.trim();
-        // Find the referrer in Firestore
-        QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-            .collection('users')
-            .where('referralCode', isEqualTo: usedReferralCode)
-            .get();
-        if (querySnapshot.docs.isNotEmpty) {
-          DocumentSnapshot referrerDoc = querySnapshot.docs.first;
-          String referrerUid = referrerDoc.id;
-          // Update user data with referrer info
-          userData['referrerUid'] = referrerUid;
-          userData['rewardPoints'] += 100; // Reward for using a referral
-          // Grant reward points to referrer
-          await FirebaseFirestore.instance.collection('users').doc(referrerUid).update({
-            'rewardPoints': FieldValue.increment(50),
-          });
-        }
+    if (user != null && user.email != null) {
+      final String userEmail = user.email!.replaceAll(".", "_"); // Firestore doesn't allow '.' in document IDs
+      final userRef = FirebaseFirestore.instance.collection('users').doc(userEmail);
+
+      // First check if the user already exists
+      DocumentSnapshot userSnapshot = await userRef.get();
+
+      // If user exists and this is coming from signup flow, don't override data
+      if (userSnapshot.exists && !isNewSignUp) {
+        // Just update the login timestamp if needed
+        await userRef.update({
+          'lastLoginAt': FieldValue.serverTimestamp(),
+        });
+        return;
       }
-      
-      // Save user data for new users
-      await userRef.set(userData);
+
+      // For new users or explicit signup flow
+      if (!userSnapshot.exists) {
+        final String referralCode = _generateReferralCode(user.uid);
+        Map<String, dynamic> userData = {
+          'uid': user.uid,
+          'email': user.email,
+          'name': null,
+          'bio': null,
+          'createdAt': FieldValue.serverTimestamp(),
+          'lastLoginAt': FieldValue.serverTimestamp(),
+          'referralCode': referralCode,
+          'referrerUid': null,
+          'rewardPoints': 100,
+          'previousRewardPoints': 0,
+          'isSubscribed': false,
+          'isPaid': false,
+          'role': 'user',
+        };
+
+        // Handling referral codes
+        if (_referralController.text.trim().isNotEmpty) {
+          String usedReferralCode = _referralController.text.trim();
+          // Find the referrer in Firestore
+          QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+              .collection('users')
+              .where('referralCode', isEqualTo: usedReferralCode)
+              .get();
+          if (querySnapshot.docs.isNotEmpty) {
+            DocumentSnapshot referrerDoc = querySnapshot.docs.first;
+            String referrerUid = referrerDoc.id;
+            // Update user data with referrer info
+            userData['referrerUid'] = referrerUid;
+            userData['rewardPoints'] += 100; // Reward for using a referral
+            // Grant reward points to referrer
+            await FirebaseFirestore.instance.collection('users').doc(referrerUid).update({
+              'rewardPoints': FieldValue.increment(50),
+            });
+          }
+        }
+
+        // Save user data for new users
+        await userRef.set(userData);
+      }
     }
   }
-}
 
-Future<void> _signInWithGoogle() async {
-  _showLoadingDialog();
-  try {
-    await GoogleSignIn().signOut();
-    final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-    if (googleUser == null) {
-      _hideLoadingDialog();
-      return;
-    }
-    final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-    final credential = GoogleAuthProvider.credential(
-      accessToken: googleAuth.accessToken,
-      idToken: googleAuth.idToken,
-    );
-    
-    // Before signing in, check if this is an existing user
-    bool isExistingUser = false;
+  Future<void> _signInWithGoogle() async {
+    _showLoadingDialog();
     try {
-      // Check if email exists in Firestore
-      final String userEmail = googleUser.email.replaceAll(".", "_");
-      final userDoc = await FirebaseFirestore.instance.collection('users').doc(userEmail).get();
-      isExistingUser = userDoc.exists;
+      await GoogleSignIn().signOut();
+      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+      if (googleUser == null) {
+        _hideLoadingDialog();
+        return;
+      }
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      // Before signing in, check if this is an existing user
+      bool isExistingUser = false;
+      try {
+        // Check if email exists in Firestore
+        final String userEmail = googleUser.email.replaceAll(".", "_");
+        final userDoc = await FirebaseFirestore.instance.collection('users').doc(userEmail).get();
+        isExistingUser = userDoc.exists;
+      } catch (e) {
+        // If error checking, proceed with normal flow
+        print("Error checking existing user: $e");
+      }
+
+      UserCredential userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+
+      // Pass information about whether this is a new signup or existing user login
+      await saveUserToFirestore(userCredential.user, isNewSignUp: !isExistingUser);
+
+      // Handle user change for notifications
+      await NotificationService.instance.handleUserChanged(userCredential.user?.uid);
+
+      // Request notification permissions after successful login/signup
+      await NotificationService.instance.requestPermissions();
+
+      _hideLoadingDialog();
+
+      // If it's an existing user coming from signup flow, show a message
+      if (isExistingUser) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("You already have an account with this email. Logging you in."),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => MainScreen()),
+            (Route<dynamic> route) => false,
+      );
     } catch (e) {
-      // If error checking, proceed with normal flow
-      print("Error checking existing user: $e");
-    }
-    
-    UserCredential userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
-    
-    // Pass information about whether this is a new signup or existing user login
-    await saveUserToFirestore(userCredential.user, isNewSignUp: !isExistingUser);
-    
-    // Handle user change for notifications
-    await NotificationService.instance.handleUserChanged(userCredential.user?.uid);
-    
-    _hideLoadingDialog();
-    
-    // If it's an existing user coming from signup flow, show a message
-    if (isExistingUser) {
+      _hideLoadingDialog();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("You already have an account with this email. Logging you in."),
-          backgroundColor: Colors.green,
+          content: Text("Google Sign-In Failed: $e"),
+          backgroundColor: Colors.red,
         ),
       );
     }
-    
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (context) => MainScreen()),
-      (Route<dynamic> route) => false,
-    );
-  } catch (e) {
-    _hideLoadingDialog();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text("Google Sign-In Failed: $e"),
-        backgroundColor: Colors.red,
-      ),
-    );
   }
-}
 
   // Function to generate a unique referral code
   String _generateReferralCode(String uid) {

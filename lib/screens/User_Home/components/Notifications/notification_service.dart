@@ -30,12 +30,6 @@ class NotificationModel {
   factory NotificationModel.fromRemoteMessage(RemoteMessage message) {
     // Determine notification type from message
     String notificationType = 'general';
-    // if (message.topic != null) {
-    //   notificationType = message.topic;
-    // } else if (message.data.containsKey('type')) {
-    //   notificationType = message.data['type'];
-    // }
-
     if (message.data.containsKey('type')) {
       notificationType = message.data['type'];
     }
@@ -95,6 +89,7 @@ class NotificationService {
 
   static final NotificationService instance = NotificationService._();
   String? _currentUserId;
+  bool _isPermissionRequested = false;
 
   final _messaging = FirebaseMessaging.instance;
   final _localNotifications = FlutterLocalNotificationsPlugin();
@@ -102,7 +97,7 @@ class NotificationService {
 
   // Stream controller for notifications
   final _notificationsStreamController =
-      StreamController<List<NotificationModel>>.broadcast();
+  StreamController<List<NotificationModel>>.broadcast();
 
   // Stream for unread notifications count
   final _unreadCountStreamController = StreamController<int>.broadcast();
@@ -118,11 +113,13 @@ class NotificationService {
 
   int get unreadCount => _notifications.where((n) => !n.isRead).length;
 
+  // This method initializes everything EXCEPT permission requests
   Future<void> initialize() async {
+    // Register background handler
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
-    // Request permission
-    await _requestPermission();
+    // Setup local notifications
+    await setupFlutterNotifications();
 
     // Load saved notifications
     if (_currentUserId != null) {
@@ -137,14 +134,38 @@ class NotificationService {
     // Setup message handlers
     await _setupMessageHandlers();
 
-    // Get FCM token and save it
+    // Get FCM token but don't request permissions yet
+    final token = await _messaging.getAPNSToken();
+    if (token != null) {
+      await _saveToken(token);
+    }
+
+    setupTokenRefresh();
+  }
+
+  // NEW METHOD: Call this after user logs in
+  Future<void> requestPermissions() async {
+    if (_isPermissionRequested) return; // Don't request multiple times
+
+    final settings = await _messaging.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+      provisional: false,
+      announcement: false,
+      carPlay: false,
+      criticalAlert: false,
+    );
+
+    print('Permission status: ${settings.authorizationStatus}');
+    _isPermissionRequested = true;
+
+    // After permissions, refresh and save token
     await refreshAndSaveToken();
 
     // Subscribe to topics
     await _subscribeToTopics();
   }
-
-  
 
   Future<void> _subscribeToTopics() async {
     // Subscribe to all topics from your Firebase Cloud Functions
@@ -157,11 +178,17 @@ class NotificationService {
 
   Future<void> refreshAndSaveToken() async {
     final token = await _messaging.getToken();
+    if (token != null) {
+      await _saveToken(token);
+    }
+  }
+
+  Future<void> _saveToken(String token) async {
     print('FCM Token: $token');
 
     // Save the token to shared preferences
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('fcm_token', token ?? '');
+    await prefs.setString('fcm_token', token);
 
     // Send token to your backend
     await _sendTokenToServer(token);
@@ -204,20 +231,6 @@ class NotificationService {
     return FirebaseAuth.instance.currentUser?.uid;
   }
 
-  Future<void> _requestPermission() async {
-    final settings = await _messaging.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-      provisional: false,
-      announcement: false,
-      carPlay: false,
-      criticalAlert: false,
-    );
-
-    print('Permission status: ${settings.authorizationStatus}');
-  }
-
   Future<void> setupFlutterNotifications() async {
     if (_isFlutterLocalNotificationsInitialized) {
       return;
@@ -236,11 +249,11 @@ class NotificationService {
 
     await _localNotifications
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
+        AndroidFlutterLocalNotificationsPlugin>()
         ?.createNotificationChannel(channel);
 
     const initializationSettingsAndroid =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+    AndroidInitializationSettings('@mipmap/ic_launcher');
 
     // ios setup
     final initializationSettingsDarwin = const DarwinInitializationSettings();
@@ -271,7 +284,6 @@ class NotificationService {
   }
 
   Future<void> showNotification(RemoteMessage message) async {
-   
     RemoteNotification? notification = message.notification;
     AndroidNotification? android = message.notification?.android;
     String? imageUrl =
@@ -280,7 +292,7 @@ class NotificationService {
     if (notification != null) {
       BigPictureStyleInformation? bigPictureStyle;
       if (imageUrl != null && imageUrl.isNotEmpty) {
-         print('image url fectched');
+        print('image url fetched');
         bigPictureStyle = BigPictureStyleInformation(
           FilePathAndroidBitmap(
               imageUrl), // This may need a proper image loader
@@ -299,7 +311,7 @@ class NotificationService {
             'high_importance_channel',
             'High Importance Notifications',
             channelDescription:
-                'This channel is used for important notifications.',
+            'This channel is used for important notifications.',
             importance: Importance.high,
             priority: Priority.high,
             styleInformation: bigPictureStyle, // Attach the style
@@ -361,7 +373,7 @@ class NotificationService {
   Future<void> saveNotification(NotificationModel notification) async {
     // Check if notification with same ID already exists
     final existingIndex =
-        _notifications.indexWhere((n) => n.id == notification.id);
+    _notifications.indexWhere((n) => n.id == notification.id);
 
     if (existingIndex >= 0) {
       // Update existing notification
@@ -473,7 +485,6 @@ class NotificationService {
     }
   }
 
-
   Future<void> _saveNotificationsToStorage() async {
     try {
       final userId = _currentUserId;
@@ -513,7 +524,6 @@ class NotificationService {
       _unreadCountStreamController.add(0);
     }
   }
-
 
   // Method to handle FCM token refresh
   void setupTokenRefresh() {
