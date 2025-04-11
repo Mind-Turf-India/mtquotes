@@ -1,4 +1,3 @@
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:mtquotes/providers/text_size_provider.dart';
 import 'package:mtquotes/screens/Auth_Screen/Login_Screen/login_screen.dart';
@@ -6,7 +5,6 @@ import 'package:mtquotes/screens/Create_Screen/components/details_screen.dart';
 import 'package:mtquotes/screens/Templates/components/template/quote_template.dart';
 import 'package:mtquotes/screens/Payment_Screen/subscription_screen.dart';
 import 'package:mtquotes/screens/Templates/components/template/template_handler.dart';
-import 'package:mtquotes/screens/Payment_Screen/subscription_service.dart';
 import 'package:mtquotes/screens/User_Home/components/Notifications/notification_service.dart';
 import 'package:mtquotes/screens/User_Home/home_screen.dart';
 import 'package:mtquotes/utils/app_theme.dart';
@@ -19,7 +17,6 @@ import 'package:provider/provider.dart';
 import 'package:mtquotes/screens/navbar_mainscreen.dart';
 import 'package:mtquotes/screens/Onboarding_Screen/onboarding_screen.dart';
 import 'package:mtquotes/l10n/app_localization.dart';
-// Import the splash screen
 import 'firebase_options.dart';
 
 void main() async {

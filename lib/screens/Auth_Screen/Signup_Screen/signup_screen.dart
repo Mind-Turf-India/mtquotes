@@ -277,11 +277,9 @@ class _SignupScreenState extends State<SignupScreen> {
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDarkMode = themeProvider.isDarkMode;
-    final theme = Theme.of(context);
 
     // Use AppColors directly for consistent theming
     final backgroundColor = isDarkMode ? AppColors.darkBackground : AppColors.lightBackground;
-    final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.lightSurface;
     final textColor = isDarkMode ? AppColors.darkText : AppColors.lightText;
     final secondaryTextColor = isDarkMode ? AppColors.darkSecondaryText : AppColors.lightSecondaryText;
     final iconColor = isDarkMode ? AppColors.darkIcon : AppColors.lightIcon;

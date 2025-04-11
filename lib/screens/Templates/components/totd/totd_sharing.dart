@@ -732,7 +732,6 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
   // Method to show the info box dialog
   void showTOTDInfoBox(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
-    final isDarkMode = themeProvider.isDarkMode;
     final textSizeProvider = Provider.of<TextSizeProvider>(context);
     final fontSize = textSizeProvider.fontSize;
 
@@ -1005,7 +1004,6 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
 
       // Calculate size and position for the watermark in top right corner
       final double width = originalImage.width.toDouble();
-      final double height = originalImage.height.toDouble();
       final double watermarkSize = width * 0.2; // 20% of the image width
       final double watermarkX = width - watermarkSize - 16; // Position from right edge with padding
       final double watermarkY = 16; // Position from top with padding

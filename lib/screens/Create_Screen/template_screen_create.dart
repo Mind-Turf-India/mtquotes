@@ -7,12 +7,11 @@ import 'package:image_picker/image_picker.dart';
 import 'package:mtquotes/screens/Payment_Screen/subscription_popup.dart';
 import 'package:mtquotes/screens/Templates/components/recent/recent_service.dart';
 import 'package:mtquotes/screens/Templates/components/template/template_handler.dart';
-import 'package:mtquotes/screens/Templates/components/template/template_section.dart';
 import 'package:mtquotes/screens/User_Home/components/Categories/category_screen.dart';
 import 'package:mtquotes/utils/app_colors.dart';
 import 'package:mtquotes/utils/theme_provider.dart';
 import 'package:provider/provider.dart';
-import 'package:shimmer/shimmer.dart'; // Make sure to add this import
+import 'package:shimmer/shimmer.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import '../../l10n/app_localization.dart';
 import '../../providers/text_size_provider.dart';

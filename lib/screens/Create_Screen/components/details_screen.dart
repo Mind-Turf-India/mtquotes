@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -667,7 +666,6 @@ class _DetailsScreenState extends State<DetailsScreen>
     final isDarkMode = Provider.of<ThemeProvider>(context).isDarkMode;
     final textSizeProvider = Provider.of<TextSizeProvider>(context);
     final fontSize = textSizeProvider.fontSize;
-    final theme = Theme.of(context);
 
     return Scaffold(
       backgroundColor: AppColors.getBackgroundColor(isDarkMode),

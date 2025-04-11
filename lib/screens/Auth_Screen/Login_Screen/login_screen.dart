@@ -1,6 +1,4 @@
-import 'dart:convert';
 import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -11,7 +9,6 @@ import 'package:mtquotes/utils/theme_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mtquotes/screens/Auth_Screen/Signup_Screen/signup_screen.dart';
 import 'package:mtquotes/screens/Auth_Screen/Forgot_Password_Screen/forgot_password.dart';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import '../../User_Home/components/Notifications/notification_service.dart';
 
@@ -291,7 +288,6 @@ class _LoginScreenState extends State<LoginScreen> {
     final isDarkMode = themeProvider.isDarkMode;
     final textColor = AppColors.getTextColor(isDarkMode);
     final backgroundColor = AppColors.getBackgroundColor(isDarkMode);
-    final surfaceColor = AppColors.getSurfaceColor(isDarkMode);
     final secondaryTextColor = AppColors.getSecondaryTextColor(isDarkMode);
     final dividerColor = AppColors.getDividerColor(isDarkMode);
     final iconColor = AppColors.getIconColor(isDarkMode);

@@ -20,8 +20,6 @@ import 'package:http/http.dart' as http;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:uuid/uuid.dart';
-import 'package:mtquotes/screens/Create_Screen/components/drafts_service.dart';
-import 'package:mtquotes/screens/Create_Screen/components/imageEditDraft.dart';
 import '../../utils/app_colors.dart';
 import '../Templates/components/template/quote_template.dart';
 import '../Templates/components/template/template_service.dart';
@@ -195,8 +193,6 @@ class _EditScreenState extends State<EditScreen> {
     // Get text color based on theme
     final textColor = Theme.of(context).textTheme.bodyMedium?.color ??
         (isDarkMode ? AppColors.darkText : AppColors.lightText);
-    final secondaryTextColor =
-        isDarkMode ? AppColors.darkSecondaryText : AppColors.lightSecondaryText;
 
     return Container(
       width: double.infinity,
@@ -472,9 +468,6 @@ class _EditScreenState extends State<EditScreen> {
 
       // Show error dialog
       if (mounted) {
-        final themeProvider =
-            Provider.of<ThemeProvider>(context, listen: false);
-        final isDarkMode = themeProvider.isDarkMode;
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -983,7 +976,6 @@ class _EditScreenState extends State<EditScreen> {
     final backgroundColor = AppColors.getBackgroundColor(isDarkMode);
     final surfaceColor = AppColors.getSurfaceColor(isDarkMode);
     final borderColor = AppColors.getDividerColor(isDarkMode);
-    final iconColor = AppColors.getIconColor(isDarkMode);
     final primaryColor = AppColors.primaryBlue;
 
     return Scaffold(

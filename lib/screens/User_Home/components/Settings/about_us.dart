@@ -65,7 +65,7 @@ class AboutUsScreen extends StatelessWidget {
                 padding:
                 const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
                 child: Text(
-                  "The Ultimate Quote & Status Maker",
+                  "Your space to feel, express, and connect",
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w600,
@@ -77,6 +77,26 @@ class AboutUsScreen extends StatelessWidget {
 
             const SizedBox(height: 24),
 
+            // Introduction section
+            _buildSection(
+              context,
+              "About Us",
+              RichText(
+                text: TextSpan(
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: AppColors.getTextColor(isDarkMode),
+                  ),
+                  children: const [
+                    TextSpan(
+                      text: "We believe words have the power to heal, inspire, and bring people together. Vaky was born from a simple idea: to create a safe, uplifting platform where anyone can share their moods, thoughts, quotes, and heartfelt wishes — whether it's a spark of joy, a cloud of doubt, or a quiet moment of reflection.",
+                    ),
+                  ],
+                ),
+              ),
+              isDarkMode,
+            ),
+
             // What is Vaky?
             _buildSection(
               context,
@@ -87,23 +107,12 @@ class AboutUsScreen extends StatelessWidget {
                     fontSize: 16,
                     color: AppColors.getTextColor(isDarkMode),
                   ),
-                  children: [
-                    const TextSpan(
-                      text: "Vaky is a powerful quote-making app ",
+                  children: const [
+                    TextSpan(
+                      text: "Vaky is a mood-sharing and quote-sharing app designed to help you express yourself freely. Whether you're looking for the perfect quote to match your mood, want to post a personal thought, or send an anonymous wish into the universe — Vaky is your outlet.\n\n",
                     ),
-                    const TextSpan(text: "designed to help you "),
-                    const TextSpan(
-                      text:
-                      "create, edit, and customize stunning quote images ",
-                    ),
-                    const TextSpan(text: "for social media. Whether it's "),
-                    const TextSpan(
-                      text:
-                      "motivational quotes, life quotes, inspirational messages, or aesthetic text posts",
-                    ),
-                    const TextSpan(text: ", Vaky makes it "),
-                    const TextSpan(
-                      text: "quick, easy, and fun!",
+                    TextSpan(
+                      text: "We make it easy and beautiful to share your inner world, connect with others who resonate, and explore a universe of emotions through words.",
                     ),
                   ],
                 ),
@@ -111,139 +120,59 @@ class AboutUsScreen extends StatelessWidget {
               isDarkMode,
             ),
 
-            // Why Vaky?
+            // Why We Built Vaky
             _buildSection(
               context,
-              "Why Vaky?",
+              "Why We Built Vaky",
               RichText(
                 text: TextSpan(
                   style: TextStyle(
                     fontSize: 16,
                     color: AppColors.getTextColor(isDarkMode),
                   ),
-                  children: [
-                    const TextSpan(
-                      text: "At ",
+                  children: const [
+                    TextSpan(
+                      text: "In a world that's always rushing, we wanted to slow things down — even for a few moments — so you can pause and reflect. Vaky was built to be a mindful space where expression matters more than perfection.\n\n",
                     ),
-                    const TextSpan(
-                      text: "Vaky",
+                    TextSpan(
+                      text: "Our goal is to empower people to be emotionally honest and feel less alone in their journey, all while celebrating the art of words and human connection.",
                     ),
-                    const TextSpan(
-                        text:
-                        ", we believe in the power of words. Our app is built for "),
-                    const TextSpan(
-                      text: "writers, influencers, and status lovers ",
-                    ),
-                    const TextSpan(
-                        text: "who want to express themselves through "),
-                    const TextSpan(
-                      text:
-                      "beautifully designed WhatsApp status, attitude quotes, and love Shayari",
-                    ),
-                    const TextSpan(text: "."),
                   ],
                 ),
               ),
               isDarkMode,
             ),
 
-            // What Can You Do with Vaky?
+            // What Makes Vaky Unique?
             _buildSection(
               context,
-              "What Can You Do with Vaky?",
+              "What Makes Vaky Unique?",
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildFeatureItem(
-                    "Create & Edit Quotes",
-                    "Design unique WhatsApp status quotes, attitude Shayari (2 lines), and love Shayari in Hindi.",
+                    "Anonymous & judgment-free sharing",
+                    "Express yourself freely without worrying about judgment.",
                     isDarkMode,
                   ),
                   _buildFeatureItem(
-                    "Stylish Status Maker",
-                    "Make eye-catching romantic status, attitude quotes in English, and short poems.",
+                    "Mood-based content suggestions",
+                    "Discover quotes and content that match how you feel.",
                     isDarkMode,
                   ),
                   _buildFeatureItem(
-                    "All-in-One Photo & Text Editor",
-                    "Perfect for motivational quotes, WhatsApp status updates, and Shayari lovers.",
+                    "Thoughtfully designed for emotional expression",
+                    "A platform built with your feelings in mind.",
                     isDarkMode,
                   ),
                   _buildFeatureItem(
-                    "Fast & Easy to Use",
-                    "Just type, customize, and save your quotes instantly with Vaky!",
+                    "A growing community of thoughtful individuals",
+                    "Connect with others who share and value authentic expression.",
                     isDarkMode,
                   ),
-                ],
-              ),
-              isDarkMode,
-            ),
-
-            // How Vaky Works?
-            _buildSection(
-              context,
-              "How Vaky Works?",
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "Using Vaky is super simple:",
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: AppColors.getTextColor(isDarkMode),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  _buildNumberedItem(
-                    "Choose a Background",
-                    "Pick from our built-in designs or use your own images.",
-                    isDarkMode,
-                  ),
-                  _buildNumberedItem(
-                    "Write Your Quote",
-                    "Add motivational, romantic, or attitude-based text.",
-                    isDarkMode,
-                  ),
-                  _buildNumberedItem(
-                    "Customize & Save",
-                    "Change font styles, colors, and alignment to match your vibe.",
-                    isDarkMode,
-                  ),
-                  _buildNumberedItem(
-                    "Share Instantly",
-                    "Post your quote on WhatsApp, Instagram, Facebook, and more!",
-                    isDarkMode,
-                  ),
-                ],
-              ),
-              isDarkMode,
-            ),
-
-            // Why Choose Vaky?
-            _buildSection(
-              context,
-              "Why Choose Vaky?",
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildCheckItem(
-                    "Lightweight & Fast",
-                    "Works smoothly on all devices.",
-                    isDarkMode,
-                  ),
-                  _buildCheckItem(
-                    "Free to Download",
-                    "Available on Google Play Store.",
-                    isDarkMode,
-                  ),
-                  _buildCheckItem(
-                    "Best Quote Maker App",
-                    "Perfect for quotes, WhatsApp status, and aesthetic posts.",
-                    isDarkMode,
-                  ),
-                  _buildCheckItem(
-                    "Express Yourself Creatively",
-                    "A powerful yet simple app for content lovers.",
+                  _buildFeatureItem(
+                    "Simple, calming interface",
+                    "User-friendly experience designed for mindful interaction.",
                     isDarkMode,
                   ),
                 ],
@@ -253,7 +182,40 @@ class AboutUsScreen extends StatelessWidget {
 
             const SizedBox(height: 24),
 
-            // Call to action
+            // Closing message
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+              decoration: BoxDecoration(
+                color: isDarkMode ? Colors.grey.shade800.withOpacity(0.3) : Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isDarkMode ? Colors.grey.shade700 : Colors.grey.shade300,
+                ),
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    "Whether you're here to inspire or be inspired, speak or simply listen — Vaky is here for you.",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontStyle: FontStyle.italic,
+                      color: AppColors.getTextColor(isDarkMode),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    "Feel it. Share it. Vaky it.",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primaryBlue,
+                    ),
+                  ),
+                ],
+              ),
+            ),
 
             const SizedBox(height: 32),
 
@@ -315,74 +277,6 @@ class AboutUsScreen extends StatelessWidget {
             Icons.star,
             size: 18,
             color: AppColors.primaryBlue,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: RichText(
-              text: TextSpan(
-                style: TextStyle(
-                  fontSize: 16,
-                  color: AppColors.getTextColor(isDarkMode),
-                ),
-                children: [
-                  TextSpan(
-                    text: "$title ",
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  TextSpan(text: "– $description"),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNumberedItem(String title, String description, bool isDarkMode) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            Icons.circle,
-            size: 12,
-            color: AppColors.primaryBlue,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: RichText(
-              text: TextSpan(
-                style: TextStyle(
-                  fontSize: 16,
-                  color: AppColors.getTextColor(isDarkMode),
-                ),
-                children: [
-                  TextSpan(
-                    text: "$title ",
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  TextSpan(text: "– $description"),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCheckItem(String title, String description, bool isDarkMode) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            Icons.check_circle,
-            size: 18,
-            color: Colors.green,
           ),
           const SizedBox(width: 8),
           Expanded(
