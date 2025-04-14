@@ -415,6 +415,22 @@ class TemplateHandler {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
+                          // Close button (X) in top right corner
+                          Align(
+                            alignment: Alignment.topRight,
+                            child: Padding(
+                              padding: EdgeInsets.only(top: 0, right: 4, bottom: 8),
+                              child: InkWell(
+                                onTap: () => Navigator.of(context).pop(),
+                                child: Icon(
+                                  Icons.close,
+                                  color: AppColors.getIconColor(isDarkMode),
+                                  size: 24,
+                                ),
+                              ),
+                            ),
+                          ),
+
                           // Template Image with Shimmer Loading Effect
                           Container(
                             height: 400,
@@ -510,116 +526,62 @@ class TemplateHandler {
                           ),
                           SizedBox(height: 24),
                           Text(
-                            context.loc.doYouWishToContinue,
+                            "How do you wish to continue?",
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w500,
                               color: textColor,
                             ),
                           ),
-                          SizedBox(height: 16),
-                          Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                          SizedBox(height: 24),
+                          // Button row with Create and Share buttons
+                          Row(
                             children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  SizedBox(
-                                    width: 100,
-                                    child: ElevatedButton(
-                                      onPressed: () {
-                                        Navigator.of(context).pop();
-                                        _navigateToProfileDetailsScreen(
-                                            context, template, isPaidUser);
-                                      },
-                                      style: ElevatedButton.styleFrom(
-                                        padding: EdgeInsets.zero,
-                                        backgroundColor: Colors.transparent,
-                                        foregroundColor: Colors.white,
-                                        elevation: 0,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                          BorderRadius.circular(24),
-                                        ),
-                                      ),
-                                      child: Ink(
-                                        decoration: BoxDecoration(
-                                          color: isDarkMode ? AppColors.primaryBlue: AppColors.primaryBlue,
-                                          borderRadius:
-                                          BorderRadius.circular(24),
-                                        ),
-                                        child: Container(
-                                          padding: EdgeInsets.symmetric(
-                                              vertical: 10, horizontal: 26),
-                                          child: Text(context.loc.create),
-                                        ),
-                                      ),
+                              // Create button (with outline style)
+                              Expanded(
+                                child: OutlinedButton(
+                                  onPressed: () {
+                                    Navigator.of(context).pop();
+                                    _navigateToProfileDetailsScreen(context, template, isPaidUser);
+                                  },
+                                  style: OutlinedButton.styleFrom(
+                                    side: BorderSide(color: dividerColor),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(24),
+                                    ),
+                                    padding: EdgeInsets.symmetric(vertical: 12),
+                                  ),
+                                  child: Text(
+                                    context.loc.create,
+                                    style: TextStyle(
+                                      color: textColor,
+                                      fontWeight: FontWeight.w500,
                                     ),
                                   ),
-                                  SizedBox(width: 40),
-                                  SizedBox(
-                                    width: 90,
-                                    height: 45,
-                                    child: ElevatedButton(
-                                      onPressed: () =>
-                                          Navigator.of(context).pop(),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: backgroundColor,
-                                        foregroundColor: textColor,
-                                        elevation: 0,
-                                        side: BorderSide(color: dividerColor),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                          BorderRadius.circular(24),
-                                        ),
-                                        padding: EdgeInsets.symmetric(
-                                          vertical: 12,
-                                        ),
-                                      ),
-                                      child: Text(context.loc.cancel),
-                                    ),
-                                  ),
-                                ],
+                                ),
                               ),
-                              SizedBox(height: 12),
-                              // Share Button
-                              Center(
-                                child: SizedBox(
-                                  width: 120,
-                                  child: ElevatedButton(
-                                    onPressed: () {
-                                      Navigator.of(context).pop();
-                                      _handleShareTemplate(
-                                          context, template, isPaidUser);
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      padding: EdgeInsets.zero,
-                                      backgroundColor: Colors.transparent,
-                                      foregroundColor: Colors.white,
-                                      elevation: 0,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(24),
-                                      ),
+
+                              SizedBox(width: 16),
+
+                              // Share button (with filled blue style)
+                              Expanded(
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    Navigator.of(context).pop();
+                                    _handleShareTemplate(context, template, isPaidUser);
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.primaryBlue,
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(24),
                                     ),
-                                    child: Ink(
-                                      decoration: BoxDecoration(
-                                        color: isDarkMode ? AppColors.primaryBlue: AppColors.primaryBlue,
-                                        borderRadius: BorderRadius.circular(24),
-                                      ),
-                                      child: Container(
-                                        padding:
-                                        EdgeInsets.symmetric(vertical: 12),
-                                        child: Row(
-                                          mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                          children: [
-                                            Icon(Icons.share,
-                                                color: Colors.white),
-                                            SizedBox(width: 8),
-                                            Text(context.loc.share),
-                                          ],
-                                        ),
-                                      ),
+                                    padding: EdgeInsets.symmetric(vertical: 12),
+                                  ),
+                                  child: Text(
+                                    context.loc.share,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w500,
                                     ),
                                   ),
                                 ),

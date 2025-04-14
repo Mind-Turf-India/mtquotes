@@ -20,7 +20,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../../utils/shimmer.dart';
 import '../../../Create_Screen/components/details_screen.dart';
-import '../../../Create_Screen/edit_screen_create.dart';
 import 'package:mtquotes/screens/Templates/components/template/quote_template.dart';
 import '../recent/recent_service.dart';
 
@@ -270,8 +269,7 @@ class TimeOfDayHandler {
       final bool isDarkMode = themeProvider.isDarkMode;
       final Color indicatorColor = AppColors.primaryBlue;
       final Color backgroundColor = AppColors.getSurfaceColor(isDarkMode);
-      final Color errorColor = Colors.red;
-      final Color successColor = AppColors.primaryGreen;
+
 
       // Add to recent templates when sharing
       try {
@@ -454,7 +452,6 @@ class TimeOfDayHandler {
 
 // Method to show the TOTD confirmation dialog
   // Add these methods to your TimeOfDayHandler class
-
   static void _showTemplateConfirmationDialog(
       BuildContext context,
       TimeOfDayPost post,
@@ -463,7 +460,10 @@ class TimeOfDayHandler {
       ) {
     final ThemeProvider themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     final bool isDarkMode = themeProvider.isDarkMode;
-    final Color textColor = AppColors.getTextColor(isDarkMode);
+    final Color textColor =
+    isDarkMode ? AppColors.darkText : AppColors.lightText;
+    final Color dividerColor =
+    isDarkMode ? AppColors.darkDivider : AppColors.lightDivider;
 
     showDialog(
       context: context,
@@ -472,229 +472,189 @@ class TimeOfDayHandler {
         return BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
           child: Dialog(
-            backgroundColor: Colors.transparent,
+            backgroundColor: AppColors.getSurfaceColor(isDarkMode),
             insetPadding: EdgeInsets.symmetric(horizontal: 20),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
             child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
                     width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: AppColors.getSurfaceColor(isDarkMode),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Padding(
-                      padding: EdgeInsets.all(16),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // TOTD Image with RepaintBoundary for capture and shimmer loading effect
-                          RepaintBoundary(
-                            key: totdImageKey,
-                            child: Container(
-                              height: 400,
-                              width: double.infinity,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(8),
-                                color: isDarkMode ? Colors.grey.shade800 : Colors.grey.shade200,
+                    padding: EdgeInsets.all(16),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Close button (X) in top right corner
+                        Align(
+                          alignment: Alignment.topRight,
+                          child: Padding(
+                            padding: EdgeInsets.only(top: 0, right: 4, bottom: 8),
+                            child: InkWell(
+                              onTap: () => Navigator.of(context).pop(),
+                              child: Icon(
+                                Icons.close,
+                                color: AppColors.getIconColor(isDarkMode),
+                                size: 24,
                               ),
-                              child: Stack(
-                                fit: StackFit.expand,
-                                children: [
-                                  // Main image with shimmer loading state
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: CachedNetworkImage(
-                                      imageUrl: post.imageUrl,
-                                      fit: BoxFit.cover,
-                                      placeholder: (context, url) => ShimmerLoader(
-                                        width: double.infinity,
-                                        height: double.infinity,
-                                        isDarkMode: isDarkMode,
-                                        type: ShimmerType.template,
-                                        margin: EdgeInsets.zero,
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      errorWidget: (context, url, error) => Center(
-                                        child: Column(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            Icon(
-                                              Icons.error_outline,
-                                              color: Colors.red,
-                                              size: 48,
-                                            ),
-                                            SizedBox(height: 16),
-                                            Text(
-                                              context.loc.failedToLoadImage,
-                                              style: TextStyle(
-                                                color: textColor,
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      // Add these options for better caching behavior
-                                      cacheKey: '${post.id}_dialog',
-                                      memCacheWidth: 600, // Optimize memory cache size
-                                      maxHeightDiskCache: 800, // Optimize disk cache size
-                                    ),
-                                  ),
+                            ),
+                          ),
+                        ),
 
-                                  // PRO badge (only for paid users)
-                                  if (post.isPaid)
-                                    Positioned(
-                                      top: 10,
-                                      right: 10,
-                                      child: Container(
-                                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                        decoration: BoxDecoration(
-                                          color: Colors.black.withOpacity(0.7),
-                                          borderRadius: BorderRadius.circular(12),
-                                        ),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Icon(Icons.lock, color: Colors.amber, size: 14),
-                                            SizedBox(width: 4),
-                                            Text(
-                                              'PRO',
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.bold,
-                                              ),
+                        // TOTD Image with RepaintBoundary for capture and shimmer loading effect
+                        RepaintBoundary(
+                          key: totdImageKey,
+                          child: Container(
+                            height: 400,
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8),
+                              color: isDarkMode ? Colors.grey.shade800 : Colors.grey.shade200,
+                            ),
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                // Main image with shimmer loading state
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: CachedNetworkImage(
+                                    imageUrl: post.imageUrl,
+                                    fit: BoxFit.cover,
+                                    placeholder: (context, url) => ShimmerLoader(
+                                      width: double.infinity,
+                                      height: double.infinity,
+                                      isDarkMode: isDarkMode,
+                                      type: ShimmerType.template,
+                                      margin: EdgeInsets.zero,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    errorWidget: (context, url, error) => Center(
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            Icons.error_outline,
+                                            color: Colors.red,
+                                            size: 48,
+                                          ),
+                                          SizedBox(height: 16),
+                                          Text(
+                                            context.loc.failedToLoadImage,
+                                            style: TextStyle(
+                                              color: textColor,
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w500,
                                             ),
-                                          ],
-                                        ),
+                                          ),
+                                        ],
                                       ),
                                     ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: 24),
-                          Text(
-                            context.loc.doYouWishToContinue,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                              color: textColor,
-                            ),
-                          ),
-                          SizedBox(height: 16),
-                          Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  SizedBox(
-                                    width: 100,
-                                    child: ElevatedButton(
-                                      onPressed: () {
-                                        Navigator.of(context).pop();
-                                        _navigateToDetailsScreen(
-                                            context, post, isPaidUser);
-                                      },
-                                      style: ElevatedButton.styleFrom(
-                                        padding: EdgeInsets.zero,
-                                        backgroundColor: Colors.transparent,
-                                        foregroundColor: Colors.white,
-                                        elevation: 0,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                          BorderRadius.circular(24),
-                                        ),
-                                      ),
-                                      child: Ink(
-                                        decoration: BoxDecoration(
-                                          color: isDarkMode ? AppColors.primaryBlue: AppColors.primaryBlue,
-                                          borderRadius:
-                                          BorderRadius.circular(24),
-                                        ),
-                                        child: Container(
-                                          padding: EdgeInsets.symmetric(
-                                              vertical: 10, horizontal: 26),
-                                          child: Text(context.loc.create),
-                                        ),
-                                      ),
-                                    ),
+                                    // Add these options for better caching behavior
+                                    cacheKey: '${post.id}_dialog',
+                                    memCacheWidth: 600, // Optimize memory cache size
+                                    maxHeightDiskCache: 800, // Optimize disk cache size
                                   ),
-                                  SizedBox(width: 40),
-                                  SizedBox(
-                                    width: 90,
-                                    height: 45,
-                                    child: ElevatedButton(
-                                      onPressed: () =>
-                                          Navigator.of(context).pop(),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: AppColors.getSurfaceColor(isDarkMode),
-                                        foregroundColor: textColor,
-                                        elevation: 0,
-                                        side: BorderSide(color: AppColors.getDividerColor(isDarkMode)),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                          BorderRadius.circular(24),
-                                        ),
-                                        padding: EdgeInsets.symmetric(
-                                          vertical: 12,
-                                        ),
-                                      ),
-                                      child: Text(context.loc.cancel),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: 12),
-                              // Share Button
-                              Center(
-                                child: SizedBox(
-                                  width: 120,
-                                  child: ElevatedButton(
-                                    onPressed: () {
-                                      Navigator.of(context).pop();
-                                      _handleShareTOTD(
-                                          context, post, isPaidUser);
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      padding: EdgeInsets.zero,
-                                      backgroundColor: Colors.transparent,
-                                      foregroundColor: Colors.white,
-                                      elevation: 0,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(24),
-                                      ),
-                                    ),
-                                    child: Ink(
+                                ),
+
+                                // PRO badge (only for paid users)
+                                if (post.isPaid)
+                                  Positioned(
+                                    top: 10,
+                                    right: 10,
+                                    child: Container(
+                                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                       decoration: BoxDecoration(
-                                        color: isDarkMode ? AppColors.primaryBlue: AppColors.primaryBlue,
-                                        borderRadius: BorderRadius.circular(24),
+                                        color: Colors.black.withOpacity(0.7),
+                                        borderRadius: BorderRadius.circular(12),
                                       ),
-                                      child: Container(
-                                        padding:
-                                        EdgeInsets.symmetric(vertical: 12),
-                                        child: Row(
-                                          mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                          children: [
-                                            Icon(Icons.share, color: Colors.white),
-                                            SizedBox(width: 8),
-                                            Text(context.loc.share),
-                                          ],
-                                        ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(Icons.lock, color: Colors.amber, size: 14),
+                                          SizedBox(width: 4),
+                                          Text(
+                                            'PRO',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 24),
+                        Text(
+                          context.loc.doYouWishToContinue,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            color: textColor,
+                          ),
+                        ),
+                        SizedBox(height: 24),
+                        // Button row with Create and Share buttons
+                        Row(
+                          children: [
+                            // Create button (with outline style)
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                  _navigateToDetailsScreen(context, post, isPaidUser);
+                                },
+                                style: OutlinedButton.styleFrom(
+                                  side: BorderSide(color: dividerColor),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(24),
+                                  ),
+                                  padding: EdgeInsets.symmetric(vertical: 12),
+                                ),
+                                child: Text(
+                                  context.loc.create,
+                                  style: TextStyle(
+                                    color: textColor,
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
                               ),
-                            ],
-                          ),
-                        ],
-                      ),
+                            ),
+
+                            SizedBox(width: 16),
+
+                            // Share button (with filled blue style)
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                  _handleShareTOTD(context, post, isPaidUser);
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.blue,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(24),
+                                  ),
+                                  padding: EdgeInsets.symmetric(vertical: 12),
+                                ),
+                                child: Text(
+                                  context.loc.share,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   )
                 ],

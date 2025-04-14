@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mtquotes/l10n/app_localization.dart';
@@ -162,7 +163,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           child: (selectedImage == null &&
                               (_profileImageUrl == null ||
                                   _profileImageUrl!.isEmpty))
-                              ? Icon(Icons.camera_alt, size: 40, color: AppColors.getIconColor(isDarkMode))
+                              ? SvgPicture.asset(
+                            'assets/icons/camera.svg',
+                            width: 40,
+                            height: 40,
+                            colorFilter: ColorFilter.mode(
+                              AppColors.getIconColor(isDarkMode),
+                              BlendMode.srcIn,
+                            ),
+                          )
                               : null,
                         ),
                         // Overlay a loading indicator when image is being processed
@@ -446,9 +455,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 const Spacer(),
                 IconButton(
-                  icon: Icon(
-                    LucideIcons.bellRing,
-                    color: AppColors.getIconColor(isDarkMode),
+                  icon: SvgPicture.asset(
+                    'assets/icons/notification_3002272.svg',
+                    width: 24,
+                    height: 24,
+                    colorFilter: ColorFilter.mode(
+                      AppColors.getTextColor(isDarkMode),
+                      BlendMode.srcIn,
+                    ),
                   ),
                   onPressed: () {
                     showModalBottomSheet(
@@ -476,11 +490,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ? NetworkImage(_profileImageUrl!)
                   : null,
               child: _profileImageUrl == null || _profileImageUrl!.isEmpty
-                  ? Icon(
-                Icons.person,
-                size: 50,
-                color: AppColors.getIconColor(isDarkMode),
+                  ? SvgPicture.asset(
+                'assets/icons/user_12344961.svg',
+                width: 50,
+                height: 50,
+                colorFilter: ColorFilter.mode(
+                  AppColors.getIconColor(isDarkMode),
+                  BlendMode.srcIn,
+                ),
               )
+
                   : null,
             ),
           ),
@@ -501,11 +520,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 onTap: () {
                   _showUserProfileDialog();
                 },
-                child: Icon(
-                  Icons.edit,
-                  size: 18,
-                  color: AppColors.getIconColor(isDarkMode).withOpacity(0.7),
-                ),
+                child: SvgPicture.asset(
+                  'assets/icons/pen_1659682.svg',
+                  width: 15,
+                  height: 15,
+                  colorFilter: ColorFilter.mode(
+                    AppColors.getIconColor(isDarkMode),
+                    BlendMode.srcIn,
+                  ),
+                )
               ),
             ],
           ),
@@ -564,7 +587,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               padding: EdgeInsets.zero,
               children: [
                 _buildMenuItem(
-                    Icons.workspace_premium,
+                    'assets/icons/premium_1659060.svg',
                     context.loc.subscriptions,
                     fontSize,
                     isDarkMode,
@@ -578,7 +601,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     }
                 ),
                 _buildMenuItem(
-                    Icons.share_rounded,
+                    'assets/icons/sad_4746966.svg',
                     context.loc.shareapplication,
                     fontSize,
                     isDarkMode,
@@ -591,22 +614,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       );
                     }
                 ),
-                // _buildMenuItem(
-                //   Icons.drafts_outlined,
-                //   context.loc.downloads,
-                //   fontSize,
-                //   isDarkMode,
-                //   () {
-                //     Navigator.push(
-                //       context,
-                //       MaterialPageRoute(
-                //         builder: (context) => FilesPage()
-                //       )
-                //     );
-                //   }
-                // ),
                 _buildMenuItem(
-                    Icons.support_agent_outlined,
+                    'assets/icons/customer-support_3888615.svg',
                     context.loc.support,
                     fontSize,
                     isDarkMode,
@@ -620,7 +629,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     }
                 ),
                 _buildMenuItem(
-                    Icons.question_mark,
+                    'assets/icons/settings_2099058.svg',
                     context.loc.aboutus,
                     fontSize,
                     isDarkMode,
@@ -634,7 +643,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     }
                 ),
                 _buildMenuItem(
-                  Icons.settings,
+                  'assets/icons/settings_2099058.svg',
                   context.loc.settings,
                   fontSize,
                   isDarkMode,
@@ -692,16 +701,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildMenuItem(
-      IconData icon,
+      String iconPath,
       String title,
       double textSize,
       bool isDarkMode,
       VoidCallback onTap
       ) {
     return ListTile(
-      leading: Icon(
-        icon,
-        color: AppColors.getIconColor(isDarkMode),
+      leading: SvgPicture.asset(
+        iconPath,
+        width: 24,
+        height: 24,
+        colorFilter: ColorFilter.mode(
+          AppColors.getIconColor(isDarkMode),
+          BlendMode.srcIn,
+        ),
       ),
       title: Text(
         title,

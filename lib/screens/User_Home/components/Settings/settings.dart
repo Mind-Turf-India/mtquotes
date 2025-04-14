@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart'; // Add this import
 import 'package:mtquotes/l10n/app_localization.dart';
 import 'package:mtquotes/screens/User_Home/components/Settings/text_language.dart';
 import 'package:mtquotes/screens/User_Home/components/Settings/text_size.dart';
@@ -48,7 +49,7 @@ class SettingsPage extends StatelessWidget {
                 isDarkMode
             ),
             _buildSettingsOption(
-                Icons.language,
+                'assets/icons/translate.svg',
                 context.loc.language,
                 fontSize,
                 isDarkMode,
@@ -60,7 +61,7 @@ class SettingsPage extends StatelessWidget {
                 }
             ),
             _buildSettingsOption(
-                Icons.text_fields,
+                'assets/icons/text-size_5083742.svg',
                 context.loc.textsize,
                 fontSize,
                 isDarkMode,
@@ -82,7 +83,15 @@ class SettingsPage extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: Row(
         children: [
-          Icon(Icons.brightness_6_outlined, color: AppColors.getIconColor(isDarkMode)),
+          SvgPicture.asset(
+            'assets/icons/light-mode_8051800.svg',
+            width: 24,
+            height: 24,
+            colorFilter: ColorFilter.mode(
+              AppColors.getIconColor(isDarkMode),
+              BlendMode.srcIn,
+            ),
+          ),
           SizedBox(width: 16),
           Expanded(
             child: Text(
@@ -105,9 +114,17 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildSettingsOption(IconData icon, String title, double textSize, bool isDarkMode, VoidCallback onTap) {
+  Widget _buildSettingsOption(String iconPath, String title, double textSize, bool isDarkMode, VoidCallback onTap) {
     return ListTile(
-      leading: Icon(icon, color: AppColors.getIconColor(isDarkMode)),
+      leading: SvgPicture.asset(
+        iconPath,
+        width: 24,
+        height: 24,
+        colorFilter: ColorFilter.mode(
+          AppColors.getIconColor(isDarkMode),
+          BlendMode.srcIn,
+        ),
+      ),
       title: Text(
         title,
         style: TextStyle(
@@ -115,7 +132,15 @@ class SettingsPage extends StatelessWidget {
             color: AppColors.getTextColor(isDarkMode)
         ),
       ),
-      trailing: Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.getIconColor(isDarkMode).withOpacity(0.6)),
+      trailing: SvgPicture.asset(
+        'assets/icons/back.svg',
+        width: 16,
+        height: 16,
+        colorFilter: ColorFilter.mode(
+          AppColors.getIconColor(isDarkMode).withOpacity(0.6),
+          BlendMode.srcIn,
+        ),
+      ),
       onTap: onTap,
     );
   }

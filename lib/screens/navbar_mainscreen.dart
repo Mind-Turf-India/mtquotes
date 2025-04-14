@@ -1,10 +1,12 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mtquotes/l10n/app_localization.dart';
 import 'package:mtquotes/screens/User_Home/home_screen.dart';
 import 'package:mtquotes/screens/User_Home/files_screen.dart';
 import 'package:mtquotes/screens/User_Home/profile_screen.dart';
+import 'package:mtquotes/screens/User_Home/components/user_survey.dart'; // Add this import
 import 'package:provider/provider.dart';
 import '../utils/app_colors.dart';
 import '../utils/theme_provider.dart';
@@ -21,13 +23,24 @@ class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
   bool isCreateExpanded = false;
 
-  final List<Widget> _screens = [
-    HomeScreen(),
-    SearchScreen(),
-    Container(), // Placeholder for create button
-    FilesPage(),
-    ProfileScreen(),
-  ];
+  // Create a key to access the HomeScreen state
+  final GlobalKey<HomeScreenState> _homeScreenKey = GlobalKey<HomeScreenState>();
+
+  // Late initialize the screens with the key
+  late List<Widget> _screens;
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize the screens list with the key for HomeScreen
+    _screens = [
+      HomeScreen(key: _homeScreenKey),
+      SearchScreen(),
+      Container(), // Placeholder for create button
+      FilesPage(),
+      ProfileScreen(),
+    ];
+  }
 
   void _toggleCreateOptions() {
     setState(() {
@@ -165,12 +178,12 @@ class _MainScreenState extends State<MainScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildNavItem(0, Icons.home_outlined, Icons.home, context.loc.home),
-                _buildNavItem(1, Icons.search, Icons.search, context.loc.search),
+                _buildNavItem(0, 'assets/icons/home Inactive.svg', 'assets/icons/Home Active.svg', context.loc.home),
+                _buildNavItem(1, 'assets/icons/Property 1=Search Inactive.svg', 'assets/icons/Property 1=Search Active.svg', context.loc.search),
                 // Empty space for the center button
                 SizedBox(width: 60),
-                _buildNavItem(3, Icons.folder_outlined, Icons.folder, context.loc.files),
-                _buildNavItem(4, Icons.person_outline, Icons.person, context.loc.profile),
+                _buildNavItem(3, 'assets/icons/Property 1=Download Inactive.svg', 'assets/icons/Property 1=Download Active.svg', context.loc.files),
+                _buildNavItem(4, 'assets/icons/Property 1=User Inactive.svg', 'assets/icons/Property 1=user Active.svg', context.loc.profile),
               ],
             ),
             Center(
@@ -205,34 +218,60 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
-  Widget _buildNavItem(int index, IconData icon, IconData activeIcon, String label) {
+  Widget _buildNavItem(int index, String iconPath, String activeIconPath, String label) {
     final isSelected = _currentIndex == index;
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDarkMode = themeProvider.isDarkMode;
 
     return InkWell(
-      onTap: () {
+      onTap: () async {
+        // If tapping on the same tab that's already selected
+        if (index == _currentIndex) {
+          // No need to do anything special when tapping same tab
+          return;
+        }
+
+        // Store old index before updating to new one
+        int oldIndex = _currentIndex;
+
+        // Update the selected index
         setState(() {
           _currentIndex = index;
         });
+
+        // If navigating TO home screen FROM a different screen
+        if (index == 0 && oldIndex != 0) {
+          print("Returning to home screen from another screen");
+
+          // Increment app open count
+          await UserSurveyManager.incrementAppOpenCount();
+
+          // Add a small delay to ensure the counter updated
+          await Future.delayed(Duration(milliseconds: 300));
+
+          // Check for survey
+          if (_homeScreenKey.currentState != null) {
+            await _homeScreenKey.currentState!.checkAndShowSurvey();
+          }
+        }
       },
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            isSelected ? activeIcon : icon,
-            color: isSelected
-                ? AppColors.primaryBlue
-                : Colors.grey,
-            size: 24,
+          SvgPicture.asset(
+            isSelected ? activeIconPath : iconPath,
+            width: 24,
+            height: 24,
+            colorFilter: ColorFilter.mode(
+              isSelected ? AppColors.primaryBlue : Colors.grey,
+              BlendMode.srcIn,
+            ),
           ),
           SizedBox(height: 4),
           Text(
             label,
             style: TextStyle(
-              color: isSelected
-                  ? AppColors.primaryBlue
-                  : Colors.grey,
+              color: isSelected ? AppColors.primaryBlue : Colors.grey,
               fontSize: 12,
             ),
           ),

@@ -11,6 +11,7 @@ import 'package:mtquotes/screens/Auth_Screen/Signup_Screen/signup_screen.dart';
 import 'package:mtquotes/screens/Auth_Screen/Forgot_Password_Screen/forgot_password.dart';
 import 'package:provider/provider.dart';
 import '../../User_Home/components/Notifications/notification_service.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 
 class LoginScreen extends StatefulWidget {
@@ -271,6 +272,11 @@ class _LoginScreenState extends State<LoginScreen> {
           'isSubscribed': false,
           'isPaid': false,
           'role': 'user',
+          'answeredSurveys': [],
+          'appOpenCount': 0,
+          'lastAnsweredQuestionIndex': -1,
+          'lastSurveyAppOpenCount': 0,
+          'lastSurveyShown': null,
         };
 
         await userRef.set(userData);
@@ -367,8 +373,17 @@ class _LoginScreenState extends State<LoginScreen> {
                         borderSide: BorderSide(color: AppColors.primaryBlue),
                       ),
                       suffixIcon: IconButton(
-                        icon: Icon(
-                          _isObscure ? Icons.visibility_off : Icons.visibility,
+                        icon: _isObscure
+                            ? SvgPicture.asset(
+                          'assets/icons/hidden_5340196.svg',
+                          width: 24,
+                          height: 24,
+                          color: iconColor,
+                        )
+                            : SvgPicture.asset(
+                          'assets/icons/blind_6212534 1.svg',
+                          width: 24,
+                          height: 24,
                           color: iconColor,
                         ),
                         onPressed: () {
@@ -445,11 +460,19 @@ class _LoginScreenState extends State<LoginScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       IconButton(
-                        icon: Image.asset('assets/gooogle.png', height: 30),
+                        icon: SvgPicture.asset(
+                          'assets/icons/google_13170545 1.svg',
+                          width: 24,
+                          height: 47,
+                        ),
                         onPressed: _signInWithGoogle,
                       ),
                       IconButton(
-                        icon: Image.asset('assets/facebook.png', height: 30),
+                        icon: SvgPicture.asset(
+                          'assets/icons/facebook_2111393.svg',
+                          width: 24,
+                          height: 30,
+                        ),
                         onPressed: () {
                           // Implement Facebook login
                         },

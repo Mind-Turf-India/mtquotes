@@ -6,6 +6,7 @@ import 'package:mtquotes/screens/Templates/components/template/quote_template.da
 import 'package:mtquotes/screens/Payment_Screen/subscription_screen.dart';
 import 'package:mtquotes/screens/Templates/components/template/template_handler.dart';
 import 'package:mtquotes/screens/User_Home/components/Notifications/notification_service.dart';
+import 'package:mtquotes/screens/User_Home/components/app_open_tracker.dart';
 import 'package:mtquotes/screens/User_Home/home_screen.dart';
 import 'package:mtquotes/utils/app_theme.dart';
 import 'package:mtquotes/screens/User_Home/components/splash_screen.dart';

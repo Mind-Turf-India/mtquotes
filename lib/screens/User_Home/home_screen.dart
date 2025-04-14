@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
@@ -36,16 +37,18 @@ import '../Templates/components/recent/recent_section.dart';
 import '../Templates/components/recent/recent_service.dart';
 import '../Templates/components/template/template_service.dart';
 import 'components/Categories/category_screen.dart';
+import 'components/app_open_tracker.dart';
 import 'components/templates_list.dart';
+import 'components/user_survey.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<HomeScreen> createState() => HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class HomeScreenState extends State<HomeScreen> {
   String userName = "User";
   String greetings = "";
   String? qotdImageUrl;
@@ -76,6 +79,8 @@ class _HomeScreenState extends State<HomeScreen> {
   // Stream to listen for auth state changes
   late Stream<User?> _authStateChanges;
 
+
+
   @override
   void initState() {
     super.initState();
@@ -91,6 +96,7 @@ class _HomeScreenState extends State<HomeScreen> {
     // Delay the check slightly to ensure UI is fully rendered
     Future.delayed(const Duration(milliseconds: 1000), () {
       checkDailyReward();
+      checkAndShowSurvey();
     });
 
     // Load initial points
@@ -131,6 +137,53 @@ class _HomeScreenState extends State<HomeScreen> {
       _loadingTimeOfDay = false;
       _loadingRecentTemplates = false;
     });
+  }
+
+  //survey
+  // Update your HomeScreenState class with this method
+
+  Future<void> checkAndShowSurvey() async {
+    try {
+      User? user = _auth.currentUser;
+      if (user == null) {
+        print("No user logged in, skipping survey check");
+        return;
+      }
+
+      // Get updated status from Firestore to ensure we have fresh data
+      String userEmail = user.email!.replaceAll(".", "_");
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userEmail)
+          .get();
+
+      if (!userDoc.exists) {
+        print("User document doesn't exist");
+        return;
+      }
+
+      // Fetch the latest values
+      final userData = userDoc.data() as Map<String, dynamic>;
+      int appOpenCount = userData['appOpenCount'] ?? 0;
+      int lastSurveyAppOpenCount = userData['lastSurveyAppOpenCount'] ?? 0;
+      int lastAnsweredQuestionIndex = userData['lastAnsweredQuestionIndex'] ?? -1;
+
+      print("Current state - appOpenCount: $appOpenCount, lastSurveyAppOpenCount: $lastSurveyAppOpenCount, lastAnsweredQuestionIndex: $lastAnsweredQuestionIndex");
+
+      // Then show survey dialog if needed
+      await UserSurveyManager.showSurveyDialog(context);
+    } catch (e) {
+      print("Error checking for survey: $e");
+    }
+  }
+
+// Call this method when the user clicks the home button
+  void onHomeButtonClicked() async {
+    // Increment the app open count
+    await UserSurveyManager.incrementAppOpenCount();
+
+    // Check if a survey should be shown
+    await checkAndShowSurvey();
   }
 
   //daily check in
@@ -972,9 +1025,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   Spacer(),
                   GestureDetector(
                     onTap: showNotificationsSheet,
-                    child: Icon(
-                      LucideIcons.bellRing,
-                      color: AppColors.getTextColor(isDarkMode),
+                    child: SvgPicture.asset(
+                      'assets/icons/notification_3002272.svg',
+                      width: 24,
+                      height: 24,
+                      colorFilter: ColorFilter.mode(
+                        AppColors.getTextColor(isDarkMode),
+                        BlendMode.srcIn,
+                      ),
                     ),
                   ),
                 ],
@@ -1063,8 +1121,15 @@ class _HomeScreenState extends State<HomeScreen> {
                                       child: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          Icon(Icons.share,
-                                              color: Colors.white),
+                                          SvgPicture.asset(
+                                            'assets/share.svg',
+                                            width: 24,
+                                            height: 18,
+                                            colorFilter: ColorFilter.mode(
+                                              Colors.white,
+                                              BlendMode.srcIn,
+                                            ),
+                                          ),
                                           SizedBox(width: 6),
                                           Text(context.loc.share,
                                               style: TextStyle(
@@ -1602,40 +1667,6 @@ class _HomeScreenState extends State<HomeScreen> {
             )));
   }
 
-  // Widget buildCategoriesSection(BuildContext context, double fontSize) {
-  //   return Column(
-  //     crossAxisAlignment: CrossAxisAlignment.start,
-  //     children: [
-  //       Row(
-  //         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  //         children: [
-  //           Text(
-  //             context.loc.categories,
-  //             style: GoogleFonts.poppins(
-  //                 fontSize: fontSize, fontWeight: FontWeight.bold),
-  //           ),
-  //         ],
-  //       ),
-  //       //SizedBox(height: 10),
-  //       // SizedBox(
-  //       //   height: 100,
-  //       //   child: ListView(
-  //       //     scrollDirection: Axis.horizontal,
-  //       //     children: [
-  //       //       categoryCard(
-  //       //           Icons.lightbulb, context.loc.motivational, Colors.green),
-  //       //       categoryCard(Icons.favorite, context.loc.love, Colors.red),
-  //       //       categoryCard(
-  //       //           Icons.emoji_emotions, context.loc.funny, Colors.orange),
-  //       //       categoryCard(Icons.people, context.loc.friendship, Colors.blue),
-  //       //       categoryCard(
-  //       //           Icons.self_improvement, context.loc.life, Colors.purple),
-  //       //     ],
-  //       //   ),
-  //       // ),
-  //     ],
-  //   );
-  // }
 
   Widget _buildRecentTemplatesSection() {
     return RecentTemplatesSection(

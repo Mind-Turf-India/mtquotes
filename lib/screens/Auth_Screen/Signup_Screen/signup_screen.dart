@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:mtquotes/screens/Auth_Screen/Login_Screen/login_screen.dart';
 import 'package:mtquotes/screens/navbar_mainscreen.dart';
@@ -158,6 +159,11 @@ class _SignupScreenState extends State<SignupScreen> {
           'isSubscribed': false,
           'isPaid': false,
           'role': 'user',
+          'answeredSurveys': [],
+          'appOpenCount': 0,
+          'lastAnsweredQuestionIndex': -1,
+          'lastSurveyAppOpenCount': 0,
+          'lastSurveyShown': null,
         };
 
         // Handling referral codes
@@ -347,8 +353,17 @@ class _SignupScreenState extends State<SignupScreen> {
                     borderSide: BorderSide(color: AppColors.primaryBlue),
                   ),
                   suffixIcon: IconButton(
-                    icon: Icon(
-                      _isObscure1 ? Icons.visibility_off : Icons.visibility,
+                    icon: _isObscure1
+                        ? SvgPicture.asset(
+                      'assets/icons/hidden_5340196.svg',
+                      width: 24,
+                      height: 24,
+                      color: iconColor,
+                    )
+                        : SvgPicture.asset(
+                      'assets/icons/blind_6212534 1.svg',
+                      width: 24,
+                      height: 24,
                       color: iconColor,
                     ),
                     onPressed: () {
@@ -375,8 +390,17 @@ class _SignupScreenState extends State<SignupScreen> {
                     borderSide: BorderSide(color: AppColors.primaryBlue),
                   ),
                   suffixIcon: IconButton(
-                    icon: Icon(
-                      _isObscure2 ? Icons.visibility_off : Icons.visibility,
+                    icon: _isObscure2
+                        ? SvgPicture.asset(
+                      'assets/icons/hidden_5340196.svg',
+                      width: 24,
+                      height: 24,
+                      color: iconColor,
+                    )
+                        : SvgPicture.asset(
+                      'assets/icons/blind_6212534 1.svg',
+                      width: 24,
+                      height: 24,
                       color: iconColor,
                     ),
                     onPressed: () {
@@ -442,11 +466,19 @@ class _SignupScreenState extends State<SignupScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   IconButton(
-                    icon: Image.asset('assets/gooogle.png', height: 30),
+                    icon: SvgPicture.asset(
+                      'assets/icons/google_13170545 1.svg',
+                      width: 24,
+                      height: 47,
+                    ),
                     onPressed: _signInWithGoogle,
                   ),
                   IconButton(
-                    icon: Image.asset('assets/facebook.png', height: 30),
+                    icon: SvgPicture.asset(
+                      'assets/icons/facebook_2111393.svg',
+                      width: 24,
+                      height: 30,
+                    ),
                     onPressed: () {
                       // Implement Facebook login
                     },

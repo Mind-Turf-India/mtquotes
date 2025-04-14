@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mtquotes/screens/Create_Screen/components/details_screen.dart';
 import 'package:mtquotes/screens/Payment_Screen/subscription_popup.dart';
@@ -219,9 +220,17 @@ class _SearchScreenState extends State<SearchScreen> {
                         fontSize: fontSize,
                         color: isDarkMode ? Colors.grey[400] : Colors.grey[500],
                       ),
-                      prefixIcon: Icon(
-                          Icons.search,
-                          color: isDarkMode ? Colors.grey[400] : Colors.grey[600]
+                      prefixIcon: Padding(
+                        padding: const EdgeInsets.all(12.0),
+                        child: SvgPicture.asset(
+                          'assets/icons/search_button.svg',
+                          width: 20,
+                          height: 20,
+                          colorFilter: ColorFilter.mode(
+                            isDarkMode ? Colors.grey[400]! : Colors.grey[600]!,
+                            BlendMode.srcIn,
+                          ),
+                        ),
                       ),
                       suffixIcon: Row(
                         mainAxisSize: MainAxisSize.min,
