@@ -1122,7 +1122,7 @@ class HomeScreenState extends State<HomeScreen> {
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
                                           SvgPicture.asset(
-                                            'assets/share.svg',
+                                            'assets/icons/share.svg',
                                             width: 24,
                                             height: 18,
                                             colorFilter: ColorFilter.mode(

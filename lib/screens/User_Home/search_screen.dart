@@ -250,11 +250,24 @@ class _SearchScreenState extends State<SearchScreen> {
                               },
                             ),
                           IconButton(
-                            icon: Icon(
-                              _isListening ? Icons.mic : Icons.mic_none,
-                              color: _isListening
-                                  ? AppColors.primaryBlue
-                                  : (isDarkMode ? Colors.grey[400] : Colors.grey[600]),
+                            icon: _isListening
+                                ? SvgPicture.asset(
+                              'assets/icons/microphone open.svg',
+                              width: 20,
+                              height: 34,
+                              colorFilter: ColorFilter.mode(
+                                AppColors.primaryBlue,
+                                BlendMode.srcIn,
+                              ),
+                            )
+                                : SvgPicture.asset(
+                              'assets/icons/microphone close.svg',
+                              width: 20,
+                              height: 20,
+                              colorFilter: ColorFilter.mode(
+                                isDarkMode ? Colors.grey[400]! : Colors.grey[600]!,
+                                BlendMode.srcIn,
+                              ),
                             ),
                             onPressed: _toggleListening,
                           ),

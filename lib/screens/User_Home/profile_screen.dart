@@ -601,7 +601,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     }
                 ),
                 _buildMenuItem(
-                    'assets/icons/sad_4746966.svg',
+                    'assets/icons/share.svg',
                     context.loc.shareapplication,
                     fontSize,
                     isDarkMode,
@@ -629,7 +629,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     }
                 ),
                 _buildMenuItem(
-                    'assets/icons/settings_2099058.svg',
+                    'assets/icons/info_1504403.svg',
                     context.loc.aboutus,
                     fontSize,
                     isDarkMode,

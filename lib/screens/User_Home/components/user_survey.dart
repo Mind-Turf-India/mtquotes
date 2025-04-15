@@ -3,13 +3,13 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
-
 import '../../../utils/app_colors.dart';
 import '../../../utils/theme_provider.dart';
 
 class UserSurveyManager {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   static final FirebaseAuth _auth = FirebaseAuth.instance;
+  static Set<int> _skippedQuestionIndexes = {};
 
   // Check if survey should be shown based on app open count
   static Future<bool> shouldShowSurvey() async {
@@ -283,80 +283,114 @@ class UserSurveyManager {
 
 // Then replace the showSurveyDialog method with this version:
   static Future<void> showSurveyDialog(BuildContext context) async {
-    try {
-      // Check if a survey is already being shown to prevent duplicates
-      if (_isShowingSurvey) {
-        print("Survey dialog is already being shown, ignoring duplicate request");
-        return;
-      }
+      try {
+        // Check if a survey is already being shown to prevent duplicates
+        if (_isShowingSurvey) {
+          print("Survey dialog is already being shown, ignoring duplicate request");
+          return;
+        }
 
-      // Set flag to indicate we're showing a survey
-      _isShowingSurvey = true;
+        // Set flag to indicate we're showing a survey
+        _isShowingSurvey = true;
 
-      // Check if we should show survey
-      print("Checking if survey should be shown...");
-      bool shouldShow = await shouldShowSurvey();
-      print("Survey should show: $shouldShow");
+        // Check if we should show survey
+        print("Checking if survey should be shown...");
+        bool shouldShow = await shouldShowSurvey();
+        print("Survey should show: $shouldShow");
 
-      if (!shouldShow) {
-        print("No survey to show at this time");
-        _isShowingSurvey = false; // Reset flag
-        return;
-      }
+        if (!shouldShow) {
+          print("No survey to show at this time");
+          _isShowingSurvey = false; // Reset flag
+          return;
+        }
 
-      // Get next question
-      Map<String, dynamic>? question = await getNextSurveyQuestion();
-      if (question == null) {
-        print("No question available to show");
-        _isShowingSurvey = false; // Reset flag
-        return;
-      }
+        // Get next question
+        Map<String, dynamic>? question = await getNextSurveyQuestion();
+        if (question == null) {
+          print("No question available to show");
+          _isShowingSurvey = false; // Reset flag
+          return;
+        }
 
-      print("Showing question: ${question['id']} - ${question['question']}");
+        // Get current user data for timestamp updating
+        User? currentUser = _auth.currentUser;
+        if (currentUser == null || currentUser.email == null) {
+          _isShowingSurvey = false;
+          return;
+        }
 
-      // Show the dialog
-      await showDialog(
-        context: context,
-        barrierDismissible: false, // User must respond to the survey
-        builder: (BuildContext context) {
-          return SurveyDialog(
-            question: question,
-            onSubmit: (response) async {
-              // First dismiss the dialog
-              Navigator.of(context).pop();
+        String userEmail = currentUser.email!.replaceAll(".", "_");
+        DocumentSnapshot userDoc = await _firestore.collection('users').doc(userEmail).get();
 
-              // Then save the response
-              print("Saving response: $response for question ${question['id']}");
-              bool success = await saveSurveyResponse(question['id'], response);
+        if (!userDoc.exists) {
+          _isShowingSurvey = false;
+          return;
+        }
 
-              if (success) {
-                print("Response saved successfully");
-              } else {
-                print("Failed to save response");
-              }
+        final userData = userDoc.data() as Map<String, dynamic>;
+        int lastAnsweredQuestionIndex = userData['lastAnsweredQuestionIndex'] ?? -1;
+        int nextQuestionIndex = lastAnsweredQuestionIndex + 1;
+        int appOpenCount = userData['appOpenCount'] ?? 0;
 
-              // Reset the flag after the dialog is closed and response is handled
-              _isShowingSurvey = false;
-            },
-            onSkip: () {
-              print("User skipped the question");
-              Navigator.of(context).pop();
+        print("Showing question: ${question['id']} - ${question['question']}");
 
-              // Reset the flag after the dialog is closed
-              _isShowingSurvey = false;
-            },
-          );
-        },
-      ).then((_) {
-        // In case the dialog is dismissed in an unexpected way, reset the flag
+        // Show the dialog
+        await showDialog(
+          context: context,
+          barrierDismissible: false, // User must respond to the survey
+          builder: (BuildContext context) {
+            return SurveyDialog(
+              question: question,
+              onSubmit: (response) async {
+                // First dismiss the dialog
+                Navigator.of(context).pop();
+
+                // Then save the response
+                print("Saving response: $response for question ${question['id']}");
+                bool success = await saveSurveyResponse(question['id'], response);
+
+                if (success) {
+                  print("Response saved successfully");
+                  // If this was a previously skipped question, remove it from the skipped set
+                  _skippedQuestionIndexes.remove(nextQuestionIndex);
+                } else {
+                  print("Failed to save response");
+                }
+
+                // Reset the flag after the dialog is closed and response is handled
+                _isShowingSurvey = false;
+              },
+              onSkip: () async {
+                print("User skipped the question: ${question['id']}");
+                Navigator.of(context).pop();
+
+                // Add the current question index to skipped questions set
+                _skippedQuestionIndexes.add(nextQuestionIndex);
+
+                // Update the lastSurveyShown timestamp and lastSurveyAppOpenCount
+                // so this question won't show again until after 5 more app opens
+                await _firestore.collection('users').doc(userEmail).update({
+                  'lastSurveyShown': FieldValue.serverTimestamp(),
+                  'lastSurveyAppOpenCount': appOpenCount
+                });
+
+                print("Updated lastSurveyAppOpenCount to $appOpenCount for skipped question");
+
+                // Reset the flag after the dialog is closed
+                _isShowingSurvey = false;
+              },
+            );
+          },
+        ).then((_) {
+          // In case the dialog is dismissed in an unexpected way, reset the flag
+          _isShowingSurvey = false;
+        });
+      } catch (e) {
+        print("Error showing survey dialog: $e");
+        // Make sure to reset the flag in case of errors
         _isShowingSurvey = false;
-      });
-    } catch (e) {
-      print("Error showing survey dialog: $e");
-      // Make sure to reset the flag in case of errors
-      _isShowingSurvey = false;
+      }
     }
-  }
 
   // Increment app open count (call this when home button is clicked)
   static Future<void> incrementAppOpenCount() async {

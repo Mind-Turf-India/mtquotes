@@ -132,14 +132,10 @@ class SettingsPage extends StatelessWidget {
             color: AppColors.getTextColor(isDarkMode)
         ),
       ),
-      trailing: SvgPicture.asset(
-        'assets/icons/back.svg',
-        width: 16,
-        height: 16,
-        colorFilter: ColorFilter.mode(
-          AppColors.getIconColor(isDarkMode).withOpacity(0.6),
-          BlendMode.srcIn,
-        ),
+      trailing: Icon(
+        Icons.arrow_forward_ios,
+        size: 16,
+        color: AppColors.getIconColor(isDarkMode).withOpacity(0.7),
       ),
       onTap: onTap,
     );
