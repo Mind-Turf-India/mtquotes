@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mtquotes/l10n/app_localization.dart';
+import 'package:mtquotes/screens/User_Home/components/Resume/resume_dashboard.dart';
 import 'package:mtquotes/screens/User_Home/components/Resume/resume_screen.dart';
 import 'package:mtquotes/screens/User_Home/home_screen.dart';
 import 'package:mtquotes/screens/User_Home/files_screen.dart';
@@ -70,7 +71,7 @@ class _MainScreenState extends State<MainScreen> {
         } else if (label == context.loc.downloads) {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => ImageUpscalingScreen()),
+            MaterialPageRoute(builder: (context) => PersonalDetailsScreen()),
           );
         }
       },

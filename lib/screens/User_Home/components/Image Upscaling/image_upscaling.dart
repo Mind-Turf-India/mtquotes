@@ -254,23 +254,23 @@ class _ImageUpscalingScreenState extends State<ImageUpscalingScreen> {
               ],
 
               // Upscale/Downscale Toggle
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text('Downscale'),
-                  Switch(
-                    value: _isUpscaling,
-                    onChanged: (value) {
-                      setState(() {
-                        _isUpscaling = value;
-                        // Adjust quality range based on mode
-                        _quality = _isUpscaling ? 2.0 : 0.5;
-                      });
-                    },
-                  ),
-                  Text('Upscale'),
-                ],
-              ),
+              // Row(
+              //   mainAxisAlignment: MainAxisAlignment.center,
+              //   children: [
+              //     Text('Downscale'),
+              //     Switch(
+              //       value: _isUpscaling,
+              //       onChanged: (value) {
+              //         setState(() {
+              //           _isUpscaling = value;
+              //           // Adjust quality range based on mode
+              //           _quality = _isUpscaling ? 2.0 : 0.5;
+              //         });
+              //       },
+              //     ),
+              //     Text('Upscale'),
+              //   ],
+              // ),
 
               // Quality Slider
               Text(
