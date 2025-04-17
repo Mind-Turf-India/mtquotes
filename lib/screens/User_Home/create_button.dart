@@ -4,10 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mtquotes/l10n/app_localization.dart';
 import 'package:mtquotes/screens/Create_Screen/edit_screen_create.dart';
+import 'package:mtquotes/screens/User_Home/components/Resume/resume_screen.dart';
 import 'package:mtquotes/screens/User_Home/files_screen.dart';
 import 'package:provider/provider.dart';
 import '../../providers/text_size_provider.dart';
 import '../Create_screen/template_screen_create.dart';
+import 'components/Image Upscaling/image_upscaling.dart';
 
 class CreateBottomSheet extends StatefulWidget {
   @override
@@ -110,7 +112,7 @@ class _CreateBottomSheetState extends State<CreateBottomSheet> {
         } else if (label == context.loc.gallery) {
           _navigateToScreen(context, EditScreen(title: context.loc.imageeditor));
         } else if (label == context.loc.downloads) {
-          _navigateToScreen(context, FilesPage());
+          _navigateToScreen(context, ImageUpscalingScreen());
         }
       },
       child: Column(
