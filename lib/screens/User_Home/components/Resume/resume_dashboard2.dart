@@ -10,7 +10,13 @@ import 'package:mtquotes/screens/User_Home/components/Resume/resume_data.dart';
 
 class Step2Screen extends StatefulWidget {
   final Step1Data step1Data;
-  const Step2Screen({Key? key, required this.step1Data}) : super(key: key);
+  final String resumeId; // Changed to make it required
+
+  const Step2Screen({
+    Key? key,
+    required this.step1Data,
+    required this.resumeId, // Make resumeId required
+  }) : super(key: key);
 
   @override
   State<Step2Screen> createState() => _Step2ScreenState();
@@ -21,12 +27,24 @@ class _Step2ScreenState extends State<Step2Screen> {
   bool _isLoading = false;
 
   // Controllers for date fields
-  final List<TextEditingController> _startDateControllers = [TextEditingController()];
-  final List<TextEditingController> _endDateControllers = [TextEditingController()];
-  final List<TextEditingController> _jobTitleControllers = [TextEditingController()];
-  final List<TextEditingController> _employerControllers = [TextEditingController()];
-  final List<TextEditingController> _locationControllers = [TextEditingController()];
-  final List<TextEditingController> _descriptionControllers = [TextEditingController()];
+  final List<TextEditingController> _startDateControllers = [
+    TextEditingController()
+  ];
+  final List<TextEditingController> _endDateControllers = [
+    TextEditingController()
+  ];
+  final List<TextEditingController> _jobTitleControllers = [
+    TextEditingController()
+  ];
+  final List<TextEditingController> _employerControllers = [
+    TextEditingController()
+  ];
+  final List<TextEditingController> _locationControllers = [
+    TextEditingController()
+  ];
+  final List<TextEditingController> _descriptionControllers = [
+    TextEditingController()
+  ];
 
   // List to track employment blocks
   final List<Widget> _employmentBlocks = [];
@@ -38,7 +56,6 @@ class _Step2ScreenState extends State<Step2Screen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   String? _userId;
-  String? _resumeId;
 
   @override
   void initState() {
@@ -81,7 +98,8 @@ class _Step2ScreenState extends State<Step2Screen> {
   }
 
   // Function to show date picker and update the text field
-  Future<void> _selectDate(BuildContext context, TextEditingController controller) async {
+  Future<void> _selectDate(
+      BuildContext context, TextEditingController controller) async {
     final DateTime now = DateTime.now();
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -157,7 +175,8 @@ class _Step2ScreenState extends State<Step2Screen> {
                 Row(
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.keyboard_arrow_down, color: Colors.black),
+                      icon: const Icon(Icons.keyboard_arrow_down,
+                          color: Colors.black),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
                       onPressed: () {
@@ -166,7 +185,8 @@ class _Step2ScreenState extends State<Step2Screen> {
                     ),
                     const SizedBox(width: 16),
                     IconButton(
-                      icon: const Icon(Icons.delete_outline, color: Colors.black),
+                      icon:
+                          const Icon(Icons.delete_outline, color: Colors.black),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
                       onPressed: () => _removeEmploymentBlock(index),
@@ -199,7 +219,8 @@ class _Step2ScreenState extends State<Step2Screen> {
                             hintText: 'Job Title',
                             hintStyle: TextStyle(color: Colors.grey),
                             border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            contentPadding: EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 14),
                           ),
                         ),
                       ),
@@ -220,7 +241,8 @@ class _Step2ScreenState extends State<Step2Screen> {
                             hintText: 'Employer',
                             hintStyle: TextStyle(color: Colors.grey),
                             border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            contentPadding: EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 14),
                           ),
                         ),
                       ),
@@ -250,13 +272,16 @@ class _Step2ScreenState extends State<Step2Screen> {
                                   hintText: 'Start Date',
                                   hintStyle: TextStyle(color: Colors.grey),
                                   border: InputBorder.none,
-                                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                  contentPadding: EdgeInsets.symmetric(
+                                      horizontal: 16, vertical: 14),
                                 ),
                               ),
                             ),
                             IconButton(
-                              icon: const Icon(Icons.calendar_today, color: Colors.grey, size: 20),
-                              onPressed: () => _selectDate(context, _startDateControllers[index]),
+                              icon: const Icon(Icons.calendar_today,
+                                  color: Colors.grey, size: 20),
+                              onPressed: () => _selectDate(
+                                  context, _startDateControllers[index]),
                             ),
                           ],
                         ),
@@ -282,13 +307,16 @@ class _Step2ScreenState extends State<Step2Screen> {
                                   hintText: 'End Date',
                                   hintStyle: TextStyle(color: Colors.grey),
                                   border: InputBorder.none,
-                                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                  contentPadding: EdgeInsets.symmetric(
+                                      horizontal: 16, vertical: 14),
                                 ),
                               ),
                             ),
                             IconButton(
-                              icon: const Icon(Icons.calendar_today, color: Colors.grey, size: 20),
-                              onPressed: () => _selectDate(context, _endDateControllers[index]),
+                              icon: const Icon(Icons.calendar_today,
+                                  color: Colors.grey, size: 20),
+                              onPressed: () => _selectDate(
+                                  context, _endDateControllers[index]),
                             ),
                           ],
                         ),
@@ -311,7 +339,8 @@ class _Step2ScreenState extends State<Step2Screen> {
                       hintText: 'Location',
                       hintStyle: TextStyle(color: Colors.grey),
                       border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      contentPadding:
+                          EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     ),
                   ),
                 ),
@@ -331,7 +360,8 @@ class _Step2ScreenState extends State<Step2Screen> {
                       hintText: 'Description of your role in 100 words...',
                       hintStyle: TextStyle(color: Colors.grey),
                       border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      contentPadding:
+                          EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     ),
                   ),
                 ),
@@ -388,7 +418,7 @@ class _Step2ScreenState extends State<Step2Screen> {
     );
   }
 
-  // Method to save resume data to Firebase
+  // UPDATED: Method to save resume data to Firebase
   Future<void> _saveDataToFirebase() async {
     if (_userId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -405,16 +435,14 @@ class _Step2ScreenState extends State<Step2Screen> {
       // Create employment objects from form data
       List<Employment> employmentList = [];
       for (int i = 0; i < _employmentBlocks.length; i++) {
-        employmentList.add(
-          Employment(
-            jobTitle: _jobTitleControllers[i].text,
-            employer: _employerControllers[i].text,
-            startDate: _startDateControllers[i].text,
-            endDate: _endDateControllers[i].text,
-            location: _locationControllers[i].text,
-            description: _descriptionControllers[i].text,
-          )
-        );
+        employmentList.add(Employment(
+          jobTitle: _jobTitleControllers[i].text,
+          employer: _employerControllers[i].text,
+          startDate: _startDateControllers[i].text,
+          endDate: _endDateControllers[i].text,
+          location: _locationControllers[i].text,
+          description: _descriptionControllers[i].text,
+        ));
       }
 
       // Create Step2Data
@@ -423,60 +451,38 @@ class _Step2ScreenState extends State<Step2Screen> {
         employment: employmentList,
       );
 
-      // Create PersonalInfo from Step1Data
-      final personalInfo = PersonalInfo(
-        role: widget.step1Data.role,
-        firstName: widget.step1Data.firstName,
-        lastName: widget.step1Data.lastName,
-        email: widget.step1Data.email,
-        phone: widget.step1Data.phone,
-        address: widget.step1Data.address,
-        city: widget.step1Data.city,
-        country: widget.step1Data.country,
-        postalCode: widget.step1Data.postalCode,
-        profileImagePath: widget.step1Data.profileImagePath,
-      );
+      // Create a map with just the fields we want to update
+      final Map<String, dynamic> updateData = {
+        'professionalSummary': step2Data.summary,
+        'employmentHistory': employmentList
+            .map((job) => {
+                  'jobTitle': job.jobTitle,
+                  'employer': job.employer,
+                  'startDate': job.startDate,
+                  'endDate': job.endDate,
+                  'location': job.location,
+                  'description': job.description,
+                })
+            .toList(),
+        'updatedAt': DateTime.now().toIso8601String(),
+      };
 
-      // Create the complete ResumeData object
-      final resumeData = ResumeData(
-        userId: _userId!,
-        templateType: "modern",
-        personalInfo: personalInfo,
-        education: widget.step1Data.education,
-        professionalSummary: step2Data.summary,
-        employmentHistory: step2Data.employment,
-        skills: [],  // Will be filled in Step3
-        languages: [], // Will be filled in Step3
-      );
-
-      // Check if we're updating an existing resume or creating a new one
-      if (_resumeId != null) {
-        // Update existing resume document
-        await _firestore
+      // Update the existing document using the resumeId passed from Step1
+      await _firestore
           .collection('users')
           .doc(_userId)
           .collection('resume')
-          .doc(_resumeId)
-          .update(resumeData.toMap());
-      } else {
-        // Create new resume document
-        DocumentReference docRef = await _firestore
-          .collection('users')
-          .doc(_userId)
-          .collection('resume')
-          .add(resumeData.toMap());
-        
-        _resumeId = docRef.id;
-      }
+          .doc(widget.resumeId)
+          .update(updateData);
 
-      // Navigate to Step3Screen with the data
+      // Navigate to Step3Screen with the data and resumeId
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => Step3Screen(
             step1Data: widget.step1Data,
             step2Data: step2Data,
-            resumeId: _resumeId,
+            resumeId: widget.resumeId, // Pass the same resumeId to Step3
           ),
         ),
       );
@@ -570,7 +576,8 @@ class _Step2ScreenState extends State<Step2Screen> {
                     const SizedBox(height: 16),
 
                     // Dynamic Employment Blocks
-                    ...List.generate(_employmentBlocks.length, (index) => _employmentBlocks[index]),
+                    ...List.generate(_employmentBlocks.length,
+                        (index) => _employmentBlocks[index]),
 
                     // Add one more employment button
                     GestureDetector(
@@ -621,15 +628,16 @@ class _Step2ScreenState extends State<Step2Screen> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        child: _isLoading 
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text(
-                              'Next',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
+                        child: _isLoading
+                            ? const CircularProgressIndicator(
+                                color: Colors.white)
+                            : const Text(
+                                'Next',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
-                            ),
                       ),
                     ),
                   ],

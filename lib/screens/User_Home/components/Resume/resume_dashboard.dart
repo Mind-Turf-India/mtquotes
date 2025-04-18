@@ -336,7 +336,7 @@ class _PersonalDetailsScreenState
   }
 
   // Save data to Firebase
-  Future<void> _saveToFirebase(Step1Data step1Data) async {
+  Future<String?> _saveToFirebase(Step1Data step1Data) async {
     try {
       setState(() {
         _isLoading = true;
@@ -371,14 +371,14 @@ class _PersonalDetailsScreenState
       // Convert Education objects to a list of maps for Firestore
       List<Map<String, dynamic>> educationList = step1Data.education
           .map((education) => {
-                'title': education.title,
-                'school': education.school,
-                'level': education.level,
-                'startDate': education.startDate,
-                'endDate': education.endDate,
-                'location': education.location,
-                'description': education.description,
-              })
+        'title': education.title,
+        'school': education.school,
+        'level': education.level,
+        'startDate': education.startDate,
+        'endDate': education.endDate,
+        'location': education.location,
+        'description': education.description,
+      })
           .toList();
 
       // Create document with personal info and education
@@ -406,21 +406,34 @@ class _PersonalDetailsScreenState
         'updatedAt': now.toIso8601String(),
       };
 
-      // Save to Firestore in users collection
-      await _firestore
-          .collection('users')
-          .doc(userId)
-          .collection('resume')
-          .add(resumeData);
+      // Reference to user's resume collection
+      final resumeCollection = _firestore.collection('users').doc(userId).collection('resume');
+
+      // Check if user already has a resume document
+      final existingResumes = await resumeCollection.limit(1).get();
+      String documentId;
+
+      if (existingResumes.docs.isNotEmpty) {
+        // Update existing document
+        documentId = existingResumes.docs.first.id;
+        await resumeCollection.doc(documentId).update(resumeData);
+      } else {
+        // Create new document
+        final docRef = await resumeCollection.add(resumeData);
+        documentId = docRef.id;
+      }
 
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Resume data saved successfully!')));
+
+      return documentId;
     } catch (e) {
       // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error saving resume: ${e.toString()}')));
       print('Error saving to Firebase: $e');
+      return null;
     } finally {
       setState(() {
         _isLoading = false;
@@ -672,7 +685,6 @@ class _PersonalDetailsScreenState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ... [Your existing code for Personal Details section remains unchanged]
                 const Text(
                   'Personal Details',
                   style: TextStyle(
@@ -714,18 +726,19 @@ class _PersonalDetailsScreenState
                           color: const Color(0xFFF5F5F5),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const TextField(
-                          style: TextStyle(color: Colors.black),
-                          decoration: InputDecoration(
+                        child: TextField(
+                          controller: _firstNameController, // Add this controller
+                          style: const TextStyle(color: Colors.black),
+                          decoration: const InputDecoration(
                             hintText: 'First Name',
                             hintStyle: TextStyle(color: Colors.grey),
                             border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 14),
+                            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                           ),
                         ),
                       ),
                     ),
+
                     const SizedBox(width: 16),
 
                     // Upload Photo
@@ -778,14 +791,14 @@ class _PersonalDetailsScreenState
                     color: const Color(0xFFF5F5F5),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const TextField(
-                    style: TextStyle(color: Colors.black),
-                    decoration: InputDecoration(
+                  child: TextField(
+                    controller: _lastNameController, // Add this controller
+                    style: const TextStyle(color: Colors.black),
+                    decoration: const InputDecoration(
                       hintText: 'Last Name',
                       hintStyle: TextStyle(color: Colors.grey),
                       border: InputBorder.none,
-                      contentPadding:
-                          EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     ),
                   ),
                 ),
@@ -797,18 +810,19 @@ class _PersonalDetailsScreenState
                     color: const Color(0xFFF5F5F5),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const TextField(
-                    style: TextStyle(color: Colors.black),
-                    decoration: InputDecoration(
+                  child: TextField(
+                    controller: _emailController, // Add this controller
+                    style: const TextStyle(color: Colors.black),
+                    decoration: const InputDecoration(
                       hintText: 'Email',
                       hintStyle: TextStyle(color: Colors.grey),
                       border: InputBorder.none,
-                      contentPadding:
-                          EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     ),
                     keyboardType: TextInputType.emailAddress,
                   ),
                 ),
+
                 const SizedBox(height: 16),
 
 // Phone No.
@@ -817,14 +831,14 @@ class _PersonalDetailsScreenState
                     color: const Color(0xFFF5F5F5),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const TextField(
-                    style: TextStyle(color: Colors.black),
-                    decoration: InputDecoration(
+                  child: TextField(
+                    controller: _phoneController, // Add this controller
+                    style: const TextStyle(color: Colors.black),
+                    decoration: const InputDecoration(
                       hintText: 'Phone No.',
                       hintStyle: TextStyle(color: Colors.grey),
                       border: InputBorder.none,
-                      contentPadding:
-                          EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     ),
                     keyboardType: TextInputType.phone,
                   ),
@@ -837,14 +851,14 @@ class _PersonalDetailsScreenState
                     color: const Color(0xFFF5F5F5),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const TextField(
-                    style: TextStyle(color: Colors.black),
-                    decoration: InputDecoration(
+                  child: TextField(
+                    controller: _addressController, // Add this controller
+                    style: const TextStyle(color: Colors.black),
+                    decoration: const InputDecoration(
                       hintText: 'Address',
                       hintStyle: TextStyle(color: Colors.grey),
                       border: InputBorder.none,
-                      contentPadding:
-                          EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     ),
                   ),
                 ),
@@ -860,14 +874,14 @@ class _PersonalDetailsScreenState
                           color: const Color(0xFFF5F5F5),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const TextField(
-                          style: TextStyle(color: Colors.black),
-                          decoration: InputDecoration(
+                        child: TextField(
+                          controller: _cityController, // Add this controller
+                          style: const TextStyle(color: Colors.black),
+                          decoration: const InputDecoration(
                             hintText: 'City',
                             hintStyle: TextStyle(color: Colors.grey),
                             border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 14),
+                            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                           ),
                         ),
                       ),
@@ -881,14 +895,14 @@ class _PersonalDetailsScreenState
                           color: const Color(0xFFF5F5F5),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const TextField(
-                          style: TextStyle(color: Colors.black),
-                          decoration: InputDecoration(
+                        child: TextField(
+                          controller: _countryController, // Add this controller
+                          style: const TextStyle(color: Colors.black),
+                          decoration: const InputDecoration(
                             hintText: 'Country',
                             hintStyle: TextStyle(color: Colors.grey),
                             border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 14),
+                            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                           ),
                         ),
                       ),
@@ -903,14 +917,14 @@ class _PersonalDetailsScreenState
                     color: const Color(0xFFF5F5F5),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const TextField(
-                    style: TextStyle(color: Colors.black),
-                    decoration: InputDecoration(
+                  child: TextField(
+                    controller: _postalCodeController, // Add this controller
+                    style: const TextStyle(color: Colors.black),
+                    decoration: const InputDecoration(
                       hintText: 'Postal Code',
                       hintStyle: TextStyle(color: Colors.grey),
                       border: InputBorder.none,
-                      contentPadding:
-                          EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     ),
                     keyboardType: TextInputType.number,
                   ),
@@ -989,51 +1003,51 @@ class _PersonalDetailsScreenState
                     onPressed: _isLoading
                         ? null
                         : () async {
-                            if (formKey.currentState!.validate()) {
-                              // Collect education data
-                              List<Education> educationData = [];
-                              for (int i = 0;
-                                  i < _educationBlocks.length;
-                                  i++) {
-                                educationData.add(Education(
-                                  title: _educationTitleControllers[i].text,
-                                  school: _schoolControllers[i].text,
-                                  level: _levelControllers[i].text,
-                                  startDate: _startDateControllers[i].text,
-                                  endDate: _endDateControllers[i].text,
-                                  location: _locationControllers[i].text,
-                                  description: _descriptionControllers[i].text,
-                                ));
-                              }
+                      if (formKey.currentState!.validate()) {
+                        // Collect education data
+                        List<Education> educationData = [];
+                        for (int i = 0; i < _educationBlocks.length; i++) {
+                          educationData.add(Education(
+                            title: _educationTitleControllers[i].text,
+                            school: _schoolControllers[i].text,
+                            level: _levelControllers[i].text,
+                            startDate: _startDateControllers[i].text,
+                            endDate: _endDateControllers[i].text,
+                            location: _locationControllers[i].text,
+                            description: _descriptionControllers[i].text,
+                          ));
+                        }
 
-                              // Create Step1Data
-                              final step1Data = Step1Data(
-                                role: _roleController.text,
-                                firstName: _firstNameController.text,
-                                lastName: _lastNameController.text,
-                                email: _emailController.text,
-                                phone: _phoneController.text,
-                                address: _addressController.text,
-                                city: _cityController.text,
-                                country: _countryController.text,
-                                postalCode: _postalCodeController.text,
-                                profileImagePath: _profileImage?.path,
-                                education: educationData,
-                              );
+                        // Create Step1Data
+                        final step1Data = Step1Data(
+                          role: _roleController.text,
+                          firstName: _firstNameController.text,
+                          lastName: _lastNameController.text,
+                          email: _emailController.text,
+                          phone: _phoneController.text,
+                          address: _addressController.text,
+                          city: _cityController.text,
+                          country: _countryController.text,
+                          postalCode: _postalCodeController.text,
+                          profileImagePath: _profileImage?.path,
+                          education: educationData,
+                        );
 
-                              // Save to Firebase
-                              await _saveToFirebase(step1Data);
+                        // Save to Firebase and get document ID
+                        final String? documentId = await _saveToFirebase(step1Data);
 
-                              // If successful, navigate to Step2Screen passing data
-                              if (!mounted) return;
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) =>
-                                        Step2Screen(step1Data: step1Data)),
-                              );
-                            }
-                          },
+                        // If successful, navigate to Step2Screen passing data and document ID
+                        if (!mounted || documentId == null) return;
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => Step2Screen(
+                                step1Data: step1Data,
+                                resumeId: documentId,
+                              )),
+                        );
+                      }
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF2196F3),
                       shape: RoundedRectangleBorder(
@@ -1043,14 +1057,14 @@ class _PersonalDetailsScreenState
                     child: _isLoading
                         ? const CircularProgressIndicator(color: Colors.white)
                         : const Text(
-                            'Next',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
+                      'Next',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ),
-                ),
+                )
               ],
             ),
           ),

@@ -1,19 +1,20 @@
+import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:mtquotes/screens/User_Home/components/Resume/resume_data.dart';
 import 'package:mtquotes/screens/User_Home/components/Resume/resume_interface.dart';
 import 'package:mtquotes/screens/User_Home/components/Resume/resume_pdf.dart';
+import 'package:mtquotes/screens/navbar_mainscreen.dart';
 import 'package:share_plus/share_plus.dart';
 
 class ResumePreviewScreen extends StatefulWidget {
   final ResumeData resumeData;
-    final String? resumeId;
-    
+  final String? resumeId;
 
   const ResumePreviewScreen({
     Key? key,
     required this.resumeData,
-        this.resumeId,
+    this.resumeId,
   }) : super(key: key);
 
   @override
@@ -24,11 +25,89 @@ class _ResumePreviewScreenState extends State<ResumePreviewScreen> {
   bool _isGeneratingPdf = false;
   String? _pdfPath;
   late ResumeTemplate _template;
+  late TemplateStyle _style;
 
   @override
   void initState() {
     super.initState();
+    print("Selected template type: ${widget.resumeData.templateType}"); // Debug print
     _template = TemplateFactory.getTemplate(widget.resumeData.templateType);
+    _style = _getTemplateStyle(widget.resumeData.templateType);
+    // Generate PDF on load for immediate sharing
+    _generatePdf();
+  }
+
+  // Helper method to get the template's styling parameters
+  TemplateStyle _getTemplateStyle(String templateType) {
+    switch (templateType.toLowerCase()) {
+      case 'classic':
+        return TemplateStyle(
+          primaryColor: Colors.black,
+          accentColor: Colors.grey[600]!,
+          backgroundColor: Colors.grey[50]!,
+          buttonColor: Colors.black,
+          dividerColor: Colors.grey[400]!,
+          buttonTextStyle: const TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+          ),
+          titleTextStyle: const TextStyle(
+            color: Colors.black,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1.0,
+          ),
+          instructionsBoxColor: Colors.grey[200]!,
+          instructionsBoxBorderColor: Colors.grey[400]!,
+          shadowColor: Colors.black.withOpacity(0.1),
+        );
+
+      case 'business':
+        return TemplateStyle(
+          primaryColor: Colors.indigo[800]!,
+          accentColor: Colors.indigo[600]!,
+          backgroundColor: Colors.white,
+          buttonColor: Colors.indigo[700]!,
+          dividerColor: Colors.indigo[200]!,
+          buttonTextStyle: const TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+          ),
+          titleTextStyle: TextStyle(
+            color: Colors.indigo[800],
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+          instructionsBoxColor: Colors.indigo[50]!,
+          instructionsBoxBorderColor: Colors.indigo[200]!,
+          shadowColor: Colors.indigo.withOpacity(0.1),
+        );
+
+      case 'modern':
+      default:
+        return TemplateStyle(
+          primaryColor: Colors.blue[700]!,
+          accentColor: Colors.blueGrey[700]!,
+          backgroundColor: const Color(0xFFF5F5F5),
+          buttonColor: Colors.blue[700]!,
+          dividerColor: Colors.blue[200]!,
+          buttonTextStyle: const TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+          ),
+          titleTextStyle: TextStyle(
+            color: Colors.blue[800],
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+          instructionsBoxColor: Colors.blue[50]!,
+          instructionsBoxBorderColor: Colors.blue[200]!,
+          shadowColor: Colors.black.withOpacity(0.1),
+        );
+    }
   }
 
   // Generate PDF file
@@ -38,8 +117,11 @@ class _ResumePreviewScreenState extends State<ResumePreviewScreen> {
     });
 
     try {
-      // Use the PDF generator service
-      final pdfPath = await ResumePdfGenerator.generatePdf(widget.resumeData);
+      // Use the PDF generator service with saveToDownloads=true
+      final pdfPath = await ResumePdfGenerator.generatePdf(
+        widget.resumeData,
+        saveToDownloads: true, // Save to downloads folder
+      );
 
       // Update state with PDF path
       setState(() {
@@ -70,11 +152,30 @@ class _ResumePreviewScreenState extends State<ResumePreviewScreen> {
   }
 
   // Share PDF
-  void _sharePdf() {
+  void _sharePdf() async {
+    // If PDF isn't generated yet, generate it first
+    if (_pdfPath == null) {
+      await _generatePdf();
+    }
+
     if (_pdfPath != null) {
-      Share.shareXFiles(
+      await Share.shareXFiles(
         [XFile(_pdfPath!)],
         text: 'My Resume',
+      );
+
+      // After sharing, navigate to MainScreen
+      if (mounted) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => MainScreen()),
+              (route) => false, // Removes all routes from the stack
+        );
+      }
+    } else {
+      // Show error if sharing failed
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Unable to share. PDF not generated.')),
       );
     }
   }
@@ -82,24 +183,41 @@ class _ResumePreviewScreenState extends State<ResumePreviewScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: _style.backgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: widget.resumeData.templateType.toLowerCase() == 'business'
+            ? _style.primaryColor
+            : Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
+          icon: Icon(
+            Icons.arrow_back_ios,
+            color: widget.resumeData.templateType.toLowerCase() == 'business'
+                ? Colors.white
+                : Colors.black,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Resume Preview',
-          style: TextStyle(color: Colors.black, fontSize: 16),
+          style: TextStyle(
+            color: widget.resumeData.templateType.toLowerCase() == 'business'
+                ? Colors.white
+                : Colors.black,
+            fontSize: 16,
+          ),
         ),
         actions: [
-          if (_pdfPath != null)
-            IconButton(
-              icon: const Icon(Icons.share, color: Colors.black),
-              onPressed: _sharePdf,
+          // Share button always visible
+          IconButton(
+            icon: Icon(
+              Icons.share,
+              color: widget.resumeData.templateType.toLowerCase() == 'business'
+                  ? Colors.white
+                  : Colors.black,
             ),
+            onPressed: _isGeneratingPdf ? null : _sharePdf,
+          ),
         ],
       ),
       body: Column(
@@ -110,73 +228,98 @@ class _ResumePreviewScreenState extends State<ResumePreviewScreen> {
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
-                    // Template preview
+                    // Template preview with flexible sizing
                     Container(
+                      constraints: BoxConstraints(
+                        // Use maximum width available, constrained to A4 proportions when possible
+                        maxWidth: MediaQuery.of(context).size.width > 600
+                            ? 595 // A4 width in points
+                            : MediaQuery.of(context).size.width - 32,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
+                            color: _style.shadowColor,
                             blurRadius: 10,
                             offset: const Offset(0, 5),
                           ),
                         ],
+                        border: widget.resumeData.templateType.toLowerCase() == 'classic'
+                            ? Border.all(color: Colors.grey[300]!)
+                            : null,
                       ),
-                      child: _template.buildTemplate(
-                        widget.resumeData,
-                        isPreview: true,
+                      // Use SingleChildScrollView to prevent overflow issues
+                      child: SingleChildScrollView(
+                        physics: const NeverScrollableScrollPhysics(), // Disable scrolling for this inner scroll view
+                        child: _template.buildTemplate(
+                          widget.resumeData,
+                          isPreview: true,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 16),
 
-                    // Instructions for older users
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.blue[50],
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.blue[200]!),
-                      ),
-                      child: Column(
-                        children: [
-                          Text(
-                            'Preview',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.blue[800],
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            'This is a preview of your resume. To download it as a PDF, tap the "Download PDF" button below.',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.black87,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
-                    ),
+                    // Instructions box - styled based on template
+                    // Container(
+                    //   padding: const EdgeInsets.all(16),
+                    //   decoration: BoxDecoration(
+                    //     color: _style.instructionsBoxColor,
+                    //     borderRadius: BorderRadius.circular(8),
+                    //     border: Border.all(color: _style.instructionsBoxBorderColor),
+                    //     boxShadow: widget.resumeData.templateType.toLowerCase() == 'business'
+                    //         ? [
+                    //       BoxShadow(
+                    //         color: Colors.black.withOpacity(0.05),
+                    //         blurRadius: 4,
+                    //         offset: const Offset(0, 2),
+                    //       ),
+                    //     ]
+                    //         : null,
+                    //   ),
+                    //   child: Column(
+                    //     children: [
+                    //       Text(
+                    //         'Preview',
+                    //         style: _style.titleTextStyle,
+                    //       ),
+                    //       const SizedBox(height: 8),
+                    //       Text(
+                    //         'This is a preview of your resume. To download it as a PDF, tap the "Download PDF" button below. The PDF will be saved to your Downloads folder.',
+                    //         style: TextStyle(
+                    //           fontSize: 14,
+                    //           color: widget.resumeData.templateType.toLowerCase() == 'classic'
+                    //               ? Colors.black87
+                    //               : _style.accentColor,
+                    //         ),
+                    //         textAlign: TextAlign.center,
+                    //       ),
+                    //     ],
+                    //   ),
+                    // ),
                   ],
                 ),
               ),
             ),
           ),
 
-          // Bottom buttons
+          // Bottom buttons - styled based on template
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: widget.resumeData.templateType.toLowerCase() == 'business'
+                  ? _style.primaryColor.withOpacity(0.05)
+                  : Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: _style.shadowColor,
                   blurRadius: 5,
                   offset: const Offset(0, -2),
                 ),
               ],
+              border: widget.resumeData.templateType.toLowerCase() == 'classic'
+                  ? Border(top: BorderSide(color: _style.dividerColor))
+                  : null,
             ),
             child: Row(
               children: [
@@ -189,9 +332,10 @@ class _ResumePreviewScreenState extends State<ResumePreviewScreen> {
                     },
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      side: BorderSide(color: Colors.blue[700]!),
+                      side: BorderSide(color: _style.primaryColor),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(
+                            widget.resumeData.templateType.toLowerCase() == 'classic' ? 4 : 8),
                       ),
                     ),
                     child: Text(
@@ -199,7 +343,7 @@ class _ResumePreviewScreenState extends State<ResumePreviewScreen> {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
-                        color: Colors.blue[700],
+                        color: _style.primaryColor,
                       ),
                     ),
                   ),
@@ -211,10 +355,11 @@ class _ResumePreviewScreenState extends State<ResumePreviewScreen> {
                   child: ElevatedButton(
                     onPressed: _isGeneratingPdf ? null : _generatePdf,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue[700],
+                      backgroundColor: _style.buttonColor,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(
+                            widget.resumeData.templateType.toLowerCase() == 'classic' ? 4 : 8),
                       ),
                     ),
                     child: _isGeneratingPdf
@@ -226,7 +371,7 @@ class _ResumePreviewScreenState extends State<ResumePreviewScreen> {
                           height: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -235,7 +380,7 @@ class _ResumePreviewScreenState extends State<ResumePreviewScreen> {
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w500,
-                            color: Colors.black,
+                            color: Colors.white,
                           ),
                         ),
                       ],
@@ -247,11 +392,7 @@ class _ResumePreviewScreenState extends State<ResumePreviewScreen> {
                         const SizedBox(width: 8),
                         Text(
                           _pdfPath == null ? 'Download PDF' : 'Download Again',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.white,
-                          ),
+                          style: _style.buttonTextStyle,
                         ),
                       ],
                     ),
@@ -264,4 +405,31 @@ class _ResumePreviewScreenState extends State<ResumePreviewScreen> {
       ),
     );
   }
+}
+
+// Helper class to manage styling for different templates
+class TemplateStyle {
+  final Color primaryColor;
+  final Color accentColor;
+  final Color backgroundColor;
+  final Color buttonColor;
+  final Color dividerColor;
+  final TextStyle buttonTextStyle;
+  final TextStyle titleTextStyle;
+  final Color instructionsBoxColor;
+  final Color instructionsBoxBorderColor;
+  final Color shadowColor;
+
+  TemplateStyle({
+    required this.primaryColor,
+    required this.accentColor,
+    required this.backgroundColor,
+    required this.buttonColor,
+    required this.dividerColor,
+    required this.buttonTextStyle,
+    required this.titleTextStyle,
+    required this.instructionsBoxColor,
+    required this.instructionsBoxBorderColor,
+    required this.shadowColor,
+  });
 }

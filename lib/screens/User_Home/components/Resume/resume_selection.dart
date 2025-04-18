@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mtquotes/screens/User_Home/components/Resume/resume_dashboard.dart';
+import 'package:mtquotes/screens/User_Home/components/Resume/resume_interface.dart';
 
 class ResumeSelectionScreen extends StatefulWidget {
   final Function(String) onTemplateSelected;
@@ -54,8 +55,8 @@ class _ResumeSelectionScreenState extends State<ResumeSelectionScreen> {
                   _buildTemplateOption(
                     'modern',
                     'Modern',
-                    'Clean, professional layout with a contemporary look.',
-                    'assets/images/modern_template_preview.png',
+                    'Clean, professional layout with a sidebar for skills and contact information.',
+                    _buildTemplatePreview('modern'),
                   ),
                   const SizedBox(height: 16),
 
@@ -63,8 +64,8 @@ class _ResumeSelectionScreenState extends State<ResumeSelectionScreen> {
                   _buildTemplateOption(
                     'classic',
                     'Classic',
-                    'Traditional layout suited for most industries.',
-                    'assets/images/classic_template_preview.png',
+                    'Traditional layout with header at top and clean sections below.',
+                    _buildTemplatePreview('classic'),
                   ),
                   const SizedBox(height: 16),
 
@@ -72,8 +73,8 @@ class _ResumeSelectionScreenState extends State<ResumeSelectionScreen> {
                   _buildTemplateOption(
                     'business',
                     'Business',
-                    'Formal design ideal for corporate positions.',
-                    'assets/images/business_template_preview.png',
+                    'Corporate design with bold header and professional styling.',
+                    _buildTemplatePreview('business'),
                   ),
                 ],
               ),
@@ -81,16 +82,14 @@ class _ResumeSelectionScreenState extends State<ResumeSelectionScreen> {
           ),
 
           // Continue Button
+          // Replace the Continue button code with this:
           Container(
             padding: const EdgeInsets.all(16),
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () {
                 widget.onTemplateSelected(_selectedTemplate);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => PersonalDetailsScreen()),
-                );
+                Navigator.pop(context, _selectedTemplate); // Return to the calling screen
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF2196F3),
@@ -117,7 +116,7 @@ class _ResumeSelectionScreenState extends State<ResumeSelectionScreen> {
       String templateId,
       String title,
       String description,
-      String imagePath,
+      Widget preview,
       ) {
     final isSelected = _selectedTemplate == templateId;
 
@@ -147,22 +146,18 @@ class _ResumeSelectionScreenState extends State<ResumeSelectionScreen> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Placeholder for template image
+            // Template preview image
             Container(
               width: 80,
               height: 120,
               decoration: BoxDecoration(
-                color: Colors.grey[200],
+                color: Colors.grey[50],
                 borderRadius: BorderRadius.circular(4),
+                border: Border.all(color: Colors.grey[300]!),
               ),
-              child: Center(
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: preview,
               ),
             ),
             const SizedBox(width: 16),
@@ -206,5 +201,271 @@ class _ResumeSelectionScreenState extends State<ResumeSelectionScreen> {
         ),
       ),
     );
+  }
+
+  // Helper to create mini preview of each template
+  Widget _buildTemplatePreview(String templateType) {
+    switch (templateType) {
+      case 'modern':
+        return Column(
+          children: [
+            // Header block
+            Container(
+              color: Colors.blueGrey[800],
+              width: double.infinity,
+              height: 30,
+              child: Row(
+                children: [
+                  const SizedBox(width: 4),
+                  Container(
+                    width: 12,
+                    height: 12,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          height: 4,
+                          width: 30,
+                          color: Colors.white,
+                        ),
+                        const SizedBox(height: 2),
+                        Container(
+                          height: 2,
+                          width: 20,
+                          color: Colors.white60,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Two column layout
+            Expanded(
+              child: Row(
+                children: [
+                  // Sidebar
+                  Container(
+                    width: 25,
+                    color: Colors.blueGrey[50],
+                    padding: const EdgeInsets.all(2),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(height: 3, width: 15, color: Colors.blueGrey),
+                        const SizedBox(height: 4),
+                        Container(height: 2, width: 12, color: Colors.black54),
+                        const SizedBox(height: 2),
+                        Container(height: 2, width: 12, color: Colors.black54),
+                        const SizedBox(height: 4),
+                        Container(height: 3, width: 15, color: Colors.blueGrey),
+                        const SizedBox(height: 4),
+                        Container(height: 2, width: 12, color: Colors.black54),
+                        Container(height: 2, width: 12, color: Colors.black54),
+                      ],
+                    ),
+                  ),
+                  // Main content
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.all(2.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(height: 3, width: 25, color: Colors.blueGrey),
+                          const SizedBox(height: 3),
+                          Container(height: 2, width: 40, color: Colors.black45),
+                          const SizedBox(height: 5),
+                          Container(height: 3, width: 25, color: Colors.blueGrey),
+                          const SizedBox(height: 3),
+                          Container(height: 2, width: 40, color: Colors.black45),
+                          Container(height: 2, width: 35, color: Colors.black45),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+
+      case 'classic':
+        return Column(
+          children: [
+            // Header block
+            Container(
+              color: Colors.white,
+              padding: const EdgeInsets.all(5),
+              alignment: Alignment.center,
+              child: Column(
+                children: [
+                  Container(
+                    height: 4,
+                    width: 50,
+                    color: Colors.black87,
+                  ),
+                  const SizedBox(height: 2),
+                  Container(
+                    height: 2,
+                    width: 30,
+                    color: Colors.black45,
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(height: 2, width: 12, color: Colors.black38),
+                      const SizedBox(width: 2),
+                      Container(height: 2, width: 12, color: Colors.black38),
+                      const SizedBox(width: 2),
+                      Container(height: 2, width: 12, color: Colors.black38),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 2),
+            Container(height: 1, color: Colors.grey),
+            const SizedBox(height: 2),
+            // Content
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(4),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(height: 3, width: 30, color: Colors.black87),
+                    const SizedBox(height: 2),
+                    Container(height: 2, width: 70, color: Colors.black45),
+                    const SizedBox(height: 3),
+                    Container(height: 1, color: Colors.grey),
+                    const SizedBox(height: 3),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Container(height: 2, width: 30, color: Colors.black54),
+                        Container(height: 2, width: 20, color: Colors.black38),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        );
+
+      case 'business':
+        return Column(
+          children: [
+            // Header block
+            Container(
+              color: Colors.indigo[800],
+              padding: const EdgeInsets.all(4),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 10,
+                        height: 10,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 1),
+                          color: Colors.indigo[800],
+                        ),
+                      ),
+                      const SizedBox(width: 3),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(height: 3, width: 35, color: Colors.white),
+                          const SizedBox(height: 1),
+                          Container(height: 2, width: 25, color: Colors.indigo[100]),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 3),
+                  Container(height: 1, color: Colors.white24),
+                  const SizedBox(height: 3),
+                  Row(
+                    children: [
+                      Icon(Icons.email, size: 6, color: Colors.indigo[100]),
+                      const SizedBox(width: 2),
+                      Container(height: 2, width: 20, color: Colors.indigo[100]),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            // Content
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(4),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(height: 3, width: 25, color: Colors.indigo[800]),
+                        const SizedBox(height: 1),
+                        Container(height: 2, width: 20, color: Colors.indigo[800]),
+                      ],
+                    ),
+                    const SizedBox(height: 3),
+                    Container(
+                      padding: const EdgeInsets.all(2),
+                      color: Colors.grey[100],
+                      child: Container(height: 2, width: double.infinity, color: Colors.black45),
+                    ),
+                    const SizedBox(height: 3),
+                    Container(
+                      padding: const EdgeInsets.symmetric(vertical: 2),
+                      decoration: BoxDecoration(
+                        border: Border(
+                          left: BorderSide(
+                            color: Colors.indigo[800]!,
+                            width: 2,
+                          ),
+                        ),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 2.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(height: 2, width: 30, color: Colors.black54),
+                            const SizedBox(height: 1),
+                            Container(height: 2, width: 20, color: Colors.indigo),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        );
+
+      default:
+        return Container(
+          color: Colors.grey[200],
+          child: const Center(
+            child: Text('Preview'),
+          ),
+        );
+    }
   }
 }
