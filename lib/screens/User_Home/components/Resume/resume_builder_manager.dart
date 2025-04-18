@@ -102,6 +102,8 @@ class ResumeBuilderManager {
     required Map<String, dynamic> step1Data,
     required Map<String, dynamic> step2Data,
     required Map<String, dynamic> step3Data,
+     final String? resumeId,
+    
   }) async {
     try {
       // Create and save resume with provided data

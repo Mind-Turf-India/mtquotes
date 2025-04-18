@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mtquotes/screens/User_Home/components/Resume/resume_dashboard.dart';
 import 'package:mtquotes/screens/User_Home/components/Resume/resume_dashboard3.dart';
 import 'package:mtquotes/screens/User_Home/components/Resume/resume_data.dart';
@@ -16,6 +18,7 @@ class Step2Screen extends StatefulWidget {
 
 class _Step2ScreenState extends State<Step2Screen> {
   final _formKey = GlobalKey<FormState>();
+  bool _isLoading = false;
 
   // Controllers for date fields
   final List<TextEditingController> _startDateControllers = [TextEditingController()];
@@ -31,11 +34,25 @@ class _Step2ScreenState extends State<Step2Screen> {
   // Text controller for professional summary
   final TextEditingController _summaryController = TextEditingController();
 
+  // Firebase instances
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  String? _userId;
+  String? _resumeId;
+
   @override
   void initState() {
     super.initState();
     // Add initial employment block
     _employmentBlocks.add(_buildEmploymentBlock(0));
+    _getUserId();
+  }
+
+  void _getUserId() {
+    final User? user = _auth.currentUser;
+    if (user != null) {
+      _userId = user.email?.replaceAll('.', '_');
+    }
   }
 
   @override
@@ -326,7 +343,7 @@ class _Step2ScreenState extends State<Step2Screen> {
     );
   }
 
-  // Breadcrumb widget for Step 2
+  // Breadcrumb widget for Step 2 (with disabled navigation for Step 3)
   Widget _buildBreadcrumb(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -339,7 +356,7 @@ class _Step2ScreenState extends State<Step2Screen> {
         children: [
           GestureDetector(
             onTap: () {
-              Navigator.pop(context);
+              Navigator.pop(context); // Only keeping back navigation
             },
             child: const Text(
               'Step 1',
@@ -359,50 +376,119 @@ class _Step2ScreenState extends State<Step2Screen> {
             ),
           ),
           const Icon(Icons.chevron_right, color: Colors.grey, size: 16),
-          GestureDetector(
-            onTap: () {
-              // The code here needs to be fixed to pass the required parameters
-              if (_formKey.currentState!.validate()) {
-                // Prepare Step2Data
-                List<Employment> employmentList = [];
-                for (int i = 0; i < _employmentBlocks.length; i++) {
-                  employmentList.add(Employment(
-                    jobTitle: _jobTitleControllers[i].text,
-                    employer: _employerControllers[i].text,
-                    startDate: _startDateControllers[i].text,
-                    endDate: _endDateControllers[i].text,
-                    location: _locationControllers[i].text,
-                    description: _descriptionControllers[i].text,
-                  ));
-                }
-
-                final step2Data = Step2Data(
-                  summary: _summaryController.text,
-                  employment: employmentList,
-                );
-
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => Step3Screen(
-                      step1Data: widget.step1Data,
-                      step2Data: step2Data,
-                    ),
-                  ),
-                );
-              }
-            },
-            child: const Text(
-              'Step 3',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey,
-              ),
+          const Text(
+            'Step 3',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey,
             ),
           ),
         ],
       ),
     );
+  }
+
+  // Method to save resume data to Firebase
+  Future<void> _saveDataToFirebase() async {
+    if (_userId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('User not authenticated')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Create employment objects from form data
+      List<Employment> employmentList = [];
+      for (int i = 0; i < _employmentBlocks.length; i++) {
+        employmentList.add(
+          Employment(
+            jobTitle: _jobTitleControllers[i].text,
+            employer: _employerControllers[i].text,
+            startDate: _startDateControllers[i].text,
+            endDate: _endDateControllers[i].text,
+            location: _locationControllers[i].text,
+            description: _descriptionControllers[i].text,
+          )
+        );
+      }
+
+      // Create Step2Data
+      final step2Data = Step2Data(
+        summary: _summaryController.text,
+        employment: employmentList,
+      );
+
+      // Create PersonalInfo from Step1Data
+      final personalInfo = PersonalInfo(
+        role: widget.step1Data.role,
+        firstName: widget.step1Data.firstName,
+        lastName: widget.step1Data.lastName,
+        email: widget.step1Data.email,
+        phone: widget.step1Data.phone,
+        address: widget.step1Data.address,
+        city: widget.step1Data.city,
+        country: widget.step1Data.country,
+        postalCode: widget.step1Data.postalCode,
+        profileImagePath: widget.step1Data.profileImagePath,
+      );
+
+      // Create the complete ResumeData object
+      final resumeData = ResumeData(
+        userId: _userId!,
+        templateType: "modern",
+        personalInfo: personalInfo,
+        education: widget.step1Data.education,
+        professionalSummary: step2Data.summary,
+        employmentHistory: step2Data.employment,
+        skills: [],  // Will be filled in Step3
+        languages: [], // Will be filled in Step3
+      );
+
+      // Check if we're updating an existing resume or creating a new one
+      if (_resumeId != null) {
+        // Update existing resume document
+        await _firestore
+          .collection('users')
+          .doc(_userId)
+          .collection('resume')
+          .doc(_resumeId)
+          .update(resumeData.toMap());
+      } else {
+        // Create new resume document
+        DocumentReference docRef = await _firestore
+          .collection('users')
+          .doc(_userId)
+          .collection('resume')
+          .add(resumeData.toMap());
+        
+        _resumeId = docRef.id;
+      }
+
+      // Navigate to Step3Screen with the data
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => Step3Screen(
+            step1Data: widget.step1Data,
+            step2Data: step2Data,
+            resumeId: _resumeId,
+          ),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error saving data: ${e.toString()}')),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -528,49 +614,22 @@ class _Step2ScreenState extends State<Step2Screen> {
                       width: double.infinity,
                       height: 48,
                       child: ElevatedButton(
-                        onPressed: () {
-                          if (_formKey.currentState!.validate()) {
-                            // Prepare Step2Data
-                            List<Employment> employmentList = [];
-                            for (int i = 0; i < _employmentBlocks.length; i++) {
-                              employmentList.add(Employment(
-                                jobTitle: _jobTitleControllers[i].text,
-                                employer: _employerControllers[i].text,
-                                startDate: _startDateControllers[i].text,
-                                endDate: _endDateControllers[i].text,
-                                location: _locationControllers[i].text,
-                                description: _descriptionControllers[i].text,
-                              ));
-                            }
-
-                            final step2Data = Step2Data(
-                              summary: _summaryController.text,
-                              employment: employmentList,
-                            );
-
-                            // Navigate to Step3Screen passing both Step1 and Step2 data
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => Step3Screen(
-                                step1Data: widget.step1Data, // Pass through from Step1
-                                step2Data: step2Data, // Pass new Step2 data
-                              )),
-                            );
-                          }
-                        },
+                        onPressed: _isLoading ? null : _saveDataToFirebase,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF2196F3),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        child: const Text(
-                          'Next',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
+                        child: _isLoading 
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : const Text(
+                              'Next',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
                       ),
                     ),
                   ],

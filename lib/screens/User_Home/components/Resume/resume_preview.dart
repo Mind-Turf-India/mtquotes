@@ -7,10 +7,13 @@ import 'package:share_plus/share_plus.dart';
 
 class ResumePreviewScreen extends StatefulWidget {
   final ResumeData resumeData;
+    final String? resumeId;
+    
 
   const ResumePreviewScreen({
     Key? key,
     required this.resumeData,
+        this.resumeId,
   }) : super(key: key);
 
   @override

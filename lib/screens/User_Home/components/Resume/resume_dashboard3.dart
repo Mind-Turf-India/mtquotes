@@ -1,6 +1,6 @@
-// Modify the Step3Screen class
 import 'dart:ui';
-
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:mtquotes/screens/User_Home/components/Resume/resume_builder_manager.dart';
@@ -12,11 +12,13 @@ import 'package:mtquotes/screens/User_Home/home_screen.dart';
 class Step3Screen extends BaseStepScreen {
   final Step1Data step1Data;
   final Step2Data step2Data;
-
+  final String? resumeId;
+  
   const Step3Screen({
-    Key? key,
+    Key? key, 
     required this.step1Data,
     required this.step2Data,
+    this.resumeId,
   }) : super(key: key, currentStep: 3);
 
   @override
@@ -38,6 +40,12 @@ class _Step3ScreenState extends BaseStepScreenState<Step3Screen> {
 
   // Selected template
   String _selectedTemplate = 'modern'; // Default template
+  
+  // Firebase instances
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -87,10 +95,86 @@ class _Step3ScreenState extends BaseStepScreenState<Step3Screen> {
     }
   }
 
-  // Function to create resume
+  // Function to save resume data to Firebase
+  Future<String> _saveResumeToFirebase({
+    required Map<String, dynamic> step1Data,
+    required Map<String, dynamic> step2Data,
+    required Map<String, dynamic> step3Data,
+  }) async {
+    try {
+      // Get current user
+      final User? currentUser = _auth.currentUser;
+      if (currentUser == null) {
+        throw Exception('User not authenticated');
+      }
+      
+      // Format user email for document ID (replace . with _)
+      final String userId = currentUser.email!.replaceAll('.', '_');
+      
+      // Create a resume data object
+      final resumeData = ResumeData(
+        userId: userId,
+        templateType: _selectedTemplate,
+        personalInfo: PersonalInfo(
+          role: step1Data['role'],
+          firstName: step1Data['firstName'],
+          lastName: step1Data['lastName'],
+          email: step1Data['email'],
+          phone: step1Data['phone'],
+          address: step1Data['address'],
+          city: step1Data['city'],
+          country: step1Data['country'],
+          postalCode: step1Data['postalCode'],
+          profileImagePath: step1Data['profileImagePath'],
+        ),
+        education: List<Map<String, dynamic>>.from(step1Data['education'])
+            .map((edu) => Education(
+                  title: edu['title'],
+                  school: edu['school'],
+                  level: edu['level'],
+                  startDate: edu['startDate'],
+                  endDate: edu['endDate'],
+                  location: edu['location'],
+                  description: edu['description'],
+                ))
+            .toList(),
+        professionalSummary: step2Data['summary'],
+        employmentHistory: List<Map<String, dynamic>>.from(step2Data['employment'])
+            .map((job) => Employment(
+                  jobTitle: job['jobTitle'],
+                  employer: job['employer'],
+                  startDate: job['startDate'],
+                  endDate: job['endDate'],
+                  location: job['location'],
+                  description: job['description'],
+                ))
+            .toList(),
+        skills: List<String>.from(step3Data['skills']),
+        languages: List<String>.from(step3Data['languages']),
+      );
 
+      // Save to Firestore
+      final CollectionReference userResumesCollection = 
+          _firestore.collection('users').doc(userId).collection('resume');
+          
+      // Use existing resumeId if available, otherwise create a new document
+      final String documentId = widget.resumeId ?? userResumesCollection.doc().id;
+      
+      await userResumesCollection.doc(documentId).set(resumeData.toMap());
+      
+      return documentId;
+    } catch (e) {
+      throw Exception('Failed to save resume: $e');
+    }
+  }
+
+  // Function to create resume
   void _createResume() async {
     if (formKey.currentState!.validate()) {
+      setState(() {
+        _isLoading = true;
+      });
+      
       try {
         // Show loading dialog
         showDialog(
@@ -150,8 +234,17 @@ class _Step3ScreenState extends BaseStepScreenState<Step3Screen> {
           'languages': _languageControllers.map((c) => c.text).where((s) => s.isNotEmpty).toList(),
         };
 
+        // Save data to Firebase
+        final String documentId = await _saveResumeToFirebase(
+          step1Data: step1Data,
+          step2Data: step2Data,
+          step3Data: step3Data,
+        );
+
         // Close loading dialog
-        Navigator.pop(context);
+        if (Navigator.canPop(context)) {
+          Navigator.pop(context);
+        }
 
         // Create resume manager
         final resumeManager = ResumeBuilderManager(context);
@@ -162,7 +255,16 @@ class _Step3ScreenState extends BaseStepScreenState<Step3Screen> {
           step1Data: step1Data,
           step2Data: step2Data,
           step3Data: step3Data,
+          resumeId: documentId,
         );
+        
+        // Navigate to Resume Dashboard after successful creation
+        // Navigator.pushAndRemoveUntil(
+        //   context,
+        //   MaterialPageRoute(builder: (context) => ResumeDashboard()),
+        //   (route) => false,
+        // );
+        
       } catch (e) {
         // Close loading dialog if still open
         if (Navigator.canPop(context)) {
@@ -183,6 +285,10 @@ class _Step3ScreenState extends BaseStepScreenState<Step3Screen> {
             ],
           ),
         );
+      } finally {
+        setState(() {
+          _isLoading = false;
+        });
       }
     }
   }
@@ -403,24 +509,35 @@ class _Step3ScreenState extends BaseStepScreenState<Step3Screen> {
               width: double.infinity,
               height: 48,
               child: ElevatedButton(
-                onPressed: _createResume,
+                onPressed: _isLoading ? null : _createResume,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF2196F3),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
+                  disabledBackgroundColor: Colors.grey,
                 ),
-                child: const Text(
-                  'Create Resume',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+                child: _isLoading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text(
+                        'Create Resume',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
               ),
             ),
           ],
         ),
       ),
     );
-  }}
+  }
+  
+  // Override to remove breadcrumb navigation
+  @override
+  Widget buildStepIndicator() {
+    // Return an empty container to remove the breadcrumb navigation
+    return Container();
+  }
+}
