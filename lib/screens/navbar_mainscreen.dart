@@ -4,7 +4,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mtquotes/l10n/app_localization.dart';
 import 'package:mtquotes/screens/User_Home/components/Resume/resume_dashboard.dart';
-import 'package:mtquotes/screens/User_Home/components/Resume/resume_screen.dart';
+import 'package:mtquotes/screens/User_Home/components/Resume/resume_service.dart';
 import 'package:mtquotes/screens/User_Home/home_screen.dart';
 import 'package:mtquotes/screens/User_Home/files_screen.dart';
 import 'package:mtquotes/screens/User_Home/profile_screen.dart';
@@ -15,6 +15,7 @@ import '../utils/theme_provider.dart';
 import 'Create_Screen/edit_screen_create.dart';
 import 'Create_Screen/template_screen_create.dart';
 import 'User_Home/components/Image Upscaling/image_upscaling.dart';
+import 'User_Home/components/Resume/resume_selection.dart';
 import 'User_Home/search_screen.dart';
 
 class MainScreen extends StatefulWidget {
@@ -71,7 +72,7 @@ class _MainScreenState extends State<MainScreen> {
         } else if (label == context.loc.downloads) {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => PersonalDetailsScreen()),
+            MaterialPageRoute(builder: (context) => ResumeSelectionScreen(onTemplateSelected: (_selectedTemplate ) { },)),
           );
         }
       },

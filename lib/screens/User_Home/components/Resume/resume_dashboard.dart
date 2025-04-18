@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mtquotes/screens/User_Home/components/Resume/resume_dashboard2.dart';
 import 'package:mtquotes/screens/User_Home/components/Resume/resume_dashboard3.dart';
+import 'package:mtquotes/screens/User_Home/components/Resume/resume_data.dart';
 
 // Base class for all step screens to ensure consistent UI and navigation
 abstract class BaseStepScreen extends StatefulWidget {
@@ -36,11 +37,11 @@ abstract class BaseStepScreenState<T extends BaseStepScreen> extends State<T> {
     } else if (step == 2) {
       // Navigate to Step 2 (Employment History)
       if (widget.currentStep < 2) {
-        // Navigate forward to step 2
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) =>const Step2Screen()),
-        );
+        // For Step 1 to Step 2, we need to collect and pass the data
+        if (widget.currentStep == 1) {
+          // This would be handled in the onPressed of the Next button
+          // since we need to collect the data from the form
+        }
       } else if (widget.currentStep > 2) {
         // Navigate back to step 2
         Navigator.pop(context);
@@ -48,24 +49,7 @@ abstract class BaseStepScreenState<T extends BaseStepScreen> extends State<T> {
     } else if (step == 3) {
       // Navigate to Step 3 (Skills & Languages)
       if (widget.currentStep < 3) {
-        if (widget.currentStep == 1) {
-          // Navigate through step 2 first if coming from step 1
-          Navigator.push(
-            context, 
-            MaterialPageRoute(builder: (context) => const Step2Screen())
-          ).then((_) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const Step3Screen()),
-            );
-          });
-        } else {
-          // Navigate directly to step 3 if coming from step 2
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const Step3Screen()),
-          );
-        }
+        // This is handled in the onPressed of Step2's Next button
       }
     }
   }
@@ -187,27 +171,61 @@ class PersonalDetailsScreen extends BaseStepScreen {
 
 class _PersonalDetailsScreenState extends BaseStepScreenState<PersonalDetailsScreen> {
   // Controllers for date fields
+  final TextEditingController _roleController = TextEditingController();
+  final TextEditingController _firstNameController = TextEditingController();
+  final TextEditingController _lastNameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _addressController = TextEditingController();
+  final TextEditingController _cityController = TextEditingController();
+  final TextEditingController _countryController = TextEditingController();
+  final TextEditingController _postalCodeController = TextEditingController();
+
+  // Controllers for education fields
+  final List<TextEditingController> _schoolControllers = [TextEditingController()];
+  final List<TextEditingController> _levelControllers = [TextEditingController()];
+  final List<TextEditingController> _locationControllers = [TextEditingController()];
+  final List<TextEditingController> _descriptionControllers = [TextEditingController()];
+
+  // These were already declared in your original code
   final List<TextEditingController> _startDateControllers = [TextEditingController()];
   final List<TextEditingController> _endDateControllers = [TextEditingController()];
   final List<TextEditingController> _educationTitleControllers = [TextEditingController()];
-  
+
   // For profile image
   File? _profileImage;
   final ImagePicker _picker = ImagePicker();
-  
+
   // List to track education blocks
   final List<Widget> _educationBlocks = [];
-  
-  @override
-  void initState() {
-    super.initState();
-    // Add initial education block
-    _educationBlocks.add(_buildEducationBlock(0));
-  }
-  
+
+  // Add this to make sure you dispose of all controllers
   @override
   void dispose() {
-    // Dispose all controllers
+    _roleController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
+    _addressController.dispose();
+    _cityController.dispose();
+    _countryController.dispose();
+    _postalCodeController.dispose();
+
+    for (var controller in _schoolControllers) {
+      controller.dispose();
+    }
+    for (var controller in _levelControllers) {
+      controller.dispose();
+    }
+    for (var controller in _locationControllers) {
+      controller.dispose();
+    }
+    for (var controller in _descriptionControllers) {
+      controller.dispose();
+    }
+
+    // These were in your original dispose method
     for (var controller in _startDateControllers) {
       controller.dispose();
     }
@@ -217,6 +235,7 @@ class _PersonalDetailsScreenState extends BaseStepScreenState<PersonalDetailsScr
     for (var controller in _educationTitleControllers) {
       controller.dispose();
     }
+
     super.dispose();
   }
 
@@ -513,9 +532,10 @@ class _PersonalDetailsScreenState extends BaseStepScreenState<PersonalDetailsScr
                 color: const Color(0xFFF5F5F5),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const TextField(
-                style: TextStyle(color: Colors.black),
-                decoration: InputDecoration(
+              child: TextField(
+                controller: _roleController,
+                style: const TextStyle(color: Colors.black),
+                decoration: const InputDecoration(
                   hintText: 'Role you want',
                   hintStyle: TextStyle(color: Colors.grey),
                   border: InputBorder.none,
@@ -800,10 +820,43 @@ class _PersonalDetailsScreenState extends BaseStepScreenState<PersonalDetailsScr
               width: double.infinity,
               height: 48,
               child: ElevatedButton(
+                // In Step1Screen.dart, update the Next button's onPressed method:
                 onPressed: () {
                   if (formKey.currentState!.validate()) {
-                    // Navigate to Step2Screen when Next is pressed
-                    navigateToStep(2);
+                    // Collect education data
+                    List<Education> educationData = [];
+                    for (int i = 0; i < _educationBlocks.length; i++) {
+                      educationData.add(Education(
+                        title: _educationTitleControllers[i].text,
+                        school: _schoolControllers[i].text,
+                        level: _levelControllers[i].text,
+                        startDate: _startDateControllers[i].text,
+                        endDate: _endDateControllers[i].text,
+                        location: _locationControllers[i].text,
+                        description: _descriptionControllers[i].text,
+                      ));
+                    }
+
+                    // Create Step1Data
+                    final step1Data = Step1Data(
+                      role: _roleController.text,
+                      firstName: _firstNameController.text,
+                      lastName: _lastNameController.text,
+                      email: _emailController.text,
+                      phone: _phoneController.text,
+                      address: _addressController.text,
+                      city: _cityController.text,
+                      country: _countryController.text,
+                      postalCode: _postalCodeController.text,
+                      profileImagePath: _profileImage?.path,
+                      education: educationData,
+                    );
+
+                    // Navigate to Step2Screen passing data
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => Step2Screen(step1Data: step1Data)),
+                    );
                   }
                 },
                 style: ElevatedButton.styleFrom(

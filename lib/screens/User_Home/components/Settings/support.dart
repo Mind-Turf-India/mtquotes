@@ -22,7 +22,7 @@ class _SupportScreenState extends State<SupportScreen> {
   final TextEditingController _phoneController = TextEditingController();
 
   // Phone number to contact on WhatsApp (replace with your number)
-  final String phoneNumber = "8739922209"; // Your WhatsApp number without country code
+  final String phoneNumber = "9220380777"; // Your WhatsApp number without country code
 
   // Pre-defined message for WhatsApp (optional)
   final String defaultMessage = "Hello, I need support with Vaky app.";

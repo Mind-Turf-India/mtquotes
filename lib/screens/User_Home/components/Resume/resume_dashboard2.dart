@@ -4,9 +4,11 @@ import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mtquotes/screens/User_Home/components/Resume/resume_dashboard.dart';
 import 'package:mtquotes/screens/User_Home/components/Resume/resume_dashboard3.dart';
+import 'package:mtquotes/screens/User_Home/components/Resume/resume_data.dart';
 
 class Step2Screen extends StatefulWidget {
-  const Step2Screen({Key? key}) : super(key: key);
+  final Step1Data step1Data;
+  const Step2Screen({Key? key, required this.step1Data}) : super(key: key);
 
   @override
   State<Step2Screen> createState() => _Step2ScreenState();
@@ -14,7 +16,7 @@ class Step2Screen extends StatefulWidget {
 
 class _Step2ScreenState extends State<Step2Screen> {
   final _formKey = GlobalKey<FormState>();
-  
+
   // Controllers for date fields
   final List<TextEditingController> _startDateControllers = [TextEditingController()];
   final List<TextEditingController> _endDateControllers = [TextEditingController()];
@@ -22,20 +24,20 @@ class _Step2ScreenState extends State<Step2Screen> {
   final List<TextEditingController> _employerControllers = [TextEditingController()];
   final List<TextEditingController> _locationControllers = [TextEditingController()];
   final List<TextEditingController> _descriptionControllers = [TextEditingController()];
-  
+
   // List to track employment blocks
   final List<Widget> _employmentBlocks = [];
-  
+
   // Text controller for professional summary
   final TextEditingController _summaryController = TextEditingController();
-  
+
   @override
   void initState() {
     super.initState();
     // Add initial employment block
     _employmentBlocks.add(_buildEmploymentBlock(0));
   }
-  
+
   @override
   void dispose() {
     // Dispose all controllers
@@ -70,14 +72,14 @@ class _Step2ScreenState extends State<Step2Screen> {
       firstDate: DateTime(1900),
       lastDate: DateTime(2100),
     );
-    
+
     if (picked != null) {
       setState(() {
         controller.text = DateFormat('MM/dd/yyyy').format(picked);
       });
     }
   }
-  
+
   // Function to add a new employment block
   void _addEmploymentBlock() {
     setState(() {
@@ -91,7 +93,7 @@ class _Step2ScreenState extends State<Step2Screen> {
       _employmentBlocks.add(_buildEmploymentBlock(index));
     });
   }
-  
+
   // Function to remove an employment block
   void _removeEmploymentBlock(int index) {
     if (_employmentBlocks.length > 1) {
@@ -106,7 +108,7 @@ class _Step2ScreenState extends State<Step2Screen> {
       });
     }
   }
-  
+
   // Build a single employment block
   Widget _buildEmploymentBlock(int index) {
     return Container(
@@ -157,7 +159,7 @@ class _Step2ScreenState extends State<Step2Screen> {
               ],
             ),
           ),
-          
+
           // Employment details form
           Padding(
             padding: const EdgeInsets.all(16),
@@ -186,7 +188,7 @@ class _Step2ScreenState extends State<Step2Screen> {
                       ),
                     ),
                     const SizedBox(width: 16),
-                    
+
                     // Employer
                     Expanded(
                       child: Container(
@@ -244,7 +246,7 @@ class _Step2ScreenState extends State<Step2Screen> {
                       ),
                     ),
                     const SizedBox(width: 16),
-                    
+
                     // End Date
                     Expanded(
                       child: Container(
@@ -359,10 +361,36 @@ class _Step2ScreenState extends State<Step2Screen> {
           const Icon(Icons.chevron_right, color: Colors.grey, size: 16),
           GestureDetector(
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const Step3Screen()),
-              );
+              // The code here needs to be fixed to pass the required parameters
+              if (_formKey.currentState!.validate()) {
+                // Prepare Step2Data
+                List<Employment> employmentList = [];
+                for (int i = 0; i < _employmentBlocks.length; i++) {
+                  employmentList.add(Employment(
+                    jobTitle: _jobTitleControllers[i].text,
+                    employer: _employerControllers[i].text,
+                    startDate: _startDateControllers[i].text,
+                    endDate: _endDateControllers[i].text,
+                    location: _locationControllers[i].text,
+                    description: _descriptionControllers[i].text,
+                  ));
+                }
+
+                final step2Data = Step2Data(
+                  summary: _summaryController.text,
+                  employment: employmentList,
+                );
+
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => Step3Screen(
+                      step1Data: widget.step1Data,
+                      step2Data: step2Data,
+                    ),
+                  ),
+                );
+              }
             },
             child: const Text(
               'Step 3',
@@ -403,7 +431,7 @@ class _Step2ScreenState extends State<Step2Screen> {
         children: [
           // Add the breadcrumb navigation
           _buildBreadcrumb(context),
-          
+
           // Content goes in a scrollable view
           Expanded(
             child: SingleChildScrollView(
@@ -423,7 +451,7 @@ class _Step2ScreenState extends State<Step2Screen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    
+
                     // Professional Summary Text Area
                     Container(
                       decoration: BoxDecoration(
@@ -443,7 +471,7 @@ class _Step2ScreenState extends State<Step2Screen> {
                       ),
                     ),
                     const SizedBox(height: 32),
-                    
+
                     // Employment History Section
                     const Text(
                       'Employment History',
@@ -454,10 +482,10 @@ class _Step2ScreenState extends State<Step2Screen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    
+
                     // Dynamic Employment Blocks
                     ...List.generate(_employmentBlocks.length, (index) => _employmentBlocks[index]),
-                    
+
                     // Add one more employment button
                     GestureDetector(
                       onTap: _addEmploymentBlock,
@@ -492,9 +520,9 @@ class _Step2ScreenState extends State<Step2Screen> {
                         ),
                       ),
                     ),
-                    
+
                     const SizedBox(height: 30),
-                    
+
                     // Next Button
                     SizedBox(
                       width: double.infinity,
@@ -502,10 +530,31 @@ class _Step2ScreenState extends State<Step2Screen> {
                       child: ElevatedButton(
                         onPressed: () {
                           if (_formKey.currentState!.validate()) {
-                            // Navigate to Step3Screen
+                            // Prepare Step2Data
+                            List<Employment> employmentList = [];
+                            for (int i = 0; i < _employmentBlocks.length; i++) {
+                              employmentList.add(Employment(
+                                jobTitle: _jobTitleControllers[i].text,
+                                employer: _employerControllers[i].text,
+                                startDate: _startDateControllers[i].text,
+                                endDate: _endDateControllers[i].text,
+                                location: _locationControllers[i].text,
+                                description: _descriptionControllers[i].text,
+                              ));
+                            }
+
+                            final step2Data = Step2Data(
+                              summary: _summaryController.text,
+                              employment: employmentList,
+                            );
+
+                            // Navigate to Step3Screen passing both Step1 and Step2 data
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) =>  Step3Screen()),
+                              MaterialPageRoute(builder: (context) => Step3Screen(
+                                step1Data: widget.step1Data, // Pass through from Step1
+                                step2Data: step2Data, // Pass new Step2 data
+                              )),
                             );
                           }
                         },
