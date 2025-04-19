@@ -83,40 +83,40 @@ class _ResumeSelectionScreenState extends State<ResumeSelectionScreen> {
 
           // Continue Button
           // Replace the Continue button code with this:
-          Container(
-  padding: const EdgeInsets.all(16),
-  width: double.infinity,
-  child: ElevatedButton(
-    onPressed: () {
-      // Call the callback to notify parent if needed
-      widget.onTemplateSelected(_selectedTemplate);
+//           Container(
+//   padding: const EdgeInsets.all(16),
+//   width: double.infinity,
+//   child: ElevatedButton(
+//     onPressed: () {
+//       // Call the callback to notify parent if needed
+//       widget.onTemplateSelected(_selectedTemplate);
       
-      // Navigate to PersonalDetailsScreen with template parameter
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => PersonalDetailsScreen(
-            initialTemplateType: _selectedTemplate,
-          ),
-        ),
-      );
-    },
-    style: ElevatedButton.styleFrom(
-      backgroundColor: const Color(0xFF2196F3),
-      padding: const EdgeInsets.symmetric(vertical: 14),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-      ),
-    ),
-    child: const Text(
-      'Continue',
-      style: TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.w500,
-      ),
-    ),
-  ),
-),
+//       // Navigate to PersonalDetailsScreen with template parameter
+//       Navigator.push(
+//         context,
+//         MaterialPageRoute(
+//           builder: (context) => PersonalDetailsScreen(
+//             initialTemplateType: _selectedTemplate,
+//           ),
+//         ),
+//       );
+//     },
+//     style: ElevatedButton.styleFrom(
+//       backgroundColor: const Color(0xFF2196F3),
+//       padding: const EdgeInsets.symmetric(vertical: 14),
+//       shape: RoundedRectangleBorder(
+//         borderRadius: BorderRadius.circular(8),
+//       ),
+//     ),
+//     child: const Text(
+//       'Continue',
+//       style: TextStyle(
+//         fontSize: 16,
+//         fontWeight: FontWeight.w500,
+//       ),
+//     ),
+//   ),
+// ),
         ],
       ),
     );

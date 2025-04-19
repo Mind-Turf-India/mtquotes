@@ -30,7 +30,8 @@ class _ResumePreviewScreenState extends State<ResumePreviewScreen> {
   @override
   void initState() {
     super.initState();
-    print("Selected template type: ${widget.resumeData.templateType}"); // Debug print
+    print(
+        "Selected template type: ${widget.resumeData.templateType}"); // Debug print
     _template = TemplateFactory.getTemplate(widget.resumeData.templateType);
     _style = _getTemplateStyle(widget.resumeData.templateType);
     // Generate PDF on load for immediate sharing
@@ -169,7 +170,7 @@ class _ResumePreviewScreenState extends State<ResumePreviewScreen> {
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => MainScreen()),
-              (route) => false, // Removes all routes from the stack
+          (route) => false, // Removes all routes from the stack
         );
       }
     } else {
@@ -185,9 +186,10 @@ class _ResumePreviewScreenState extends State<ResumePreviewScreen> {
     return Scaffold(
       backgroundColor: _style.backgroundColor,
       appBar: AppBar(
-        backgroundColor: widget.resumeData.templateType.toLowerCase() == 'business'
-            ? _style.primaryColor
-            : Colors.white,
+        backgroundColor:
+            widget.resumeData.templateType.toLowerCase() == 'business'
+                ? _style.primaryColor
+                : Colors.white,
         elevation: 0,
         leading: IconButton(
           icon: Icon(
@@ -207,97 +209,39 @@ class _ResumePreviewScreenState extends State<ResumePreviewScreen> {
             fontSize: 16,
           ),
         ),
-        actions: [
-          // Share button always visible
-          IconButton(
-            icon: Icon(
-              Icons.share,
-              color: widget.resumeData.templateType.toLowerCase() == 'business'
-                  ? Colors.white
-                  : Colors.black,
-            ),
-            onPressed: _isGeneratingPdf ? null : _sharePdf,
-          ),
-        ],
+        iconTheme: IconThemeData(
+          color: widget.resumeData.templateType.toLowerCase() == 'business'
+              ? Colors.white
+              : Colors.black,
+        ),
+        centerTitle: true,
       ),
       body: Column(
         children: [
           Expanded(
             child: Center(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    // Template preview with flexible sizing
-                    Container(
-                      constraints: BoxConstraints(
-                        // Use maximum width available, constrained to A4 proportions when possible
-                        maxWidth: MediaQuery.of(context).size.width > 600
-                            ? 595 // A4 width in points
-                            : MediaQuery.of(context).size.width - 32,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 24,
+                ),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                        color: _style.shadowColor,
+                        blurRadius: 10,
+                        offset: const Offset(0, 5),
                       ),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        boxShadow: [
-                          BoxShadow(
-                            color: _style.shadowColor,
-                            blurRadius: 10,
-                            offset: const Offset(0, 5),
-                          ),
-                        ],
-                        border: widget.resumeData.templateType.toLowerCase() == 'classic'
-                            ? Border.all(color: Colors.grey[300]!)
-                            : null,
-                      ),
-                      // Use SingleChildScrollView to prevent overflow issues
-                      child: SingleChildScrollView(
-                        physics: const NeverScrollableScrollPhysics(), // Disable scrolling for this inner scroll view
-                        child: _template.buildTemplate(
-                          widget.resumeData,
-                          isPreview: true,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Instructions box - styled based on template
-                    // Container(
-                    //   padding: const EdgeInsets.all(16),
-                    //   decoration: BoxDecoration(
-                    //     color: _style.instructionsBoxColor,
-                    //     borderRadius: BorderRadius.circular(8),
-                    //     border: Border.all(color: _style.instructionsBoxBorderColor),
-                    //     boxShadow: widget.resumeData.templateType.toLowerCase() == 'business'
-                    //         ? [
-                    //       BoxShadow(
-                    //         color: Colors.black.withOpacity(0.05),
-                    //         blurRadius: 4,
-                    //         offset: const Offset(0, 2),
-                    //       ),
-                    //     ]
-                    //         : null,
-                    //   ),
-                    //   child: Column(
-                    //     children: [
-                    //       Text(
-                    //         'Preview',
-                    //         style: _style.titleTextStyle,
-                    //       ),
-                    //       const SizedBox(height: 8),
-                    //       Text(
-                    //         'This is a preview of your resume. To download it as a PDF, tap the "Download PDF" button below. The PDF will be saved to your Downloads folder.',
-                    //         style: TextStyle(
-                    //           fontSize: 14,
-                    //           color: widget.resumeData.templateType.toLowerCase() == 'classic'
-                    //               ? Colors.black87
-                    //               : _style.accentColor,
-                    //         ),
-                    //         textAlign: TextAlign.center,
-                    //       ),
-                    //     ],
-                    //   ),
-                    // ),
-                  ],
+                    ],
+                  ),
+                  margin: const EdgeInsets.only(bottom: 24),
+                  child: _template.buildTemplate(
+                    widget.resumeData,
+                    isPreview: true,
+                    maxWidth: MediaQuery.of(context).size.width - 32,
+                  ),
                 ),
               ),
             ),
@@ -307,94 +251,43 @@ class _ResumePreviewScreenState extends State<ResumePreviewScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: widget.resumeData.templateType.toLowerCase() == 'business'
-                  ? _style.primaryColor.withOpacity(0.05)
-                  : Colors.white,
+              color: Colors.white,
               boxShadow: [
                 BoxShadow(
                   color: _style.shadowColor,
-                  blurRadius: 5,
+                  blurRadius: 4,
                   offset: const Offset(0, -2),
                 ),
               ],
-              border: widget.resumeData.templateType.toLowerCase() == 'classic'
-                  ? Border(top: BorderSide(color: _style.dividerColor))
-                  : null,
             ),
             child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                // Edit button
+                // Share button
                 Expanded(
-                  child: OutlinedButton(
-                    onPressed: () {
-                      // Navigate back to edit
-                      Navigator.pop(context);
-                    },
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      side: BorderSide(color: _style.primaryColor),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(
-                            widget.resumeData.templateType.toLowerCase() == 'classic' ? 4 : 8),
-                      ),
-                    ),
-                    child: Text(
-                      'Edit',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: _style.primaryColor,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-
-                // Download PDF button
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: _isGeneratingPdf ? null : _generatePdf,
+                  child: ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: _style.buttonColor,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(
-                            widget.resumeData.templateType.toLowerCase() == 'classic' ? 4 : 8),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    child: _isGeneratingPdf
-                        ? Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        const Text(
-                          'Generating...',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    )
-                        : Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.download, size: 20),
-                        const SizedBox(width: 8),
-                        Text(
-                          _pdfPath == null ? 'Download PDF' : 'Download Again',
-                          style: _style.buttonTextStyle,
-                        ),
-                      ],
+                    onPressed: _isGeneratingPdf ? null : _sharePdf,
+                    icon: _isGeneratingPdf
+                        ? SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : const Icon(Icons.share, size: 20),
+                    label: Text(
+                      _isGeneratingPdf ? 'Processing...' : 'Save & Share',
+                      style: _style.buttonTextStyle,
                     ),
                   ),
                 ),

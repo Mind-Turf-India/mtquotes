@@ -7,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class ResumePdfGenerator {
+  
   // Generate PDF from Resume Data
   static Future<String> generatePdf(ResumeData data, {bool saveToDownloads = true}) async {
     // Create PDF document
@@ -395,8 +396,7 @@ class ResumePdfGenerator {
         ];
       },
     );
-  }
-
+  }  
   // Build Classic Template with traditional centered design
   static pw.Page _buildClassicTemplate(
       ResumeData data,

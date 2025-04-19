@@ -72,7 +72,7 @@ class _MainScreenState extends State<MainScreen> {
         } else if (label == context.loc.downloads) {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => ResumeSelectionScreen(onTemplateSelected: (_selectedTemplate ) { },)),
+            MaterialPageRoute(builder: (context) => PersonalDetailsScreen()),
           );
         }
       },

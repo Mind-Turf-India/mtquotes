@@ -428,8 +428,8 @@ class _PersonalDetailsScreenState
       }
 
       // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Resume data saved successfully!')));
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //     const SnackBar(content: Text('Resume data saved successfully!')));
 
       return documentId;
     } catch (e) {
