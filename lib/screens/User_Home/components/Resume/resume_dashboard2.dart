@@ -10,12 +10,12 @@ import 'package:mtquotes/screens/User_Home/components/Resume/resume_data.dart';
 
 class Step2Screen extends StatefulWidget {
   final Step1Data step1Data;
-  final String resumeId; // Changed to make it required
+  final String resumeId;
 
   const Step2Screen({
     Key? key,
     required this.step1Data,
-    required this.resumeId, // Make resumeId required
+    required this.resumeId,
   }) : super(key: key);
 
   @override
@@ -25,6 +25,7 @@ class Step2Screen extends StatefulWidget {
 class _Step2ScreenState extends State<Step2Screen> {
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
+  bool _isLoadingData = true; // Added to show loading state while fetching data
 
   // Controllers for date fields
   final List<TextEditingController> _startDateControllers = [
@@ -63,12 +64,100 @@ class _Step2ScreenState extends State<Step2Screen> {
     // Add initial employment block
     _employmentBlocks.add(_buildEmploymentBlock(0));
     _getUserId();
+    // Fetch existing data
+    _fetchResumeData();
   }
 
   void _getUserId() {
     final User? user = _auth.currentUser;
     if (user != null) {
       _userId = user.email?.replaceAll('.', '_');
+    }
+  }
+
+  // New method to fetch resume data from Firebase
+  Future<void> _fetchResumeData() async {
+    if (_userId == null) {
+      setState(() {
+        _isLoadingData = false;
+      });
+      return;
+    }
+
+    try {
+      DocumentSnapshot resumeDoc = await _firestore
+          .collection('users')
+          .doc(_userId)
+          .collection('resume')
+          .doc(widget.resumeId)
+          .get();
+
+      if (resumeDoc.exists) {
+        Map<String, dynamic> data = resumeDoc.data() as Map<String, dynamic>;
+
+        // Populate professional summary
+        if (data.containsKey('professionalSummary')) {
+          _summaryController.text = data['professionalSummary'] ?? '';
+        }
+
+        // Populate employment history
+        if (data.containsKey('employmentHistory') && data['employmentHistory'] is List) {
+          List<dynamic> employmentHistory = data['employmentHistory'];
+
+          // Clear existing controllers and blocks
+          _startDateControllers.clear();
+          _endDateControllers.clear();
+          _jobTitleControllers.clear();
+          _employerControllers.clear();
+          _locationControllers.clear();
+          _descriptionControllers.clear();
+          _employmentBlocks.clear();
+
+          // Create new controllers and blocks for each employment entry
+          for (int i = 0; i < employmentHistory.length; i++) {
+            Map<String, dynamic> job = employmentHistory[i];
+
+            // Create controllers for this job
+            TextEditingController startDateController = TextEditingController(text: job['startDate'] ?? '');
+            TextEditingController endDateController = TextEditingController(text: job['endDate'] ?? '');
+            TextEditingController jobTitleController = TextEditingController(text: job['jobTitle'] ?? '');
+            TextEditingController employerController = TextEditingController(text: job['employer'] ?? '');
+            TextEditingController locationController = TextEditingController(text: job['location'] ?? '');
+            TextEditingController descriptionController = TextEditingController(text: job['description'] ?? '');
+
+            // Add controllers to lists
+            _startDateControllers.add(startDateController);
+            _endDateControllers.add(endDateController);
+            _jobTitleControllers.add(jobTitleController);
+            _employerControllers.add(employerController);
+            _locationControllers.add(locationController);
+            _descriptionControllers.add(descriptionController);
+
+            // Add employment block
+            _employmentBlocks.add(_buildEmploymentBlock(i));
+          }
+
+          // If no employment history was found, add a default block
+          if (employmentHistory.isEmpty) {
+            _startDateControllers.add(TextEditingController());
+            _endDateControllers.add(TextEditingController());
+            _jobTitleControllers.add(TextEditingController());
+            _employerControllers.add(TextEditingController());
+            _locationControllers.add(TextEditingController());
+            _descriptionControllers.add(TextEditingController());
+            _employmentBlocks.add(_buildEmploymentBlock(0));
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching resume data: ${e.toString()}');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading data: ${e.toString()}')),
+      );
+    } finally {
+      setState(() {
+        _isLoadingData = false;
+      });
     }
   }
 
@@ -165,10 +254,14 @@ class _Step2ScreenState extends State<Step2Screen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Add here...',
+                Text(
+                  _jobTitleControllers[index].text.isNotEmpty
+                      ? _jobTitleControllers[index].text
+                      : 'Add here...',
                   style: TextStyle(
-                    color: Colors.grey,
+                    color: _jobTitleControllers[index].text.isNotEmpty
+                        ? Colors.black
+                        : Colors.grey,
                     fontSize: 14,
                   ),
                 ),
@@ -186,7 +279,7 @@ class _Step2ScreenState extends State<Step2Screen> {
                     const SizedBox(width: 16),
                     IconButton(
                       icon:
-                          const Icon(Icons.delete_outline, color: Colors.black),
+                      const Icon(Icons.delete_outline, color: Colors.black),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
                       onPressed: () => _removeEmploymentBlock(index),
@@ -340,7 +433,7 @@ class _Step2ScreenState extends State<Step2Screen> {
                       hintStyle: TextStyle(color: Colors.grey),
                       border: InputBorder.none,
                       contentPadding:
-                          EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     ),
                   ),
                 ),
@@ -361,7 +454,7 @@ class _Step2ScreenState extends State<Step2Screen> {
                       hintStyle: TextStyle(color: Colors.grey),
                       border: InputBorder.none,
                       contentPadding:
-                          EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     ),
                   ),
                 ),
@@ -418,7 +511,7 @@ class _Step2ScreenState extends State<Step2Screen> {
     );
   }
 
-  // UPDATED: Method to save resume data to Firebase
+  // Method to save resume data to Firebase
   Future<void> _saveDataToFirebase() async {
     if (_userId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -456,13 +549,13 @@ class _Step2ScreenState extends State<Step2Screen> {
         'professionalSummary': step2Data.summary,
         'employmentHistory': employmentList
             .map((job) => {
-                  'jobTitle': job.jobTitle,
-                  'employer': job.employer,
-                  'startDate': job.startDate,
-                  'endDate': job.endDate,
-                  'location': job.location,
-                  'description': job.description,
-                })
+          'jobTitle': job.jobTitle,
+          'employer': job.employer,
+          'startDate': job.startDate,
+          'endDate': job.endDate,
+          'location': job.location,
+          'description': job.description,
+        })
             .toList(),
         'updatedAt': DateTime.now().toIso8601String(),
       };
@@ -512,9 +605,10 @@ class _Step2ScreenState extends State<Step2Screen> {
           'Dashboard',
           style: TextStyle(color: Colors.black, fontSize: 16),
         ),
-      
       ),
-      body: Column(
+      body: _isLoadingData
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
         children: [
           // Add the breadcrumb navigation
           _buildBreadcrumb(context),
@@ -571,8 +665,9 @@ class _Step2ScreenState extends State<Step2Screen> {
                     const SizedBox(height: 16),
 
                     // Dynamic Employment Blocks
-                    ...List.generate(_employmentBlocks.length,
-                        (index) => _employmentBlocks[index]),
+                    if (_employmentBlocks.isNotEmpty)
+                      ...List.generate(_employmentBlocks.length,
+                              (index) => _employmentBlocks[index]),
 
                     // Add one more employment button
                     GestureDetector(
@@ -625,14 +720,14 @@ class _Step2ScreenState extends State<Step2Screen> {
                         ),
                         child: _isLoading
                             ? const CircularProgressIndicator(
-                                color: Colors.white)
+                            color: Colors.white)
                             : const Text(
-                                'Next',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
+                          'Next',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
                       ),
                     ),
                   ],

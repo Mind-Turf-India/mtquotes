@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -8,6 +9,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:mtquotes/screens/User_Home/components/Resume/resume_dashboard2.dart';
 import 'package:mtquotes/screens/User_Home/components/Resume/resume_dashboard3.dart';
 import 'package:mtquotes/screens/User_Home/components/Resume/resume_data.dart';
+import 'package:path_provider/path_provider.dart';
 
 // Base class for all step screens to ensure consistent UI and navigation
 abstract class BaseStepScreen extends StatefulWidget {
@@ -222,6 +224,7 @@ class _PersonalDetailsScreenState
 
   // Loading state
   bool _isLoading = false;
+  bool _isDataLoading = false;
 
   // List to track education blocks
   final List<Widget> _educationBlocks = [];
@@ -238,6 +241,7 @@ class _PersonalDetailsScreenState
     if (_auth.currentUser != null) {
       _emailController.text = _auth.currentUser!.email ?? '';
     }
+    _fetchExistingResumeData();
   }
 
   // Add this to make sure you dispose of all controllers
@@ -279,6 +283,132 @@ class _PersonalDetailsScreenState
 
     super.dispose();
   }
+
+  Future<void> _fetchExistingResumeData() async {
+    try {
+      setState(() {
+        _isDataLoading = true;
+      });
+
+      // Make sure we have a user
+      if (_auth.currentUser == null) {
+        throw Exception("User not authenticated");
+      }
+
+      // Format user ID for Firestore document ID (replace '.' with '_')
+      String userEmail = _auth.currentUser!.email ?? '';
+      String userId = userEmail.replaceAll('.', '_');
+
+      // Reference to user's resume collection
+      final resumeCollection = _firestore.collection('users').doc(userId).collection('resume');
+
+      // Get the latest resume document
+      final querySnapshot = await resumeCollection.orderBy('updatedAt', descending: true).limit(1).get();
+
+      if (querySnapshot.docs.isNotEmpty) {
+        final resumeData = querySnapshot.docs.first.data();
+
+        // Update template type
+        _selectedTemplateType = resumeData['templateType'] ?? widget.initialTemplateType;
+
+        // Fill personal info fields
+        if (resumeData.containsKey('personalInfo')) {
+          final personalInfo = resumeData['personalInfo'] as Map<String, dynamic>;
+          _roleController.text = personalInfo['role'] ?? '';
+          _firstNameController.text = personalInfo['firstName'] ?? '';
+          _lastNameController.text = personalInfo['lastName'] ?? '';
+          _emailController.text = personalInfo['email'] ?? '';
+          _phoneController.text = personalInfo['phone'] ?? '';
+          _addressController.text = personalInfo['address'] ?? '';
+          _cityController.text = personalInfo['city'] ?? '';
+          _countryController.text = personalInfo['country'] ?? '';
+          _postalCodeController.text = personalInfo['postalCode'] ?? '';
+
+          // Get profile image if exists
+          if (personalInfo['profileImagePath'] != null && personalInfo['profileImagePath'] != '') {
+            try {
+              // Here we're using http package to download the image
+              final response = await http.get(Uri.parse(personalInfo['profileImagePath']));
+              final bytes = response.bodyBytes;
+
+              // Create a temporary file
+              final tempDir = await getTemporaryDirectory();
+              final tempFile = File('${tempDir.path}/profile_image.jpg');
+              await tempFile.writeAsBytes(bytes);
+
+              setState(() {
+                _profileImage = tempFile;
+              });
+            } catch (e) {
+              print('Error loading profile image: $e');
+            }
+          }
+        }
+
+        // Fill education data
+        if (resumeData.containsKey('education') && resumeData['education'] is List) {
+          final educationList = resumeData['education'] as List;
+
+          // Clear the initial education block
+          setState(() {
+            _educationBlocks.clear();
+            _startDateControllers.clear();
+            _endDateControllers.clear();
+            _educationTitleControllers.clear();
+            _schoolControllers.clear();
+            _levelControllers.clear();
+            _locationControllers.clear();
+            _descriptionControllers.clear();
+          });
+
+          // Add each education entry
+          for (var education in educationList) {
+            if (education is Map<String, dynamic>) {
+              setState(() {
+                final index = _educationBlocks.length;
+
+                // Add controllers
+                _startDateControllers.add(TextEditingController(text: education['startDate'] ?? ''));
+                _endDateControllers.add(TextEditingController(text: education['endDate'] ?? ''));
+                _educationTitleControllers.add(TextEditingController(text: education['title'] ?? ''));
+                _schoolControllers.add(TextEditingController(text: education['school'] ?? ''));
+                _levelControllers.add(TextEditingController(text: education['level'] ?? ''));
+                _locationControllers.add(TextEditingController(text: education['location'] ?? ''));
+                _descriptionControllers.add(TextEditingController(text: education['description'] ?? ''));
+
+                // Add education block widget
+                _educationBlocks.add(_buildEducationBlock(index));
+              });
+            }
+          }
+
+          // If no education was added, add an empty one
+          if (_educationBlocks.isEmpty) {
+            setState(() {
+              _startDateControllers.add(TextEditingController());
+              _endDateControllers.add(TextEditingController());
+              _educationTitleControllers.add(TextEditingController());
+              _schoolControllers.add(TextEditingController());
+              _levelControllers.add(TextEditingController());
+              _locationControllers.add(TextEditingController());
+              _descriptionControllers.add(TextEditingController());
+              _educationBlocks.add(_buildEducationBlock(0));
+            });
+          }
+        }
+      }
+    } catch (e) {
+      print('Error fetching resume data: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading resume data: ${e.toString()}')),
+      );
+    } finally {
+      setState(() {
+        _isDataLoading = false;
+      });
+    }
+  }
+
 
   // Function to pick image from gallery
   Future<void> _pickImage() async {
@@ -682,6 +812,10 @@ class _PersonalDetailsScreenState
   Widget buildStepContent() {
     return Stack(
       children: [
+        if (_isDataLoading)
+          const Center(
+            child: CircularProgressIndicator(),
+          ),
         SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Form(

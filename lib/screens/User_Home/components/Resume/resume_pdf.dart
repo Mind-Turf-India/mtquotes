@@ -1,17 +1,20 @@
 import 'dart:io';
 import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
 import 'package:mtquotes/screens/User_Home/components/Resume/resume_data.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+
 class ResumePdfGenerator {
-  
+
   // Generate PDF from Resume Data
   static Future<String> generatePdf(ResumeData data, {bool saveToDownloads = true}) async {
     // Create PDF document
     final pdf = pw.Document();
+
 
     // Load font assets
     final regularFont =
@@ -20,10 +23,12 @@ class ResumePdfGenerator {
     final italicFont =
     await rootBundle.load('assets/fonts/OpenSans-Italic.ttf');
 
+
     // Register fonts
     final ttfRegular = pw.Font.ttf(regularFont);
     final ttfBold = pw.Font.ttf(boldFont);
     final ttfItalic = pw.Font.ttf(italicFont);
+
 
     // Define theme
     final theme = pw.ThemeData.withFont(
@@ -32,15 +37,77 @@ class ResumePdfGenerator {
       italic: ttfItalic,
     );
 
+
     // Load profile image if it exists
+
+// Load profile image if it exists
     pw.MemoryImage? profileImage;
-    if (data.personalInfo.profileImagePath != null) {
-      final file = File(data.personalInfo.profileImagePath!);
-      if (await file.exists()) {
-        final bytes = await file.readAsBytes();
-        profileImage = pw.MemoryImage(bytes);
+    if (data.personalInfo.profileImagePath != null && data.personalInfo.profileImagePath!.isNotEmpty) {
+      print('DEBUG - Original image path: ${data.personalInfo.profileImagePath}');
+      try {
+        if (data.personalInfo.profileImagePath!.startsWith('http')) {
+          // For network images from Firebase or other URLs
+          print('Network image detected. Downloading image from: ${data.personalInfo.profileImagePath}');
+
+          // Download the image bytes
+          final response = await http.get(Uri.parse(data.personalInfo.profileImagePath!));
+          if (response.statusCode == 200) {
+            final bytes = response.bodyBytes;
+            if (bytes.isNotEmpty) {
+              try {
+                profileImage = pw.MemoryImage(bytes);
+                print('Successfully downloaded and loaded network image');
+              } catch (e) {
+                print('Error creating MemoryImage from network image: $e');
+              }
+            } else {
+              print('Downloaded image is empty');
+            }
+          } else {
+            print('Failed to download image: ${response.statusCode}');
+          }
+        } else {
+          // For local file path
+          final file = File(data.personalInfo.profileImagePath!);
+
+          if (await file.exists()) {
+            final bytes = await file.readAsBytes();
+
+            // Check if the bytes are valid and not empty
+            if (bytes.isNotEmpty) {
+              try {
+                profileImage = pw.MemoryImage(bytes);
+                print('Successfully loaded image from: ${data.personalInfo.profileImagePath}');
+              } catch (e) {
+                print('Error creating MemoryImage: $e');
+              }
+            } else {
+              print('Image file exists but is empty: ${data.personalInfo.profileImagePath}');
+            }
+          } else {
+            print('Image file does not exist: ${data.personalInfo.profileImagePath}');
+
+            // If the file doesn't exist at the provided path, try to see if it's a relative path
+            // This is a common issue with path resolution
+            final appDir = await getApplicationDocumentsDirectory();
+            final alternativePath = '${appDir.path}/${data.personalInfo.profileImagePath!.split('/').last}';
+
+            final alternativeFile = File(alternativePath);
+            if (await alternativeFile.exists()) {
+              final bytes = await alternativeFile.readAsBytes();
+              if (bytes.isNotEmpty) {
+                profileImage = pw.MemoryImage(bytes);
+                print('Successfully loaded image from alternative path: $alternativePath');
+              }
+            }
+          }
+        }
+      } catch (e) {
+        print('Error loading profile image: $e');
       }
     }
+
+
 
     // Add pages based on template type and content size
     // Using MultiPage to handle content overflow automatically
@@ -58,15 +125,19 @@ class ResumePdfGenerator {
         pdf.addPage(_buildModernTemplate(data, theme, profileImage));
     }
 
+
     // Save the PDF to the appropriate directory
     String filePath;
+
 
     if (saveToDownloads) {
       // Request storage permission
       await _requestStoragePermission();
 
+
       try {
         Directory? downloadsDir;
+
 
         if (Platform.isAndroid) {
           // For Android
@@ -84,6 +155,7 @@ class ResumePdfGenerator {
           downloadsDir = await getTemporaryDirectory();
         }
 
+
         // Create a file name with timestamp to avoid conflicts
         final timestamp = DateTime.now().millisecondsSinceEpoch;
         filePath = '${downloadsDir.path}/Resume_${data.personalInfo.firstName}_${data.personalInfo.lastName}_$timestamp.pdf';
@@ -100,12 +172,38 @@ class ResumePdfGenerator {
       filePath = '${dir.path}/Resume_${timestamp}.pdf';
     }
 
+
     // Save the PDF
     final file = File(filePath);
     await file.writeAsBytes(await pdf.save());
 
+
     return filePath;
   }
+
+  // Request storage permission
+  static Future<void> _requestStoragePermission() async {
+    if (Platform.isAndroid) {
+      // Request storage permission on Android
+      var status = await Permission.storage.status;
+      if (!status.isGranted) {
+        status = await Permission.storage.request();
+      }
+
+      // On newer Android versions, also request the manageExternalStorage permission
+      try {
+        // Only needed on Android 11+ (API level 30+)
+        status = await Permission.manageExternalStorage.status;
+        if (!status.isGranted) {
+          status = await Permission.manageExternalStorage.request();
+        }
+      } catch (e) {
+        // Ignore errors for older Android versions
+        print('Error requesting manage external storage: $e');
+      }
+    }
+  }
+
 
   // Build Modern Template with MultiPage to handle overflow
   static pw.Page _buildModernTemplate(
@@ -141,6 +239,7 @@ class ResumePdfGenerator {
                     ),
                   ),
 
+
                 pw.Expanded(
                   child: pw.Column(
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -168,6 +267,7 @@ class ResumePdfGenerator {
             ),
           ),
 
+
           // Main content in two columns
           pw.Row(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -191,6 +291,7 @@ class ResumePdfGenerator {
                     ),
                     pw.SizedBox(height: 12),
 
+
                     // Email
                     pw.Text(
                       data.personalInfo.email,
@@ -200,6 +301,7 @@ class ResumePdfGenerator {
                       ),
                     ),
                     pw.SizedBox(height: 8),
+
 
                     // Phone
                     pw.Text(
@@ -211,6 +313,7 @@ class ResumePdfGenerator {
                     ),
                     pw.SizedBox(height: 8),
 
+
                     // Address
                     pw.Text(
                       '${data.personalInfo.address}\n${data.personalInfo.city}, ${data.personalInfo.country}\n${data.personalInfo.postalCode}',
@@ -220,7 +323,9 @@ class ResumePdfGenerator {
                       ),
                     ),
 
+
                     pw.SizedBox(height: 24),
+
 
                     // Skills section
                     pw.Text(
@@ -243,7 +348,9 @@ class ResumePdfGenerator {
                       ),
                     )),
 
+
                     pw.SizedBox(height: 24),
+
 
                     // Languages section
                     pw.Text(
@@ -268,6 +375,7 @@ class ResumePdfGenerator {
                   ],
                 ),
               ),
+
 
               // Main content with summary, experience, and education
               pw.Expanded(
@@ -294,7 +402,9 @@ class ResumePdfGenerator {
                         ),
                       ),
 
+
                       pw.SizedBox(height: 20),
+
 
                       // Work Experience
                       pw.Text(
@@ -341,7 +451,9 @@ class ResumePdfGenerator {
                         ),
                       )),
 
+
                       pw.SizedBox(height: 20),
+
 
                       // Education
                       pw.Text(
@@ -396,7 +508,7 @@ class ResumePdfGenerator {
         ];
       },
     );
-  }  
+  }
   // Build Classic Template with traditional centered design
   static pw.Page _buildClassicTemplate(
       ResumeData data,
@@ -433,6 +545,7 @@ class ResumePdfGenerator {
                           ),
                         ),
 
+
                       pw.Text(
                         '${data.personalInfo.firstName} ${data.personalInfo.lastName}'.toUpperCase(),
                         style: pw.TextStyle(
@@ -453,6 +566,7 @@ class ResumePdfGenerator {
                         textAlign: pw.TextAlign.center,
                       ),
                       pw.SizedBox(height: 10),
+
 
                       // Contact info in one row using spacers for separation
                       pw.Row(
@@ -491,9 +605,11 @@ class ResumePdfGenerator {
                   ),
                 ),
 
+
                 pw.SizedBox(height: 20),
                 pw.Divider(thickness: 1, color: PdfColors.grey400),
                 pw.SizedBox(height: 10),
+
 
                 // Professional Summary
                 pw.Text(
@@ -513,7 +629,9 @@ class ResumePdfGenerator {
                   ),
                 ),
 
+
                 pw.SizedBox(height: 16),
+
 
                 // Experience
                 pw.Text(
@@ -589,7 +707,9 @@ class ResumePdfGenerator {
                   ),
                 )),
 
+
                 pw.SizedBox(height: 16),
+
 
                 // Education
                 pw.Text(
@@ -665,7 +785,9 @@ class ResumePdfGenerator {
                   ),
                 )),
 
+
                 pw.SizedBox(height: 16),
+
 
                 // Skills and Languages
                 pw.Row(
@@ -707,6 +829,7 @@ class ResumePdfGenerator {
                       ),
                     ),
                     pw.SizedBox(width: 20),
+
 
                     // Languages section
                     pw.Expanded(
@@ -753,7 +876,7 @@ class ResumePdfGenerator {
     );
   }
 
-  // Build Business Template with corporate styling
+
   // Build Business Template with corporate styling
   static pw.Page _buildBusinessTemplate(
       ResumeData data,
@@ -794,6 +917,7 @@ class ResumePdfGenerator {
                         ),
                       ),
 
+
                     pw.Expanded(
                       child: pw.Column(
                         crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -820,9 +944,11 @@ class ResumePdfGenerator {
                   ],
                 ),
 
+
                 pw.SizedBox(height: 16),
                 pw.Divider(color: PdfColors.white),
                 pw.SizedBox(height: 16),
+
 
                 // Contact info in row
                 pw.Row(
@@ -855,6 +981,7 @@ class ResumePdfGenerator {
                       ),
                     ),
 
+
                     pw.Expanded(
                       child: pw.Row(
                         children: [
@@ -882,6 +1009,7 @@ class ResumePdfGenerator {
                         ],
                       ),
                     ),
+
 
                     pw.Expanded(
                       child: pw.Row(
@@ -916,6 +1044,7 @@ class ResumePdfGenerator {
             ),
           ),
 
+
           // Main content
           pw.Padding(
             padding: const pw.EdgeInsets.all(20),
@@ -942,11 +1071,14 @@ class ResumePdfGenerator {
                   ),
                 ),
 
+
                 pw.SizedBox(height: 20),
+
 
                 // Experience
                 _buildPdfSectionHeader('Professional Experience'),
                 pw.SizedBox(height: 10),
+
 
                 // Employment history items
                 ...data.employmentHistory.map((job) => pw.Container(
@@ -999,11 +1131,14 @@ class ResumePdfGenerator {
                   ),
                 )),
 
+
                 pw.SizedBox(height: 20),
+
 
                 // Education
                 _buildPdfSectionHeader('Education'),
                 pw.SizedBox(height: 10),
+
 
                 // Education in a grid or row based layout
                 pw.Wrap(
@@ -1056,7 +1191,9 @@ class ResumePdfGenerator {
                   )).toList(),
                 ),
 
+
                 pw.SizedBox(height: 20),
+
 
                 // Skills and Languages
                 pw.Row(
@@ -1095,6 +1232,7 @@ class ResumePdfGenerator {
                       ),
                     ),
                     pw.SizedBox(width: 20),
+
 
                     // Languages section with progress bars
                     pw.Expanded(
@@ -1151,6 +1289,7 @@ class ResumePdfGenerator {
     );
   }
 
+
   // Helper method for business template section headers
   static pw.Widget _buildPdfSectionHeader(String title) {
     return pw.Column(
@@ -1175,28 +1314,4 @@ class ResumePdfGenerator {
         ),
       ],
     );
-  }
-
-  // Request storage permission
-  static Future<void> _requestStoragePermission() async {
-    if (Platform.isAndroid) {
-      // Request storage permission on Android
-      var status = await Permission.storage.status;
-      if (!status.isGranted) {
-        status = await Permission.storage.request();
-      }
-
-      // On newer Android versions, also request the manageExternalStorage permission
-      try {
-        // Only needed on Android 11+ (API level 30+)
-        status = await Permission.manageExternalStorage.status;
-        if (!status.isGranted) {
-          status = await Permission.manageExternalStorage.request();
-        }
-      } catch (e) {
-        // Ignore errors for older Android versions
-        print('Error requesting manage external storage: $e');
-      }
-    }
-  }
-}
+  }}

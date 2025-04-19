@@ -47,6 +47,14 @@ class _Step3ScreenState extends BaseStepScreenState<Step3Screen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   bool _isLoading = false;
+  bool _isDataLoaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Fetch existing resume data when the screen initializes
+    _fetchResumeData();
+  }
 
   @override
   void dispose() {
@@ -59,6 +67,99 @@ class _Step3ScreenState extends BaseStepScreenState<Step3Screen> {
     }
     super.dispose();
   }
+
+  Future<void> _fetchResumeData() async {
+    try {
+      setState(() {
+        _isLoading = true;
+      });
+
+      // Get current user
+      final User? currentUser = _auth.currentUser;
+      if (currentUser == null) {
+        throw Exception('User not authenticated');
+      }
+
+      // Format user email for document ID (replace . with _)
+      final String userId = currentUser.email!.replaceAll('.', '_');
+
+      // Fetch resume data using the resumeId passed from previous screen
+      final docSnapshot = await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('resume')
+          .doc(widget.resumeId)
+          .get();
+
+      if (docSnapshot.exists) {
+        final data = docSnapshot.data()!;
+
+        // Populate skills if available
+        if (data.containsKey('skills') && data['skills'] is List) {
+          final skills = List<String>.from(data['skills']);
+
+          // Clear existing controllers and create new ones for each skill
+          for (var controller in _skillControllers) {
+            controller.dispose();
+          }
+          _skillControllers.clear();
+
+          if (skills.isNotEmpty) {
+            for (var skill in skills) {
+              final controller = TextEditingController(text: skill);
+              _skillControllers.add(controller);
+            }
+          } else {
+            // Add default empty controllers if no skills found
+            _skillControllers.add(TextEditingController());
+            _skillControllers.add(TextEditingController());
+            _skillControllers.add(TextEditingController());
+          }
+        }
+
+        // Populate languages if available
+        if (data.containsKey('languages') && data['languages'] is List) {
+          final languages = List<String>.from(data['languages']);
+
+          // Clear existing controllers and create new ones for each language
+          for (var controller in _languageControllers) {
+            controller.dispose();
+          }
+          _languageControllers.clear();
+
+          if (languages.isNotEmpty) {
+            for (var language in languages) {
+              final controller = TextEditingController(text: language);
+              _languageControllers.add(controller);
+            }
+          } else {
+            // Add default empty controller if no languages found
+            _languageControllers.add(TextEditingController());
+          }
+        }
+
+        // Set selected template if available
+        if (data.containsKey('templateType') && data['templateType'] is String) {
+          setState(() {
+            _selectedTemplate = data['templateType'];
+          });
+        }
+      }
+
+      setState(() {
+        _isDataLoaded = true;
+      });
+
+    } catch (e) {
+      // Handle any errors
+      print('Error fetching resume data: $e');
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
 
   // Function to add a new skill field
   void _addSkill() {

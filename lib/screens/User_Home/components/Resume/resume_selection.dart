@@ -19,105 +19,113 @@ class _ResumeSelectionScreenState extends State<ResumeSelectionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
-          onPressed: () => Navigator.pop(context, _selectedTemplate),
+    return WillPopScope(
+        // Handle hardware back button press
+        onWillPop: () async {
+      // Return the selected template when back button is pressed
+      Navigator.of(context).pop(_selectedTemplate);
+      return false; // Prevent default back behavior since we're handling it
+    },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFFAFAFA),
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
+            onPressed: () => Navigator.pop(context, _selectedTemplate),
+          ),
+          title: const Text(
+            'Select Template',
+            style: TextStyle(color: Colors.black, fontSize: 16),
+          ),
         ),
-        title: const Text(
-          'Select Template',
-          style: TextStyle(color: Colors.black, fontSize: 16),
-        ),
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Choose a template for your resume',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
+        body: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Choose a template for your resume',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 24),
+                    const SizedBox(height: 24),
 
-                  // Modern Template
-                  _buildTemplateOption(
-                    'modern',
-                    'Modern',
-                    'Clean, professional layout with a sidebar for skills and contact information.',
-                    _buildTemplatePreview('modern'),
-                  ),
-                  const SizedBox(height: 16),
+                    // Modern Template
+                    _buildTemplateOption(
+                      'modern',
+                      'Modern',
+                      'Clean, professional layout with a sidebar for skills and contact information.',
+                      _buildTemplatePreview('modern'),
+                    ),
+                    const SizedBox(height: 16),
 
-                  // Classic Template
-                  _buildTemplateOption(
-                    'classic',
-                    'Classic',
-                    'Traditional layout with header at top and clean sections below.',
-                    _buildTemplatePreview('classic'),
-                  ),
-                  const SizedBox(height: 16),
+                    // Classic Template
+                    _buildTemplateOption(
+                      'classic',
+                      'Classic',
+                      'Traditional layout with header at top and clean sections below.',
+                      _buildTemplatePreview('classic'),
+                    ),
+                    const SizedBox(height: 16),
 
-                  // Business Template
-                  _buildTemplateOption(
-                    'business',
-                    'Business',
-                    'Corporate design with bold header and professional styling.',
-                    _buildTemplatePreview('business'),
-                  ),
-                ],
+                    // Business Template
+                    _buildTemplateOption(
+                      'business',
+                      'Business',
+                      'Corporate design with bold header and professional styling.',
+                      _buildTemplatePreview('business'),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
 
-          // Continue Button
-          // Replace the Continue button code with this:
-//           Container(
-//   padding: const EdgeInsets.all(16),
-//   width: double.infinity,
-//   child: ElevatedButton(
-//     onPressed: () {
-//       // Call the callback to notify parent if needed
-//       widget.onTemplateSelected(_selectedTemplate);
-      
-//       // Navigate to PersonalDetailsScreen with template parameter
-//       Navigator.push(
-//         context,
-//         MaterialPageRoute(
-//           builder: (context) => PersonalDetailsScreen(
-//             initialTemplateType: _selectedTemplate,
-//           ),
-//         ),
-//       );
-//     },
-//     style: ElevatedButton.styleFrom(
-//       backgroundColor: const Color(0xFF2196F3),
-//       padding: const EdgeInsets.symmetric(vertical: 14),
-//       shape: RoundedRectangleBorder(
-//         borderRadius: BorderRadius.circular(8),
-//       ),
-//     ),
-//     child: const Text(
-//       'Continue',
-//       style: TextStyle(
-//         fontSize: 16,
-//         fontWeight: FontWeight.w500,
-//       ),
-//     ),
-//   ),
-// ),
-        ],
+            // Continue Button
+            // Replace the Continue button code with this:
+      //           Container(
+      //   padding: const EdgeInsets.all(16),
+      //   width: double.infinity,
+      //   child: ElevatedButton(
+      //     onPressed: () {
+      //       // Call the callback to notify parent if needed
+      //       widget.onTemplateSelected(_selectedTemplate);
+
+      //       // Navigate to PersonalDetailsScreen with template parameter
+      //       Navigator.push(
+      //         context,
+      //         MaterialPageRoute(
+      //           builder: (context) => PersonalDetailsScreen(
+      //             initialTemplateType: _selectedTemplate,
+      //           ),
+      //         ),
+      //       );
+      //     },
+      //     style: ElevatedButton.styleFrom(
+      //       backgroundColor: const Color(0xFF2196F3),
+      //       padding: const EdgeInsets.symmetric(vertical: 14),
+      //       shape: RoundedRectangleBorder(
+      //         borderRadius: BorderRadius.circular(8),
+      //       ),
+      //     ),
+      //     child: const Text(
+      //       'Continue',
+      //       style: TextStyle(
+      //         fontSize: 16,
+      //         fontWeight: FontWeight.w500,
+      //       ),
+      //     ),
+      //   ),
+      // ),
+          ],
+        ),
       ),
     );
   }

@@ -61,8 +61,6 @@ Widget buildProfileImage(String? imagePath, {double size = 80.0, Color borderCol
 
 
 // Modern Template with modern styling
-// Horizontal Modern Template with modern styling
-// Horizontal Modern Template with modern styling and circular avatar
 class ModernTemplate implements ResumeTemplate {
   @override
   String get templateName => 'Modern';
