@@ -134,12 +134,7 @@ abstract class BaseStepScreenState<T extends BaseStepScreen> extends State<T> {
         'Dashboard',
         style: TextStyle(color: Colors.black, fontSize: 16),
       ),
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.notifications_none, color: Colors.black),
-          onPressed: () {},
-        ),
-      ],
+      
     );
   }
 
@@ -166,7 +161,12 @@ abstract class BaseStepScreenState<T extends BaseStepScreen> extends State<T> {
 
 // Step 1: Personal Details Screen
 class PersonalDetailsScreen extends BaseStepScreen {
-  const PersonalDetailsScreen({Key? key}) : super(key: key, currentStep: 1);
+  final String initialTemplateType;
+  
+  const PersonalDetailsScreen({
+    Key? key, 
+    this.initialTemplateType = 'modern', // Default template if none provided
+  }) : super(key: key, currentStep: 1);
 
   @override
   State<PersonalDetailsScreen> createState() => _PersonalDetailsScreenState();
@@ -184,6 +184,7 @@ class _PersonalDetailsScreenState
   final TextEditingController _cityController = TextEditingController();
   final TextEditingController _countryController = TextEditingController();
   final TextEditingController _postalCodeController = TextEditingController();
+  late String _selectedTemplateType;
 
   // Controllers for education fields
   final List<TextEditingController> _schoolControllers = [
@@ -228,7 +229,10 @@ class _PersonalDetailsScreenState
   @override
   void initState() {
     super.initState();
+     // Initialize with the passed template
+    _selectedTemplateType = widget.initialTemplateType;
     _educationBlocks.add(_buildEducationBlock(0));
+    
 
     // Pre-fill email if user is signed in
     if (_auth.currentUser != null) {
@@ -401,7 +405,7 @@ class _PersonalDetailsScreenState
         'skills': [], // Empty for now, will be filled in Step 3
         'languages': [], // Empty for now, will be filled in Step 3
         'professionalSummary': '',
-        'templateType': 'modern',
+        'templateType': _selectedTemplateType,
         'createdAt': now.toIso8601String(),
         'updatedAt': now.toIso8601String(),
       };

@@ -512,12 +512,7 @@ class _Step2ScreenState extends State<Step2Screen> {
           'Dashboard',
           style: TextStyle(color: Colors.black, fontSize: 16),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_none, color: Colors.black),
-            onPressed: () {},
-          ),
-        ],
+      
       ),
       body: Column(
         children: [
