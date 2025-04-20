@@ -511,7 +511,7 @@ class _PersonalDetailsScreenState
         'startDate': education.startDate,
         'endDate': education.endDate,
         'location': education.location,
-        'description': education.description,
+        // 'description': education.description,
       })
           .toList();
 
@@ -531,9 +531,9 @@ class _PersonalDetailsScreenState
           'profileImagePath': profileImageUrl,
         },
         'education': educationList,
-        'employmentHistory': [], // Empty for now, will be filled in Step 2
-        'skills': [], // Empty for now, will be filled in Step 3
-        'languages': [], // Empty for now, will be filled in Step 3
+        // 'employmentHistory': [], // Empty for now, will be filled in Step 2
+        // 'skills': [], // Empty for now, will be filled in Step 3
+        // 'languages': [], // Empty for now, will be filled in Step 3
         'professionalSummary': '',
         'templateType': _selectedTemplateType,
         'createdAt': now.toIso8601String(),
@@ -673,7 +673,7 @@ class _PersonalDetailsScreenState
                     controller: _levelControllers[index],
                     style: const TextStyle(color: Colors.black),
                     decoration: const InputDecoration(
-                      hintText: 'Higher Sec...',
+                      hintText: 'Aggregate',
                       hintStyle: TextStyle(color: Colors.grey),
                       border: InputBorder.none,
                       contentPadding:
@@ -785,24 +785,24 @@ class _PersonalDetailsScreenState
           const SizedBox(height: 16),
 
           // Description text field
-          Container(
-            decoration: BoxDecoration(
-              color: const Color(0xFFF5F5F5),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: TextField(
-              controller: _descriptionControllers[index],
-              style: const TextStyle(color: Colors.black),
-              maxLines: 4,
-              decoration: const InputDecoration(
-                hintText: 'Description of your role in 100 words...',
-                hintStyle: TextStyle(color: Colors.grey),
-                border: InputBorder.none,
-                contentPadding:
-                    EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              ),
-            ),
-          ),
+          // Container(
+          //   decoration: BoxDecoration(
+          //     color: const Color(0xFFF5F5F5),
+          //     borderRadius: BorderRadius.circular(8),
+          //   ),
+          //   child: TextField(
+          //     controller: _descriptionControllers[index],
+          //     style: const TextStyle(color: Colors.black),
+          //     maxLines: 4,
+          //     decoration: const InputDecoration(
+          //       hintText: 'Description of your role in 100 words...',
+          //       hintStyle: TextStyle(color: Colors.grey),
+          //       border: InputBorder.none,
+          //       contentPadding:
+          //           EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          //     ),
+          //   ),
+          // ),
         ],
       ),
     );
@@ -1152,7 +1152,7 @@ class _PersonalDetailsScreenState
                             startDate: _startDateControllers[i].text,
                             endDate: _endDateControllers[i].text,
                             location: _locationControllers[i].text,
-                            description: _descriptionControllers[i].text,
+                            // description: _descriptionControllers[i].text,
                           ));
                         }
 

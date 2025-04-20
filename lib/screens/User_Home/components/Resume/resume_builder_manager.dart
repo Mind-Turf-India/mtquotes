@@ -42,7 +42,7 @@ class ResumeBuilderManager {
         startDate: edu['startDate'] ?? '',
         endDate: edu['endDate'] ?? '',
         location: edu['location'] ?? '',
-        description: edu['description'] ?? '',
+        // description: edu['description'] ?? '',
       ));
     }
 

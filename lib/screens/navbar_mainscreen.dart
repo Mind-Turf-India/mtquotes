@@ -52,7 +52,62 @@ class _MainScreenState extends State<MainScreen> {
     });
   }
 
-  Widget _buildCreateOption(String label, IconData icon, bool isDarkMode) {
+ Widget _buildCreateOption(String label, IconData icon, bool isDarkMode) {
+    // If it's the "resumebuilder" option, we'll use the custom image
+    if (label == context.loc.resumebuilder) {
+      return GestureDetector(
+        onTap: () {
+          setState(() {
+            isCreateExpanded = false;
+          });
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => PersonalDetailsScreen()),
+          );
+        },
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                color: AppColors.primaryBlue,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primaryBlue.withOpacity(0.3),
+                    spreadRadius: 1,
+                    blurRadius: 4,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Center(
+                child: Image.asset(
+                  'assets/resume_builder.png',
+                  width: 28,
+                  height: 28,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              label,
+              style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w300,
+                  decoration: TextDecoration.none
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    
+    // Otherwise use the default icon implementation
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -68,11 +123,6 @@ class _MainScreenState extends State<MainScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => EditScreen(title: context.loc.imageeditor)),
-          );
-        } else if (label == context.loc.downloads) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => PersonalDetailsScreen()),
           );
         }
       },
@@ -156,7 +206,7 @@ class _MainScreenState extends State<MainScreen> {
                     children: [
                       Flexible(child: _buildCreateOption(context.loc.gallery, Icons.image, isDarkMode)),
                       Flexible(child: _buildCreateOption(context.loc.template, Icons.grid_view, isDarkMode)),
-                      Flexible(child: _buildCreateOption(context.loc.downloads, Icons.folder, isDarkMode)),
+                      Flexible(child: _buildCreateOption(context.loc.resumebuilder, Icons.folder, isDarkMode)),
                     ],
                   ),
                 ),

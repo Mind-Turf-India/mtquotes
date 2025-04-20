@@ -26,6 +26,8 @@ class _Step2ScreenState extends State<Step2Screen> {
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
   bool _isLoadingData = true; // Added to show loading state while fetching data
+  // Add this with your other state variables
+  int _currentWordCount = 0;
 
   // Controllers for date fields
   final List<TextEditingController> _startDateControllers = [
@@ -101,7 +103,8 @@ class _Step2ScreenState extends State<Step2Screen> {
         }
 
         // Populate employment history
-        if (data.containsKey('employmentHistory') && data['employmentHistory'] is List) {
+        if (data.containsKey('employmentHistory') &&
+            data['employmentHistory'] is List) {
           List<dynamic> employmentHistory = data['employmentHistory'];
 
           // Clear existing controllers and blocks
@@ -118,12 +121,18 @@ class _Step2ScreenState extends State<Step2Screen> {
             Map<String, dynamic> job = employmentHistory[i];
 
             // Create controllers for this job
-            TextEditingController startDateController = TextEditingController(text: job['startDate'] ?? '');
-            TextEditingController endDateController = TextEditingController(text: job['endDate'] ?? '');
-            TextEditingController jobTitleController = TextEditingController(text: job['jobTitle'] ?? '');
-            TextEditingController employerController = TextEditingController(text: job['employer'] ?? '');
-            TextEditingController locationController = TextEditingController(text: job['location'] ?? '');
-            TextEditingController descriptionController = TextEditingController(text: job['description'] ?? '');
+            TextEditingController startDateController =
+                TextEditingController(text: job['startDate'] ?? '');
+            TextEditingController endDateController =
+                TextEditingController(text: job['endDate'] ?? '');
+            TextEditingController jobTitleController =
+                TextEditingController(text: job['jobTitle'] ?? '');
+            TextEditingController employerController =
+                TextEditingController(text: job['employer'] ?? '');
+            TextEditingController locationController =
+                TextEditingController(text: job['location'] ?? '');
+            TextEditingController descriptionController =
+                TextEditingController(text: job['description'] ?? '');
 
             // Add controllers to lists
             _startDateControllers.add(startDateController);
@@ -132,10 +141,15 @@ class _Step2ScreenState extends State<Step2Screen> {
             _employerControllers.add(employerController);
             _locationControllers.add(locationController);
             _descriptionControllers.add(descriptionController);
-
-            // Add employment block
-            _employmentBlocks.add(_buildEmploymentBlock(i));
           }
+
+          // Build employment blocks after adding all controllers
+          setState(() {
+            // This ensures the UI is updated with new blocks
+            for (int i = 0; i < employmentHistory.length; i++) {
+              _employmentBlocks.add(_buildEmploymentBlock(i));
+            }
+          });
 
           // If no employment history was found, add a default block
           if (employmentHistory.isEmpty) {
@@ -145,7 +159,10 @@ class _Step2ScreenState extends State<Step2Screen> {
             _employerControllers.add(TextEditingController());
             _locationControllers.add(TextEditingController());
             _descriptionControllers.add(TextEditingController());
-            _employmentBlocks.add(_buildEmploymentBlock(0));
+
+            setState(() {
+              _employmentBlocks.add(_buildEmploymentBlock(0));
+            });
           }
         }
       }
@@ -255,36 +272,18 @@ class _Step2ScreenState extends State<Step2Screen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  _jobTitleControllers[index].text.isNotEmpty
-                      ? _jobTitleControllers[index].text
-                      : 'Add here...',
-                  style: TextStyle(
-                    color: _jobTitleControllers[index].text.isNotEmpty
-                        ? Colors.black
-                        : Colors.grey,
+                  'Employment History #${index + 1}',
+                  style: const TextStyle(
                     fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
                   ),
                 ),
-                Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.keyboard_arrow_down,
-                          color: Colors.black),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      onPressed: () {
-                        // Toggle collapse/expand (would implement state for this)
-                      },
-                    ),
-                    const SizedBox(width: 16),
-                    IconButton(
-                      icon:
-                      const Icon(Icons.delete_outline, color: Colors.black),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      onPressed: () => _removeEmploymentBlock(index),
-                    ),
-                  ],
+                IconButton(
+                  icon: const Icon(Icons.delete_outline, color: Colors.black),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  onPressed: () => _removeEmploymentBlock(index),
                 ),
               ],
             ),
@@ -433,7 +432,7 @@ class _Step2ScreenState extends State<Step2Screen> {
                       hintStyle: TextStyle(color: Colors.grey),
                       border: InputBorder.none,
                       contentPadding:
-                      EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     ),
                   ),
                 ),
@@ -454,7 +453,7 @@ class _Step2ScreenState extends State<Step2Screen> {
                       hintStyle: TextStyle(color: Colors.grey),
                       border: InputBorder.none,
                       contentPadding:
-                      EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     ),
                   ),
                 ),
@@ -549,13 +548,13 @@ class _Step2ScreenState extends State<Step2Screen> {
         'professionalSummary': step2Data.summary,
         'employmentHistory': employmentList
             .map((job) => {
-          'jobTitle': job.jobTitle,
-          'employer': job.employer,
-          'startDate': job.startDate,
-          'endDate': job.endDate,
-          'location': job.location,
-          'description': job.description,
-        })
+                  'jobTitle': job.jobTitle,
+                  'employer': job.employer,
+                  'startDate': job.startDate,
+                  'endDate': job.endDate,
+                  'location': job.location,
+                  'description': job.description,
+                })
             .toList(),
         'updatedAt': DateTime.now().toIso8601String(),
       };
@@ -609,134 +608,161 @@ class _Step2ScreenState extends State<Step2Screen> {
       body: _isLoadingData
           ? const Center(child: CircularProgressIndicator())
           : Column(
-        children: [
-          // Add the breadcrumb navigation
-          _buildBreadcrumb(context),
+              children: [
+                // Add the breadcrumb navigation
+                _buildBreadcrumb(context),
 
-          // Content goes in a scrollable view
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Professional Summary Section
-                    const Text(
-                      'Professional Summary',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
+                // Content goes in a scrollable view
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(16),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Professional Summary Section
+                          const Text(
+                            'Professional Summary',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
 
-                    // Professional Summary Text Area
-                    Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF5F5F5),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: TextField(
-                        controller: _summaryController,
-                        style: const TextStyle(color: Colors.black),
-                        maxLines: 5,
-                        decoration: const InputDecoration(
-                          hintText: 'Write here in 100 words...',
-                          hintStyle: TextStyle(color: Colors.grey),
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.all(16),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 32),
+                          // Professional Summary Text Area
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF5F5F5),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: TextField(
+                                  controller: _summaryController,
+                                  style: const TextStyle(color: Colors.black),
+                                  maxLines: 5,
+                                  maxLength: 100, // Built-in character limit
+                                  decoration: const InputDecoration(
+                                    hintText:
+                                        'Write here (maximum 100 characters)...',
+                                    hintStyle: TextStyle(color: Colors.grey),
+                                    border: InputBorder.none,
+                                    contentPadding: EdgeInsets.all(16),
+                                    // Hide the default counter
+                                    counterText: '',
+                                  ),
+                                  onChanged: (text) {
+                                    // Update state to refresh counter
+                                    setState(() {});
+                                  },
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8, left: 8),
+                                child: Text(
+                                  '${100 - (_summaryController.text.length)} characters remaining',
+                                  style: TextStyle(
+                                    color: _summaryController.text.length >= 80
+                                        ? Colors.red
+                                        : Colors.grey,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                            ],
+                          ),
+                          // Employment History Section
+                          const Text(
+                            'Employment History',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
 
-                    // Employment History Section
-                    const Text(
-                      'Employment History',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
+                          // Dynamic Employment Blocks
+                          if (_employmentBlocks.isNotEmpty)
+                            ...List.generate(_employmentBlocks.length,
+                                (index) => _employmentBlocks[index]),
 
-                    // Dynamic Employment Blocks
-                    if (_employmentBlocks.isNotEmpty)
-                      ...List.generate(_employmentBlocks.length,
-                              (index) => _employmentBlocks[index]),
-
-                    // Add one more employment button
-                    GestureDetector(
-                      onTap: _addEmploymentBlock,
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              'Add one more employment',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.black87,
+                          // Add one more employment button
+                          GestureDetector(
+                            onTap: _addEmploymentBlock,
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text(
+                                    'Add one more employment',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                  Container(
+                                    width: 28,
+                                    height: 28,
+                                    decoration: BoxDecoration(
+                                      color: Colors.black,
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: const Icon(
+                                      Icons.add,
+                                      color: Colors.white,
+                                      size: 18,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            Container(
-                              width: 28,
-                              height: 28,
-                              decoration: BoxDecoration(
-                                color: Colors.black,
-                                borderRadius: BorderRadius.circular(4),
+                          ),
+
+                          const SizedBox(height: 30),
+
+                          // Next Button
+                          SizedBox(
+                            width: double.infinity,
+                            height: 48,
+                            child: ElevatedButton(
+                              onPressed:
+                                  _isLoading ? null : _saveDataToFirebase,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF2196F3),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
                               ),
-                              child: const Icon(
-                                Icons.add,
-                                color: Colors.white,
-                                size: 18,
-                              ),
+                              child: _isLoading
+                                  ? const CircularProgressIndicator(
+                                      color: Colors.white)
+                                  : const Text(
+                                      'Next',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
-
-                    const SizedBox(height: 30),
-
-                    // Next Button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 48,
-                      child: ElevatedButton(
-                        onPressed: _isLoading ? null : _saveDataToFirebase,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF2196F3),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        child: _isLoading
-                            ? const CircularProgressIndicator(
-                            color: Colors.white)
-                            : const Text(
-                          'Next',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
+              ],
             ),
-          ),
-        ],
-      ),
     );
   }
 }

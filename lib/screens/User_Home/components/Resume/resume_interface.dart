@@ -61,6 +61,8 @@ Widget buildProfileImage(String? imagePath, {double size = 80.0, Color borderCol
 
 
 // Modern Template with modern styling
+// Horizontal Modern Template with modern styling
+// Horizontal Modern Template with modern styling and circular avatar
 class ModernTemplate implements ResumeTemplate {
   @override
   String get templateName => 'Modern';
@@ -341,14 +343,14 @@ class ModernTemplate implements ResumeTemplate {
                                     ),
                                   ),
                                   const SizedBox(height: 8),
-                                  if (edu.description.isNotEmpty)
-                                    Text(
-                                      edu.description,
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.black87,
-                                      ),
-                                    ),
+                                  // if (edu.description.isNotEmpty)
+                                  //   Text(
+                                  //     edu.description,
+                                  //     style: const TextStyle(
+                                  //       fontSize: 12,
+                                  //       color: Colors.black87,
+                                  //     ),
+                                  //   ),
                                 ],
                               ),
                             )),
@@ -665,21 +667,21 @@ class ClassicTemplate implements ResumeTemplate {
                     ),
 
                     // Description with wrap for text overflow
-                    if (edu.description.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: Wrap(
-                          children: [
-                            Text(
-                              edu.description,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Colors.black87,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                    // if (edu.description.isNotEmpty)
+                    //   Padding(
+                    //     padding: const EdgeInsets.only(top: 4),
+                    //     child: Wrap(
+                    //       children: [
+                    //         Text(
+                    //           edu.description,
+                    //           style: const TextStyle(
+                    //             fontSize: 12,
+                    //             color: Colors.black87,
+                    //           ),
+                    //         ),
+                    //       ],
+                    //     ),
+                    //   ),
                   ],
                 ),
               )),

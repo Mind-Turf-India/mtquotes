@@ -161,7 +161,7 @@ class Education {
   final String startDate;
   final String endDate;
   final String location;
-  final String description;
+  // final String description;
 
   Education({
     required this.title,
@@ -170,7 +170,7 @@ class Education {
     required this.startDate,
     required this.endDate,
     required this.location,
-    required this.description,
+    // required this.description,
   });
 
   Map<String, dynamic> toMap() {
@@ -181,7 +181,7 @@ class Education {
       'startDate': startDate,
       'endDate': endDate,
       'location': location,
-      'description': description,
+      // 'description': description,
     };
   }
 
@@ -193,7 +193,7 @@ class Education {
       startDate: map['startDate'] ?? '',
       endDate: map['endDate'] ?? '',
       location: map['location'] ?? '',
-      description: map['description'] ?? '',
+      // description: map['description'] ?? '',
     );
   }
 }

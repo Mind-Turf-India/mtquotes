@@ -13,6 +13,7 @@ import 'package:mtquotes/screens/Templates/components/totd/totd_handler.dart';
 import 'package:mtquotes/screens/Templates/components/totd/totd_service.dart';
 import 'package:mtquotes/screens/Payment_Screen/subscription_popup.dart';
 import 'package:mtquotes/screens/Templates/components/template/template_section.dart';
+import 'package:mtquotes/screens/User_Home/components/Image%20Upscaling/image_upscaling.dart';
 import 'package:mtquotes/screens/User_Home/components/daily_check_in.dart';
 import 'package:mtquotes/screens/User_Home/components/Notifications/notifications.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -40,6 +41,7 @@ import 'components/Categories/category_screen.dart';
 import 'components/app_open_tracker.dart';
 import 'components/templates_list.dart';
 import 'components/user_survey.dart';
+
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -1023,6 +1025,26 @@ class HomeScreenState extends State<HomeScreen> {
                     overflow: TextOverflow.ellipsis,
                   ),
                   Spacer(),
+                  //image enhancer icon.
+                  GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => ImageUpscalingScreen()),
+                    );
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 15),
+                    child: Image.asset(
+                      'assets/image_enhancer.png',
+                      width: 24,
+                      height: 24,
+                      color: AppColors.getTextColor(isDarkMode),
+                    ),
+                  ),
+                ),
+                //notifcation icon
                   GestureDetector(
                     onTap: showNotificationsSheet,
                     child: SvgPicture.asset(

@@ -489,13 +489,13 @@ class ResumePdfGenerator {
                               ),
                             ),
                             pw.SizedBox(height: 6),
-                            pw.Text(
-                              edu.description,
-                              style: const pw.TextStyle(
-                                fontSize: 10,
-                                color: PdfColors.black,
-                              ),
-                            ),
+                            // pw.Text(
+                            //   edu.description,
+                            //   style: const pw.TextStyle(
+                            //     fontSize: 10,
+                            //     color: PdfColors.black,
+                            //   ),
+                            // ),
                           ],
                         ),
                       )),
