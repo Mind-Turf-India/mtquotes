@@ -84,8 +84,8 @@ class _MainScreenState extends State<MainScreen> {
                 ],
               ),
               child: Center(
-                child: Image.asset(
-                  'assets/resume_builder.png',
+                child: SvgPicture.asset(
+                  'assets/resume_builder.svg',
                   width: 28,
                   height: 28,
                   color: Colors.white,

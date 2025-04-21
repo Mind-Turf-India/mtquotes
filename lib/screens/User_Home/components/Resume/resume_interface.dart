@@ -7,58 +7,57 @@ abstract class ResumeTemplate {
   Widget buildTemplate(
     ResumeData data, {
     bool isPreview = false,
-
     double? maxWidth,
   });
 
   String get templateName;
 }
-Widget buildProfileImage(String? imagePath, {double size = 80.0, Color borderColor = Colors.white}) {
-    if (imagePath == null || imagePath.isEmpty) {
-      return Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: Colors.grey[300],
-          border: Border.all(color: borderColor, width: 2),
-        ),
-        child: Icon(Icons.person, color: Colors.grey[600], size: size * 0.6),
-      );
-    }
-    
-    // Check if it's a Firebase URL (starts with http or https)
-    if (imagePath.startsWith('http')) {
-      return Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(color: borderColor, width: 2),
-          image: DecorationImage(
-            image: NetworkImage(imagePath),
-            fit: BoxFit.cover,
-          ),
-        ),
-      );
-    } else {
-      // Local file path
-      return Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(color: borderColor, width: 2),
-          image: DecorationImage(
-            image: FileImage(File(imagePath)),
-            fit: BoxFit.cover,
-          ),
-        ),
-      );
-    }
+
+Widget buildProfileImage(String? imagePath,
+    {double size = 80.0, Color borderColor = Colors.white}) {
+  if (imagePath == null || imagePath.isEmpty) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: Colors.grey[300],
+        border: Border.all(color: borderColor, width: 2),
+      ),
+      child: Icon(Icons.person, color: Colors.grey[600], size: size * 0.6),
+    );
   }
 
-
+  // Check if it's a Firebase URL (starts with http or https)
+  if (imagePath.startsWith('http')) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: borderColor, width: 2),
+        image: DecorationImage(
+          image: NetworkImage(imagePath),
+          fit: BoxFit.cover,
+        ),
+      ),
+    );
+  } else {
+    // Local file path
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: borderColor, width: 2),
+        image: DecorationImage(
+          image: FileImage(File(imagePath)),
+          fit: BoxFit.cover,
+        ),
+      ),
+    );
+  }
+}
 
 // Modern Template with modern styling
 // Horizontal Modern Template with modern styling
@@ -68,52 +67,133 @@ class ModernTemplate implements ResumeTemplate {
   String get templateName => 'Modern';
 
   @override
-  Widget buildTemplate(ResumeData data, {bool isPreview = false,double? maxWidth}) {
+  Widget buildTemplate(ResumeData data,
+      {bool isPreview = false, double? maxWidth}) {
+    final containerWidth = isPreview ? 400 : 595; // A4 width in points
+    final containerHeight = isPreview ? 560 : 842; // A4 height in points
+    
     return Container(
-      width: isPreview ? 400 : 595, // A4 width in points
-      height: isPreview ? 560 : 842, // A4 height in points
+      width: containerWidth.toDouble(),
+      height: containerHeight.toDouble(),
       color: Colors.white,
       child: Column(
         children: [
-          // Header with name and role
+          // Header with name, role, and contact info
           Container(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(20),
             color: Colors.blueGrey[800],
-            child: Row(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Profile image if available
-                 if (data.personalInfo.profileImagePath != null)
-                  Container(
-                    margin: const EdgeInsets.only(right: 20),
-                    child: buildProfileImage(
-                      data.personalInfo.profileImagePath,
-                      size: 80,
-                      borderColor: Colors.white,
+                // Name and role with profile image
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Profile image if available
+                    if (data.personalInfo.profileImagePath != null)
+                      Container(
+                        width: 70,
+                        height: 70,
+                        margin: const EdgeInsets.only(right: 20),
+                        child: buildProfileImage(
+                          data.personalInfo.profileImagePath,
+                          size: 70,
+                          borderColor: Colors.white,
+                        ),
+                      ),
+                    
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${data.personalInfo.firstName} ${data.personalInfo.lastName}',
+                            style: const TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            data.personalInfo.role,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              color: Colors.white70,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '${data.personalInfo.firstName} ${data.personalInfo.lastName}',
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
+                  ],
+                ),
+                
+                // Contact details below name and role
+                const SizedBox(height: 15),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Contact info - Email and Phone
+                    Expanded(
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.email,
+                            color: Colors.white,
+                            size: 12,
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            data.personalInfo.email,
+                            style: const TextStyle(
+                              fontSize: 10,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(width: 15),
+                          const Icon(
+                            Icons.phone,
+                            color: Colors.white,
+                            size: 12,
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            data.personalInfo.phone,
+                            style: const TextStyle(
+                              fontSize: 10,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        data.personalInfo.role,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.white70,
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                    
+                    // Address
+                    // if (data.personalInfo.address.isNotEmpty)
+                    //   Container(
+                    //     width: 180,
+                    //     child: Row(
+                    //       crossAxisAlignment: CrossAxisAlignment.start,
+                    //       children: [
+                    //         const Icon(
+                    //           Icons.location_on,
+                    //           color: Colors.white,
+                    //           size: 12,
+                    //         ),
+                    //         const SizedBox(width: 5),
+                    //         Expanded(
+                    //           child: Text(
+                    //             '${data.personalInfo.address}, ${data.personalInfo.city}, ${data.personalInfo.country} ${data.personalInfo.postalCode}',
+                    //             style: const TextStyle(
+                    //               fontSize: 10,
+                    //               color: Colors.white,
+                    //             ),
+                    //           ),
+                    //         ),
+                    //       ],
+                    //     ),
+                    //   ),
+                  ],
                 ),
               ],
             ),
@@ -124,61 +204,14 @@ class ModernTemplate implements ResumeTemplate {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Left sidebar with contact info, skills, and languages
+                // Left sidebar with skills and languages
                 Container(
-                  width: isPreview ? 120 : 180,
+                  width: isPreview ? 110 : 150,
                   color: Colors.blueGrey[50],
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Contact section
-                      const Text(
-                        'CONTACT',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blueGrey,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-
-                      // Email
-                      Text(
-                        data.personalInfo.email,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-
-                      // Phone
-                      Text(
-                        data.personalInfo.phone,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-
-                      // Address
-                      Text(
-                        [
-                          data.personalInfo.address,
-                          if (data.personalInfo.city.isNotEmpty || data.personalInfo.country.isNotEmpty)
-                            '${data.personalInfo.city}, ${data.personalInfo.country}',
-                          data.personalInfo.postalCode,
-                        ].where((s) => s.isNotEmpty).join('\n'),
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.black87,
-                        ),
-                      ),
-
-                      const SizedBox(height: 24),
-
                       // Skills section
                       const Text(
                         'SKILLS',
@@ -194,7 +227,7 @@ class ModernTemplate implements ResumeTemplate {
                             child: Text(
                               skill,
                               style: const TextStyle(
-                                fontSize: 12,
+                                fontSize: 10,
                                 color: Colors.black87,
                               ),
                             ),
@@ -204,7 +237,7 @@ class ModernTemplate implements ResumeTemplate {
 
                       // Languages section
                       const Text(
-                        'LANGUAGES',
+                        'LANGUAGE',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
@@ -217,7 +250,7 @@ class ModernTemplate implements ResumeTemplate {
                             child: Text(
                               language,
                               style: const TextStyle(
-                                fontSize: 12,
+                                fontSize: 10,
                                 color: Colors.black87,
                               ),
                             ),
@@ -229,128 +262,117 @@ class ModernTemplate implements ResumeTemplate {
                 // Main content with summary, experience, and education
                 Expanded(
                   child: Container(
-                    padding: const EdgeInsets.all(24),
+                    padding: const EdgeInsets.all(20),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Professional Summary
                         const Text(
-                          'PROFESSIONAL SUMMARY',
+                          'SUMMARY',
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: 14,
                             fontWeight: FontWeight.bold,
                             color: Colors.blueGrey,
                           ),
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 10),
                         Text(
                           data.professionalSummary,
                           style: const TextStyle(
-                            fontSize: 12,
+                            fontSize: 10,
                             color: Colors.black87,
                           ),
                         ),
 
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 20),
 
                         // Work Experience
                         const Text(
                           'EXPERIENCE',
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: 14,
                             fontWeight: FontWeight.bold,
                             color: Colors.blueGrey,
                           ),
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 10),
                         ...data.employmentHistory.map((job) => Padding(
-                              padding: const EdgeInsets.only(bottom: 16),
+                              padding: const EdgeInsets.only(bottom: 14),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     job.jobTitle,
                                     style: const TextStyle(
-                                      fontSize: 14,
+                                      fontSize: 12,
                                       fontWeight: FontWeight.bold,
                                       color: Colors.black87,
                                     ),
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    [
-                                      if (job.employer.isNotEmpty) job.employer,
-                                      if (job.location.isNotEmpty) job.location,
-                                      if (job.startDate.isNotEmpty || job.endDate.isNotEmpty)
-                                        '${job.startDate} - ${job.endDate}',
-                                    ].where((s) => s.isNotEmpty).join(' | '),
+                                    '${job.employer} | ${job.location} | ${job.startDate} - ${job.endDate}',
                                     style: const TextStyle(
-                                      fontSize: 12,
+                                      fontSize: 10,
                                       fontStyle: FontStyle.italic,
                                       color: Colors.black54,
                                     ),
                                   ),
-                                  const SizedBox(height: 8),
-                                  if (job.description.isNotEmpty)
-                                    Text(
-                                      job.description,
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.black87,
-                                      ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    job.description,
+                                    style: const TextStyle(
+                                      fontSize: 10,
+                                      color: Colors.black87,
                                     ),
+                                  ),
                                 ],
                               ),
                             )),
 
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 20),
 
                         // Education
                         const Text(
                           'EDUCATION',
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: 14,
                             fontWeight: FontWeight.bold,
                             color: Colors.blueGrey,
                           ),
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 10),
                         ...data.education.map((edu) => Padding(
-                              padding: const EdgeInsets.only(bottom: 16),
+                              padding: const EdgeInsets.only(bottom: 14),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     edu.title,
                                     style: const TextStyle(
-                                      fontSize: 14,
+                                      fontSize: 12,
                                       fontWeight: FontWeight.bold,
                                       color: Colors.black87,
                                     ),
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    [
-                                      if (edu.school.isNotEmpty) edu.school,
-                                      if (edu.level.isNotEmpty) edu.level,
-                                      if (edu.startDate.isNotEmpty || edu.endDate.isNotEmpty)
-                                        '${edu.startDate} - ${edu.endDate}',
-                                    ].where((s) => s.isNotEmpty).join(' | '),
+                                    '${edu.school} | ${edu.level} | ${edu.startDate} - ${edu.endDate}',
                                     style: const TextStyle(
-                                      fontSize: 12,
+                                      fontSize: 10,
                                       fontStyle: FontStyle.italic,
                                       color: Colors.black54,
                                     ),
                                   ),
-                                  const SizedBox(height: 8),
-                                  // if (edu.description.isNotEmpty)
-                                  //   Text(
-                                  //     edu.description,
-                                  //     style: const TextStyle(
-                                  //       fontSize: 12,
-                                  //       color: Colors.black87,
-                                  //     ),
-                                  //   ),
+                                  const SizedBox(height: 6),
+                                //   if (edu.description.isNotEmpty)
+                                //     Text(
+                                //       edu.description,
+                                //       style: const TextStyle(
+                                //         fontSize: 10,
+                                //         color: Colors.black87,
+                                //       ),
+                                //     ),
                                 ],
                               ),
                             )),
@@ -365,7 +387,9 @@ class ModernTemplate implements ResumeTemplate {
       ),
     );
   }
-}// Classic Template with traditional styling
+}
+
+// Classic Template with traditional styling
 class ClassicTemplate implements ResumeTemplate {
   @override
   String get templateName => 'Classic';
@@ -397,16 +421,13 @@ class ClassicTemplate implements ResumeTemplate {
                     width: 100,
                     height: 100,
                     margin: const EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.grey[300]!, width: 3),
-                      image: DecorationImage(
-                        image: FileImage(
-                            File(data.personalInfo.profileImagePath!)),
-                        fit: BoxFit.cover,
-                      ),
+                     child: buildProfileImage(
+                      data.personalInfo.profileImagePath,
+                      size: 80,
+                      borderColor: Colors.black,
                     ),
-                  ),
+                      ),
+                   
 
                 Text(
                   '${data.personalInfo.firstName} ${data.personalInfo.lastName}'
@@ -465,8 +486,6 @@ class ClassicTemplate implements ResumeTemplate {
             ),
           ),
 
-          const SizedBox(height: 24),
-          const Divider(thickness: 1),
           const SizedBox(height: 16),
 
           // Professional Summary
@@ -478,6 +497,7 @@ class ClassicTemplate implements ResumeTemplate {
               color: Colors.black,
             ),
           ),
+          const Divider(thickness: 1),
           const SizedBox(height: 8),
           Wrap(
             children: [
@@ -502,7 +522,7 @@ class ClassicTemplate implements ResumeTemplate {
               color: Colors.black,
             ),
           ),
-          const SizedBox(height: 8),
+
           const Divider(thickness: 1),
           const SizedBox(height: 8),
 
@@ -582,7 +602,7 @@ class ClassicTemplate implements ResumeTemplate {
                 ),
               )),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
 
           // Education
           const Text(
@@ -593,7 +613,6 @@ class ClassicTemplate implements ResumeTemplate {
               color: Colors.black,
             ),
           ),
-          const SizedBox(height: 8),
           const Divider(thickness: 1),
           const SizedBox(height: 8),
 
@@ -686,7 +705,7 @@ class ClassicTemplate implements ResumeTemplate {
                 ),
               )),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
 
           // Skills and Languages in a row
           Row(
@@ -705,7 +724,6 @@ class ClassicTemplate implements ResumeTemplate {
                         color: Colors.black,
                       ),
                     ),
-                    const SizedBox(height: 8),
                     const Divider(thickness: 1),
                     const SizedBox(height: 8),
                     // Use Wrap for skills to handle overflow
@@ -740,7 +758,6 @@ class ClassicTemplate implements ResumeTemplate {
                         color: Colors.black,
                       ),
                     ),
-                    const SizedBox(height: 8),
                     const Divider(thickness: 1),
                     const SizedBox(height: 8),
                     // Use Wrap for languages to handle overflow
@@ -805,7 +822,7 @@ class BusinessTemplate implements ResumeTemplate {
                     children: [
                       // Profile image if available
                       if (data.personalInfo.profileImagePath != null)
-                         Container(
+                        Container(
                           margin: const EdgeInsets.only(right: 20),
                           child: buildProfileImage(
                             data.personalInfo.profileImagePath,
@@ -914,15 +931,15 @@ class BusinessTemplate implements ResumeTemplate {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Professional Summary
-                  _buildSectionHeader('Professional Summary'),
+                  _buildSectionHeader('SUMMARY'),
                   const SizedBox(height: 12),
                   Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[50],
-                      border: Border.all(color: Colors.grey[200]!),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
+                    // padding: const EdgeInsets.all(16),
+                    // decoration: BoxDecoration(
+                    //   color: Colors.grey[50],
+                    //   border: Border.all(color: Colors.grey[200]!),
+                    //   borderRadius: BorderRadius.circular(4),
+                    // ),
                     child: Text(
                       data.professionalSummary,
                       style: const TextStyle(
@@ -936,20 +953,20 @@ class BusinessTemplate implements ResumeTemplate {
                   const SizedBox(height: 24),
 
                   // Experience
-                  _buildSectionHeader('Professional Experience'),
+                  _buildSectionHeader('EXPERIENCE'),
                   const SizedBox(height: 12),
 
                   // Employment history items
                   ...data.employmentHistory.map((job) => Container(
                         margin: const EdgeInsets.only(bottom: 16),
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[50],
-                          // border: Border.left(
-                          //   color: Colors.indigo[800]!,
-                          //   width: 3,
-                          // ),
-                        ),
+                        // padding: const EdgeInsets.all(16),
+                        // decoration: BoxDecoration(
+                        //   color: Colors.grey[50],
+                        //   // border: Border.left(
+                        //   //   color: Colors.indigo[800]!,
+                        //   //   width: 3,
+                        //   // ),
+                        // ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -1014,54 +1031,58 @@ class BusinessTemplate implements ResumeTemplate {
                     itemBuilder: (context, index) {
                       final edu = data.education[index];
                       return Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[50],
-                          border: Border.all(color: Colors.grey[200]!),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              edu.title,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black87,
+                        height: 150,
+                        // margin: const EdgeInsets.only(bottom: 16),
+                        // padding: const EdgeInsets.all(1),
+                        // decoration: BoxDecoration(
+                        //   color: Colors.grey[50],
+                        //   border: Border.all(color: Colors.grey[200]!),
+                        //   borderRadius: BorderRadius.circular(4),
+                        // ),
+                        child: SingleChildScrollView(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                edu.title,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            Text(
-                              edu.school,
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.indigo[700],
+                              Text(
+                                edu.school,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.indigo[700],
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            Text(
-                              '${edu.startDate} - ${edu.endDate}',
-                              style: const TextStyle(
-                                fontSize: 10,
-                                fontStyle: FontStyle.italic,
-                                color: Colors.black54,
+                              Text(
+                                '${edu.startDate} - ${edu.endDate}',
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  fontStyle: FontStyle.italic,
+                                  color: Colors.black54,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            Text(
-                              edu.level,
-                              style: const TextStyle(
-                                fontSize: 10,
-                                color: Colors.black87,
+                              Text(
+                                edu.level,
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.black87,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       );
                     },
@@ -1118,44 +1139,41 @@ class BusinessTemplate implements ResumeTemplate {
                             _buildSectionHeader('Languages'),
                             const SizedBox(height: 12),
                             // Languages with visual bars
-                            ...data.languages
-                                .map((language) => Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          language,
-                                          style: const TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w500,
-                                            color: Colors.black87,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Container(
-                                          height: 4,
-                                          width: double.infinity,
-                                          decoration: BoxDecoration(
-                                            color: Colors.grey[200],
-                                            borderRadius:
-                                                BorderRadius.circular(2),
-                                          ),
-                                          child: FractionallySizedBox(
-                                            widthFactor: 0.8,
-                                            // Default 80% proficiency
-                                            child: Container(
-                                              decoration: BoxDecoration(
-                                                color: Colors.indigo[700],
-                                                borderRadius:
-                                                    BorderRadius.circular(2),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        const SizedBox(height: 12),
-                                      ],
-                                    ))
-                                .toList(),
+                            ...data.languages.map((language) => Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      language,
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    // Container(
+                                    //   height: 4,
+                                    //   width: double.infinity,
+                                    //   decoration: BoxDecoration(
+                                    //     color: Colors.grey[200],
+                                    //     borderRadius:
+                                    //         BorderRadius.circular(2),
+                                    //   ),
+                                    //   // child: FractionallySizedBox(
+                                    //   //   widthFactor: 0.8,
+                                    //   //   // // Default 80% proficiency
+                                    //   //   // child: Container(
+                                    //   //   //   decoration: BoxDecoration(
+                                    //   //   //     color: Colors.indigo[700],
+                                    //   //   //     borderRadius:
+                                    //   //   //         BorderRadius.circular(2),
+                                    //   //   //   ),
+                                    //   //   // ),
+                                    //   // ),
+                                    // ),
+                                    const SizedBox(height: 12),
+                                  ],
+                                )),
                           ],
                         ),
                       ),
@@ -1205,7 +1223,7 @@ class TemplateFactory {
         return ModernTemplate();
       case 'classic':
         return ClassicTemplate();
-        
+
       case 'business':
         return BusinessTemplate();
       default:

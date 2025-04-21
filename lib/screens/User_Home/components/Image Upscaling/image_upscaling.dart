@@ -402,22 +402,22 @@ class _ImageUpscalingScreenState extends State<ImageUpscalingScreen> {
                           ),
                         ],
                       ),
-                      ElevatedButton(
-                        onPressed: () {
-                          // Edit button functionality
-                        },
-                        child: Text('Edit'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryBlue,
-                          foregroundColor:
-                              Theme.of(context).colorScheme.surface,
-                          padding: EdgeInsets.symmetric(
-                              horizontal: 24, vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                      ),
+                      // ElevatedButton(
+                      //   onPressed: () {
+                      //     // Edit button functionality
+                      //   },
+                      //   child: Text('Edit'),
+                      //   style: ElevatedButton.styleFrom(
+                      //     backgroundColor: AppColors.primaryBlue,
+                      //     foregroundColor:
+                      //         Theme.of(context).colorScheme.surface,
+                      //     padding: EdgeInsets.symmetric(
+                      //         horizontal: 24, vertical: 12),
+                      //     shape: RoundedRectangleBorder(
+                      //       borderRadius: BorderRadius.circular(8),
+                      //     ),
+                      //   ),
+                      // ),
                     ],
                   ),
                 ),

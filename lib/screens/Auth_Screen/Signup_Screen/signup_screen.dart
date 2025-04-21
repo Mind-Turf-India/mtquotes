@@ -11,7 +11,6 @@ import 'package:provider/provider.dart';
 import '../../../utils/app_colors.dart';
 import '../../User_Home/components/Notifications/notification_service.dart';
 
-
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
 
@@ -93,7 +92,8 @@ class _SignupScreenState extends State<SignupScreen> {
     _showLoadingDialog();
 
     try {
-      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+      UserCredential userCredential =
+          await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
@@ -102,7 +102,8 @@ class _SignupScreenState extends State<SignupScreen> {
       await saveUserToFirestore(userCredential.user);
 
       // Handle user change for notifications
-      await NotificationService.instance.handleUserChanged(userCredential.user?.uid);
+      await NotificationService.instance
+          .handleUserChanged(userCredential.user?.uid);
 
       // Request notification permissions after successful signup
       await NotificationService.instance.requestPermissions();
@@ -111,7 +112,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (context) => MainScreen()),
-            (Route<dynamic> route) => false, // Remove all previous screens
+        (Route<dynamic> route) => false, // Remove all previous screens
       );
     } catch (e) {
       _hideLoadingDialog();
@@ -125,10 +126,13 @@ class _SignupScreenState extends State<SignupScreen> {
     }
   }
 
-  Future<void> saveUserToFirestore(User? user, {bool isNewSignUp = true}) async {
+  Future<void> saveUserToFirestore(User? user,
+      {bool isNewSignUp = true}) async {
     if (user != null && user.email != null) {
-      final String userEmail = user.email!.replaceAll(".", "_"); // Firestore doesn't allow '.' in document IDs
-      final userRef = FirebaseFirestore.instance.collection('users').doc(userEmail);
+      final String userEmail = user.email!
+          .replaceAll(".", "_"); // Firestore doesn't allow '.' in document IDs
+      final userRef =
+          FirebaseFirestore.instance.collection('users').doc(userEmail);
 
       // First check if the user already exists
       DocumentSnapshot userSnapshot = await userRef.get();
@@ -181,7 +185,10 @@ class _SignupScreenState extends State<SignupScreen> {
             userData['referrerUid'] = referrerUid;
             userData['rewardPoints'] += 100; // Reward for using a referral
             // Grant reward points to referrer
-            await FirebaseFirestore.instance.collection('users').doc(referrerUid).update({
+            await FirebaseFirestore.instance
+                .collection('users')
+                .doc(referrerUid)
+                .update({
               'rewardPoints': FieldValue.increment(50),
             });
           }
@@ -202,7 +209,8 @@ class _SignupScreenState extends State<SignupScreen> {
         _hideLoadingDialog();
         return;
       }
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
@@ -213,20 +221,26 @@ class _SignupScreenState extends State<SignupScreen> {
       try {
         // Check if email exists in Firestore
         final String userEmail = googleUser.email.replaceAll(".", "_");
-        final userDoc = await FirebaseFirestore.instance.collection('users').doc(userEmail).get();
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userEmail)
+            .get();
         isExistingUser = userDoc.exists;
       } catch (e) {
         // If error checking, proceed with normal flow
         print("Error checking existing user: $e");
       }
 
-      UserCredential userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+      UserCredential userCredential =
+          await FirebaseAuth.instance.signInWithCredential(credential);
 
       // Pass information about whether this is a new signup or existing user login
-      await saveUserToFirestore(userCredential.user, isNewSignUp: !isExistingUser);
+      await saveUserToFirestore(userCredential.user,
+          isNewSignUp: !isExistingUser);
 
       // Handle user change for notifications
-      await NotificationService.instance.handleUserChanged(userCredential.user?.uid);
+      await NotificationService.instance
+          .handleUserChanged(userCredential.user?.uid);
 
       // Request notification permissions after successful login/signup
       await NotificationService.instance.requestPermissions();
@@ -237,7 +251,8 @@ class _SignupScreenState extends State<SignupScreen> {
       if (isExistingUser) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("You already have an account with this email. Logging you in."),
+            content: Text(
+                "You already have an account with this email. Logging you in."),
             backgroundColor: Colors.green,
           ),
         );
@@ -245,7 +260,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (context) => MainScreen()),
-            (Route<dynamic> route) => false,
+        (Route<dynamic> route) => false,
       );
     } catch (e) {
       _hideLoadingDialog();
@@ -262,12 +277,14 @@ class _SignupScreenState extends State<SignupScreen> {
   String _generateReferralCode(String uid) {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     final random = Random();
-    String randomString = String.fromCharCodes(Iterable.generate(5, (_) => chars.codeUnitAt(random.nextInt(chars.length))));
+    String randomString = String.fromCharCodes(Iterable.generate(
+        5, (_) => chars.codeUnitAt(random.nextInt(chars.length))));
     return '${uid.substring(0, 6)}$randomString'; // Example: "AB1234XYZ89"
   }
 
   bool passwordConfirmed() {
-    return _passwordController.text.trim() == _confirmPasswordController.text.trim();
+    return _passwordController.text.trim() ==
+        _confirmPasswordController.text.trim();
   }
 
   @override
@@ -285,233 +302,235 @@ class _SignupScreenState extends State<SignupScreen> {
     final isDarkMode = themeProvider.isDarkMode;
 
     // Use AppColors directly for consistent theming
-    final backgroundColor = isDarkMode ? AppColors.darkBackground : AppColors.lightBackground;
+    final backgroundColor =
+        isDarkMode ? AppColors.darkBackground : AppColors.lightBackground;
     final textColor = isDarkMode ? AppColors.darkText : AppColors.lightText;
-    final secondaryTextColor = isDarkMode ? AppColors.darkSecondaryText : AppColors.lightSecondaryText;
+    final secondaryTextColor =
+        isDarkMode ? AppColors.darkSecondaryText : AppColors.lightSecondaryText;
     final iconColor = isDarkMode ? AppColors.darkIcon : AppColors.lightIcon;
     final dividerColor = AppColors.getDividerColor(isDarkMode);
 
     return Scaffold(
       backgroundColor: backgroundColor,
       body: _isLoading
-          ? Center(child: CircularProgressIndicator(color: AppColors.primaryBlue))
+          ? Center(
+              child: CircularProgressIndicator(color: AppColors.primaryBlue))
           : SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const SizedBox(height: 50),
-              Image.asset('assets/logo.png', height: 100, width: 100),
-              const SizedBox(height: 10),
-              Text(
-                  'Welcome',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w500,
-                    color: textColor,
-                  )
-              ),
-              Text(
-                  'Create New Account',
-                  style: TextStyle(
-                    color: secondaryTextColor,
-                    fontSize: 14,
-                  )
-              ),
-              const SizedBox(height: 50),
-              TextField(
-                controller: _emailController,
-                style: TextStyle(
-                  color: isDarkMode ? AppColors.darkText : AppColors.lightText,
-                ),
-                decoration: InputDecoration(
-                  labelText: 'Email',
-                  labelStyle: TextStyle(color: secondaryTextColor),
-                  border: OutlineInputBorder(),
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: dividerColor),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: AppColors.primaryBlue),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              TextField(
-                controller: _passwordController,
-                obscureText: _isObscure1,
-                style: TextStyle(color: textColor),
-                decoration: InputDecoration(
-                  labelText: 'Password',
-                  labelStyle: TextStyle(color: secondaryTextColor),
-                  border: OutlineInputBorder(),
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: dividerColor),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: AppColors.primaryBlue),
-                  ),
-                  suffixIcon: IconButton(
-                    icon: _isObscure1
-                        ? SvgPicture.asset(
-                      'assets/icons/hidden_5340196.svg',
-                      width: 24,
-                      height: 24,
-                      color: iconColor,
-                    )
-                        : SvgPicture.asset(
-                      'assets/icons/blind_6212534 1.svg',
-                      width: 24,
-                      height: 24,
-                      color: iconColor,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _isObscure1 = !_isObscure1;
-                      });
-                    },
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              TextField(
-                controller: _passwordController,
-                obscureText: _isObscure2,
-                style: TextStyle(color: textColor),
-                decoration: InputDecoration(
-                  labelText: 'Password',
-                  labelStyle: TextStyle(color: secondaryTextColor),
-                  border: OutlineInputBorder(),
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: dividerColor),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: AppColors.primaryBlue),
-                  ),
-                  suffixIcon: IconButton(
-                    icon: _isObscure2
-                        ? SvgPicture.asset(
-                      'assets/icons/hidden_5340196.svg',
-                      width: 24,
-                      height: 24,
-                      color: iconColor,
-                    )
-                        : SvgPicture.asset(
-                      'assets/icons/blind_6212534 1.svg',
-                      width: 24,
-                      height: 24,
-                      color: iconColor,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _isObscure2 = !_isObscure2;
-                      });
-                    },
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              TextField(
-                controller: _referralController,
-                style: TextStyle(color: textColor),
-                decoration: InputDecoration(
-                  labelText: 'Referral code (if any)',
-                  labelStyle: TextStyle(color: secondaryTextColor),
-                  border: OutlineInputBorder(),
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: dividerColor),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: AppColors.primaryBlue),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Checkbox(
-                    value: _rememberMe,
-                    onChanged: (value) {
-                      setState(() {
-                        _rememberMe = value ?? false;
-                      });
-                    },
-                    activeColor: AppColors.primaryBlue,
-                    checkColor: Colors.white,
-                  ),
-                  Text(
-                    'Remember me',
-                    style: TextStyle(color: textColor),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryBlue,
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size(double.infinity, 50),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                onPressed: _signInWithEmailAndPassword,
-                child: const Text('Sign Up', style: TextStyle(fontSize: 18)),
-              ),
-              const SizedBox(height: 20),
-              Text('or', style: TextStyle(color: textColor)),
-              const SizedBox(height: 10),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  IconButton(
-                    icon: SvgPicture.asset(
-                      'assets/icons/google_13170545 1.svg',
-                      width: 24,
-                      height: 47,
-                    ),
-                    onPressed: _signInWithGoogle,
-                  ),
-                  IconButton(
-                    icon: SvgPicture.asset(
-                      'assets/icons/facebook_2111393.svg',
-                      width: 24,
-                      height: 30,
-                    ),
-                    onPressed: () {
-                      // Implement Facebook login
-                    },
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    "Already have an account? ",
-                    style: TextStyle(color: textColor),
-                  ),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => LoginScreen()));
-                    },
-                    child: Text(
-                        'Sign In',
+              padding: const EdgeInsets.all(16.0),
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const SizedBox(height: 50),
+                    Image.asset('assets/logo.png', height: 100, width: 100),
+                    const SizedBox(height: 10),
+                    Text('Welcome',
                         style: TextStyle(
-                            color: AppColors.primaryBlue,
-                            fontWeight: FontWeight.bold
-                        )
+                          fontSize: 24,
+                          fontWeight: FontWeight.w500,
+                          color: textColor,
+                        )),
+                    Text('Create New Account',
+                        style: TextStyle(
+                          color: secondaryTextColor,
+                          fontSize: 14,
+                        )),
+                    const SizedBox(height: 50),
+                    TextField(
+                      controller: _emailController,
+                      style: TextStyle(
+                        color: isDarkMode
+                            ? AppColors.darkText
+                            : AppColors.lightText,
+                      ),
+                      decoration: InputDecoration(
+                        labelText: 'Email',
+                        labelStyle: TextStyle(color: secondaryTextColor),
+                        border: OutlineInputBorder(),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: dividerColor),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: AppColors.primaryBlue),
+                        ),
+                      ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 20),
+                    TextField(
+                      controller: _passwordController,
+                      obscureText: _isObscure1,
+                      style: TextStyle(color: textColor),
+                      decoration: InputDecoration(
+                        labelText: 'Password',
+                        labelStyle: TextStyle(color: secondaryTextColor),
+                        border: OutlineInputBorder(),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: dividerColor),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: AppColors.primaryBlue),
+                        ),
+                        suffixIcon: IconButton(
+                          icon: _isObscure1
+                              ? SvgPicture.asset(
+                                  'assets/icons/hidden_5340196.svg',
+                                  width: 24,
+                                  height: 24,
+                                  color: iconColor,
+                                )
+                              : SvgPicture.asset(
+                                  'assets/icons/blind_6212534 1.svg',
+                                  width: 24,
+                                  height: 24,
+                                  color: iconColor,
+                                ),
+                          onPressed: () {
+                            setState(() {
+                              _isObscure1 = !_isObscure1;
+                            });
+                          },
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    TextField(
+                      controller: _confirmPasswordController,
+                      obscureText: _isObscure2,
+                      style: TextStyle(color: textColor),
+                      decoration: InputDecoration(
+                        labelText: 'Password',
+                        labelStyle: TextStyle(color: secondaryTextColor),
+                        border: OutlineInputBorder(),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: dividerColor),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: AppColors.primaryBlue),
+                        ),
+                        suffixIcon: IconButton(
+                          icon: _isObscure2
+                              ? SvgPicture.asset(
+                                  'assets/icons/hidden_5340196.svg',
+                                  width: 24,
+                                  height: 24,
+                                  color: iconColor,
+                                )
+                              : SvgPicture.asset(
+                                  'assets/icons/blind_6212534 1.svg',
+                                  width: 24,
+                                  height: 24,
+                                  color: iconColor,
+                                ),
+                          onPressed: () {
+                            setState(() {
+                              _isObscure2 = !_isObscure2;
+                            });
+                          },
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    TextField(
+                      controller: _referralController,
+                      style: TextStyle(color: textColor),
+                      decoration: InputDecoration(
+                        labelText: 'Referral code (if any)',
+                        labelStyle: TextStyle(color: secondaryTextColor),
+                        border: OutlineInputBorder(),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: dividerColor),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: AppColors.primaryBlue),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Checkbox(
+                          value: _rememberMe,
+                          onChanged: (value) {
+                            setState(() {
+                              _rememberMe = value ?? false;
+                            });
+                          },
+                          activeColor: AppColors.primaryBlue,
+                          checkColor: Colors.white,
+                        ),
+                        Text(
+                          'Remember me',
+                          style: TextStyle(color: textColor),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryBlue,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(double.infinity, 50),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      onPressed: _signInWithEmailAndPassword,
+                      child:
+                          const Text('Sign Up', style: TextStyle(fontSize: 18)),
+                    ),
+                    const SizedBox(height: 20),
+                    Text('or', style: TextStyle(color: textColor)),
+                    const SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        IconButton(
+                          icon: SvgPicture.asset(
+                            'assets/icons/Group.svg',
+                            width: 20,
+                            height: 35,
+                          ),
+                          onPressed: _signInWithGoogle,
+                        ),
+                        IconButton(
+                          icon: SvgPicture.asset(
+                            'assets/icons/facebook_2111393.svg',
+                            width: 24,
+                            height: 33,
+                          ),
+                          onPressed: () {
+                            // Implement Facebook login
+                          },
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          "Already have an account? ",
+                          style: TextStyle(color: textColor),
+                        ),
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => LoginScreen()));
+                          },
+                          child: Text('Sign In',
+                              style: TextStyle(
+                                  color: AppColors.primaryBlue,
+                                  fontWeight: FontWeight.bold)),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                  ],
+                ),
               ),
-              const SizedBox(height: 20),
-            ],
-          ),
-        ),
-      ),
+            ),
     );
   }
 }

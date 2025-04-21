@@ -13,8 +13,9 @@ import 'package:provider/provider.dart';
 import '../../User_Home/components/Notifications/notification_service.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-
 class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
   @override
   _LoginScreenState createState() => _LoginScreenState();
 }
@@ -74,7 +75,8 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _showLoginPopup(String email, String password) {
-    final isDarkMode = Provider.of<ThemeProvider>(context, listen: false).isDarkMode;
+    final isDarkMode =
+        Provider.of<ThemeProvider>(context, listen: false).isDarkMode;
 
     showDialog(
       context: context,
@@ -113,11 +115,13 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Future<void> _signInWithSavedCredentials(String email, String password) async {
+  Future<void> _signInWithSavedCredentials(
+      String email, String password) async {
     _showLoadingDialog();
 
     try {
-      UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+      UserCredential userCredential =
+          await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
@@ -125,7 +129,8 @@ class _LoginScreenState extends State<LoginScreen> {
       await saveUserToFirestore(userCredential.user);
 
       // Handle user change for notifications
-      await NotificationService.instance.handleUserChanged(userCredential.user?.uid);
+      await NotificationService.instance
+          .handleUserChanged(userCredential.user?.uid);
 
       // Request notification permissions after successful login
       await NotificationService.instance.requestPermissions();
@@ -134,7 +139,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (context) => MainScreen()),
-            (Route<dynamic> route) => false,
+        (Route<dynamic> route) => false,
       );
     } catch (e) {
       _hideLoadingDialog();
@@ -160,7 +165,8 @@ class _LoginScreenState extends State<LoginScreen> {
     _showLoadingDialog();
 
     try {
-      UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+      UserCredential userCredential =
+          await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
@@ -170,7 +176,8 @@ class _LoginScreenState extends State<LoginScreen> {
       await saveUserToFirestore(userCredential.user);
 
       // Handle user change for notifications
-      await NotificationService.instance.handleUserChanged(userCredential.user?.uid);
+      await NotificationService.instance
+          .handleUserChanged(userCredential.user?.uid);
 
       // Request notification permissions after successful login
       await NotificationService.instance.requestPermissions();
@@ -179,7 +186,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (context) => MainScreen()),
-            (Route<dynamic> route) => false,
+        (Route<dynamic> route) => false,
       );
     } catch (e) {
       _hideLoadingDialog();
@@ -206,19 +213,21 @@ class _LoginScreenState extends State<LoginScreen> {
       }
 
       final GoogleSignInAuthentication googleAuth =
-      await googleUser.authentication;
+          await googleUser.authentication;
 
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
-      UserCredential userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+      UserCredential userCredential =
+          await FirebaseAuth.instance.signInWithCredential(credential);
 
       await saveUserToFirestore(userCredential.user);
 
       // Handle user change for notifications
-      await NotificationService.instance.handleUserChanged(userCredential.user?.uid);
+      await NotificationService.instance
+          .handleUserChanged(userCredential.user?.uid);
 
       // Request notification permissions after successful login
       await NotificationService.instance.requestPermissions();
@@ -227,7 +236,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (context) => MainScreen()),
-            (Route<dynamic> route) => false,
+        (Route<dynamic> route) => false,
       );
     } catch (e) {
       _hideLoadingDialog();
@@ -244,14 +253,16 @@ class _LoginScreenState extends State<LoginScreen> {
   String _generateReferralCode(String uid) {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     final random = Random.secure();
-    String randomString = String.fromCharCodes(Iterable.generate(5, (_) => chars.codeUnitAt(random.nextInt(chars.length))));
+    String randomString = String.fromCharCodes(Iterable.generate(
+        5, (_) => chars.codeUnitAt(random.nextInt(chars.length))));
     return '${uid.substring(0, 6)}$randomString';
   }
 
   Future<void> saveUserToFirestore(User? user) async {
     if (user != null && user.email != null) {
       final String userEmail = user.email!.replaceAll(".", "_");
-      final userRef = FirebaseFirestore.instance.collection('users').doc(userEmail);
+      final userRef =
+          FirebaseFirestore.instance.collection('users').doc(userEmail);
 
       DocumentSnapshot doc = await userRef.get();
 
@@ -309,206 +320,211 @@ class _LoginScreenState extends State<LoginScreen> {
         backgroundColor: backgroundColor,
         body: _isLoading
             ? Center(
-          child: CircularProgressIndicator(
-            color: AppColors.primaryBlue,
-          ),
-        )
+                child: CircularProgressIndicator(
+                  color: AppColors.primaryBlue,
+                ),
+              )
             : SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const SizedBox(height: 70),
-                  Image.asset(
-                    'assets/logo.png',
-                    height: 100,
-                    width: 100,
-                  ),
-                  const SizedBox(height: 30),
-                  Text(
-                    'Welcome back!',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w500,
-                      color: textColor,
-                    ),
-                  ),
-                  Text(
-                    'Login to your account',
-                    style: TextStyle(color: secondaryTextColor),
-                  ),
-                  const SizedBox(height: 50),
-                  TextField(
-                    controller: _emailController,
-                    style: TextStyle(
-                      color: isDarkMode ? AppColors.darkText : AppColors.lightText,
-                    ),
-                    decoration: InputDecoration(
-                      labelText: 'Email',
-                      labelStyle: TextStyle(color: secondaryTextColor),
-                      border: OutlineInputBorder(),
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: dividerColor),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: AppColors.primaryBlue),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  TextField(
-                    controller: _passwordController,
-                    obscureText: _isObscure,
-                    style: TextStyle(color: textColor),
-                    decoration: InputDecoration(
-                      labelText: 'Password',
-                      labelStyle: TextStyle(color: secondaryTextColor),
-                      border: OutlineInputBorder(),
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: dividerColor),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: AppColors.primaryBlue),
-                      ),
-                      suffixIcon: IconButton(
-                        icon: _isObscure
-                            ? SvgPicture.asset(
-                          'assets/icons/hidden_5340196.svg',
-                          width: 24,
-                          height: 24,
-                          color: iconColor,
-                        )
-                            : SvgPicture.asset(
-                          'assets/icons/blind_6212534 1.svg',
-                          width: 24,
-                          height: 24,
-                          color: iconColor,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const SizedBox(height: 70),
+                        Image.asset(
+                          'assets/logo.png',
+                          height: 100,
+                          width: 100,
                         ),
-                        onPressed: () {
-                          setState(() {
-                            _isObscure = !_isObscure;
-                          });
-                        },
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Checkbox(
-                            value: _rememberMe,
-                            onChanged: (value) {
-                              setState(() {
-                                _rememberMe = value ?? false;
-                              });
-                            },
-                            activeColor: AppColors.primaryBlue,
-                            checkColor: Colors.white,
-                          ),
-                          Text(
-                            'Remember me',
-                            style: TextStyle(color: textColor),
-                          ),
-                        ],
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ForgotPasswordScreen(),
-                            ),
-                          );
-                        },
-                        child: Text(
-                          'Forgot Password?',
+                        const SizedBox(height: 30),
+                        Text(
+                          'Welcome back!',
                           style: TextStyle(
-                            color: AppColors.primaryBlue,
-                            fontWeight: FontWeight.bold,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w500,
+                            color: textColor,
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryBlue,
-                      minimumSize: const Size(double.infinity, 50),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    onPressed: _signInWithEmailAndPassword,
-                    child: const Text(
-                      'Log In',
-                      style: TextStyle(fontSize: 18, color: Colors.white),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    'or',
-                    style: TextStyle(color: textColor),
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      IconButton(
-                        icon: SvgPicture.asset(
-                          'assets/icons/google_13170545 1.svg',
-                          width: 24,
-                          height: 47,
+                        Text(
+                          'Login to your account',
+                          style: TextStyle(color: secondaryTextColor),
                         ),
-                        onPressed: _signInWithGoogle,
-                      ),
-                      IconButton(
-                        icon: SvgPicture.asset(
-                          'assets/icons/facebook_2111393.svg',
-                          width: 24,
-                          height: 30,
-                        ),
-                        onPressed: () {
-                          // Implement Facebook login
-                        },
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        "Don't have an account? ",
-                        style: TextStyle(color: textColor),
-                      ),
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => SignupScreen(),
+                        const SizedBox(height: 50),
+                        TextField(
+                          controller: _emailController,
+                          style: TextStyle(
+                            color: isDarkMode
+                                ? AppColors.darkText
+                                : AppColors.lightText,
+                          ),
+                          decoration: InputDecoration(
+                            labelText: 'Email',
+                            labelStyle: TextStyle(color: secondaryTextColor),
+                            border: OutlineInputBorder(),
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: dividerColor),
                             ),
-                          );
-                        },
-                        child: Text(
-                          'Sign Up',
-                          style: TextStyle(color: AppColors.primaryBlue),
+                            focusedBorder: OutlineInputBorder(
+                              borderSide:
+                                  BorderSide(color: AppColors.primaryBlue),
+                            ),
+                          ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 20),
+                        TextField(
+                          controller: _passwordController,
+                          obscureText: _isObscure,
+                          style: TextStyle(color: textColor),
+                          decoration: InputDecoration(
+                            labelText: 'Password',
+                            labelStyle: TextStyle(color: secondaryTextColor),
+                            border: OutlineInputBorder(),
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: dividerColor),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderSide:
+                                  BorderSide(color: AppColors.primaryBlue),
+                            ),
+                            suffixIcon: IconButton(
+                              icon: _isObscure
+                                  ? SvgPicture.asset(
+                                      'assets/icons/hidden_5340196.svg',
+                                      width: 24,
+                                      height: 24,
+                                      color: iconColor,
+                                    )
+                                  : SvgPicture.asset(
+                                      'assets/icons/blind_6212534 1.svg',
+                                      width: 24,
+                                      height: 24,
+                                      color: iconColor,
+                                    ),
+                              onPressed: () {
+                                setState(() {
+                                  _isObscure = !_isObscure;
+                                });
+                              },
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Checkbox(
+                                  value: _rememberMe,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _rememberMe = value ?? false;
+                                    });
+                                  },
+                                  activeColor: AppColors.primaryBlue,
+                                  checkColor: Colors.white,
+                                ),
+                                Text(
+                                  'Remember me',
+                                  style: TextStyle(color: textColor),
+                                ),
+                              ],
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        ForgotPasswordScreen(),
+                                  ),
+                                );
+                              },
+                              child: Text(
+                                'Forgot Password?',
+                                style: TextStyle(
+                                  color: AppColors.primaryBlue,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primaryBlue,
+                            minimumSize: const Size(double.infinity, 50),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          onPressed: _signInWithEmailAndPassword,
+                          child: const Text(
+                            'Log In',
+                            style: TextStyle(fontSize: 18, color: Colors.white),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        Text(
+                          'or',
+                          style: TextStyle(color: textColor),
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            IconButton(
+                              icon: SvgPicture.asset(
+                                'assets/icons/Group.svg',
+                                width: 20,
+                                height: 35,
+                              ),
+                              onPressed: _signInWithGoogle,
+                            ),
+                            IconButton(
+                              icon: SvgPicture.asset(
+                                'assets/icons/facebook_2111393.svg',
+                                width: 24,
+                                height: 33,
+                              ),
+                              onPressed: () {
+                                // Implement Facebook login
+                              },
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              "Don't have an account? ",
+                              style: TextStyle(color: textColor),
+                            ),
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => SignupScreen(),
+                                  ),
+                                );
+                              },
+                              child: Text(
+                                'Sign Up',
+                                style: TextStyle(color: AppColors.primaryBlue),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 20),
-                ],
+                ),
               ),
-            ),
-          ),
-        ),
       ),
     );
   }

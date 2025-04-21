@@ -1,3 +1,4 @@
+
 import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -5,10 +6,12 @@ import 'package:mtquotes/screens/User_Home/components/Resume/resume_data.dart';
 import 'package:mtquotes/screens/User_Home/components/Resume/resume_interface.dart';
 import 'package:mtquotes/screens/User_Home/components/Resume/resume_pdf.dart';
 import 'package:mtquotes/screens/navbar_mainscreen.dart';
+import 'package:mtquotes/utils/app_colors.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:share_plus/share_plus.dart';
+
 
 class ResumePreviewScreen extends StatefulWidget {
   final ResumeData resumeData;
@@ -37,81 +40,94 @@ class _ResumePreviewScreenState extends State<ResumePreviewScreen> {
     super.initState();
     print("Selected template type: ${widget.resumeData.templateType}");
     _template = TemplateFactory.getTemplate(widget.resumeData.templateType);
-    _style = _getTemplateStyle(widget.resumeData.templateType);
     // Generate PDF on load for immediate actions
-    generatePdf(widget.resumeData,
-      saveToDownloads: true);
+    generatePdf(widget.resumeData, saveToDownloads: true);
   }
 
-  // Helper method to get the template's styling parameters
-  TemplateStyle _getTemplateStyle(String templateType) {
+  // Get template style based on current theme and template type
+  TemplateStyle _getTemplateStyle(String templateType, bool isDarkMode) {
+    // Base colors from app theme
+    final primaryColor = AppColors.primaryBlue;
+    final accentColor = AppColors.primaryGreen;
+    final backgroundColor = isDarkMode ? AppColors.darkBackground : AppColors.lightBackground;
+    final textColor = isDarkMode ? AppColors.darkText : AppColors.lightText;
+    final secondaryTextColor = isDarkMode ? AppColors.darkSecondaryText : AppColors.lightSecondaryText;
+    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.lightDivider;
+    final shadowColor = isDarkMode 
+        ? Colors.black.withOpacity(0.3) 
+        : Colors.black.withOpacity(0.1);
+
     switch (templateType.toLowerCase()) {
       case 'classic':
         return TemplateStyle(
-          primaryColor: Colors.black,
-          accentColor: Colors.grey[600]!,
-          backgroundColor: Colors.grey[50]!,
-          buttonColor: Colors.black,
-          dividerColor: Colors.grey[400]!,
-          buttonTextStyle: const TextStyle(
-            color: Colors.white,
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-          ),
-          titleTextStyle: const TextStyle(
-            color: Colors.black,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 1.0,
-          ),
-          instructionsBoxColor: Colors.grey[200]!,
-          instructionsBoxBorderColor: Colors.grey[400]!,
-          shadowColor: Colors.black.withOpacity(0.1),
-        );
-
-      case 'business':
-        return TemplateStyle(
-          primaryColor: Colors.indigo[800]!,
-          accentColor: Colors.indigo[600]!,
-          backgroundColor: Colors.white,
-          buttonColor: Colors.indigo[700]!,
-          dividerColor: Colors.indigo[200]!,
-          buttonTextStyle: const TextStyle(
+          primaryColor: isDarkMode ? Colors.white : Colors.black,
+          accentColor: isDarkMode ? Colors.grey[400]! : Colors.grey[600]!,
+          backgroundColor: backgroundColor,
+          buttonColor: primaryColor,
+          dividerColor: dividerColor,
+          buttonTextStyle: TextStyle(
             color: Colors.white,
             fontSize: 16,
             fontWeight: FontWeight.w500,
           ),
           titleTextStyle: TextStyle(
-            color: Colors.indigo[800],
+            color: textColor,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1.0,
+          ),
+          instructionsBoxColor: isDarkMode ? AppColors.darkSurface : Colors.grey[200]!,
+          instructionsBoxBorderColor: dividerColor,
+          shadowColor: shadowColor,
+        );
+
+      case 'business':
+        return TemplateStyle(
+          primaryColor: primaryColor,
+          accentColor: accentColor,
+          backgroundColor: backgroundColor,
+          buttonColor: primaryColor,
+          dividerColor: dividerColor,
+          buttonTextStyle: TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+          ),
+          titleTextStyle: TextStyle(
+            color: primaryColor,
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
-          instructionsBoxColor: Colors.indigo[50]!,
-          instructionsBoxBorderColor: Colors.indigo[200]!,
-          shadowColor: Colors.indigo.withOpacity(0.1),
+          instructionsBoxColor: isDarkMode 
+              ? AppColors.darkSurface 
+              : AppColors.primaryBlue.withOpacity(0.1),
+          instructionsBoxBorderColor: dividerColor,
+          shadowColor: shadowColor,
         );
 
       case 'modern':
       default:
         return TemplateStyle(
-          primaryColor: Colors.blue[700]!,
-          accentColor: Colors.blueGrey[700]!,
-          backgroundColor: const Color(0xFFF5F5F5),
-          buttonColor: Colors.blue[700]!,
-          dividerColor: Colors.blue[200]!,
-          buttonTextStyle: const TextStyle(
+          primaryColor: AppColors.primaryBlue,
+          accentColor: AppColors.primaryGreen,
+          backgroundColor: backgroundColor,
+          buttonColor: AppColors.primaryBlue,
+          dividerColor: dividerColor,
+          buttonTextStyle: TextStyle(
             color: Colors.white,
             fontSize: 16,
             fontWeight: FontWeight.w500,
           ),
           titleTextStyle: TextStyle(
-            color: Colors.blue[800],
+            color: primaryColor,
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
-          instructionsBoxColor: Colors.blue[50]!,
-          instructionsBoxBorderColor: Colors.blue[200]!,
-          shadowColor: Colors.black.withOpacity(0.1),
+          instructionsBoxColor: isDarkMode 
+              ? AppColors.darkSurface 
+              : AppColors.lightBlue.withOpacity(0.1),
+          instructionsBoxBorderColor: dividerColor,
+          shadowColor: shadowColor,
         );
     }
   }
@@ -219,19 +235,31 @@ class _ResumePreviewScreenState extends State<ResumePreviewScreen> {
   void _sharePdf() async {
     // If PDF isn't generated yet, generate it first
     if (_pdfPath == null) {
-      await generatePdf(widget.resumeData,
-        saveToDownloads: true);
-    }
-
-    if (_pdfPath != null) {
+      setState(() {
+        _isGeneratingPdf = true;
+      });
+      
+      try {
+        _pdfPath = await generatePdf(widget.resumeData, saveToDownloads: true);
+        
+        await Share.shareXFiles(
+          [XFile(_pdfPath!)],
+          text: 'My Resume',
+        );
+      } catch (e) {
+        print('Error sharing PDF: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Unable to share. Please try again.')),
+        );
+      } finally {
+        setState(() {
+          _isGeneratingPdf = false;
+        });
+      }
+    } else {
       await Share.shareXFiles(
         [XFile(_pdfPath!)],
         text: 'My Resume',
-      );
-    } else {
-      // Show error if sharing failed
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Unable to share. PDF not generated.')),
       );
     }
   }
@@ -314,29 +342,42 @@ class _ResumePreviewScreenState extends State<ResumePreviewScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Get current theme brightness
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    
+    // Get template style based on current theme and template type
+    _style = _getTemplateStyle(widget.resumeData.templateType, isDarkMode);
+    
+    // Check if template is business type
     final bool isBusinessTemplate = widget.resumeData.templateType.toLowerCase() == 'business';
 
+    // Get theme colors
+    final backgroundColor = isDarkMode ? AppColors.darkBackground : AppColors.lightBackground;
+    final textColor = isDarkMode ? AppColors.darkText : AppColors.lightText;
+    final iconColor = isDarkMode ? AppColors.darkIcon : AppColors.lightIcon;
+    final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.lightSurface;
+
     return Scaffold(
-      backgroundColor: _style.backgroundColor,
+      backgroundColor: backgroundColor,
       appBar: AppBar(
-        backgroundColor: isBusinessTemplate ? _style.primaryColor : Colors.white,
+        backgroundColor: isBusinessTemplate ? _style.primaryColor : (isDarkMode ? AppColors.darkSurface : AppColors.lightBackground),
         elevation: 0,
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back_ios,
-            color: isBusinessTemplate ? Colors.white : Colors.black,
+            color: isBusinessTemplate ? Colors.white : iconColor,
           ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Resume Preview',
           style: TextStyle(
-            color: isBusinessTemplate ? Colors.white : Colors.black,
+            color: isBusinessTemplate ? Colors.white : textColor,
             fontSize: 16,
           ),
         ),
         iconTheme: IconThemeData(
-          color: isBusinessTemplate ? Colors.white : Colors.black,
+          color: isBusinessTemplate ? Colors.white : iconColor,
         ),
         centerTitle: true,
         actions: [
@@ -344,7 +385,7 @@ class _ResumePreviewScreenState extends State<ResumePreviewScreen> {
           IconButton(
             icon: Icon(
               Icons.share,
-              color: isBusinessTemplate ? Colors.white : Colors.black,
+              color: isBusinessTemplate ? Colors.white : iconColor,
             ),
             onPressed: _isGeneratingPdf ? null : _sharePdf,
           ),
@@ -361,7 +402,7 @@ class _ResumePreviewScreenState extends State<ResumePreviewScreen> {
                 ),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Colors.white, // Resume preview always white for better readability
                     boxShadow: [
                       BoxShadow(
                         color: _style.shadowColor,
@@ -385,7 +426,7 @@ class _ResumePreviewScreenState extends State<ResumePreviewScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: surfaceColor,
               boxShadow: [
                 BoxShadow(
                   color: _style.shadowColor,
@@ -403,8 +444,8 @@ class _ResumePreviewScreenState extends State<ResumePreviewScreen> {
                     padding: const EdgeInsets.only(right: 8.0),
                     child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.grey[200],
-                        foregroundColor: Colors.black87,
+                        backgroundColor: isDarkMode ? Colors.grey[800] : Colors.grey[200],
+                        foregroundColor: isDarkMode ? Colors.white70 : Colors.black87,
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -415,7 +456,7 @@ class _ResumePreviewScreenState extends State<ResumePreviewScreen> {
                       label: Text(
                         'Edit',
                         style: TextStyle(
-                          color: Colors.black87,
+                          color: isDarkMode ? Colors.white70 : Colors.black87,
                           fontSize: 16,
                           fontWeight: FontWeight.w500,
                         ),
@@ -430,7 +471,7 @@ class _ResumePreviewScreenState extends State<ResumePreviewScreen> {
                     padding: const EdgeInsets.only(left: 8.0),
                     child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: _style.buttonColor,
+                        backgroundColor: AppColors.primaryBlue,
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -439,18 +480,22 @@ class _ResumePreviewScreenState extends State<ResumePreviewScreen> {
                       onPressed: _isGeneratingPdf ? null : _downloadPdf,
                       icon: _isGeneratingPdf
                           ? SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor:
-                          AlwaysStoppedAnimation<Color>(Colors.white),
-                        ),
-                      )
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            )
                           : const Icon(Icons.download, size: 20),
                       label: Text(
                         _isGeneratingPdf ? 'Processing...' : 'Download',
-                        style: _style.buttonTextStyle,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
                   ),
@@ -490,3 +535,4 @@ class TemplateStyle {
     required this.shadowColor,
   });
 }
+

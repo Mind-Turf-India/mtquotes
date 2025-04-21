@@ -10,10 +10,14 @@ import 'package:mtquotes/screens/User_Home/components/Resume/resume_preview.dart
 import 'package:mtquotes/screens/User_Home/components/Resume/resume_selection.dart';
 import 'package:mtquotes/screens/User_Home/home_screen.dart';
 
+import 'package:mtquotes/utils/app_colors.dart'; // Import app colors
+
+
 class Step3Screen extends BaseStepScreen {
   final Step1Data step1Data;
   final Step2Data step2Data;
   final String resumeId; // Changed from String? to String (required)
+
 
   const Step3Screen({
     Key? key,
@@ -22,9 +26,11 @@ class Step3Screen extends BaseStepScreen {
     required this.resumeId, // Made resumeId required
   }) : super(key: key, currentStep: 3);
 
+
   @override
   State<Step3Screen> createState() => _Step3ScreenState();
 }
+
 
 class _Step3ScreenState extends BaseStepScreenState<Step3Screen> {
   // Controllers for skills
@@ -34,20 +40,25 @@ class _Step3ScreenState extends BaseStepScreenState<Step3Screen> {
     TextEditingController()
   ];
 
+
   // Controllers for languages
   final List<TextEditingController> _languageControllers = [
     TextEditingController()
   ];
 
+
   // Selected template
   String _selectedTemplate = 'modern'; // Default template
+
 
   // Firebase instances
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
+
   bool _isLoading = false;
   bool _isDataLoaded = false;
+
 
   @override
   void initState() {
@@ -55,6 +66,15 @@ class _Step3ScreenState extends BaseStepScreenState<Step3Screen> {
     // Fetch existing resume data when the screen initializes
     _fetchResumeData();
   }
+
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Get the theme mode
+    isDarkMode = Theme.of(context).brightness == Brightness.dark;
+  }
+
 
   @override
   void dispose() {
@@ -68,11 +88,13 @@ class _Step3ScreenState extends BaseStepScreenState<Step3Screen> {
     super.dispose();
   }
 
+
   Future<void> _fetchResumeData() async {
     try {
       setState(() {
         _isLoading = true;
       });
+
 
       // Get current user
       final User? currentUser = _auth.currentUser;
@@ -80,8 +102,10 @@ class _Step3ScreenState extends BaseStepScreenState<Step3Screen> {
         throw Exception('User not authenticated');
       }
 
+
       // Format user email for document ID (replace . with _)
       final String userId = currentUser.email!.replaceAll('.', '_');
+
 
       // Fetch resume data using the resumeId passed from previous screen
       final docSnapshot = await _firestore
@@ -91,18 +115,22 @@ class _Step3ScreenState extends BaseStepScreenState<Step3Screen> {
           .doc(widget.resumeId)
           .get();
 
+
       if (docSnapshot.exists) {
         final data = docSnapshot.data()!;
+
 
         // Populate skills if available
         if (data.containsKey('skills') && data['skills'] is List) {
           final skills = List<String>.from(data['skills']);
+
 
           // Clear existing controllers and create new ones for each skill
           for (var controller in _skillControllers) {
             controller.dispose();
           }
           _skillControllers.clear();
+
 
           if (skills.isNotEmpty) {
             for (var skill in skills) {
@@ -117,15 +145,18 @@ class _Step3ScreenState extends BaseStepScreenState<Step3Screen> {
           }
         }
 
+
         // Populate languages if available
         if (data.containsKey('languages') && data['languages'] is List) {
           final languages = List<String>.from(data['languages']);
+
 
           // Clear existing controllers and create new ones for each language
           for (var controller in _languageControllers) {
             controller.dispose();
           }
           _languageControllers.clear();
+
 
           if (languages.isNotEmpty) {
             for (var language in languages) {
@@ -138,6 +169,7 @@ class _Step3ScreenState extends BaseStepScreenState<Step3Screen> {
           }
         }
 
+
         // Set selected template if available
         if (data.containsKey('templateType') && data['templateType'] is String) {
           setState(() {
@@ -146,9 +178,11 @@ class _Step3ScreenState extends BaseStepScreenState<Step3Screen> {
         }
       }
 
+
       setState(() {
         _isDataLoaded = true;
       });
+
 
     } catch (e) {
       // Handle any errors
@@ -168,12 +202,14 @@ class _Step3ScreenState extends BaseStepScreenState<Step3Screen> {
     });
   }
 
+
   // Function to add a new language field
   void _addLanguage() {
     setState(() {
       _languageControllers.add(TextEditingController());
     });
   }
+
 
   // Function to select template
   void _selectTemplate() async {
@@ -190,6 +226,7 @@ class _Step3ScreenState extends BaseStepScreenState<Step3Screen> {
       ),
     );
 
+
     if (result != null && result is String) {
       setState(() {
         _selectedTemplate = result;
@@ -197,8 +234,7 @@ class _Step3ScreenState extends BaseStepScreenState<Step3Screen> {
     }
   }
 
-  // UPDATED: Function to save resume data to Firebase
-  // This now simply updates the existing document rather than creating a new one
+
   // UPDATED: Function to save resume data to Firebase (only updates existing document)
   Future<void> _saveResumeToFirebase() async {
     try {
@@ -208,8 +244,10 @@ class _Step3ScreenState extends BaseStepScreenState<Step3Screen> {
         throw Exception('User not authenticated');
       }
 
+
       // Format user email for document ID (replace . with _)
       final String userId = currentUser.email!.replaceAll('.', '_');
+
 
       // Collect data from Step 3
       final List<String> skills = _skillControllers
@@ -217,10 +255,12 @@ class _Step3ScreenState extends BaseStepScreenState<Step3Screen> {
           .where((s) => s.isNotEmpty)
           .toList();
 
+
       final List<String> languages = _languageControllers
           .map((c) => c.text)
           .where((s) => s.isNotEmpty)
           .toList();
+
 
       // Create a map with just the fields we want to update
       final Map<String, dynamic> updateData = {
@@ -230,6 +270,7 @@ class _Step3ScreenState extends BaseStepScreenState<Step3Screen> {
         'updatedAt': DateTime.now().toIso8601String(),
       };
 
+
       // Update the existing document with the new skills and languages data
       await _firestore
           .collection('users')
@@ -238,10 +279,12 @@ class _Step3ScreenState extends BaseStepScreenState<Step3Screen> {
           .doc(widget.resumeId) // Use the same resumeId passed from Step2
           .update(updateData);
 
+
     } catch (e) {
       throw Exception('Failed to save resume: $e');
     }
   }
+
 
   // UPDATED: Function to create resume
   void _createResume() async {
@@ -250,25 +293,36 @@ class _Step3ScreenState extends BaseStepScreenState<Step3Screen> {
         _isLoading = true;
       });
 
+
       try {
         // Show loading dialog
         showDialog(
           context: context,
           barrierDismissible: false,
-          builder: (context) => const AlertDialog(
+          builder: (context) => AlertDialog(
+            backgroundColor: AppColors.getSurfaceColor(isDarkMode),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 16),
-                Text('Creating your resume...'),
+                CircularProgressIndicator(
+                  color: AppColors.primaryBlue,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Creating your resume...',
+                  style: TextStyle(
+                    color: AppColors.getTextColor(isDarkMode),
+                  ),
+                ),
               ],
             ),
           ),
         );
 
+
         // Save the skills and languages data to the existing document without creating a new doc
         await _saveResumeToFirebase();
+
 
         // Get current user
         final User? currentUser = _auth.currentUser;
@@ -276,8 +330,10 @@ class _Step3ScreenState extends BaseStepScreenState<Step3Screen> {
           throw Exception('User not authenticated');
         }
 
+
         // Format user email for document ID (replace . with _)
         final String userId = currentUser.email!.replaceAll('.', '_');
+
 
         // Fetch the complete resume data from Firestore using the existing resumeId
         final docSnapshot = await _firestore
@@ -287,17 +343,21 @@ class _Step3ScreenState extends BaseStepScreenState<Step3Screen> {
             .doc(widget.resumeId)
             .get();
 
+
         if (!docSnapshot.exists) {
           throw Exception('Resume not found');
         }
 
+
         // Convert the document data to a ResumeData object
         final resumeData = ResumeData.fromMap(docSnapshot.data()!);
+
 
         // Close loading dialog
         if (Navigator.canPop(context)) {
           Navigator.pop(context);
         }
+
 
         // Navigate to the ResumePreviewScreen with the complete data
         if (!mounted) return;
@@ -311,21 +371,37 @@ class _Step3ScreenState extends BaseStepScreenState<Step3Screen> {
           ),
         );
 
+
       } catch (e) {
         // Close loading dialog if still open
         if (Navigator.canPop(context)) {
           Navigator.pop(context);
         }
 
+
         // Show error dialog
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text('Error'),
-            content: Text('Failed to create resume: $e'),
+            backgroundColor: AppColors.getSurfaceColor(isDarkMode),
+            title: Text(
+              'Error',
+              style: TextStyle(
+                color: AppColors.getTextColor(isDarkMode),
+              ),
+            ),
+            content: Text(
+              'Failed to create resume: $e',
+              style: TextStyle(
+                color: AppColors.getTextColor(isDarkMode),
+              ),
+            ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.primaryBlue,
+                ),
                 child: const Text('OK'),
               ),
             ],
@@ -339,6 +415,7 @@ class _Step3ScreenState extends BaseStepScreenState<Step3Screen> {
     }
   }
 
+
   @override
   Widget buildStepContent() {
     return SingleChildScrollView(
@@ -349,15 +426,16 @@ class _Step3ScreenState extends BaseStepScreenState<Step3Screen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Skills Section
-            const Text(
+            Text(
               'Skills',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: Colors.black87,
+                color: AppColors.getTextColor(isDarkMode),
               ),
             ),
             const SizedBox(height: 16),
+
 
             // Skills Input Fields
             for (int i = 0; i < _skillControllers.length; i++)
@@ -365,21 +443,22 @@ class _Step3ScreenState extends BaseStepScreenState<Step3Screen> {
                 padding: const EdgeInsets.only(bottom: 12),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF5F5F5),
+                    color: isDarkMode ? AppColors.darkSurface : const Color(0xFFF5F5F5),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: TextField(
                     controller: _skillControllers[i],
-                    style: const TextStyle(color: Colors.black),
+                    style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
                     decoration: InputDecoration(
                       hintText: 'Add skill ${i + 1}',
-                      hintStyle: const TextStyle(color: Colors.grey),
+                      hintStyle: TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode)),
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     ),
                   ),
                 ),
               ),
+
 
             // Add Skill Button
             GestureDetector(
@@ -390,19 +469,19 @@ class _Step3ScreenState extends BaseStepScreenState<Step3Screen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
+                    Text(
                       'Add one more skill',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
-                        color: Colors.black87,
+                        color: AppColors.getTextColor(isDarkMode),
                       ),
                     ),
                     Container(
                       width: 28,
                       height: 28,
                       decoration: BoxDecoration(
-                        color: Colors.black,
+                        color: AppColors.primaryBlue,
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: const Icon(
@@ -416,18 +495,21 @@ class _Step3ScreenState extends BaseStepScreenState<Step3Screen> {
               ),
             ),
 
+
             const SizedBox(height: 32),
 
+
             // Languages Section
-            const Text(
+            Text(
               'Languages',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: Colors.black87,
+                color: AppColors.getTextColor(isDarkMode),
               ),
             ),
             const SizedBox(height: 16),
+
 
             // Language Input Fields
             for (int i = 0; i < _languageControllers.length; i++)
@@ -435,21 +517,22 @@ class _Step3ScreenState extends BaseStepScreenState<Step3Screen> {
                 padding: const EdgeInsets.only(bottom: 12),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF5F5F5),
+                    color: isDarkMode ? AppColors.darkSurface : const Color(0xFFF5F5F5),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: TextField(
                     controller: _languageControllers[i],
-                    style: const TextStyle(color: Colors.black),
+                    style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
                     decoration: InputDecoration(
                       hintText: 'Add language ${i + 1}',
-                      hintStyle: const TextStyle(color: Colors.grey),
+                      hintStyle: TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode)),
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     ),
                   ),
                 ),
               ),
+
 
             // Add Language Button
             GestureDetector(
@@ -460,19 +543,19 @@ class _Step3ScreenState extends BaseStepScreenState<Step3Screen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
+                    Text(
                       'Add one more language',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
-                        color: Colors.black87,
+                        color: AppColors.getTextColor(isDarkMode),
                       ),
                     ),
                     Container(
                       width: 28,
                       height: 28,
                       decoration: BoxDecoration(
-                        color: Colors.black,
+                        color: AppColors.primaryBlue,
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: const Icon(
@@ -486,33 +569,41 @@ class _Step3ScreenState extends BaseStepScreenState<Step3Screen> {
               ),
             ),
 
+
             const SizedBox(height: 32),
+
 
             // Template Selection Section
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.blue[50],
+                color: isDarkMode
+                    ? AppColors.primaryBlue.withOpacity(0.2)
+                    : Colors.blue[50],
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.blue[200]!),
+                border: Border.all(
+                  color: isDarkMode
+                      ? AppColors.primaryBlue.withOpacity(0.5)
+                      : Colors.blue[200]!,
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Select a Resume Template',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: Colors.black87,
+                      color: AppColors.getTextColor(isDarkMode),
                     ),
                   ),
                   const SizedBox(height: 12),
-                  const Text(
+                  Text(
                     'Choose a professional design template for your resume.',
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.black87,
+                      color: AppColors.getTextColor(isDarkMode),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -521,7 +612,7 @@ class _Step3ScreenState extends BaseStepScreenState<Step3Screen> {
                     child: ElevatedButton(
                       onPressed: _selectTemplate,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue[700],
+                        backgroundColor: AppColors.primaryBlue,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -530,7 +621,7 @@ class _Step3ScreenState extends BaseStepScreenState<Step3Screen> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.style, size: 20),
+                          const Icon(Icons.style, size: 20, color: Colors.white),
                           const SizedBox(width: 8),
                           Text(
                             'Selected Template: ${_selectedTemplate}',
@@ -548,7 +639,9 @@ class _Step3ScreenState extends BaseStepScreenState<Step3Screen> {
               ),
             ),
 
+
             const SizedBox(height: 32),
+
 
             // Create Resume Button
             SizedBox(
@@ -557,21 +650,29 @@ class _Step3ScreenState extends BaseStepScreenState<Step3Screen> {
               child: ElevatedButton(
                 onPressed: _isLoading ? null : _createResume,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2196F3),
+                  backgroundColor: AppColors.primaryBlue,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  disabledBackgroundColor: Colors.grey,
+                  disabledBackgroundColor: AppColors.primaryBlue.withOpacity(0.6),
                 ),
                 child: _isLoading
-                    ? const CircularProgressIndicator(color: Colors.white)
+                    ? SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
                     : const Text(
-                  'Create Resume',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+                        'Create Resume',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.white,
+                        ),
+                      ),
               ),
             ),
           ],
@@ -580,6 +681,7 @@ class _Step3ScreenState extends BaseStepScreenState<Step3Screen> {
     );
   }
 
+
   // Override to remove breadcrumb navigation
   @override
   Widget buildStepIndicator() {
@@ -587,3 +689,6 @@ class _Step3ScreenState extends BaseStepScreenState<Step3Screen> {
     return Container();
   }
 }
+
+
+

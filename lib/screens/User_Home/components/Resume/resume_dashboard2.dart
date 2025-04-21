@@ -8,9 +8,13 @@ import 'package:mtquotes/screens/User_Home/components/Resume/resume_dashboard.da
 import 'package:mtquotes/screens/User_Home/components/Resume/resume_dashboard3.dart';
 import 'package:mtquotes/screens/User_Home/components/Resume/resume_data.dart';
 
+import 'package:mtquotes/utils/app_colors.dart'; // Import app colors
+
+
 class Step2Screen extends StatefulWidget {
   final Step1Data step1Data;
   final String resumeId;
+
 
   const Step2Screen({
     Key? key,
@@ -18,16 +22,21 @@ class Step2Screen extends StatefulWidget {
     required this.resumeId,
   }) : super(key: key);
 
+
   @override
   State<Step2Screen> createState() => _Step2ScreenState();
 }
+
 
 class _Step2ScreenState extends State<Step2Screen> {
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
   bool _isLoadingData = true; // Added to show loading state while fetching data
+  bool isDarkMode = false; // Add dark mode tracking
+  
   // Add this with your other state variables
   int _currentWordCount = 0;
+
 
   // Controllers for date fields
   final List<TextEditingController> _startDateControllers = [
@@ -49,16 +58,20 @@ class _Step2ScreenState extends State<Step2Screen> {
     TextEditingController()
   ];
 
+
   // List to track employment blocks
   final List<Widget> _employmentBlocks = [];
 
+
   // Text controller for professional summary
   final TextEditingController _summaryController = TextEditingController();
+
 
   // Firebase instances
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   String? _userId;
+
 
   @override
   void initState() {
@@ -70,12 +83,22 @@ class _Step2ScreenState extends State<Step2Screen> {
     _fetchResumeData();
   }
 
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Get the theme mode
+    isDarkMode = Theme.of(context).brightness == Brightness.dark;
+  }
+
+
   void _getUserId() {
     final User? user = _auth.currentUser;
     if (user != null) {
       _userId = user.email?.replaceAll('.', '_');
     }
   }
+
 
   // New method to fetch resume data from Firebase
   Future<void> _fetchResumeData() async {
@@ -86,6 +109,7 @@ class _Step2ScreenState extends State<Step2Screen> {
       return;
     }
 
+
     try {
       DocumentSnapshot resumeDoc = await _firestore
           .collection('users')
@@ -94,18 +118,22 @@ class _Step2ScreenState extends State<Step2Screen> {
           .doc(widget.resumeId)
           .get();
 
+
       if (resumeDoc.exists) {
         Map<String, dynamic> data = resumeDoc.data() as Map<String, dynamic>;
+
 
         // Populate professional summary
         if (data.containsKey('professionalSummary')) {
           _summaryController.text = data['professionalSummary'] ?? '';
         }
 
+
         // Populate employment history
         if (data.containsKey('employmentHistory') &&
             data['employmentHistory'] is List) {
           List<dynamic> employmentHistory = data['employmentHistory'];
+
 
           // Clear existing controllers and blocks
           _startDateControllers.clear();
@@ -116,9 +144,11 @@ class _Step2ScreenState extends State<Step2Screen> {
           _descriptionControllers.clear();
           _employmentBlocks.clear();
 
+
           // Create new controllers and blocks for each employment entry
           for (int i = 0; i < employmentHistory.length; i++) {
             Map<String, dynamic> job = employmentHistory[i];
+
 
             // Create controllers for this job
             TextEditingController startDateController =
@@ -134,6 +164,7 @@ class _Step2ScreenState extends State<Step2Screen> {
             TextEditingController descriptionController =
                 TextEditingController(text: job['description'] ?? '');
 
+
             // Add controllers to lists
             _startDateControllers.add(startDateController);
             _endDateControllers.add(endDateController);
@@ -143,6 +174,7 @@ class _Step2ScreenState extends State<Step2Screen> {
             _descriptionControllers.add(descriptionController);
           }
 
+
           // Build employment blocks after adding all controllers
           setState(() {
             // This ensures the UI is updated with new blocks
@@ -150,6 +182,7 @@ class _Step2ScreenState extends State<Step2Screen> {
               _employmentBlocks.add(_buildEmploymentBlock(i));
             }
           });
+
 
           // If no employment history was found, add a default block
           if (employmentHistory.isEmpty) {
@@ -159,6 +192,7 @@ class _Step2ScreenState extends State<Step2Screen> {
             _employerControllers.add(TextEditingController());
             _locationControllers.add(TextEditingController());
             _descriptionControllers.add(TextEditingController());
+
 
             setState(() {
               _employmentBlocks.add(_buildEmploymentBlock(0));
@@ -177,6 +211,7 @@ class _Step2ScreenState extends State<Step2Screen> {
       });
     }
   }
+
 
   @override
   void dispose() {
@@ -203,6 +238,7 @@ class _Step2ScreenState extends State<Step2Screen> {
     super.dispose();
   }
 
+
   // Function to show date picker and update the text field
   Future<void> _selectDate(
       BuildContext context, TextEditingController controller) async {
@@ -212,7 +248,21 @@ class _Step2ScreenState extends State<Step2Screen> {
       initialDate: now,
       firstDate: DateTime(1900),
       lastDate: DateTime(2100),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: AppColors.primaryBlue,
+              onPrimary: Colors.white,
+              surface: AppColors.getSurfaceColor(isDarkMode),
+              onSurface: AppColors.getTextColor(isDarkMode),
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
+
 
     if (picked != null) {
       setState(() {
@@ -220,6 +270,7 @@ class _Step2ScreenState extends State<Step2Screen> {
       });
     }
   }
+
 
   // Function to add a new employment block
   void _addEmploymentBlock() {
@@ -234,6 +285,7 @@ class _Step2ScreenState extends State<Step2Screen> {
       _employmentBlocks.add(_buildEmploymentBlock(index));
     });
   }
+
 
   // Function to remove an employment block
   void _removeEmploymentBlock(int index) {
@@ -250,12 +302,13 @@ class _Step2ScreenState extends State<Step2Screen> {
     }
   }
 
+
   // Build a single employment block
   Widget _buildEmploymentBlock(int index) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF5F5F5),
+        color: isDarkMode ? AppColors.darkSurface : const Color(0xFFF5F5F5),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
@@ -263,9 +316,12 @@ class _Step2ScreenState extends State<Step2Screen> {
           // Header with expand/collapse and delete
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               border: Border(
-                bottom: BorderSide(color: Color(0xFFE0E0E0), width: 1),
+                bottom: BorderSide(
+                  color: AppColors.getDividerColor(isDarkMode),
+                  width: 1,
+                ),
               ),
             ),
             child: Row(
@@ -273,14 +329,17 @@ class _Step2ScreenState extends State<Step2Screen> {
               children: [
                 Text(
                   'Employment History #${index + 1}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black,
+                    color: AppColors.getTextColor(isDarkMode),
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.delete_outline, color: Colors.black),
+                  icon: Icon(
+                    Icons.delete_outline,
+                    color: AppColors.getIconColor(isDarkMode),
+                  ),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                   onPressed: () => _removeEmploymentBlock(index),
@@ -288,6 +347,7 @@ class _Step2ScreenState extends State<Step2Screen> {
               ],
             ),
           ),
+
 
           // Employment details form
           Padding(
@@ -301,17 +361,17 @@ class _Step2ScreenState extends State<Step2Screen> {
                     Expanded(
                       child: Container(
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: AppColors.getSurfaceColor(isDarkMode),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: TextField(
                           controller: _jobTitleControllers[index],
-                          style: const TextStyle(color: Colors.black),
-                          decoration: const InputDecoration(
+                          style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+                          decoration: InputDecoration(
                             hintText: 'Job Title',
-                            hintStyle: TextStyle(color: Colors.grey),
+                            hintStyle: TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode)),
                             border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(
+                            contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 16, vertical: 14),
                           ),
                         ),
@@ -319,21 +379,22 @@ class _Step2ScreenState extends State<Step2Screen> {
                     ),
                     const SizedBox(width: 16),
 
+
                     // Employer
                     Expanded(
                       child: Container(
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: AppColors.getSurfaceColor(isDarkMode),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: TextField(
                           controller: _employerControllers[index],
-                          style: const TextStyle(color: Colors.black),
-                          decoration: const InputDecoration(
+                          style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+                          decoration: InputDecoration(
                             hintText: 'Employer',
-                            hintStyle: TextStyle(color: Colors.grey),
+                            hintStyle: TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode)),
                             border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(
+                            contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 16, vertical: 14),
                           ),
                         ),
@@ -343,6 +404,7 @@ class _Step2ScreenState extends State<Step2Screen> {
                 ),
                 const SizedBox(height: 16),
 
+
                 // Start Date and End Date
                 Row(
                   children: [
@@ -350,7 +412,7 @@ class _Step2ScreenState extends State<Step2Screen> {
                     Expanded(
                       child: Container(
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: AppColors.getSurfaceColor(isDarkMode),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
@@ -359,19 +421,22 @@ class _Step2ScreenState extends State<Step2Screen> {
                               child: TextField(
                                 controller: _startDateControllers[index],
                                 readOnly: true,
-                                style: const TextStyle(color: Colors.black),
-                                decoration: const InputDecoration(
+                                style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+                                decoration: InputDecoration(
                                   hintText: 'Start Date',
-                                  hintStyle: TextStyle(color: Colors.grey),
+                                  hintStyle: TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode)),
                                   border: InputBorder.none,
-                                  contentPadding: EdgeInsets.symmetric(
+                                  contentPadding: const EdgeInsets.symmetric(
                                       horizontal: 16, vertical: 14),
                                 ),
                               ),
                             ),
                             IconButton(
-                              icon: const Icon(Icons.calendar_today,
-                                  color: Colors.grey, size: 20),
+                              icon: Icon(
+                                Icons.calendar_today,
+                                color: AppColors.getSecondaryTextColor(isDarkMode),
+                                size: 20
+                              ),
                               onPressed: () => _selectDate(
                                   context, _startDateControllers[index]),
                             ),
@@ -381,11 +446,12 @@ class _Step2ScreenState extends State<Step2Screen> {
                     ),
                     const SizedBox(width: 16),
 
+
                     // End Date
                     Expanded(
                       child: Container(
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: AppColors.getSurfaceColor(isDarkMode),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
@@ -394,19 +460,22 @@ class _Step2ScreenState extends State<Step2Screen> {
                               child: TextField(
                                 controller: _endDateControllers[index],
                                 readOnly: true,
-                                style: const TextStyle(color: Colors.black),
-                                decoration: const InputDecoration(
+                                style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+                                decoration: InputDecoration(
                                   hintText: 'End Date',
-                                  hintStyle: TextStyle(color: Colors.grey),
+                                  hintStyle: TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode)),
                                   border: InputBorder.none,
-                                  contentPadding: EdgeInsets.symmetric(
+                                  contentPadding: const EdgeInsets.symmetric(
                                       horizontal: 16, vertical: 14),
                                 ),
                               ),
                             ),
                             IconButton(
-                              icon: const Icon(Icons.calendar_today,
-                                  color: Colors.grey, size: 20),
+                              icon: Icon(
+                                Icons.calendar_today,
+                                color: AppColors.getSecondaryTextColor(isDarkMode),
+                                size: 20
+                              ),
                               onPressed: () => _selectDate(
                                   context, _endDateControllers[index]),
                             ),
@@ -418,42 +487,44 @@ class _Step2ScreenState extends State<Step2Screen> {
                 ),
                 const SizedBox(height: 16),
 
+
                 // Location
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AppColors.getSurfaceColor(isDarkMode),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: TextField(
                     controller: _locationControllers[index],
-                    style: const TextStyle(color: Colors.black),
-                    decoration: const InputDecoration(
+                    style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+                    decoration: InputDecoration(
                       hintText: 'Location',
-                      hintStyle: TextStyle(color: Colors.grey),
+                      hintStyle: TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode)),
                       border: InputBorder.none,
                       contentPadding:
-                          EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     ),
                   ),
                 ),
                 const SizedBox(height: 16),
 
+
                 // Description
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AppColors.getSurfaceColor(isDarkMode),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: TextField(
                     controller: _descriptionControllers[index],
-                    style: const TextStyle(color: Colors.black),
+                    style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
                     maxLines: 4,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       hintText: 'Description of your role in 100 words...',
-                      hintStyle: TextStyle(color: Colors.grey),
+                      hintStyle: TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode)),
                       border: InputBorder.none,
                       contentPadding:
-                          EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     ),
                   ),
                 ),
@@ -465,13 +536,18 @@ class _Step2ScreenState extends State<Step2Screen> {
     );
   }
 
+
   // Breadcrumb widget for Step 2 (with disabled navigation for Step 3)
   Widget _buildBreadcrumb(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
+        color: AppColors.getSurfaceColor(isDarkMode),
         border: Border(
-          bottom: BorderSide(color: Color(0xFFEEEEEE), width: 1),
+          bottom: BorderSide(
+            color: AppColors.getDividerColor(isDarkMode),
+            width: 1,
+          ),
         ),
       ),
       child: Row(
@@ -480,35 +556,44 @@ class _Step2ScreenState extends State<Step2Screen> {
             onTap: () {
               Navigator.pop(context); // Only keeping back navigation
             },
-            child: const Text(
+            child: Text(
               'Step 1',
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.grey,
+                color: AppColors.getSecondaryTextColor(isDarkMode),
               ),
             ),
           ),
-          const Icon(Icons.chevron_right, color: Colors.grey, size: 16),
-          const Text(
+          Icon(
+            Icons.chevron_right,
+            color: AppColors.getSecondaryTextColor(isDarkMode),
+            size: 16
+          ),
+          Text(
             'Step 2',
             style: TextStyle(
               fontSize: 14,
-              color: Color(0xFF2196F3),
+              color: AppColors.primaryBlue,
               fontWeight: FontWeight.w500,
             ),
           ),
-          const Icon(Icons.chevron_right, color: Colors.grey, size: 16),
-          const Text(
+          Icon(
+            Icons.chevron_right,
+            color: AppColors.getSecondaryTextColor(isDarkMode),
+            size: 16
+          ),
+          Text(
             'Step 3',
             style: TextStyle(
               fontSize: 14,
-              color: Colors.grey,
+              color: AppColors.getSecondaryTextColor(isDarkMode),
             ),
           ),
         ],
       ),
     );
   }
+
 
   // Method to save resume data to Firebase
   Future<void> _saveDataToFirebase() async {
@@ -519,9 +604,11 @@ class _Step2ScreenState extends State<Step2Screen> {
       return;
     }
 
+
     setState(() {
       _isLoading = true;
     });
+
 
     try {
       // Create employment objects from form data
@@ -537,11 +624,13 @@ class _Step2ScreenState extends State<Step2Screen> {
         ));
       }
 
+
       // Create Step2Data
       final step2Data = Step2Data(
         summary: _summaryController.text,
         employment: employmentList,
       );
+
 
       // Create a map with just the fields we want to update
       final Map<String, dynamic> updateData = {
@@ -559,6 +648,7 @@ class _Step2ScreenState extends State<Step2Screen> {
         'updatedAt': DateTime.now().toIso8601String(),
       };
 
+
       // Update the existing document using the resumeId passed from Step1
       await _firestore
           .collection('users')
@@ -566,6 +656,7 @@ class _Step2ScreenState extends State<Step2Screen> {
           .collection('resume')
           .doc(widget.resumeId)
           .update(updateData);
+
 
       // Navigate to Step3Screen with the data and resumeId
       Navigator.push(
@@ -589,28 +680,41 @@ class _Step2ScreenState extends State<Step2Screen> {
     }
   }
 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: AppColors.getBackgroundColor(isDarkMode),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.getSurfaceColor(isDarkMode),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
+          icon: Icon(
+            Icons.arrow_back_ios,
+            color: AppColors.getIconColor(isDarkMode),
+          ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Dashboard',
-          style: TextStyle(color: Colors.black, fontSize: 16),
+          style: TextStyle(
+            color: AppColors.getTextColor(isDarkMode),
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
       body: _isLoadingData
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(
+              child: CircularProgressIndicator(
+                color: AppColors.primaryBlue,
+              ),
+            )
           : Column(
               children: [
                 // Add the breadcrumb navigation
                 _buildBreadcrumb(context),
+
 
                 // Content goes in a scrollable view
                 Expanded(
@@ -622,15 +726,16 @@ class _Step2ScreenState extends State<Step2Screen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           // Professional Summary Section
-                          const Text(
+                          Text(
                             'Professional Summary',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
-                              color: Colors.black87,
+                              color: AppColors.getTextColor(isDarkMode),
                             ),
                           ),
                           const SizedBox(height: 16),
+
 
                           // Professional Summary Text Area
                           Column(
@@ -638,20 +743,20 @@ class _Step2ScreenState extends State<Step2Screen> {
                             children: [
                               Container(
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFF5F5F5),
+                                  color: isDarkMode ? AppColors.darkSurface : const Color(0xFFF5F5F5),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: TextField(
                                   controller: _summaryController,
-                                  style: const TextStyle(color: Colors.black),
+                                  style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
                                   maxLines: 5,
                                   maxLength: 100, // Built-in character limit
-                                  decoration: const InputDecoration(
+                                  decoration: InputDecoration(
                                     hintText:
                                         'Write here (maximum 100 characters)...',
-                                    hintStyle: TextStyle(color: Colors.grey),
+                                    hintStyle: TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode)),
                                     border: InputBorder.none,
-                                    contentPadding: EdgeInsets.all(16),
+                                    contentPadding: const EdgeInsets.all(16),
                                     // Hide the default counter
                                     counterText: '',
                                   ),
@@ -668,7 +773,7 @@ class _Step2ScreenState extends State<Step2Screen> {
                                   style: TextStyle(
                                     color: _summaryController.text.length >= 80
                                         ? Colors.red
-                                        : Colors.grey,
+                                        : AppColors.getSecondaryTextColor(isDarkMode),
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
                                   ),
@@ -678,20 +783,22 @@ class _Step2ScreenState extends State<Step2Screen> {
                             ],
                           ),
                           // Employment History Section
-                          const Text(
+                          Text(
                             'Employment History',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
-                              color: Colors.black87,
+                              color: AppColors.getTextColor(isDarkMode),
                             ),
                           ),
                           const SizedBox(height: 16),
+
 
                           // Dynamic Employment Blocks
                           if (_employmentBlocks.isNotEmpty)
                             ...List.generate(_employmentBlocks.length,
                                 (index) => _employmentBlocks[index]),
+
 
                           // Add one more employment button
                           GestureDetector(
@@ -703,19 +810,19 @@ class _Step2ScreenState extends State<Step2Screen> {
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
                                 children: [
-                                  const Text(
+                                  Text(
                                     'Add one more employment',
                                     style: TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w500,
-                                      color: Colors.black87,
+                                      color: AppColors.getTextColor(isDarkMode),
                                     ),
                                   ),
                                   Container(
                                     width: 28,
                                     height: 28,
                                     decoration: BoxDecoration(
-                                      color: Colors.black,
+                                      color: AppColors.primaryBlue,
                                       borderRadius: BorderRadius.circular(4),
                                     ),
                                     child: const Icon(
@@ -729,7 +836,9 @@ class _Step2ScreenState extends State<Step2Screen> {
                             ),
                           ),
 
+
                           const SizedBox(height: 30),
+
 
                           // Next Button
                           SizedBox(
@@ -739,19 +848,27 @@ class _Step2ScreenState extends State<Step2Screen> {
                               onPressed:
                                   _isLoading ? null : _saveDataToFirebase,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF2196F3),
+                                backgroundColor: AppColors.primaryBlue,
+                                disabledBackgroundColor: AppColors.primaryBlue.withOpacity(0.6),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                               ),
                               child: _isLoading
-                                  ? const CircularProgressIndicator(
-                                      color: Colors.white)
+                                  ? SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        color: Colors.white,
+                                        strokeWidth: 2,
+                                      ),
+                                    )
                                   : const Text(
                                       'Next',
                                       style: TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.w500,
+                                        color: Colors.white,
                                       ),
                                     ),
                             ),
@@ -766,3 +883,6 @@ class _Step2ScreenState extends State<Step2Screen> {
     );
   }
 }
+
+
+

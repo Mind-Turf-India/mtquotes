@@ -9,6 +9,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:mtquotes/screens/User_Home/components/Resume/resume_dashboard2.dart';
 import 'package:mtquotes/screens/User_Home/components/Resume/resume_dashboard3.dart';
 import 'package:mtquotes/screens/User_Home/components/Resume/resume_data.dart';
+import 'package:mtquotes/utils/app_colors.dart';
 import 'package:path_provider/path_provider.dart';
 
 // Base class for all step screens to ensure consistent UI and navigation
@@ -24,6 +25,7 @@ abstract class BaseStepScreen extends StatefulWidget {
 // Base state class for all step screens
 abstract class BaseStepScreenState<T extends BaseStepScreen> extends State<T> {
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+  bool isDarkMode = false; // You can set this based on your app's theme mode
 
   // Navigate to specific step
   void navigateToStep(int step) {
@@ -63,10 +65,11 @@ abstract class BaseStepScreenState<T extends BaseStepScreen> extends State<T> {
   Widget buildBreadcrumb() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: AppColors.getSurfaceColor(isDarkMode),
         border: Border(
-          bottom: BorderSide(color: Color(0xFFEEEEEE), width: 1),
+          bottom: BorderSide(
+              color: AppColors.getDividerColor(isDarkMode), width: 1),
         ),
       ),
       child: Row(
@@ -78,15 +81,16 @@ abstract class BaseStepScreenState<T extends BaseStepScreen> extends State<T> {
               style: TextStyle(
                 fontSize: 16,
                 color: widget.currentStep == 1
-                    ? const Color(0xFF2196F3)
-                    : Colors.grey,
+                    ? AppColors.primaryBlue
+                    : AppColors.getSecondaryTextColor(isDarkMode),
                 fontWeight: widget.currentStep == 1
                     ? FontWeight.w500
                     : FontWeight.normal,
               ),
             ),
           ),
-          const Icon(Icons.chevron_right, color: Colors.grey, size: 20),
+          Icon(Icons.chevron_right,
+              color: AppColors.getSecondaryTextColor(isDarkMode), size: 20),
           GestureDetector(
             onTap: () => navigateToStep(2),
             child: Text(
@@ -94,15 +98,16 @@ abstract class BaseStepScreenState<T extends BaseStepScreen> extends State<T> {
               style: TextStyle(
                 fontSize: 16,
                 color: widget.currentStep == 2
-                    ? const Color(0xFF2196F3)
-                    : Colors.grey,
+                    ? AppColors.primaryBlue
+                    : AppColors.getSecondaryTextColor(isDarkMode),
                 fontWeight: widget.currentStep == 2
                     ? FontWeight.w500
                     : FontWeight.normal,
               ),
             ),
           ),
-          const Icon(Icons.chevron_right, color: Colors.grey, size: 20),
+          Icon(Icons.chevron_right,
+              color: AppColors.getSecondaryTextColor(isDarkMode), size: 20),
           GestureDetector(
             onTap: () => navigateToStep(3),
             child: Text(
@@ -110,8 +115,8 @@ abstract class BaseStepScreenState<T extends BaseStepScreen> extends State<T> {
               style: TextStyle(
                 fontSize: 16,
                 color: widget.currentStep == 3
-                    ? const Color(0xFF2196F3)
-                    : Colors.grey,
+                    ? AppColors.primaryBlue
+                    : AppColors.getSecondaryTextColor(isDarkMode),
                 fontWeight: widget.currentStep == 3
                     ? FontWeight.w500
                     : FontWeight.normal,
@@ -126,25 +131,30 @@ abstract class BaseStepScreenState<T extends BaseStepScreen> extends State<T> {
   // Shared app bar with consistent styling
   PreferredSizeWidget buildAppBar() {
     return AppBar(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.getSurfaceColor(isDarkMode),
       elevation: 0,
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
+        icon: Icon(Icons.arrow_back_ios,
+            color: AppColors.getIconColor(isDarkMode)),
         onPressed: () => Navigator.pop(context),
       ),
-      title: const Text(
+      title: Text(
         'Dashboard',
-        style: TextStyle(color: Colors.black, fontSize: 16),
+        style: TextStyle(
+            color: AppColors.getTextColor(isDarkMode),
+            fontSize: 18,
+            fontWeight: FontWeight.bold),
       ),
-      
     );
   }
 
   // Base scaffold implementation
   @override
   Widget build(BuildContext context) {
+    // You can get the isDarkMode value from your theme provider or MediaQuery
+    // For example: isDarkMode = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: AppColors.getBackgroundColor(isDarkMode),
       appBar: buildAppBar(),
       body: Column(
         children: [
@@ -164,9 +174,9 @@ abstract class BaseStepScreenState<T extends BaseStepScreen> extends State<T> {
 // Step 1: Personal Details Screen
 class PersonalDetailsScreen extends BaseStepScreen {
   final String initialTemplateType;
-  
+
   const PersonalDetailsScreen({
-    Key? key, 
+    Key? key,
     this.initialTemplateType = 'modern', // Default template if none provided
   }) : super(key: key, currentStep: 1);
 
@@ -232,10 +242,12 @@ class _PersonalDetailsScreenState
   @override
   void initState() {
     super.initState();
-     // Initialize with the passed template
+    // // Check if dark mode is active
+    // isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
+    // Initialize with the passed template
     _selectedTemplateType = widget.initialTemplateType;
     _educationBlocks.add(_buildEducationBlock(0));
-    
 
     // Pre-fill email if user is signed in
     if (_auth.currentUser != null) {
@@ -244,7 +256,13 @@ class _PersonalDetailsScreenState
     _fetchExistingResumeData();
   }
 
-  // Add this to make sure you dispose of all controllers
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Move theme detection to didChangeDependencies which is safe to access context
+    isDarkMode = Theme.of(context).brightness == Brightness.dark;
+  }
+
   @override
   void dispose() {
     _roleController.dispose();
@@ -300,20 +318,26 @@ class _PersonalDetailsScreenState
       String userId = userEmail.replaceAll('.', '_');
 
       // Reference to user's resume collection
-      final resumeCollection = _firestore.collection('users').doc(userId).collection('resume');
+      final resumeCollection =
+          _firestore.collection('users').doc(userId).collection('resume');
 
       // Get the latest resume document
-      final querySnapshot = await resumeCollection.orderBy('updatedAt', descending: true).limit(1).get();
+      final querySnapshot = await resumeCollection
+          .orderBy('updatedAt', descending: true)
+          .limit(1)
+          .get();
 
       if (querySnapshot.docs.isNotEmpty) {
         final resumeData = querySnapshot.docs.first.data();
 
         // Update template type
-        _selectedTemplateType = resumeData['templateType'] ?? widget.initialTemplateType;
+        _selectedTemplateType =
+            resumeData['templateType'] ?? widget.initialTemplateType;
 
         // Fill personal info fields
         if (resumeData.containsKey('personalInfo')) {
-          final personalInfo = resumeData['personalInfo'] as Map<String, dynamic>;
+          final personalInfo =
+              resumeData['personalInfo'] as Map<String, dynamic>;
           _roleController.text = personalInfo['role'] ?? '';
           _firstNameController.text = personalInfo['firstName'] ?? '';
           _lastNameController.text = personalInfo['lastName'] ?? '';
@@ -325,10 +349,12 @@ class _PersonalDetailsScreenState
           _postalCodeController.text = personalInfo['postalCode'] ?? '';
 
           // Get profile image if exists
-          if (personalInfo['profileImagePath'] != null && personalInfo['profileImagePath'] != '') {
+          if (personalInfo['profileImagePath'] != null &&
+              personalInfo['profileImagePath'] != '') {
             try {
               // Here we're using http package to download the image
-              final response = await http.get(Uri.parse(personalInfo['profileImagePath']));
+              final response =
+                  await http.get(Uri.parse(personalInfo['profileImagePath']));
               final bytes = response.bodyBytes;
 
               // Create a temporary file
@@ -346,7 +372,8 @@ class _PersonalDetailsScreenState
         }
 
         // Fill education data
-        if (resumeData.containsKey('education') && resumeData['education'] is List) {
+        if (resumeData.containsKey('education') &&
+            resumeData['education'] is List) {
           final educationList = resumeData['education'] as List;
 
           // Clear the initial education block
@@ -368,13 +395,20 @@ class _PersonalDetailsScreenState
                 final index = _educationBlocks.length;
 
                 // Add controllers
-                _startDateControllers.add(TextEditingController(text: education['startDate'] ?? ''));
-                _endDateControllers.add(TextEditingController(text: education['endDate'] ?? ''));
-                _educationTitleControllers.add(TextEditingController(text: education['title'] ?? ''));
-                _schoolControllers.add(TextEditingController(text: education['school'] ?? ''));
-                _levelControllers.add(TextEditingController(text: education['level'] ?? ''));
-                _locationControllers.add(TextEditingController(text: education['location'] ?? ''));
-                _descriptionControllers.add(TextEditingController(text: education['description'] ?? ''));
+                _startDateControllers.add(
+                    TextEditingController(text: education['startDate'] ?? ''));
+                _endDateControllers.add(
+                    TextEditingController(text: education['endDate'] ?? ''));
+                _educationTitleControllers
+                    .add(TextEditingController(text: education['title'] ?? ''));
+                _schoolControllers.add(
+                    TextEditingController(text: education['school'] ?? ''));
+                _levelControllers
+                    .add(TextEditingController(text: education['level'] ?? ''));
+                _locationControllers.add(
+                    TextEditingController(text: education['location'] ?? ''));
+                _descriptionControllers.add(TextEditingController(
+                    text: education['description'] ?? ''));
 
                 // Add education block widget
                 _educationBlocks.add(_buildEducationBlock(index));
@@ -409,7 +443,6 @@ class _PersonalDetailsScreenState
     }
   }
 
-
   // Function to pick image from gallery
   Future<void> _pickImage() async {
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
@@ -429,6 +462,19 @@ class _PersonalDetailsScreenState
       initialDate: now,
       firstDate: DateTime(1900),
       lastDate: DateTime(2100),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: AppColors.primaryBlue,
+              onPrimary: Colors.white,
+              surface: AppColors.getSurfaceColor(isDarkMode),
+              onSurface: AppColors.getTextColor(isDarkMode),
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
 
     if (picked != null) {
@@ -505,14 +551,14 @@ class _PersonalDetailsScreenState
       // Convert Education objects to a list of maps for Firestore
       List<Map<String, dynamic>> educationList = step1Data.education
           .map((education) => {
-        'title': education.title,
-        'school': education.school,
-        'level': education.level,
-        'startDate': education.startDate,
-        'endDate': education.endDate,
-        'location': education.location,
-        // 'description': education.description,
-      })
+                'title': education.title,
+                'school': education.school,
+                'level': education.level,
+                'startDate': education.startDate,
+                'endDate': education.endDate,
+                'location': education.location,
+                // 'description': education.description,
+              })
           .toList();
 
       // Create document with personal info and education
@@ -541,7 +587,8 @@ class _PersonalDetailsScreenState
       };
 
       // Reference to user's resume collection
-      final resumeCollection = _firestore.collection('users').doc(userId).collection('resume');
+      final resumeCollection =
+          _firestore.collection('users').doc(userId).collection('resume');
 
       // Check if user already has a resume document
       final existingResumes = await resumeCollection.limit(1).get();
@@ -556,10 +603,6 @@ class _PersonalDetailsScreenState
         final docRef = await resumeCollection.add(resumeData);
         documentId = docRef.id;
       }
-
-      // Show success message
-      // ScaffoldMessenger.of(context).showSnackBar(
-      //     const SnackBar(content: Text('Resume data saved successfully!')));
 
       return documentId;
     } catch (e) {
@@ -581,9 +624,9 @@ class _PersonalDetailsScreenState
       margin: const EdgeInsets.only(bottom: 20),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.getSurfaceColor(isDarkMode),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFE0E0E0)),
+        border: Border.all(color: AppColors.getDividerColor(isDarkMode)),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.1),
@@ -602,14 +645,14 @@ class _PersonalDetailsScreenState
             children: [
               Text(
                 'Education #${index + 1}',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Colors.black87,
+                  color: AppColors.getTextColor(isDarkMode),
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.delete_outline, color: Colors.red),
+                icon: Icon(Icons.delete_outline, color: Colors.red),
                 onPressed: () => _removeEducationBlock(index),
               ),
             ],
@@ -619,18 +662,20 @@ class _PersonalDetailsScreenState
           // Education Title
           Container(
             decoration: BoxDecoration(
-              color: const Color(0xFFF5F5F5),
+              color:
+                  isDarkMode ? AppColors.darkSurface : const Color(0xFFF5F5F5),
               borderRadius: BorderRadius.circular(8),
             ),
             child: TextField(
               controller: _educationTitleControllers[index],
-              style: const TextStyle(color: Colors.black),
-              decoration: const InputDecoration(
+              style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+              decoration: InputDecoration(
                 hintText: 'Education Title',
-                hintStyle: TextStyle(color: Colors.grey),
+                hintStyle: TextStyle(
+                    color: AppColors.getSecondaryTextColor(isDarkMode)),
                 border: InputBorder.none,
                 contentPadding:
-                    EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               ),
             ),
           ),
@@ -644,18 +689,21 @@ class _PersonalDetailsScreenState
               Expanded(
                 child: Container(
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF5F5F5),
+                    color: isDarkMode
+                        ? AppColors.darkSurface
+                        : const Color(0xFFF5F5F5),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: TextField(
                     controller: _schoolControllers[index],
-                    style: const TextStyle(color: Colors.black),
-                    decoration: const InputDecoration(
+                    style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+                    decoration: InputDecoration(
                       hintText: 'Name Of School',
-                      hintStyle: TextStyle(color: Colors.grey),
+                      hintStyle: TextStyle(
+                          color: AppColors.getSecondaryTextColor(isDarkMode)),
                       border: InputBorder.none,
-                      contentPadding:
-                          EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 14),
                     ),
                   ),
                 ),
@@ -666,18 +714,21 @@ class _PersonalDetailsScreenState
               Expanded(
                 child: Container(
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF5F5F5),
+                    color: isDarkMode
+                        ? AppColors.darkSurface
+                        : const Color(0xFFF5F5F5),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: TextField(
                     controller: _levelControllers[index],
-                    style: const TextStyle(color: Colors.black),
-                    decoration: const InputDecoration(
+                    style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+                    decoration: InputDecoration(
                       hintText: 'Aggregate',
-                      hintStyle: TextStyle(color: Colors.grey),
+                      hintStyle: TextStyle(
+                          color: AppColors.getSecondaryTextColor(isDarkMode)),
                       border: InputBorder.none,
-                      contentPadding:
-                          EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 14),
                     ),
                   ),
                 ),
@@ -694,28 +745,33 @@ class _PersonalDetailsScreenState
               Expanded(
                 child: Container(
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF5F5F5),
+                    color: isDarkMode
+                        ? AppColors.darkSurface
+                        : const Color(0xFFF5F5F5),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
                     children: [
                       Expanded(
                         child: TextFormField(
-                          style: const TextStyle(color: Colors.black),
+                          style: TextStyle(
+                              color: AppColors.getTextColor(isDarkMode)),
                           controller: _startDateControllers[index],
                           readOnly: true,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             hintText: 'Start Date',
-                            hintStyle: TextStyle(color: Colors.grey),
+                            hintStyle: TextStyle(
+                                color: AppColors.getSecondaryTextColor(
+                                    isDarkMode)),
                             border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(
+                            contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 16, vertical: 14),
                           ),
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.calendar_today,
-                            color: Colors.grey),
+                        icon: Icon(Icons.calendar_today,
+                            color: AppColors.getSecondaryTextColor(isDarkMode)),
                         onPressed: () =>
                             _selectDate(context, _startDateControllers[index]),
                       ),
@@ -729,28 +785,33 @@ class _PersonalDetailsScreenState
               Expanded(
                 child: Container(
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF5F5F5),
+                    color: isDarkMode
+                        ? AppColors.darkSurface
+                        : const Color(0xFFF5F5F5),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
                     children: [
                       Expanded(
                         child: TextFormField(
-                          style: const TextStyle(color: Colors.black),
+                          style: TextStyle(
+                              color: AppColors.getTextColor(isDarkMode)),
                           controller: _endDateControllers[index],
                           readOnly: true,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             hintText: 'End Date',
-                            hintStyle: TextStyle(color: Colors.grey),
+                            hintStyle: TextStyle(
+                                color: AppColors.getSecondaryTextColor(
+                                    isDarkMode)),
                             border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(
+                            contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 16, vertical: 14),
                           ),
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.calendar_today,
-                            color: Colors.grey),
+                        icon: Icon(Icons.calendar_today,
+                            color: AppColors.getSecondaryTextColor(isDarkMode)),
                         onPressed: () =>
                             _selectDate(context, _endDateControllers[index]),
                       ),
@@ -766,43 +827,23 @@ class _PersonalDetailsScreenState
           // Location
           Container(
             decoration: BoxDecoration(
-              color: const Color(0xFFF5F5F5),
+              color:
+                  isDarkMode ? AppColors.darkSurface : const Color(0xFFF5F5F5),
               borderRadius: BorderRadius.circular(8),
             ),
             child: TextField(
               controller: _locationControllers[index],
-              style: const TextStyle(color: Colors.black),
-              decoration: const InputDecoration(
+              style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+              decoration: InputDecoration(
                 hintText: 'Location',
-                hintStyle: TextStyle(color: Colors.grey),
+                hintStyle: TextStyle(
+                    color: AppColors.getSecondaryTextColor(isDarkMode)),
                 border: InputBorder.none,
                 contentPadding:
-                    EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               ),
             ),
           ),
-
-          const SizedBox(height: 16),
-
-          // Description text field
-          // Container(
-          //   decoration: BoxDecoration(
-          //     color: const Color(0xFFF5F5F5),
-          //     borderRadius: BorderRadius.circular(8),
-          //   ),
-          //   child: TextField(
-          //     controller: _descriptionControllers[index],
-          //     style: const TextStyle(color: Colors.black),
-          //     maxLines: 4,
-          //     decoration: const InputDecoration(
-          //       hintText: 'Description of your role in 100 words...',
-          //       hintStyle: TextStyle(color: Colors.grey),
-          //       border: InputBorder.none,
-          //       contentPadding:
-          //           EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          //     ),
-          //   ),
-          // ),
         ],
       ),
     );
@@ -813,8 +854,10 @@ class _PersonalDetailsScreenState
     return Stack(
       children: [
         if (_isDataLoading)
-          const Center(
-            child: CircularProgressIndicator(),
+          Center(
+            child: CircularProgressIndicator(
+              color: AppColors.primaryBlue,
+            ),
           ),
         SingleChildScrollView(
           padding: const EdgeInsets.all(16),
@@ -823,70 +866,111 @@ class _PersonalDetailsScreenState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Personal Details',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: Colors.black87,
+                    color: AppColors.getTextColor(isDarkMode),
                   ),
                 ),
                 const SizedBox(height: 24),
 
-// Role you want
+                // Role you want
                 Container(
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF5F5F5),
+                    color: isDarkMode
+                        ? AppColors.darkSurface
+                        : const Color(0xFFF5F5F5),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: TextField(
                     controller: _roleController,
-                    style: const TextStyle(color: Colors.black),
-                    decoration: const InputDecoration(
+                    style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+                    decoration: InputDecoration(
                       hintText: 'Role you want',
-                      hintStyle: TextStyle(color: Colors.grey),
+                      hintStyle: TextStyle(
+                          color: AppColors.getSecondaryTextColor(isDarkMode)),
                       border: InputBorder.none,
-                      contentPadding:
-                          EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 14),
                     ),
                   ),
                 ),
                 const SizedBox(height: 16),
 
-// First Name and Upload Photo
+                // First Name, Last Name, and Upload Photo
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // First Name
+                    // First Name and Last Name Column
                     Expanded(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF5F5F5),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: TextField(
-                          controller: _firstNameController, // Add this controller
-                          style: const TextStyle(color: Colors.black),
-                          decoration: const InputDecoration(
-                            hintText: 'First Name',
-                            hintStyle: TextStyle(color: Colors.grey),
-                            border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      child: Column(
+                        children: [
+                          // First Name
+                          Container(
+                            decoration: BoxDecoration(
+                              color: isDarkMode
+                                  ? AppColors.darkSurface
+                                  : const Color(0xFFF5F5F5),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: TextField(
+                              controller: _firstNameController,
+                              style: TextStyle(
+                                  color: AppColors.getTextColor(isDarkMode)),
+                              decoration: InputDecoration(
+                                hintText: 'First Name',
+                                hintStyle: TextStyle(
+                                    color: AppColors.getSecondaryTextColor(
+                                        isDarkMode)),
+                                border: InputBorder.none,
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 14),
+                              ),
+                            ),
                           ),
-                        ),
+                          const SizedBox(height: 16),
+                          // Last Name
+                          Container(
+                            decoration: BoxDecoration(
+                              color: isDarkMode
+                                  ? AppColors.darkSurface
+                                  : const Color(0xFFF5F5F5),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: TextField(
+                              controller: _lastNameController,
+                              style: TextStyle(
+                                  color: AppColors.getTextColor(isDarkMode)),
+                              decoration: InputDecoration(
+                                hintText: 'Last Name',
+                                hintStyle: TextStyle(
+                                    color: AppColors.getSecondaryTextColor(
+                                        isDarkMode)),
+                                border: InputBorder.none,
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 14),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
 
                     const SizedBox(width: 16),
 
-                    // Upload Photo
+                    // Upload Photo - Height matches combined height of first name and last name fields
                     GestureDetector(
                       onTap: _pickImage,
                       child: Container(
                         width: 110,
-                        height: 48,
+                        // Height calculation: 2 text fields (each ~48px) + 16px spacing between them
+                        height: 112, // 48 + 48 + 16
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF5F5F5),
+                          color: isDarkMode
+                              ? AppColors.darkSurface
+                              : const Color(0xFFF5F5F5),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: _profileImage != null
@@ -896,24 +980,26 @@ class _PersonalDetailsScreenState
                                   _profileImage!,
                                   fit: BoxFit.cover,
                                   width: 110,
-                                  height: 48,
+                                  height: 112,
                                 ),
                               )
                             : Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  const Text(
+                                  Text(
                                     'Upload Photo',
                                     style: TextStyle(
-                                      color: Colors.grey,
+                                      color: AppColors.getSecondaryTextColor(
+                                          isDarkMode),
                                       fontSize: 12,
                                     ),
                                   ),
-                                  const SizedBox(height: 2),
+                                  const SizedBox(height: 4),
                                   Icon(
                                     Icons.add,
-                                    color: Colors.grey[400],
-                                    size: 18,
+                                    color: AppColors.getSecondaryTextColor(
+                                        isDarkMode),
+                                    size: 24,
                                   ),
                                 ],
                               ),
@@ -923,39 +1009,24 @@ class _PersonalDetailsScreenState
                 ),
                 const SizedBox(height: 16),
 
-// Last Name
+                // Email
                 Container(
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF5F5F5),
+                    color: isDarkMode
+                        ? AppColors.darkSurface
+                        : const Color(0xFFF5F5F5),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: TextField(
-                    controller: _lastNameController, // Add this controller
-                    style: const TextStyle(color: Colors.black),
-                    decoration: const InputDecoration(
-                      hintText: 'Last Name',
-                      hintStyle: TextStyle(color: Colors.grey),
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-// Email
-                Container(
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF5F5F5),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: TextField(
-                    controller: _emailController, // Add this controller
-                    style: const TextStyle(color: Colors.black),
-                    decoration: const InputDecoration(
+                    controller: _emailController,
+                    style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+                    decoration: InputDecoration(
                       hintText: 'Email',
-                      hintStyle: TextStyle(color: Colors.grey),
+                      hintStyle: TextStyle(
+                          color: AppColors.getSecondaryTextColor(isDarkMode)),
                       border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 14),
                     ),
                     keyboardType: TextInputType.emailAddress,
                   ),
@@ -963,63 +1034,77 @@ class _PersonalDetailsScreenState
 
                 const SizedBox(height: 16),
 
-// Phone No.
+                // Phone No.
                 Container(
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF5F5F5),
+                    color: isDarkMode
+                        ? AppColors.darkSurface
+                        : const Color(0xFFF5F5F5),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: TextField(
-                    controller: _phoneController, // Add this controller
-                    style: const TextStyle(color: Colors.black),
-                    decoration: const InputDecoration(
+                    controller: _phoneController,
+                    style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+                    decoration: InputDecoration(
                       hintText: 'Phone No.',
-                      hintStyle: TextStyle(color: Colors.grey),
+                      hintStyle: TextStyle(
+                          color: AppColors.getSecondaryTextColor(isDarkMode)),
                       border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 14),
                     ),
                     keyboardType: TextInputType.phone,
                   ),
                 ),
                 const SizedBox(height: 16),
 
-// Address
+                // Address
                 Container(
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF5F5F5),
+                    color: isDarkMode
+                        ? AppColors.darkSurface
+                        : const Color(0xFFF5F5F5),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: TextField(
-                    controller: _addressController, // Add this controller
-                    style: const TextStyle(color: Colors.black),
-                    decoration: const InputDecoration(
+                    controller: _addressController,
+                    style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+                    decoration: InputDecoration(
                       hintText: 'Address',
-                      hintStyle: TextStyle(color: Colors.grey),
+                      hintStyle: TextStyle(
+                          color: AppColors.getSecondaryTextColor(isDarkMode)),
                       border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 14),
                     ),
                   ),
                 ),
                 const SizedBox(height: 16),
 
-// City and Country
+                // City and Country
                 Row(
                   children: [
                     // City
                     Expanded(
                       child: Container(
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF5F5F5),
+                          color: isDarkMode
+                              ? AppColors.darkSurface
+                              : const Color(0xFFF5F5F5),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: TextField(
-                          controller: _cityController, // Add this controller
-                          style: const TextStyle(color: Colors.black),
-                          decoration: const InputDecoration(
+                          controller: _cityController,
+                          style: TextStyle(
+                              color: AppColors.getTextColor(isDarkMode)),
+                          decoration: InputDecoration(
                             hintText: 'City',
-                            hintStyle: TextStyle(color: Colors.grey),
+                            hintStyle: TextStyle(
+                                color: AppColors.getSecondaryTextColor(
+                                    isDarkMode)),
                             border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 14),
                           ),
                         ),
                       ),
@@ -1030,17 +1115,23 @@ class _PersonalDetailsScreenState
                     Expanded(
                       child: Container(
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF5F5F5),
+                          color: isDarkMode
+                              ? AppColors.darkSurface
+                              : const Color(0xFFF5F5F5),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: TextField(
-                          controller: _countryController, // Add this controller
-                          style: const TextStyle(color: Colors.black),
-                          decoration: const InputDecoration(
+                          controller: _countryController,
+                          style: TextStyle(
+                              color: AppColors.getTextColor(isDarkMode)),
+                          decoration: InputDecoration(
                             hintText: 'Country',
-                            hintStyle: TextStyle(color: Colors.grey),
+                            hintStyle: TextStyle(
+                                color: AppColors.getSecondaryTextColor(
+                                    isDarkMode)),
                             border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 14),
                           ),
                         ),
                       ),
@@ -1049,20 +1140,24 @@ class _PersonalDetailsScreenState
                 ),
                 const SizedBox(height: 16),
 
-// Postal Code
+                // Postal Code
                 Container(
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF5F5F5),
+                    color: isDarkMode
+                        ? AppColors.darkSurface
+                        : const Color(0xFFF5F5F5),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: TextField(
-                    controller: _postalCodeController, // Add this controller
-                    style: const TextStyle(color: Colors.black),
-                    decoration: const InputDecoration(
+                    controller: _postalCodeController,
+                    style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+                    decoration: InputDecoration(
                       hintText: 'Postal Code',
-                      hintStyle: TextStyle(color: Colors.grey),
+                      hintStyle: TextStyle(
+                          color: AppColors.getSecondaryTextColor(isDarkMode)),
                       border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 14),
                     ),
                     keyboardType: TextInputType.number,
                   ),
@@ -1073,20 +1168,20 @@ class _PersonalDetailsScreenState
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.only(bottom: 8),
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     border: Border(
                       bottom: BorderSide(
-                        color: Color(0xFFE0E0E0),
+                        color: AppColors.getDividerColor(isDarkMode),
                         width: 1,
                       ),
                     ),
                   ),
-                  child: const Text(
+                  child: Text(
                     'Education',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: Colors.black87,
+                      color: AppColors.getTextColor(isDarkMode),
                     ),
                   ),
                 ),
@@ -1105,19 +1200,19 @@ class _PersonalDetailsScreenState
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
+                        Text(
                           'Add one more education',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
-                            color: Colors.black87,
+                            color: AppColors.getTextColor(isDarkMode),
                           ),
                         ),
                         Container(
                           width: 32,
                           height: 32,
                           decoration: BoxDecoration(
-                            color: Colors.black,
+                            color: AppColors.primaryBlue,
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: const Icon(
@@ -1141,66 +1236,78 @@ class _PersonalDetailsScreenState
                     onPressed: _isLoading
                         ? null
                         : () async {
-                      if (formKey.currentState!.validate()) {
-                        // Collect education data
-                        List<Education> educationData = [];
-                        for (int i = 0; i < _educationBlocks.length; i++) {
-                          educationData.add(Education(
-                            title: _educationTitleControllers[i].text,
-                            school: _schoolControllers[i].text,
-                            level: _levelControllers[i].text,
-                            startDate: _startDateControllers[i].text,
-                            endDate: _endDateControllers[i].text,
-                            location: _locationControllers[i].text,
-                            // description: _descriptionControllers[i].text,
-                          ));
-                        }
+                            if (formKey.currentState!.validate()) {
+                              // Collect education data
+                              List<Education> educationData = [];
+                              for (int i = 0;
+                                  i < _educationBlocks.length;
+                                  i++) {
+                                educationData.add(Education(
+                                  title: _educationTitleControllers[i].text,
+                                  school: _schoolControllers[i].text,
+                                  level: _levelControllers[i].text,
+                                  startDate: _startDateControllers[i].text,
+                                  endDate: _endDateControllers[i].text,
+                                  location: _locationControllers[i].text,
+                                  // description: _descriptionControllers[i].text,
+                                ));
+                              }
 
-                        // Create Step1Data
-                        final step1Data = Step1Data(
-                          role: _roleController.text,
-                          firstName: _firstNameController.text,
-                          lastName: _lastNameController.text,
-                          email: _emailController.text,
-                          phone: _phoneController.text,
-                          address: _addressController.text,
-                          city: _cityController.text,
-                          country: _countryController.text,
-                          postalCode: _postalCodeController.text,
-                          profileImagePath: _profileImage?.path,
-                          education: educationData,
-                        );
+                              // Create Step1Data
+                              final step1Data = Step1Data(
+                                role: _roleController.text,
+                                firstName: _firstNameController.text,
+                                lastName: _lastNameController.text,
+                                email: _emailController.text,
+                                phone: _phoneController.text,
+                                address: _addressController.text,
+                                city: _cityController.text,
+                                country: _countryController.text,
+                                postalCode: _postalCodeController.text,
+                                profileImagePath: _profileImage?.path,
+                                education: educationData,
+                              );
 
-                        // Save to Firebase and get document ID
-                        final String? documentId = await _saveToFirebase(step1Data);
+                              // Save to Firebase and get document ID
+                              final String? documentId =
+                                  await _saveToFirebase(step1Data);
 
-                        // If successful, navigate to Step2Screen passing data and document ID
-                        if (!mounted || documentId == null) return;
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => Step2Screen(
-                                step1Data: step1Data,
-                                resumeId: documentId,
-                              )),
-                        );
-                      }
-                    },
+                              // If successful, navigate to Step2Screen passing data and document ID
+                              if (!mounted || documentId == null) return;
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => Step2Screen(
+                                          step1Data: step1Data,
+                                          resumeId: documentId,
+                                        )),
+                              );
+                            }
+                          },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2196F3),
+                      backgroundColor: AppColors.primaryBlue,
+                      disabledBackgroundColor:
+                          AppColors.primaryBlue.withOpacity(0.6),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
                     child: _isLoading
-                        ? const CircularProgressIndicator(color: Colors.white)
+                        ? SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ))
                         : const Text(
-                      'Next',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
+                            'Next',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.white,
+                            ),
+                          ),
                   ),
                 )
               ],
@@ -1211,8 +1318,10 @@ class _PersonalDetailsScreenState
         if (_isLoading)
           Container(
             color: Colors.black.withOpacity(0.3),
-            child: const Center(
-              child: CircularProgressIndicator(),
+            child: Center(
+              child: CircularProgressIndicator(
+                color: AppColors.primaryBlue,
+              ),
             ),
           ),
       ],

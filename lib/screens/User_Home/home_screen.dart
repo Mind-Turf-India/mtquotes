@@ -42,7 +42,6 @@ import 'components/app_open_tracker.dart';
 import 'components/templates_list.dart';
 import 'components/user_survey.dart';
 
-
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -80,8 +79,6 @@ class HomeScreenState extends State<HomeScreen> {
 
   // Stream to listen for auth state changes
   late Stream<User?> _authStateChanges;
-
-
 
   @override
   void initState() {
@@ -168,9 +165,11 @@ class HomeScreenState extends State<HomeScreen> {
       final userData = userDoc.data() as Map<String, dynamic>;
       int appOpenCount = userData['appOpenCount'] ?? 0;
       int lastSurveyAppOpenCount = userData['lastSurveyAppOpenCount'] ?? 0;
-      int lastAnsweredQuestionIndex = userData['lastAnsweredQuestionIndex'] ?? -1;
+      int lastAnsweredQuestionIndex =
+          userData['lastAnsweredQuestionIndex'] ?? -1;
 
-      print("Current state - appOpenCount: $appOpenCount, lastSurveyAppOpenCount: $lastSurveyAppOpenCount, lastAnsweredQuestionIndex: $lastAnsweredQuestionIndex");
+      print(
+          "Current state - appOpenCount: $appOpenCount, lastSurveyAppOpenCount: $lastSurveyAppOpenCount, lastAnsweredQuestionIndex: $lastAnsweredQuestionIndex");
 
       // Then show survey dialog if needed
       await UserSurveyManager.showSurveyDialog(context);
@@ -380,7 +379,9 @@ class HomeScreenState extends State<HomeScreen> {
   }
 
 // Add this method to handle template selection
-  void _handleRecentTemplateSelection(QuoteTemplate template,) async {
+  void _handleRecentTemplateSelection(
+    QuoteTemplate template,
+  ) async {
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     final isDarkMode = themeProvider.isDarkMode;
 
@@ -1027,24 +1028,24 @@ class HomeScreenState extends State<HomeScreen> {
                   Spacer(),
                   //image enhancer icon.
                   GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => ImageUpscalingScreen()),
-                    );
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.only(right: 15),
-                    child: Image.asset(
-                      'assets/image_enhancer.png',
-                      width: 24,
-                      height: 24,
-                      color: AppColors.getTextColor(isDarkMode),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => ImageUpscalingScreen()),
+                      );
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 15),
+                      child: SvgPicture.asset(
+                        'assets/image_enhancer.svg',
+                        width: 24,
+                        height: 24,
+                        color: AppColors.getTextColor(isDarkMode),
+                      ),
                     ),
                   ),
-                ),
-                //notifcation icon
+                  //notifcation icon
                   GestureDetector(
                     onTap: showNotificationsSheet,
                     child: SvgPicture.asset(
@@ -1689,7 +1690,6 @@ class HomeScreenState extends State<HomeScreen> {
             )));
   }
 
-
   Widget _buildRecentTemplatesSection() {
     return RecentTemplatesSection(
       recentTemplates: _recentTemplates,
@@ -1885,17 +1885,16 @@ class HomeScreenState extends State<HomeScreen> {
 // Single template image shimmer
   Widget _buildTemplateImageShimmer(bool isDarkMode) {
     return Shimmer.fromColors(
-      baseColor: isDarkMode ? Colors.grey[800]! : Colors.grey[300]!,
-      highlightColor: isDarkMode ? Colors.grey[700]! : Colors.grey[100]!,
-      child: Container(
-      width: 100,
-      margin: EdgeInsets.only(right: 10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-      ),
-    )
-    );
+        baseColor: isDarkMode ? Colors.grey[800]! : Colors.grey[300]!,
+        highlightColor: isDarkMode ? Colors.grey[700]! : Colors.grey[100]!,
+        child: Container(
+          width: 100,
+          margin: EdgeInsets.only(right: 10),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ));
   }
 }
 
