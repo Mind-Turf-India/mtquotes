@@ -277,60 +277,72 @@ class _MainScreenState extends State<MainScreen> {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDarkMode = themeProvider.isDarkMode;
 
-    return InkWell(
-      onTap: () async {
-        // If tapping on the same tab that's already selected
-        if (index == _currentIndex) {
-          // No need to do anything special when tapping same tab
-          return;
-        }
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        // Wrap just the icon in Material for circular effect
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () async {
+              // If tapping on the same tab that's already selected
+              if (index == _currentIndex) {
+                // No need to do anything special when tapping same tab
+                return;
+              }
 
-        // Store old index before updating to new one
-        int oldIndex = _currentIndex;
+              // Store old index before updating to new one
+              int oldIndex = _currentIndex;
 
-        // Update the selected index
-        setState(() {
-          _currentIndex = index;
-        });
+              // Update the selected index
+              setState(() {
+                _currentIndex = index;
+              });
 
-        // If navigating TO home screen FROM a different screen
-        if (index == 0 && oldIndex != 0) {
-          print("Returning to home screen from another screen");
+              // If navigating TO home screen FROM a different screen
+              if (index == 0 && oldIndex != 0) {
+                print("Returning to home screen from another screen");
 
-          // Increment app open count
-          await UserSurveyManager.incrementAppOpenCount();
+                // Increment app open count
+                await UserSurveyManager.incrementAppOpenCount();
 
-          // Add a small delay to ensure the counter updated
-          await Future.delayed(Duration(milliseconds: 300));
+                // Add a small delay to ensure the counter updated
+                await Future.delayed(Duration(milliseconds: 300));
 
-          // Check for survey
-          if (_homeScreenKey.currentState != null) {
-            await _homeScreenKey.currentState!.checkAndShowSurvey();
-          }
-        }
-      },
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          SvgPicture.asset(
-            isSelected ? activeIconPath : iconPath,
-            width: 24,
-            height: 24,
-            colorFilter: ColorFilter.mode(
-              isSelected ? AppColors.primaryBlue : Colors.grey,
-              BlendMode.srcIn,
+                // Check for survey
+                if (_homeScreenKey.currentState != null) {
+                  await _homeScreenKey.currentState!.checkAndShowSurvey();
+                }
+              }
+            },
+            splashColor: AppColors.primaryBlue.withOpacity(0.3),
+            highlightColor: AppColors.primaryBlue.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(24), // Circular border radius
+            customBorder: CircleBorder(), // Ensure perfect circle
+            child: Padding(
+              padding: EdgeInsets.all(8),
+              child: SvgPicture.asset(
+                isSelected ? activeIconPath : iconPath,
+                width: 24,
+                height: 24,
+                colorFilter: ColorFilter.mode(
+                  isSelected ? AppColors.primaryBlue : Colors.grey,
+                  BlendMode.srcIn,
+                ),
+              ),
             ),
           ),
-          SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              color: isSelected ? AppColors.primaryBlue : Colors.grey,
-              fontSize: 12,
-            ),
+        ),
+        SizedBox(height: 4),
+        // Text outside the tap area
+        Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? AppColors.primaryBlue : Colors.grey,
+            fontSize: 12,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

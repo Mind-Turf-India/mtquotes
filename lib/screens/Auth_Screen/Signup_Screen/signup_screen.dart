@@ -10,6 +10,7 @@ import 'package:mtquotes/utils/theme_provider.dart';
 import 'package:provider/provider.dart';
 import '../../../utils/app_colors.dart';
 import '../../User_Home/components/Notifications/notification_service.dart';
+import 'email_verification.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -61,11 +62,24 @@ class _SignupScreenState extends State<SignupScreen> {
 
     try {
       User? user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
+      if (user != null && user.emailVerified) {
+        // Only proceed to main screen if email is verified
         WidgetsBinding.instance.addPostFrameCallback((_) {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => MainScreen()),
+          );
+        });
+      } else if (user != null && !user.emailVerified) {
+        // If user exists but email not verified, navigate to verification screen
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => EmailVerificationScreen(
+                email: user.email ?? "",
+              ),
+            ),
           );
         });
       }
@@ -93,10 +107,13 @@ class _SignupScreenState extends State<SignupScreen> {
 
     try {
       UserCredential userCredential =
-          await FirebaseAuth.instance.createUserWithEmailAndPassword(
+      await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
+
+      // Send email verification
+      await userCredential.user!.sendEmailVerification();
 
       // Store user info in Firestore
       await saveUserToFirestore(userCredential.user);
@@ -110,9 +127,13 @@ class _SignupScreenState extends State<SignupScreen> {
 
       _hideLoadingDialog();
 
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (context) => MainScreen()),
-        (Route<dynamic> route) => false, // Remove all previous screens
+      // Navigate to email verification screen
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => EmailVerificationScreen(
+            email: _emailController.text.trim(),
+          ),
+        ),
       );
     } catch (e) {
       _hideLoadingDialog();
@@ -124,6 +145,77 @@ class _SignupScreenState extends State<SignupScreen> {
         ),
       );
     }
+  }
+
+  void showVerificationDialog() {
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    final isDarkMode = themeProvider.isDarkMode;
+    final backgroundColor = isDarkMode ? AppColors.darkBackground : AppColors.lightBackground;
+    final textColor = isDarkMode ? AppColors.darkText : AppColors.lightText;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: backgroundColor,
+          title: Text(
+            'Verify Your Email',
+            style: TextStyle(color: textColor),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'A verification email has been sent to ${_emailController.text.trim()}',
+                style: TextStyle(color: textColor),
+              ),
+              SizedBox(height: 10),
+              Text(
+                'Please verify your email before logging in.',
+                style: TextStyle(color: textColor),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => LoginScreen()),
+                      (Route<dynamic> route) => false,
+                );
+              },
+              child: Text('Ok', style: TextStyle(color: AppColors.primaryBlue)),
+            ),
+            TextButton(
+              onPressed: () async {
+                try {
+                  User? user = FirebaseAuth.instance.currentUser;
+                  if (user != null) {
+                    await user.sendEmailVerification();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text("Verification email sent again!"),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text("Failed to send verification email: $e"),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              },
+              child: Text('Resend', style: TextStyle(color: AppColors.primaryBlue)),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> saveUserToFirestore(User? user,

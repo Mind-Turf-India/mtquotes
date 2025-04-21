@@ -1,7 +1,9 @@
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mtquotes/utils/app_colors.dart';
 import 'package:path_provider/path_provider.dart';
@@ -172,29 +174,134 @@ class _ImageUpscalingScreenState extends State<ImageUpscalingScreen> {
   }
 
   Future<void> _saveImage() async {
-    if (_processedImage == null) return;
+    if (_processedImage == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No image to save')),
+      );
+      return;
+    }
 
     try {
+      // Show loading indicator
+      _showLoadingIndicator();
+
       // Convert the ui.Image to bytes
       final bytes = await _imageToBytes(_processedImage!);
 
-      final directory = await getDownloadsDirectory() ??
-          await getApplicationDocumentsDirectory();
+      // Request proper permissions based on platform and Android version
+      bool hasPermission = false;
+
+      if (Platform.isAndroid) {
+        // Request different permissions based on Android SDK version
+        if (await _getAndroidVersion() >= 33) {
+          // Android 13+
+          hasPermission = await Permission.photos.isGranted;
+          if (!hasPermission) {
+            hasPermission = (await Permission.photos.request()).isGranted;
+          }
+        } else if (await _getAndroidVersion() >= 29) {
+          // Android 10-12
+          hasPermission = await Permission.storage.isGranted;
+          if (!hasPermission) {
+            hasPermission = (await Permission.storage.request()).isGranted;
+          }
+        } else {
+          // Android 9 and below
+          hasPermission = await Permission.storage.isGranted;
+          if (!hasPermission) {
+            hasPermission = (await Permission.storage.request()).isGranted;
+          }
+        }
+      } else if (Platform.isIOS) {
+        // iOS typically doesn't need explicit permission for saving to gallery
+        hasPermission = true;
+      }
+
+      if (!hasPermission) {
+        _hideLoadingIndicator();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Storage permission is required to save images')),
+        );
+        return;
+      }
+
+      // Generate a unique filename based on timestamp
       final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final savePath = '${directory.path}/processed_image_$timestamp.png';
+      final fileName = "Vaky_${timestamp}.jpg";
 
-      final file = File(savePath);
-      await file.writeAsBytes(bytes);
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Image saved to $savePath')),
+      // Save to gallery
+      final result = await ImageGallerySaverPlus.saveImage(
+        bytes,
+        quality: 100,
+        name: fileName,
       );
+
+      // Check if save was successful
+      bool isSuccess = false;
+      if (result is Map) {
+        isSuccess = result['isSuccess'] ?? false;
+      } else {
+        isSuccess = result != null;
+      }
+
+      _hideLoadingIndicator();
+
+      if (isSuccess) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Image saved to gallery')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to save image to gallery')),
+        );
+      }
     } catch (e) {
+      _hideLoadingIndicator();
       debugPrint('Error saving image: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error saving image: $e')),
       );
     }
+  }
+
+// Get Android version as an integer (e.g., 29 for Android 10)
+  Future<int> _getAndroidVersion() async {
+    if (Platform.isAndroid) {
+      try {
+        final androidInfo = await DeviceInfoPlugin().androidInfo;
+        return androidInfo.version.sdkInt;
+      } catch (e) {
+        print('Error getting Android version: $e');
+        return 0;
+      }
+    }
+    return 0;
+  }
+
+// Show loading indicator dialog
+  void _showLoadingIndicator() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          content: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(width: 20),
+              Text("Saving image...", style: TextStyle(color: Colors.blue)),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+// Hide loading indicator
+  void _hideLoadingIndicator() {
+    Navigator.of(context, rootNavigator: true).pop();
   }
 
   Future<Uint8List> _imageToBytes(ui.Image image) async {

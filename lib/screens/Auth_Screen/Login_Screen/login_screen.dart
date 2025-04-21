@@ -121,10 +121,19 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       UserCredential userCredential =
-          await FirebaseAuth.instance.signInWithEmailAndPassword(
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
+
+      // Check if email is verified
+      if (!userCredential.user!.emailVerified) {
+        _hideLoadingDialog();
+
+        // Show verification required dialog
+        _showEmailVerificationRequiredDialog(userCredential.user!);
+        return;
+      }
 
       await saveUserToFirestore(userCredential.user);
 
@@ -139,7 +148,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (context) => MainScreen()),
-        (Route<dynamic> route) => false,
+            (Route<dynamic> route) => false,
       );
     } catch (e) {
       _hideLoadingDialog();
@@ -166,10 +175,19 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       UserCredential userCredential =
-          await FirebaseAuth.instance.signInWithEmailAndPassword(
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
+
+      // Check if email is verified
+      if (!userCredential.user!.emailVerified) {
+        _hideLoadingDialog();
+
+        // Show verification required dialog
+        _showEmailVerificationRequiredDialog(userCredential.user!);
+        return;
+      }
 
       await _saveCredentials();
 
@@ -186,7 +204,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (context) => MainScreen()),
-        (Route<dynamic> route) => false,
+            (Route<dynamic> route) => false,
       );
     } catch (e) {
       _hideLoadingDialog();
@@ -198,6 +216,72 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       );
     }
+  }
+
+  void _showEmailVerificationRequiredDialog(User user) {
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    final isDarkMode = themeProvider.isDarkMode;
+    final backgroundColor = AppColors.getSurfaceColor(isDarkMode);
+    final textColor = AppColors.getTextColor(isDarkMode);
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: backgroundColor,
+          title: Text(
+            'Email Not Verified',
+            style: TextStyle(color: textColor),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Your email has not been verified yet.',
+                style: TextStyle(color: textColor),
+              ),
+              SizedBox(height: 10),
+              Text(
+                'Please check your inbox and verify your email before logging in.',
+                style: TextStyle(color: textColor),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('Ok', style: TextStyle(color: AppColors.primaryBlue)),
+            ),
+            TextButton(
+              onPressed: () async {
+                try {
+                  await user.sendEmailVerification();
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text("Verification email sent again!"),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                } catch (e) {
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text("Failed to send verification email: $e"),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              },
+              child: Text('Resend', style: TextStyle(color: AppColors.primaryBlue)),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> _signInWithGoogle() async {

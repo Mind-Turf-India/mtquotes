@@ -165,7 +165,7 @@ class _ResumePreviewScreenState extends State<ResumePreviewScreen> {
                     break;
                   }
                 }
-                newPath += "/Vaky";
+                newPath += "/Download";
                 downloadsDir = Directory(newPath);
                 // Create directory if it doesn't exist
                 if (!await downloadsDir.exists()) {
@@ -187,7 +187,8 @@ class _ResumePreviewScreenState extends State<ResumePreviewScreen> {
         }
 
         // Create a file name with timestamp to avoid conflicts
-        final fileName = 'Resume_${data.personalInfo.firstName}_${data.personalInfo.lastName}.pdf';
+        final timestamp = DateTime.now().millisecondsSinceEpoch;
+        final fileName = 'Resume_${data.personalInfo.firstName}_${data.personalInfo.lastName}_$timestamp.pdf';
         filePath = '${downloadsDir?.path}/$fileName';
 
         // Save the PDF
