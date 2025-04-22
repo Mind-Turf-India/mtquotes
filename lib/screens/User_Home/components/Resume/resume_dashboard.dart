@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
@@ -619,6 +620,7 @@ class _PersonalDetailsScreenState
   }
 
   // Build a single education block
+  // Build a single education block with proper dark theme support
   Widget _buildEducationBlock(int index) {
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
@@ -629,7 +631,9 @@ class _PersonalDetailsScreenState
         border: Border.all(color: AppColors.getDividerColor(isDarkMode)),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: isDarkMode
+                ? Colors.black.withOpacity(0.2)
+                : Colors.grey.withOpacity(0.1),
             spreadRadius: 1,
             blurRadius: 2,
             offset: const Offset(0, 1),
@@ -652,7 +656,7 @@ class _PersonalDetailsScreenState
                 ),
               ),
               IconButton(
-                icon: Icon(Icons.delete_outline, color: Colors.red),
+                icon: const Icon(Icons.delete_outline, color: Colors.red),
                 onPressed: () => _removeEducationBlock(index),
               ),
             ],
@@ -662,20 +666,24 @@ class _PersonalDetailsScreenState
           // Education Title
           Container(
             decoration: BoxDecoration(
-              color:
-                  isDarkMode ? AppColors.darkSurface : const Color(0xFFF5F5F5),
+              color: isDarkMode
+                  ? AppColors.darkSurface.withOpacity(0.7)
+                  : const Color(0xFFF5F5F5),
               borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: AppColors.getDividerColor(isDarkMode),
+                width: 0.5,
+              ),
             ),
             child: TextField(
               controller: _educationTitleControllers[index],
               style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
               decoration: InputDecoration(
                 hintText: 'Education Title',
-                hintStyle: TextStyle(
-                    color: AppColors.getSecondaryTextColor(isDarkMode)),
+                hintStyle: TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode)),
                 border: InputBorder.none,
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 14),
               ),
             ),
           ),
@@ -690,20 +698,22 @@ class _PersonalDetailsScreenState
                 child: Container(
                   decoration: BoxDecoration(
                     color: isDarkMode
-                        ? AppColors.darkSurface
+                        ? AppColors.darkSurface.withOpacity(0.7)
                         : const Color(0xFFF5F5F5),
                     borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: AppColors.getDividerColor(isDarkMode),
+                      width: 0.5,
+                    ),
                   ),
                   child: TextField(
                     controller: _schoolControllers[index],
                     style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
                     decoration: InputDecoration(
                       hintText: 'Name Of School',
-                      hintStyle: TextStyle(
-                          color: AppColors.getSecondaryTextColor(isDarkMode)),
+                      hintStyle: TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode)),
                       border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 14),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     ),
                   ),
                 ),
@@ -715,20 +725,27 @@ class _PersonalDetailsScreenState
                 child: Container(
                   decoration: BoxDecoration(
                     color: isDarkMode
-                        ? AppColors.darkSurface
+                        ? AppColors.darkSurface.withOpacity(0.7)
                         : const Color(0xFFF5F5F5),
                     borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: AppColors.getDividerColor(isDarkMode),
+                      width: 0.5,
+                    ),
                   ),
                   child: TextField(
                     controller: _levelControllers[index],
                     style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+                    keyboardType: TextInputType.text,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'[0-9.,%+-]')),
+                    ],
+
                     decoration: InputDecoration(
                       hintText: 'Aggregate',
-                      hintStyle: TextStyle(
-                          color: AppColors.getSecondaryTextColor(isDarkMode)),
+                      hintStyle: TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode)),
                       border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 14),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     ),
                   ),
                 ),
@@ -746,34 +763,35 @@ class _PersonalDetailsScreenState
                 child: Container(
                   decoration: BoxDecoration(
                     color: isDarkMode
-                        ? AppColors.darkSurface
+                        ? AppColors.darkSurface.withOpacity(0.7)
                         : const Color(0xFFF5F5F5),
                     borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: AppColors.getDividerColor(isDarkMode),
+                      width: 0.5,
+                    ),
                   ),
                   child: Row(
                     children: [
                       Expanded(
                         child: TextFormField(
-                          style: TextStyle(
-                              color: AppColors.getTextColor(isDarkMode)),
+                          style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
                           controller: _startDateControllers[index],
                           readOnly: true,
                           decoration: InputDecoration(
                             hintText: 'Start Date',
-                            hintStyle: TextStyle(
-                                color: AppColors.getSecondaryTextColor(
-                                    isDarkMode)),
+                            hintStyle: TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode)),
                             border: InputBorder.none,
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 14),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                           ),
                         ),
                       ),
                       IconButton(
-                        icon: Icon(Icons.calendar_today,
-                            color: AppColors.getSecondaryTextColor(isDarkMode)),
-                        onPressed: () =>
-                            _selectDate(context, _startDateControllers[index]),
+                        icon: Icon(
+                            Icons.calendar_today,
+                            color: AppColors.getSecondaryTextColor(isDarkMode)
+                        ),
+                        onPressed: () => _selectDate(context, _startDateControllers[index]),
                       ),
                     ],
                   ),
@@ -786,34 +804,35 @@ class _PersonalDetailsScreenState
                 child: Container(
                   decoration: BoxDecoration(
                     color: isDarkMode
-                        ? AppColors.darkSurface
+                        ? AppColors.darkSurface.withOpacity(0.7)
                         : const Color(0xFFF5F5F5),
                     borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: AppColors.getDividerColor(isDarkMode),
+                      width: 0.5,
+                    ),
                   ),
                   child: Row(
                     children: [
                       Expanded(
                         child: TextFormField(
-                          style: TextStyle(
-                              color: AppColors.getTextColor(isDarkMode)),
+                          style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
                           controller: _endDateControllers[index],
                           readOnly: true,
                           decoration: InputDecoration(
                             hintText: 'End Date',
-                            hintStyle: TextStyle(
-                                color: AppColors.getSecondaryTextColor(
-                                    isDarkMode)),
+                            hintStyle: TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode)),
                             border: InputBorder.none,
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 14),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                           ),
                         ),
                       ),
                       IconButton(
-                        icon: Icon(Icons.calendar_today,
-                            color: AppColors.getSecondaryTextColor(isDarkMode)),
-                        onPressed: () =>
-                            _selectDate(context, _endDateControllers[index]),
+                        icon: Icon(
+                            Icons.calendar_today,
+                            color: AppColors.getSecondaryTextColor(isDarkMode)
+                        ),
+                        onPressed: () => _selectDate(context, _endDateControllers[index]),
                       ),
                     ],
                   ),
@@ -827,20 +846,23 @@ class _PersonalDetailsScreenState
           // Location
           Container(
             decoration: BoxDecoration(
-              color:
-                  isDarkMode ? AppColors.darkSurface : const Color(0xFFF5F5F5),
+              color: isDarkMode
+                  ? AppColors.darkSurface.withOpacity(0.7)
+                  : const Color(0xFFF5F5F5),
               borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: AppColors.getDividerColor(isDarkMode),
+                width: 0.5,
+              ),
             ),
             child: TextField(
               controller: _locationControllers[index],
               style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
               decoration: InputDecoration(
                 hintText: 'Location',
-                hintStyle: TextStyle(
-                    color: AppColors.getSecondaryTextColor(isDarkMode)),
+                hintStyle: TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode)),
                 border: InputBorder.none,
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               ),
             ),
           ),

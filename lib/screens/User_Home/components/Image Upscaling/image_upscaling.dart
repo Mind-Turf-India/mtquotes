@@ -1,16 +1,20 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mtquotes/utils/app_colors.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'dart:ui' as ui;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:image/image.dart' as img;
+
+import '../../../../utils/theme_provider.dart';
 
 class ImageUpscalingScreen extends StatefulWidget {
   const ImageUpscalingScreen({Key? key}) : super(key: key);
@@ -110,57 +114,104 @@ class _ImageUpscalingScreenState extends State<ImageUpscalingScreen> {
     });
 
     try {
-      // Using the image package for basic image processing
-      // (instead of relying on the ONNX model)
-      final bytes = await _imageFile!.readAsBytes();
-      final image = img.decodeImage(bytes);
+      // Calculate the target dimensions before processing
+      final originalWidth = _originalImage!.width;
+      final originalHeight = _originalImage!.height;
 
-      if (image == null) {
-        throw Exception('Failed to decode image');
-      }
+      // Define size limits to prevent app crashes
+      final int maxOutputDimension = 4000; // Maximum dimension for processed image
 
-      img.Image processedImage;
-
+      // Calculate output dimensions
+      int targetWidth, targetHeight;
       if (_isUpscaling) {
-        // Upscale the image using resize
-        final scaleFactor = _quality.toInt();
-        processedImage = img.copyResize(
-          image,
-          width: image.width * scaleFactor,
-          height: image.height * scaleFactor,
-          interpolation: img.Interpolation.cubic,
-        );
+        targetWidth = (originalWidth * _quality).toInt();
+        targetHeight = (originalHeight * _quality).toInt();
       } else {
-        // Downscale the image
-        final scaleFactor = _quality;
-        processedImage = img.copyResize(
-          image,
-          width: (image.width * scaleFactor).toInt(),
-          height: (image.height * scaleFactor).toInt(),
-          interpolation: img.Interpolation.average,
-        );
+        targetWidth = (originalWidth * _quality).toInt();
+        targetHeight = (originalHeight * _quality).toInt();
       }
 
-      // Convert processed image back to ui.Image
-      final pngBytes = img.encodePng(processedImage);
-      final codec =
-          await ui.instantiateImageCodec(Uint8List.fromList(pngBytes));
-      final frameInfo = await codec.getNextFrame();
+      // Check if output dimensions exceed maximum allowed size
+      if (targetWidth > maxOutputDimension || targetHeight > maxOutputDimension) {
+        // Show warning but continue with capped dimensions
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Image size limited to prevent app crashes'),
+            duration: Duration(seconds: 3),
+          ),
+        );
 
-      setState(() {
-        _processedImage = frameInfo.image;
-        _isProcessing = false;
-      });
-
-      // Scroll to bottom to show the processed image after a short delay
-      Future.delayed(Duration(milliseconds: 300), () {
-        if (_scrollController.hasClients) {
-          _scrollController.animateTo(
-            _scrollController.position.maxScrollExtent,
-            duration: Duration(milliseconds: 500),
-            curve: Curves.easeOut,
-          );
+        // Scale down dimensions while maintaining aspect ratio
+        if (targetWidth > targetHeight) {
+          double ratio = maxOutputDimension / targetWidth;
+          targetWidth = maxOutputDimension;
+          targetHeight = (targetHeight * ratio).toInt();
+        } else {
+          double ratio = maxOutputDimension / targetHeight;
+          targetHeight = maxOutputDimension;
+          targetWidth = (targetWidth * ratio).toInt();
         }
+      }
+
+      // Process image in background using compute
+      await compute(
+            (Map<String, dynamic> params) async {
+          final bytes = params['bytes'] as Uint8List;
+          final targetWidth = params['targetWidth'] as int;
+          final targetHeight = params['targetHeight'] as int;
+          final isUpscaling = params['isUpscaling'] as bool;
+
+          // Decode image
+          final image = img.decodeImage(bytes);
+          if (image == null) return null;
+
+          // Process image with appropriate interpolation based on mode
+          final img.Image processedImage = img.copyResize(
+            image,
+            width: targetWidth,
+            height: targetHeight,
+            interpolation: isUpscaling
+                ? img.Interpolation.cubic
+                : img.Interpolation.average,
+          );
+
+          // Return processed image bytes
+          return img.encodePng(processedImage);
+        },
+        {
+          'bytes': await _imageFile!.readAsBytes(),
+          'targetWidth': targetWidth,
+          'targetHeight': targetHeight,
+          'isUpscaling': _isUpscaling,
+        },
+      ).then((processedBytes) async {
+        if (processedBytes == null) {
+          throw Exception('Image processing failed');
+        }
+
+        // Convert processed bytes back to ui.Image
+        final codec = await ui.instantiateImageCodec(
+          Uint8List.fromList(processedBytes),
+          targetWidth: targetWidth,
+          targetHeight: targetHeight,
+        );
+        final frameInfo = await codec.getNextFrame();
+
+        setState(() {
+          _processedImage = frameInfo.image;
+          _isProcessing = false;
+        });
+
+        // Scroll to bottom to show processed image
+        Future.delayed(Duration(milliseconds: 300), () {
+          if (_scrollController.hasClients) {
+            _scrollController.animateTo(
+              _scrollController.position.maxScrollExtent,
+              duration: Duration(milliseconds: 500),
+              curve: Curves.easeOut,
+            );
+          }
+        });
       });
     } catch (e) {
       setState(() {
@@ -175,16 +226,13 @@ class _ImageUpscalingScreenState extends State<ImageUpscalingScreen> {
 
   Future<void> _saveImage() async {
     if (_processedImage == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('No image to save')),
-      );
+      showNoImageSelectedDialog();
       return;
     }
 
-    try {
-      // Show loading indicator
-      _showLoadingIndicator();
+    _showLoadingIndicator();
 
+    try {
       // Convert the ui.Image to bytes
       final bytes = await _imageToBytes(_processedImage!);
 
@@ -195,10 +243,7 @@ class _ImageUpscalingScreenState extends State<ImageUpscalingScreen> {
         // Request different permissions based on Android SDK version
         if (await _getAndroidVersion() >= 33) {
           // Android 13+
-          hasPermission = await Permission.photos.isGranted;
-          if (!hasPermission) {
-            hasPermission = (await Permission.photos.request()).isGranted;
-          }
+          hasPermission = await _requestAndroid13Permission();
         } else if (await _getAndroidVersion() >= 29) {
           // Android 10-12
           hasPermission = await Permission.storage.isGranted;
@@ -219,9 +264,8 @@ class _ImageUpscalingScreenState extends State<ImageUpscalingScreen> {
 
       if (!hasPermission) {
         _hideLoadingIndicator();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Storage permission is required to save images')),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text("Storage permission is required to save images")));
         return;
       }
 
@@ -237,30 +281,48 @@ class _ImageUpscalingScreenState extends State<ImageUpscalingScreen> {
       );
 
       // Check if save was successful
-      bool isSuccess = false;
+      bool isGallerySaveSuccess = false;
       if (result is Map) {
-        isSuccess = result['isSuccess'] ?? false;
+        isGallerySaveSuccess = result['isSuccess'] ?? false;
       } else {
-        isSuccess = result != null;
+        isGallerySaveSuccess = result != null;
+      }
+
+      if (!isGallerySaveSuccess) {
+        throw Exception("Failed to save image to gallery");
+      }
+
+      // Also save to downloads directory for easy access
+      final downloadsDir = await getDownloadsDirectory();
+      if (downloadsDir != null) {
+        String filePath = '${downloadsDir.path}/$fileName';
+        File file = File(filePath);
+        await file.writeAsBytes(bytes);
       }
 
       _hideLoadingIndicator();
 
-      if (isSuccess) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Image saved to gallery')),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to save image to gallery')),
-        );
-      }
+      // Show success message
+      final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+      final isDarkMode = themeProvider.isDarkMode;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Image saved to your gallery and downloads"),
+          duration: Duration(seconds: 3),
+          backgroundColor: isDarkMode
+              ? AppColors.primaryGreen.withOpacity(0.7)
+              : AppColors.primaryGreen,
+        ),
+      );
+
+      print("Image saved to gallery and downloads: $fileName");
     } catch (e) {
       _hideLoadingIndicator();
-      debugPrint('Error saving image: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error saving image: $e')),
+        SnackBar(content: Text("Error saving image: $e")),
       );
+      print("Error saving image: $e");
     }
   }
 
@@ -276,6 +338,41 @@ class _ImageUpscalingScreenState extends State<ImageUpscalingScreen> {
       }
     }
     return 0;
+  }
+
+// Request permissions for Android 13+ (API level 33+)
+  Future<bool> _requestAndroid13Permission() async {
+    // Check if photos permission is already granted
+    bool photosGranted = await Permission.photos.isGranted;
+
+    if (!photosGranted) {
+      // Request photos permission
+      final status = await Permission.photos.request();
+      photosGranted = status.isGranted;
+    }
+
+    return photosGranted;
+  }
+
+// Helper method to show a dialog when no image is selected
+  void showNoImageSelectedDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("No Image"),
+          content: Text("Please process an image first."),
+          actions: [
+            TextButton(
+              child: Text("OK"),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
 // Show loading indicator dialog

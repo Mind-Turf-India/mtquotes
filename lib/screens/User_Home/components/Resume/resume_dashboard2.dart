@@ -303,13 +303,27 @@ class _Step2ScreenState extends State<Step2Screen> {
   }
 
 
-  // Build a single employment block
+  // Build a single employment block with proper dark theme support and borders
   Widget _buildEmploymentBlock(int index) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: isDarkMode ? AppColors.darkSurface : const Color(0xFFF5F5F5),
+        color: isDarkMode ? AppColors.darkSurface : Colors.white,
         borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: AppColors.getDividerColor(isDarkMode),
+          width: 0.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: isDarkMode
+                ? Colors.black.withOpacity(0.2)
+                : Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 2,
+            offset: const Offset(0, 1),
+          ),
+        ],
       ),
       child: Column(
         children: [
@@ -330,15 +344,15 @@ class _Step2ScreenState extends State<Step2Screen> {
                 Text(
                   'Employment History #${index + 1}',
                   style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
                     color: AppColors.getTextColor(isDarkMode),
                   ),
                 ),
                 IconButton(
                   icon: Icon(
                     Icons.delete_outline,
-                    color: AppColors.getIconColor(isDarkMode),
+                    color: Colors.red,
                   ),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
@@ -347,7 +361,6 @@ class _Step2ScreenState extends State<Step2Screen> {
               ],
             ),
           ),
-
 
           // Employment details form
           Padding(
@@ -361,8 +374,14 @@ class _Step2ScreenState extends State<Step2Screen> {
                     Expanded(
                       child: Container(
                         decoration: BoxDecoration(
-                          color: AppColors.getSurfaceColor(isDarkMode),
+                          color: isDarkMode
+                              ? AppColors.darkSurface.withOpacity(0.7)
+                              : const Color(0xFFF5F5F5),
                           borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: AppColors.getDividerColor(isDarkMode),
+                            width: 0.5,
+                          ),
                         ),
                         child: TextField(
                           controller: _jobTitleControllers[index],
@@ -371,21 +390,25 @@ class _Step2ScreenState extends State<Step2Screen> {
                             hintText: 'Job Title',
                             hintStyle: TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode)),
                             border: InputBorder.none,
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 14),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                           ),
                         ),
                       ),
                     ),
                     const SizedBox(width: 16),
 
-
                     // Employer
                     Expanded(
                       child: Container(
                         decoration: BoxDecoration(
-                          color: AppColors.getSurfaceColor(isDarkMode),
+                          color: isDarkMode
+                              ? AppColors.darkSurface.withOpacity(0.7)
+                              : const Color(0xFFF5F5F5),
                           borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: AppColors.getDividerColor(isDarkMode),
+                            width: 0.5,
+                          ),
                         ),
                         child: TextField(
                           controller: _employerControllers[index],
@@ -394,8 +417,7 @@ class _Step2ScreenState extends State<Step2Screen> {
                             hintText: 'Employer',
                             hintStyle: TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode)),
                             border: InputBorder.none,
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 14),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                           ),
                         ),
                       ),
@@ -404,7 +426,6 @@ class _Step2ScreenState extends State<Step2Screen> {
                 ),
                 const SizedBox(height: 16),
 
-
                 // Start Date and End Date
                 Row(
                   children: [
@@ -412,8 +433,14 @@ class _Step2ScreenState extends State<Step2Screen> {
                     Expanded(
                       child: Container(
                         decoration: BoxDecoration(
-                          color: AppColors.getSurfaceColor(isDarkMode),
+                          color: isDarkMode
+                              ? AppColors.darkSurface.withOpacity(0.7)
+                              : const Color(0xFFF5F5F5),
                           borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: AppColors.getDividerColor(isDarkMode),
+                            width: 0.5,
+                          ),
                         ),
                         child: Row(
                           children: [
@@ -426,19 +453,17 @@ class _Step2ScreenState extends State<Step2Screen> {
                                   hintText: 'Start Date',
                                   hintStyle: TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode)),
                                   border: InputBorder.none,
-                                  contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 16, vertical: 14),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                                 ),
                               ),
                             ),
                             IconButton(
                               icon: Icon(
-                                Icons.calendar_today,
-                                color: AppColors.getSecondaryTextColor(isDarkMode),
-                                size: 20
+                                  Icons.calendar_today,
+                                  color: AppColors.getSecondaryTextColor(isDarkMode),
+                                  size: 20
                               ),
-                              onPressed: () => _selectDate(
-                                  context, _startDateControllers[index]),
+                              onPressed: () => _selectDate(context, _startDateControllers[index]),
                             ),
                           ],
                         ),
@@ -446,13 +471,18 @@ class _Step2ScreenState extends State<Step2Screen> {
                     ),
                     const SizedBox(width: 16),
 
-
                     // End Date
                     Expanded(
                       child: Container(
                         decoration: BoxDecoration(
-                          color: AppColors.getSurfaceColor(isDarkMode),
+                          color: isDarkMode
+                              ? AppColors.darkSurface.withOpacity(0.7)
+                              : const Color(0xFFF5F5F5),
                           borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: AppColors.getDividerColor(isDarkMode),
+                            width: 0.5,
+                          ),
                         ),
                         child: Row(
                           children: [
@@ -465,19 +495,17 @@ class _Step2ScreenState extends State<Step2Screen> {
                                   hintText: 'End Date',
                                   hintStyle: TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode)),
                                   border: InputBorder.none,
-                                  contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 16, vertical: 14),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                                 ),
                               ),
                             ),
                             IconButton(
                               icon: Icon(
-                                Icons.calendar_today,
-                                color: AppColors.getSecondaryTextColor(isDarkMode),
-                                size: 20
+                                  Icons.calendar_today,
+                                  color: AppColors.getSecondaryTextColor(isDarkMode),
+                                  size: 20
                               ),
-                              onPressed: () => _selectDate(
-                                  context, _endDateControllers[index]),
+                              onPressed: () => _selectDate(context, _endDateControllers[index]),
                             ),
                           ],
                         ),
@@ -487,12 +515,17 @@ class _Step2ScreenState extends State<Step2Screen> {
                 ),
                 const SizedBox(height: 16),
 
-
                 // Location
                 Container(
                   decoration: BoxDecoration(
-                    color: AppColors.getSurfaceColor(isDarkMode),
+                    color: isDarkMode
+                        ? AppColors.darkSurface.withOpacity(0.7)
+                        : const Color(0xFFF5F5F5),
                     borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: AppColors.getDividerColor(isDarkMode),
+                      width: 0.5,
+                    ),
                   ),
                   child: TextField(
                     controller: _locationControllers[index],
@@ -501,19 +534,23 @@ class _Step2ScreenState extends State<Step2Screen> {
                       hintText: 'Location',
                       hintStyle: TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode)),
                       border: InputBorder.none,
-                      contentPadding:
-                          const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     ),
                   ),
                 ),
                 const SizedBox(height: 16),
 
-
                 // Description
                 Container(
                   decoration: BoxDecoration(
-                    color: AppColors.getSurfaceColor(isDarkMode),
+                    color: isDarkMode
+                        ? AppColors.darkSurface.withOpacity(0.7)
+                        : const Color(0xFFF5F5F5),
                     borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: AppColors.getDividerColor(isDarkMode),
+                      width: 0.5,
+                    ),
                   ),
                   child: TextField(
                     controller: _descriptionControllers[index],
@@ -523,8 +560,7 @@ class _Step2ScreenState extends State<Step2Screen> {
                       hintText: 'Description of your role in 100 words...',
                       hintStyle: TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode)),
                       border: InputBorder.none,
-                      contentPadding:
-                          const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     ),
                   ),
                 ),
