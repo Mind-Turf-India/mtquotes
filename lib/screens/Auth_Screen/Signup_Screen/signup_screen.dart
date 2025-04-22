@@ -92,206 +92,328 @@ class _SignupScreenState extends State<SignupScreen> {
     }
   }
 
-  Future<void> _signInWithEmailAndPassword() async {
-    if (!passwordConfirmed()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Passwords do not match!"),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    _showLoadingDialog();
-
-    try {
-      UserCredential userCredential =
-      await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-      );
-
-      // Send email verification
-      await userCredential.user!.sendEmailVerification();
-
-      // Store user info in Firestore
-      await saveUserToFirestore(userCredential.user);
-
-      // Handle user change for notifications
-      await NotificationService.instance
-          .handleUserChanged(userCredential.user?.uid);
-
-      // Request notification permissions after successful signup
-      await NotificationService.instance.requestPermissions();
-
-      _hideLoadingDialog();
-
-      // Navigate to email verification screen
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (context) => EmailVerificationScreen(
-            email: _emailController.text.trim(),
-          ),
-        ),
-      );
-    } catch (e) {
-      _hideLoadingDialog();
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Signup Failed: $e"),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
+  // Updated sign up function
+Future<void> _signInWithEmailAndPassword() async {
+  if (!passwordConfirmed()) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("Passwords do not match!"),
+        backgroundColor: Colors.red,
+      ),
+    );
+    return;
   }
 
-  void showVerificationDialog() {
-    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
-    final isDarkMode = themeProvider.isDarkMode;
-    final backgroundColor = isDarkMode ? AppColors.darkBackground : AppColors.lightBackground;
-    final textColor = isDarkMode ? AppColors.darkText : AppColors.lightText;
+  _showLoadingDialog();
 
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: backgroundColor,
-          title: Text(
-            'Verify Your Email',
-            style: TextStyle(color: textColor),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'A verification email has been sent to ${_emailController.text.trim()}',
-                style: TextStyle(color: textColor),
-              ),
-              SizedBox(height: 10),
-              Text(
-                'Please verify your email before logging in.',
-                style: TextStyle(color: textColor),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(builder: (context) => LoginScreen()),
-                      (Route<dynamic> route) => false,
-                );
-              },
-              child: Text('Ok', style: TextStyle(color: AppColors.primaryBlue)),
-            ),
-            TextButton(
-              onPressed: () async {
-                try {
-                  User? user = FirebaseAuth.instance.currentUser;
-                  if (user != null) {
-                    await user.sendEmailVerification();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text("Verification email sent again!"),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
-                  }
-                } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text("Failed to send verification email: $e"),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              },
-              child: Text('Resend', style: TextStyle(color: AppColors.primaryBlue)),
-            ),
-          ],
-        );
-      },
+  try {
+    // Step 1: Create Firebase Auth user
+    UserCredential userCredential =
+    await FirebaseAuth.instance.createUserWithEmailAndPassword(
+      email: _emailController.text.trim(),
+      password: _passwordController.text.trim(),
+    );
+
+    // Step 2: Send email verification
+    await userCredential.user!.sendEmailVerification();
+    
+    // Step 3: Create temporary user record
+    // Store referral code if provided, but don't apply rewards yet
+    await createTemporaryUser(
+      userCredential.user, 
+      referralCode: _referralController.text.trim()
+    );
+
+    // Handle user change for notifications
+    await NotificationService.instance
+        .handleUserChanged(userCredential.user?.uid);
+
+    // Request notification permissions after successful signup
+    await NotificationService.instance.requestPermissions();
+
+    _hideLoadingDialog();
+
+    // Navigate to email verification screen
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (context) => EmailVerificationScreen(
+          email: _emailController.text.trim(),
+        ),
+      ),
+    );
+  } catch (e) {
+    _hideLoadingDialog();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("Signup Failed: $e"),
+        backgroundColor: Colors.red,
+      ),
     );
   }
+}
 
-  Future<void> saveUserToFirestore(User? user,
-      {bool isNewSignUp = true}) async {
-    if (user != null && user.email != null) {
-      final String userEmail = user.email!
-          .replaceAll(".", "_"); // Firestore doesn't allow '.' in document IDs
-      final userRef =
-          FirebaseFirestore.instance.collection('users').doc(userEmail);
+// New function to save temporary user data
+Future<void> _saveTemporaryUserData(User? user) async {
+  if (user == null) return;
+  
+  try {
+    // You can store minimal data with an "isVerified" flag set to false
+    await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+      'email': user.email,
+      'isVerified': false,
+      'createdAt': FieldValue.serverTimestamp(),
+      'tempCreation': true,  // Flag to identify unverified accounts for potential cleanup
+    });
+  } catch (e) {
+    print("Error saving temporary user data: $e");
+  }
+}
 
-      // First check if the user already exists
-      DocumentSnapshot userSnapshot = await userRef.get();
+// Function to save the complete user profile after verification
+Future<void> saveVerifiedUserToFirestore(User? user) async {
+  if (user == null) return;
+  
+  try {
+    // Get any additional user info you want to store
+    // This would update the temporary record with full user data
+    await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+      'email': user.email,
+      'isVerified': true,
+      'tempCreation': false,
+      'verifiedAt': FieldValue.serverTimestamp(),
+      // Add any other user fields you want to store
+      'displayName': user.displayName ?? '',
+      'photoURL': user.photoURL ?? '',
+      // Add additional fields as needed
+    });
+  } catch (e) {
+    print("Error saving verified user to Firestore: $e");
+  }
+}
 
-      // If user exists and this is coming from signup flow, don't override data
-      if (userSnapshot.exists && !isNewSignUp) {
-        // Just update the login timestamp if needed
-        await userRef.update({
-          'lastLoginAt': FieldValue.serverTimestamp(),
+  // void showVerificationDialog() {
+  //   final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+  //   final isDarkMode = themeProvider.isDarkMode;
+  //   final backgroundColor = isDarkMode ? AppColors.darkBackground : AppColors.lightBackground;
+  //   final textColor = isDarkMode ? AppColors.darkText : AppColors.lightText;
+
+  //   showDialog(
+  //     context: context,
+  //     barrierDismissible: false,
+  //     builder: (BuildContext context) {
+  //       return AlertDialog(
+  //         backgroundColor: backgroundColor,
+  //         title: Text(
+  //           'Verify Your Email',
+  //           style: TextStyle(color: textColor),
+  //         ),
+  //         content: Column(
+  //           mainAxisSize: MainAxisSize.min,
+  //           children: [
+  //             Text(
+  //               'A verification email has been sent to ${_emailController.text.trim()}',
+  //               style: TextStyle(color: textColor),
+  //             ),
+  //             SizedBox(height: 10),
+  //             Text(
+  //               'Please verify your email before logging in.',
+  //               style: TextStyle(color: textColor),
+  //             ),
+  //           ],
+  //         ),
+  //         actions: [
+  //           TextButton(
+  //             onPressed: () {
+  //               Navigator.pushAndRemoveUntil(
+  //                 context,
+  //                 MaterialPageRoute(builder: (context) => LoginScreen()),
+  //                     (Route<dynamic> route) => false,
+  //               );
+  //             },
+  //             child: Text('Ok', style: TextStyle(color: AppColors.primaryBlue)),
+  //           ),
+  //           TextButton(
+  //             onPressed: () async {
+  //               try {
+  //                 User? user = FirebaseAuth.instance.currentUser;
+  //                 if (user != null) {
+  //                   await user.sendEmailVerification();
+  //                   ScaffoldMessenger.of(context).showSnackBar(
+  //                     SnackBar(
+  //                       content: Text("Verification email sent again!"),
+  //                       backgroundColor: Colors.green,
+  //                     ),
+  //                   );
+  //                 }
+  //               } catch (e) {
+  //                 ScaffoldMessenger.of(context).showSnackBar(
+  //                   SnackBar(
+  //                     content: Text("Failed to send verification email: $e"),
+  //                     backgroundColor: Colors.red,
+  //                   ),
+  //                 );
+  //               }
+  //             },
+  //             child: Text('Resend', style: TextStyle(color: AppColors.primaryBlue)),
+  //           ),
+  //         ],
+  //       );
+  //     },
+  //   );
+  // }
+
+ // Step 1: Create a temporary user record during signup
+Future<void> createTemporaryUser(User? user, {String? referralCode}) async {
+  if (user == null || user.email == null) return;
+  
+  try {
+    final String userEmail = user.email!.replaceAll(".", "_"); // Firestore doesn't allow '.' in document IDs
+    final userRef = FirebaseFirestore.instance.collection('users').doc(userEmail);
+    
+    // Basic temporary data
+    Map<String, dynamic> tempUserData = {
+      'uid': user.uid,
+      'email': user.email,
+      'createdAt': FieldValue.serverTimestamp(),
+      'isEmailVerified': false,
+      'tempAccount': true,
+      'pendingReferralCode': referralCode, // Store this to apply after verification
+    };
+    
+    // Save temporary user data
+    await userRef.set(tempUserData);
+    
+    print("Temporary user data saved while waiting for verification");
+  } catch (e) {
+    print("Error creating temporary user: $e");
+  }
+}
+
+// Step 2: Complete user creation after email verification
+Future<void> completeUserCreation(User? user) async {
+  if (user == null || user.email == null) return;
+  
+  try {
+    final String userEmail = user.email!.replaceAll(".", "_");
+    final userRef = FirebaseFirestore.instance.collection('users').doc(userEmail);
+    
+    // Get temporary user data
+    DocumentSnapshot userSnapshot = await userRef.get();
+    
+    if (!userSnapshot.exists) {
+      print("Error: User document not found during verification completion");
+      return;
+    }
+    
+    // Get data from the temporary record
+    final userData = userSnapshot.data() as Map<String, dynamic>;
+    String? pendingReferralCode = userData['pendingReferralCode'];
+    
+    // Generate full user data
+    final String referralCode = _generateReferralCode(user.uid);
+    Map<String, dynamic> completeUserData = {
+      'uid': user.uid,
+      'email': user.email,
+      'name': null,
+      'bio': null,
+      'createdAt': userData['createdAt'], // Keep original creation timestamp
+      'verifiedAt': FieldValue.serverTimestamp(),
+      'lastLoginAt': FieldValue.serverTimestamp(),
+      'referralCode': referralCode,
+      'referrerUid': null,
+      'rewardPoints': 100,
+      'previousRewardPoints': 0,
+      'isSubscribed': false,
+      'isPaid': false,
+      'role': 'user',
+      'answeredSurveys': [],
+      'appOpenCount': 0,
+      'lastAnsweredQuestionIndex': -1,
+      'lastSurveyAppOpenCount': 0,
+      'lastSurveyShown': null,
+      'isEmailVerified': true,
+      'tempAccount': false,
+    };
+    
+    // Handle pending referral code if it exists
+    if (pendingReferralCode != null && pendingReferralCode.isNotEmpty) {
+      // Find the referrer in Firestore
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .where('referralCode', isEqualTo: pendingReferralCode)
+          .get();
+          
+      if (querySnapshot.docs.isNotEmpty) {
+        DocumentSnapshot referrerDoc = querySnapshot.docs.first;
+        String referrerUid = referrerDoc.id;
+        // Update user data with referrer info
+        completeUserData['referrerUid'] = referrerUid;
+        completeUserData['rewardPoints'] += 100; // Reward for using a referral
+        
+        // Grant reward points to referrer
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(referrerUid)
+            .update({
+          'rewardPoints': FieldValue.increment(50),
         });
-        return;
-      }
-
-      // For new users or explicit signup flow
-      if (!userSnapshot.exists) {
-        final String referralCode = _generateReferralCode(user.uid);
-        Map<String, dynamic> userData = {
-          'uid': user.uid,
-          'email': user.email,
-          'name': null,
-          'bio': null,
-          'createdAt': FieldValue.serverTimestamp(),
-          'lastLoginAt': FieldValue.serverTimestamp(),
-          'referralCode': referralCode,
-          'referrerUid': null,
-          'rewardPoints': 100,
-          'previousRewardPoints': 0,
-          'isSubscribed': false,
-          'isPaid': false,
-          'role': 'user',
-          'answeredSurveys': [],
-          'appOpenCount': 0,
-          'lastAnsweredQuestionIndex': -1,
-          'lastSurveyAppOpenCount': 0,
-          'lastSurveyShown': null,
-        };
-
-        // Handling referral codes
-        if (_referralController.text.trim().isNotEmpty) {
-          String usedReferralCode = _referralController.text.trim();
-          // Find the referrer in Firestore
-          QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-              .collection('users')
-              .where('referralCode', isEqualTo: usedReferralCode)
-              .get();
-          if (querySnapshot.docs.isNotEmpty) {
-            DocumentSnapshot referrerDoc = querySnapshot.docs.first;
-            String referrerUid = referrerDoc.id;
-            // Update user data with referrer info
-            userData['referrerUid'] = referrerUid;
-            userData['rewardPoints'] += 100; // Reward for using a referral
-            // Grant reward points to referrer
-            await FirebaseFirestore.instance
-                .collection('users')
-                .doc(referrerUid)
-                .update({
-              'rewardPoints': FieldValue.increment(50),
-            });
-          }
-        }
-
-        // Save user data for new users
-        await userRef.set(userData);
       }
     }
+    
+    // Update the user document with complete data
+    await userRef.update(completeUserData);
+    
+    print("User creation completed after email verification");
+  } catch (e) {
+    print("Error completing user creation: $e");
   }
+}
 
+// Step 3: Handle user cleanup if verification is cancelled or times out
+Future<void> cleanupUnverifiedUser(User? user) async {
+  if (user == null || user.email == null) return;
+  
+  try {
+    final String userEmail = user.email!.replaceAll(".", "_");
+    final userRef = FirebaseFirestore.instance.collection('users').doc(userEmail);
+    
+    // Delete the Firestore document
+    await userRef.delete();
+    print("Temporary user data cleaned up");
+  } catch (e) {
+    print("Error cleaning up unverified user: $e");
+  }
+}
+
+// For backward compatibility - redirect to appropriate function
+Future<void> saveUserToFirestore(User? user, {bool isNewSignUp = true}) async {
+  if (user == null || user.email == null) return;
+  
+  // Check if the user is email verified
+  await user.reload(); // Get latest status
+  final isVerified = FirebaseAuth.instance.currentUser?.emailVerified ?? false;
+  
+  if (isNewSignUp) {
+    // For new signups, we'll handle differently based on verification approach
+    if (isVerified) {
+      // Rare case: user is already verified during signup
+      await completeUserCreation(user);
+    } else {
+      // Normal flow: create temporary user, verification happens later
+      await createTemporaryUser(user, referralCode: _referralController.text.trim());
+    }
+  } else {
+    // This is a login, not a signup
+    final String userEmail = user.email!.replaceAll(".", "_");
+    final userRef = FirebaseFirestore.instance.collection('users').doc(userEmail);
+    
+    // Just update login timestamp
+    await userRef.update({
+      'lastLoginAt': FieldValue.serverTimestamp(),
+    });
+  }
+}
   Future<void> _signInWithGoogle() async {
     _showLoadingDialog();
     try {

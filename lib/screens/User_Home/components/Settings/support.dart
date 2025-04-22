@@ -407,12 +407,13 @@ class _SupportScreenState extends State<SupportScreen> {
                       child: GestureDetector(
                         onTap: _openWhatsApp,
                         child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             SvgPicture.asset(
-                              'assets/icons/whatsapp_5968841.svg',
+                              'assets/icons/whatsapp.svg',
                               height: 28,
                               width: 28,
-                              colorFilter: ColorFilter.mode(Colors.green, BlendMode.srcIn),
+                              // colorFilter: ColorFilter.mode(Colors.green, BlendMode.srcIn),
                             ),
                             SizedBox(width: 10),
                             Text(

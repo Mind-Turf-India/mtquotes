@@ -19,6 +19,7 @@ import 'package:mtquotes/screens/navbar_mainscreen.dart';
 import 'package:mtquotes/screens/Onboarding_Screen/onboarding_screen.dart';
 import 'package:mtquotes/l10n/app_localization.dart';
 import 'firebase_options.dart';
+import 'package:mtquotes/utils/app_colors.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
