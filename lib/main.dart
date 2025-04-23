@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:mtquotes/providers/text_size_provider.dart';
 import 'package:mtquotes/screens/Auth_Screen/Login_Screen/login_screen.dart';
 import 'package:mtquotes/screens/Create_Screen/components/details_screen.dart';
@@ -100,7 +101,8 @@ class MyAppState extends State<MyApp> {
           localizationsDelegates: localizationDelegates,
           theme: AppTheme.getLightTheme().copyWith(
             textTheme: TextTheme(
-              bodyLarge: TextStyle(fontSize: fontSizeProvider.fontSize),
+              
+              bodyLarge: TextStyle(fontSize: fontSizeProvider.fontSize, ),
               bodyMedium: TextStyle(fontSize: fontSizeProvider.fontSize * 0.9),
               bodySmall: TextStyle(fontSize: fontSizeProvider.fontSize * 0.8),
             ),

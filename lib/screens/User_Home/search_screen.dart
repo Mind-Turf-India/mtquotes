@@ -182,21 +182,21 @@ class _SearchScreenState extends State<SearchScreen> {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDarkMode = themeProvider.isDarkMode;
     double fontSize = textSizeProvider.fontSize;
-
-    return Scaffold(
-      backgroundColor: AppColors.getBackgroundColor(isDarkMode),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text(
-          context.loc.search,
-          style: GoogleFonts.poppins(
-            fontSize: fontSize + 6,
-            fontWeight: FontWeight.w600,
-            color: AppColors.getTextColor(isDarkMode),
-          ),
-        ),
+return Scaffold(
+  backgroundColor: AppColors.getBackgroundColor(isDarkMode),
+  appBar: AppBar(
+    
+    backgroundColor: Colors.transparent,
+    elevation: 0,
+    title: Text(
+      context.loc.search,
+      style: GoogleFonts.poppins(
+        fontSize: fontSize + 6,
+        fontWeight: FontWeight.w600,
+        color: AppColors.getTextColor(isDarkMode),
       ),
+    ),
+  ),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -293,11 +293,31 @@ class _SearchScreenState extends State<SearchScreen> {
                   child: ListView(
                     scrollDirection: Axis.horizontal,
                     children: [
-                      categoryCard(Icons.lightbulb, context.loc.motivational, Colors.green, isDarkMode),
-                      categoryCard(Icons.favorite, context.loc.love, Colors.red, isDarkMode),
-                      categoryCard(Icons.emoji_emotions, context.loc.funny, Colors.orange, isDarkMode),
-                      categoryCard(Icons.people, context.loc.friendship, Colors.blue, isDarkMode),
-                      categoryCard(Icons.self_improvement, context.loc.life, Colors.purple, isDarkMode),
+                      categoryCard(
+                                        'assets/icons/motivation.svg',
+                                        context.loc.motivational,
+                                        Colors.green,
+                                        isDarkMode),
+                                    categoryCard(
+                                        'assets/icons/love.svg',
+                                        context.loc.love,
+                                        Colors.red,
+                                        isDarkMode),
+                                    categoryCard(
+                                        'assets/icons/funny.svg',
+                                        context.loc.funny,
+                                        Colors.orange,
+                                        isDarkMode),
+                                    categoryCard(
+                                        'assets/icons/friendship.svg',
+                                        context.loc.friendship,
+                                        Colors.blue,
+                                        isDarkMode),
+                                    categoryCard(
+                                        'assets/icons/sad.svg',
+                                        context.loc.life,
+                                        Colors.purple,
+                                        isDarkMode),
                     ],
                   ),
                 ),
@@ -650,48 +670,56 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  Widget categoryCard(IconData icon, String title, Color color, bool isDarkMode) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => CategoryScreen(
-              categoryName: title,
-              categoryColor: color,
-              categoryIcon: icon,
+  Widget categoryCard(
+  String svgAssetPath, String title, Color color, bool isDarkMode) {
+  return GestureDetector(
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => CategoryScreen(
+            categoryName: title,
+            categoryColor: color,
+            categorySvgPath: svgAssetPath,
+          ),
+        ),
+      );
+    },
+    child: Padding(
+      padding: EdgeInsets.only(right: 12),
+      child: Column(
+        children: [
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              color: color.withOpacity(isDarkMode ? 0.3 : 0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Center(
+              child: SvgPicture.asset(
+                svgAssetPath,
+                width: 35,  // Reduced from 30 to 24
+                height: 35, // Reduced from 30 to 24
+                color: color,
+              ),
             ),
           ),
-        );
-      },
-      child: Padding(
-        padding: EdgeInsets.only(right: 12),
-        child: Column(
-          children: [
-            Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                color: color.withOpacity(isDarkMode ? 0.3 : 0.2),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, color: color, size: 30),
+          SizedBox(
+            height: 5,
+            width: 10,
+          ),
+          Text(
+            title,
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: AppColors.getTextColor(isDarkMode),
             ),
-            SizedBox(
-              height: 5,
-              width: 10,
-            ),
-            Text(
-              title,
-              style: GoogleFonts.poppins(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: AppColors.getTextColor(isDarkMode),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
 }

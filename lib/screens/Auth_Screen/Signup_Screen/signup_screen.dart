@@ -316,106 +316,168 @@ Future<void> cleanupUnverifiedUser(User? user) async {
 }
 
 // For backward compatibility - redirect to appropriate function
-Future<void> saveUserToFirestore(User? user, {bool isNewSignUp = true}) async {
+Future<void> saveUserToFirestore(User? user, {required bool isNewSignUp}) async {
   if (user == null || user.email == null) return;
   
-  // Check if the user is email verified
-  await user.reload(); // Get latest status
-  final isVerified = FirebaseAuth.instance.currentUser?.emailVerified ?? false;
+  final String userEmail = user.email!.replaceAll(".", "_");
+  final userRef = FirebaseFirestore.instance.collection('users').doc(userEmail);
   
-  if (isNewSignUp) {
-    // For new signups, we'll handle differently based on verification approach
-    if (isVerified) {
-      // Rare case: user is already verified during signup
-      await completeUserCreation(user);
+  try {
+    if (isNewSignUp) {
+      // This is a new user - create full user record
+      final String referralCode = _generateReferralCode(user.uid);
+      
+      // Extract pending referral code if it exists (You'll need to implement how you track this)
+      String? pendingReferralCode = await _getPendingReferralCode();
+      
+      Map<String, dynamic> userData = {
+        'uid': user.uid,
+        'email': user.email,
+        'name': user.displayName ?? null,
+        'photoURL': user.photoURL,
+        'bio': null,
+        'createdAt': FieldValue.serverTimestamp(),
+        'verifiedAt': FieldValue.serverTimestamp(), 
+        'lastLoginAt': FieldValue.serverTimestamp(),
+        'referralCode': referralCode,
+        'referrerUid': null, // Will be handled by the cloud function if referral code is valid
+        'rewardPoints': 100,
+        'previousRewardPoints': 0,
+        'isSubscribed': false,
+        'isPaid': false,
+        'role': 'user',
+        'answeredSurveys': [],
+        'appOpenCount': 0,
+        'lastAnsweredQuestionIndex': -1,
+        'lastSurveyAppOpenCount': 0,
+        'lastSurveyShown': null,
+        'isEmailVerified': true,
+        'tempAccount': false,
+        'googleSignIn': true, // Mark as Google sign-in
+        'provider': 'google.com',
+        'welcomeEmailSent': false // The cloud function will set this to true after sending the email
+      };
+      
+      // Add pending referral code if it exists
+      if (pendingReferralCode != null && pendingReferralCode.isNotEmpty) {
+        userData['pendingReferralCode'] = pendingReferralCode;
+      }
+      
+      // Create new user document
+      await userRef.set(userData);
+      
+      print("New Google user created successfully");
     } else {
-      // Normal flow: create temporary user, verification happens later
-      await createTemporaryUser(user, referralCode: _referralController.text.trim());
+      // This is an existing user - just update login timestamp
+      await userRef.update({
+        'lastLoginAt': FieldValue.serverTimestamp(),
+        'appOpenCount': FieldValue.increment(1)
+      });
+      
+      print("Existing user login updated");
     }
-  } else {
-    // This is a login, not a signup
-    final String userEmail = user.email!.replaceAll(".", "_");
-    final userRef = FirebaseFirestore.instance.collection('users').doc(userEmail);
-    
-    // Just update login timestamp
-    await userRef.update({
-      'lastLoginAt': FieldValue.serverTimestamp(),
-    });
+  } catch (e) {
+    print("Error saving user to Firestore: $e");
+    // You might want to handle this error, possibly by showing a notification
   }
 }
+
+
+// Helper method to retrieve pending referral code
+// Implement this based on how you track referral codes in your app
+Future<String?> _getPendingReferralCode() async {
+  // Example implementation - replace with your actual implementation
+  // This might be stored in SharedPreferences, app state, etc.
+  
+  // For example, if using SharedPreferences:
+  // final prefs = await SharedPreferences.getInstance();
+  // return prefs.getString('pendingReferralCode');
+  
+  return null; // Return null if no pending referral code
+}
   Future<void> _signInWithGoogle() async {
-    _showLoadingDialog();
+  _showLoadingDialog();
+  try {
+    await GoogleSignIn().signOut();
+    final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+    if (googleUser == null) {
+      _hideLoadingDialog();
+      return;
+    }
+    final GoogleSignInAuthentication googleAuth =
+        await googleUser.authentication;
+    final credential = GoogleAuthProvider.credential(
+      accessToken: googleAuth.accessToken,
+      idToken: googleAuth.idToken,
+    );
+
+    // Before signing in, check if this is an existing user
+    bool isExistingUser = false;
+    String userEmail = '';
     try {
-      await GoogleSignIn().signOut();
-      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-      if (googleUser == null) {
-        _hideLoadingDialog();
-        return;
-      }
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
-      final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
-
-      // Before signing in, check if this is an existing user
-      bool isExistingUser = false;
-      try {
-        // Check if email exists in Firestore
-        final String userEmail = googleUser.email.replaceAll(".", "_");
-        final userDoc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(userEmail)
-            .get();
-        isExistingUser = userDoc.exists;
-      } catch (e) {
-        // If error checking, proceed with normal flow
-        print("Error checking existing user: $e");
-      }
-
-      UserCredential userCredential =
-          await FirebaseAuth.instance.signInWithCredential(credential);
-
-      // Pass information about whether this is a new signup or existing user login
-      await saveUserToFirestore(userCredential.user,
-          isNewSignUp: !isExistingUser);
-
-      // Handle user change for notifications
-      await NotificationService.instance
-          .handleUserChanged(userCredential.user?.uid);
-
-      // Request notification permissions after successful login/signup
-      await NotificationService.instance.requestPermissions();
-
-      _hideLoadingDialog();
-
-      // If it's an existing user coming from signup flow, show a message
-      if (isExistingUser) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-                "You already have an account with this email. Logging you in."),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (context) => MainScreen()),
-        (Route<dynamic> route) => false,
-      );
+      // Check if email exists in Firestore
+      userEmail = googleUser.email.replaceAll(".", "_");
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userEmail)
+          .get();
+      isExistingUser = userDoc.exists;
     } catch (e) {
-      _hideLoadingDialog();
+      // If error checking, proceed with normal flow
+      print("Error checking existing user: $e");
+    }
+
+    UserCredential userCredential =
+        await FirebaseAuth.instance.signInWithCredential(credential);
+
+    // Pass information about whether this is a new signup or existing user login
+    await saveUserToFirestore(userCredential.user,
+        isNewSignUp: !isExistingUser);
+
+    // Handle user change for notifications
+    await NotificationService.instance
+        .handleUserChanged(userCredential.user?.uid);
+
+    // Request notification permissions after successful login/signup
+    await NotificationService.instance.requestPermissions();
+
+    _hideLoadingDialog();
+
+    // If it's an existing user coming from signup flow, show a message
+    if (isExistingUser) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Google Sign-In Failed: $e"),
-          backgroundColor: Colors.red,
+          content: Text(
+              "You already have an account with this email. Logging you in."),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } else {
+      // Show welcome message for new users
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              "Welcome! Your account has been created successfully.",
+          ),
+          backgroundColor: Colors.green,
         ),
       );
     }
-  }
 
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (context) => MainScreen()),
+      (Route<dynamic> route) => false,
+    );
+  } catch (e) {
+    _hideLoadingDialog();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("Google Sign-In Failed: $e"),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+}
   // Function to generate a unique referral code
   String _generateReferralCode(String uid) {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';

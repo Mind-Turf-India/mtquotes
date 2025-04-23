@@ -6,6 +6,7 @@ import 'package:mtquotes/screens/Templates/components/template/quote_template.da
 import 'package:mtquotes/screens/Templates/components/template/template_handler.dart';
 import 'package:mtquotes/screens/Templates/components/template/template_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import '../../../../providers/text_size_provider.dart';
 import '../../../../utils/app_colors.dart';
@@ -16,13 +17,13 @@ import 'package:mtquotes/l10n/app_localization.dart';
 class CategoryScreen extends StatefulWidget {
   final String categoryName;
   final Color categoryColor;
-  final IconData categoryIcon;
+  final String categorySvgPath; // Changed from IconData to String for SVG path
 
   const CategoryScreen({
     Key? key,
     required this.categoryName,
     required this.categoryColor,
-    required this.categoryIcon,
+    required this.categorySvgPath, // Updated parameter
   }) : super(key: key);
 
   @override
@@ -120,7 +121,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
     TemplateHandler.handleTemplateSelection(
       context,
       template,
-          (selectedTemplate) {
+      (selectedTemplate) {
         // This callback is executed when access is granted
         // Navigate to the edit screen with the selected template
         Navigator.push(
@@ -195,13 +196,25 @@ class _CategoryScreenState extends State<CategoryScreen> {
             Navigator.pop(context);
           },
         ),
-        title: Text(
-          widget.categoryName,
-          style: GoogleFonts.poppins(
-            fontSize: fontSize + 2,
-            fontWeight: FontWeight.w600,
-            color: AppColors.getTextColor(isDarkMode),
-          ),
+        title: Row(
+          children: [
+            // Display SVG in app bar
+            // SvgPicture.asset(
+            //   widget.categorySvgPath,
+            //   width: 24,
+            //   height: 24,
+            //   color: widget.categoryColor,
+            // ),
+            // SizedBox(width: 8),
+            Text(
+              widget.categoryName,
+              style: GoogleFonts.poppins(
+                fontSize: fontSize + 2,
+                fontWeight: FontWeight.w600,
+                color: AppColors.getTextColor(isDarkMode),
+              ),
+            ),
+          ],
         ),
         backgroundColor: AppColors.getBackgroundColor(isDarkMode),
         elevation: 0,
@@ -212,122 +225,122 @@ class _CategoryScreenState extends State<CategoryScreen> {
           // Templates Grid
           _isLoading
               ? SliverToBoxAdapter(
-            child: _buildShimmerGrid(isDarkMode),
-          )
+                  child: _buildShimmerGrid(isDarkMode),
+                )
               : _errorMessage.isNotEmpty
-              ? SliverFillRemaining(
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  _errorMessage,
-                  style: GoogleFonts.poppins(
-                    fontSize: fontSize,
-                    color: Colors.red,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ),
-          )
-              : _categoryTemplates.isEmpty
-              ? SliverFillRemaining(
-            child: Center(
-              child: Text(
-                'No templates available for ${widget.categoryName}',
-                style: GoogleFonts.poppins(
-                  fontSize: fontSize,
-                  color: AppColors.getTextColor(isDarkMode),
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          )
-              : SliverPadding(
-            padding: EdgeInsets.all(16),
-            sliver: SliverGrid(
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                childAspectRatio: 0.75,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-              ),
-              delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                  final template = _categoryTemplates[index];
-                  return GestureDetector(
-                    onTap: () => _handleTemplateSelection(template),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          // Template Image
-                          template.imageUrl.isNotEmpty
-                              ? CachedNetworkImage(
-                            imageUrl: template.imageUrl,
-                            fit: BoxFit.cover,
-                            placeholder: (context, url) => _buildImageShimmer(isDarkMode),
-                            errorWidget: (context, url, error) => Container(
-                              color: isDarkMode ? Colors.grey[700] : Colors.grey[300],
-                              child: Icon(
-                                Icons.error,
-                                color: AppColors.getIconColor(isDarkMode),
-                              ),
+                  ? SliverFillRemaining(
+                      child: Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Text(
+                            _errorMessage,
+                            style: GoogleFonts.poppins(
+                              fontSize: fontSize,
+                              color: Colors.red,
                             ),
-                          )
-                              : Container(
-                            color: isDarkMode ? Colors.grey[700] : Colors.grey[300],
-                            child: Icon(
-                              Icons.image_not_supported,
-                              color: AppColors.getIconColor(isDarkMode),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                    )
+                  : _categoryTemplates.isEmpty
+                      ? SliverFillRemaining(
+                          child: Center(
+                            child: Text(
+                              'No templates available for ${widget.categoryName}',
+                              style: GoogleFonts.poppins(
+                                fontSize: fontSize,
+                                color: AppColors.getTextColor(isDarkMode),
+                              ),
+                              textAlign: TextAlign.center,
                             ),
                           ),
-
-                          // PRO badge for paid templates
-                          if (template.isPaid)
-                            Positioned(
-                              top: 8,
-                              right: 8,
-                              child: Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.black.withOpacity(0.7),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      Icons.lock,
-                                      color: Colors.amber,
-                                      size: 14,
-                                    ),
-                                    SizedBox(width: 4),
-                                    Text(
-                                      'PRO',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
+                        )
+                      : SliverPadding(
+                          padding: EdgeInsets.all(16),
+                          sliver: SliverGrid(
+                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 3,
+                              childAspectRatio: 0.75,
+                              crossAxisSpacing: 16,
+                              mainAxisSpacing: 16,
                             ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-                childCount: _categoryTemplates.length,
-              ),
-            ),
-          ),
+                            delegate: SliverChildBuilderDelegate(
+                              (context, index) {
+                                final template = _categoryTemplates[index];
+                                return GestureDetector(
+                                  onTap: () => _handleTemplateSelection(template),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Stack(
+                                      fit: StackFit.expand,
+                                      children: [
+                                        // Template Image
+                                        template.imageUrl.isNotEmpty
+                                            ? CachedNetworkImage(
+                                                imageUrl: template.imageUrl,
+                                                fit: BoxFit.cover,
+                                                placeholder: (context, url) => _buildImageShimmer(isDarkMode),
+                                                errorWidget: (context, url, error) => Container(
+                                                  color: isDarkMode ? Colors.grey[700] : Colors.grey[300],
+                                                  child: Icon(
+                                                    Icons.error,
+                                                    color: AppColors.getIconColor(isDarkMode),
+                                                  ),
+                                                ),
+                                              )
+                                            : Container(
+                                                color: isDarkMode ? Colors.grey[700] : Colors.grey[300],
+                                                child: Icon(
+                                                  Icons.image_not_supported,
+                                                  color: AppColors.getIconColor(isDarkMode),
+                                                ),
+                                              ),
+
+                                        // PRO badge for paid templates
+                                        if (template.isPaid)
+                                          Positioned(
+                                            top: 8,
+                                            right: 8,
+                                            child: Container(
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal: 8,
+                                                vertical: 4,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: Colors.black.withOpacity(0.7),
+                                                borderRadius: BorderRadius.circular(12),
+                                              ),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Icon(
+                                                    Icons.lock,
+                                                    color: Colors.amber,
+                                                    size: 14,
+                                                  ),
+                                                  SizedBox(width: 4),
+                                                  Text(
+                                                    'PRO',
+                                                    style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontSize: 12,
+                                                      fontWeight: FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                              childCount: _categoryTemplates.length,
+                            ),
+                          ),
+                        ),
         ],
       ),
     );

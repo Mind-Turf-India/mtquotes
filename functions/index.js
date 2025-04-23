@@ -1,10 +1,186 @@
+require('dotenv').config();
 const functions = require("firebase-functions");
 const functionsV2 = require("firebase-functions/v2");
 const admin = require("firebase-admin");
-const { DateTime } = require("luxon");
-const { onDocumentUpdated } = require('firebase-functions/v2/firestore');
+const { onDocumentCreated, onDocumentUpdated } = require('firebase-functions/v2/firestore');
+const nodemailer = require('nodemailer');
 
 admin.initializeApp();
+
+// Check if running in Firebase environment or local
+const emailHost = process.env.EMAIL_HOST || functions.config().email?.host;
+const emailUser = process.env.EMAIL_USER || functions.config().email?.user;
+const emailPassword = process.env.EMAIL_PASSWORD || functions.config().email?.password;
+
+// Create email transporter
+const transporter = nodemailer.createTransport({
+  host: emailHost,
+  port: 465,
+  secure: true,
+  auth: {
+    user: emailUser,
+    pass: emailPassword
+  }
+});
+
+// Function to send welcome email
+async function sendWelcomeEmail(userEmail, userName) {
+  const mailOptions = {
+    from: '"Vaky" <no-reply@vaky.app>',
+    to: userEmail,
+    subject: 'Welcome to Our Community!',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px;">
+        <img src="assets/logo.png" alt="Logo" style="display: block; margin: 0 auto; width: 100px;">
+        <h2 style="color: #4285f4; text-align: center;">Welcome to Our Community!</h2>
+        <p>Hello ${userName || 'New User'},</p>
+        <p>Thank you for joining our community! We're excited to have you on board.</p>
+        <p>With your verified account, you now have access to all features of our app:</p>
+        <ul>
+          <li>Browse and save your favorite quotes</li>
+          <li>Customize your profile</li>
+          <li>Connect with others</li>
+          <li>And much more!</li>
+        </ul>
+        <p>Don't hesitate to reach out if you have any questions or feedback.</p>
+        <div style="text-align: center; margin-top: 30px;">
+          <a href="https://your-app-url.com" style="background-color: #4285f4; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Open App</a>
+        </div>
+        <p style="margin-top: 30px; font-size: 12px; color: #666; text-align: center;">
+          This email was sent to ${userEmail}. If you did not sign up for an account, please disregard this email.
+        </p>
+      </div>
+    `
+  };
+  
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log('Welcome email sent to:', userEmail);
+    return { success: true };
+  } catch (error) {
+    console.error('Error sending welcome email:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+// Function for handling new user documents (for Google sign-ins)
+exports.handleNewGoogleUser = onDocumentCreated('users/{userDocId}', async (event) => {
+  const userData = event.data.data();
+  
+  if (!userData) {
+    console.log('No user data available');
+    return null;
+  }
+  
+  // Check if this is a Google sign-in and welcome email hasn't been sent yet
+  if ((userData.provider === 'google.com' || userData.googleSignIn === true) && 
+      !userData.welcomeEmailSent) {
+    const userEmail = userData.email;
+    const userName = userData.name || 'New User';
+    
+    // Send welcome email
+    try {
+      await sendWelcomeEmail(userEmail, userName);
+      
+      // Update the user document to mark that welcome email was sent
+      await event.data.ref.update({
+        welcomeEmailSent: true,
+        welcomeEmailSentAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+      
+      // Process referral if present
+      if (userData.pendingReferralCode) {
+        await processReferral(userData.uid, userData.pendingReferralCode, event.data.ref);
+      }
+      
+      return { success: true };
+    } catch (error) {
+      console.error('Error sending welcome email:', error);
+      return { success: false, error: error.message };
+    }
+  }
+  
+  return null;
+});
+
+// Function to process referral codes
+async function processReferral(userId, referralCode, userDocRef) {
+  try {
+    // Find the referrer in Firestore
+    const querySnapshot = await admin.firestore()
+      .collection('users')
+      .where('referralCode', '==', referralCode)
+      .get();
+    
+    if (!querySnapshot.empty) {
+      const referrerDoc = querySnapshot.docs[0];
+      const referrerUid = referrerDoc.id;
+      
+      // Update new user with referrer info
+      await userDocRef.update({
+        referrerUid: referrerUid,
+        rewardPoints: admin.firestore.FieldValue.increment(100) // Extra points for using referral
+      });
+      
+      // Grant reward points to referrer
+      await admin.firestore()
+        .collection('users')
+        .doc(referrerUid)
+        .update({
+          rewardPoints: admin.firestore.FieldValue.increment(50)
+        });
+      
+      console.log(`Referral processed: ${userId} was referred by ${referrerUid}`);
+    }
+  } catch (error) {
+    console.error('Error processing referral:', error);
+  }
+}
+
+// Keep your original function for email verification
+exports.sendWelcomeEmail = onDocumentUpdated('users/{userDocId}', async (event) => {
+  const userDocId = event.params.userDocId;
+  
+  try {
+    const previousData = event.data.before.data();
+    const newData = event.data.after.data();
+    
+    if (!previousData || !newData) {
+      console.log('No data available for comparison');
+      return null;
+    }
+    
+    // Check if this update represents an email verification
+    if ((previousData.tempAccount === true && newData.tempAccount === false) || 
+        (previousData.isEmailVerified === false && newData.isEmailVerified === true)) {
+      
+      // Skip if this is a returning user (welcome email already sent)
+      if (newData.welcomeEmailSent === true) {
+        console.log('Welcome email already sent to user:', newData.email);
+        return null;
+      }
+      
+      // User has just verified their email
+      const userEmail = newData.email;
+      const userName = newData.name || 'New User';
+      
+      await sendWelcomeEmail(userEmail, userName);
+      
+      // Update the user document to mark that welcome email was sent
+      await event.data.after.ref.update({
+        welcomeEmailSent: true,
+        welcomeEmailSentAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+      
+      return { success: true };
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error in welcome email function:', error);
+    return { success: false, error: error.message };
+  }
+});
 
 // ================ SUBSCRIPTION MANAGEMENT FUNCTIONS ================
 

@@ -636,7 +636,7 @@ class HomeScreenState extends State<HomeScreen> {
                                   profileImageUrl!.isEmpty))
                           ? Icon(Icons.camera_alt,
                               size: 40,
-                              color: AppColors.getIconColor(isDarkMode))
+                              color: AppColors.getIconColor(!isDarkMode))
                           : null,
                     ),
                   ),
@@ -1389,27 +1389,27 @@ class HomeScreenState extends State<HomeScreen> {
                                   scrollDirection: Axis.horizontal,
                                   children: [
                                     categoryCard(
-                                        Icons.lightbulb,
+                                        'assets/icons/motivation.svg',
                                         context.loc.motivational,
                                         Colors.green,
                                         isDarkMode),
                                     categoryCard(
-                                        Icons.favorite,
+                                        'assets/icons/love.svg',
                                         context.loc.love,
                                         Colors.red,
                                         isDarkMode),
                                     categoryCard(
-                                        Icons.emoji_emotions,
+                                        'assets/icons/funny.svg',
                                         context.loc.funny,
                                         Colors.orange,
                                         isDarkMode),
                                     categoryCard(
-                                        Icons.people,
+                                        'assets/icons/friendship.svg',
                                         context.loc.friendship,
                                         Colors.blue,
                                         isDarkMode),
                                     categoryCard(
-                                        Icons.self_improvement,
+                                        'assets/icons/sad.svg',
                                         context.loc.life,
                                         Colors.purple,
                                         isDarkMode),
@@ -1796,50 +1796,57 @@ class HomeScreenState extends State<HomeScreen> {
 
   // Update the categoryCard function in your HomeScreen class
   Widget categoryCard(
-      IconData icon, String title, Color color, bool isDarkMode) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => CategoryScreen(
-              categoryName: title,
-              categoryColor: color,
-              categoryIcon: icon,
+  String svgAssetPath, String title, Color color, bool isDarkMode) {
+  return GestureDetector(
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => CategoryScreen(
+            categoryName: title,
+            categoryColor: color,
+            categorySvgPath: svgAssetPath,
+          ),
+        ),
+      );
+    },
+    child: Padding(
+      padding: EdgeInsets.only(right: 12),
+      child: Column(
+        children: [
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              color: color.withOpacity(isDarkMode ? 0.3 : 0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Center(
+              child: SvgPicture.asset(
+                svgAssetPath,
+                width: 35,  // Reduced from 30 to 24
+                height: 35, // Reduced from 30 to 24
+                color: color,
+              ),
             ),
           ),
-        );
-      },
-      child: Padding(
-        padding: EdgeInsets.only(right: 12),
-        child: Column(
-          children: [
-            Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                color: color.withOpacity(isDarkMode ? 0.3 : 0.2),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, color: color, size: 30),
+          SizedBox(
+            height: 5,
+            width: 10,
+          ),
+          Text(
+            title,
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: AppColors.getTextColor(isDarkMode),
             ),
-            SizedBox(
-              height: 5,
-              width: 10,
-            ),
-            Text(
-              title,
-              style: GoogleFonts.poppins(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: AppColors.getTextColor(isDarkMode),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   //shimmer widgets starts
   Widget _buildQotdShimmer(bool isDarkMode) {

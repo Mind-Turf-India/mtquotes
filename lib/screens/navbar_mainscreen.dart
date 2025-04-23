@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mtquotes/l10n/app_localization.dart';
@@ -8,7 +10,7 @@ import 'package:mtquotes/screens/User_Home/components/Resume/resume_service.dart
 import 'package:mtquotes/screens/User_Home/home_screen.dart';
 import 'package:mtquotes/screens/User_Home/files_screen.dart';
 import 'package:mtquotes/screens/User_Home/profile_screen.dart';
-import 'package:mtquotes/screens/User_Home/components/user_survey.dart'; // Add this import
+import 'package:mtquotes/screens/User_Home/components/user_survey.dart';
 import 'package:provider/provider.dart';
 import '../utils/app_colors.dart';
 import '../utils/theme_provider.dart';
@@ -26,6 +28,9 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
   bool isCreateExpanded = false;
+  
+  // Stack to keep track of navigation history
+  final List<int> _navigationStack = [0]; // Start with home screen
 
   // Create a key to access the HomeScreen state
   final GlobalKey<HomeScreenState> _homeScreenKey = GlobalKey<HomeScreenState>();
@@ -46,13 +51,101 @@ class _MainScreenState extends State<MainScreen> {
     ];
   }
 
+  // Handle back button press
+Future<bool> _onWillPop() async {
+  // If create menu is expanded, close it
+  if (isCreateExpanded) {
+    setState(() {
+      isCreateExpanded = false;
+    });
+    return false;
+  }
+  
+  // If we're already at the home screen or navigation stack is empty
+  if (_navigationStack.length <= 1 || _currentIndex == 0) {
+    // Show exit confirmation dialog
+    final shouldExit = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text("Exit Vaky"),
+            content: Text('Are you sure you want to exit Vaky?'),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: Text('OK'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+    
+    // If user confirmed exit, close the app
+    if (shouldExit) {
+      // Close the app properly based on platform
+      if (Platform.isAndroid) {
+        SystemNavigator.pop(); // Exits app on Android
+      } else if (Platform.isIOS) {
+        exit(0); // Force exits app on iOS
+      }
+      return true; // This line may not be reached on some platforms
+    }
+    return false;
+  }
+  
+  // Pop the current screen from stack
+  _navigationStack.removeLast();
+  
+  // Navigate to the previous screen
+  setState(() {
+    _currentIndex = _navigationStack.last;
+  });
+  
+  return false; // Don't exit the app
+}
+
+  void _navigateToTab(int index) async {
+    // If tapping on the same tab that's already selected
+    if (index == _currentIndex) {
+      // No need to do anything special when tapping same tab
+      return;
+    }
+
+    // Store the current tab in navigation history
+    _navigationStack.add(index);
+
+    // Update the selected index
+    setState(() {
+      _currentIndex = index;
+    });
+
+    // If navigating TO home screen FROM a different screen
+    if (index == 0 && _navigationStack[_navigationStack.length - 2] != 0) {
+      print("Returning to home screen from another screen");
+
+      // Increment app open count
+      await UserSurveyManager.incrementAppOpenCount();
+
+      // Add a small delay to ensure the counter updated
+      await Future.delayed(Duration(milliseconds: 300));
+
+      // Check for survey
+      if (_homeScreenKey.currentState != null) {
+        await _homeScreenKey.currentState!.checkAndShowSurvey();
+      }
+    }
+  }
+
   void _toggleCreateOptions() {
     setState(() {
       isCreateExpanded = !isCreateExpanded;
     });
   }
 
- Widget _buildCreateOption(String label, IconData icon, bool isDarkMode) {
+  Widget _buildCreateOption(String label, IconData icon, bool isDarkMode) {
     // If it's the "resumebuilder" option, we'll use the custom image
     if (label == context.loc.resumebuilder) {
       return GestureDetector(
@@ -98,7 +191,7 @@ class _MainScreenState extends State<MainScreen> {
               style: GoogleFonts.poppins(
                   color: Colors.white,
                   fontSize: 12,
-                  fontWeight: FontWeight.w300,
+                  fontWeight: FontWeight.w700,
                   decoration: TextDecoration.none
               ),
             ),
@@ -152,7 +245,7 @@ class _MainScreenState extends State<MainScreen> {
             style: GoogleFonts.poppins(
                 color: Colors.white,
                 fontSize: 12,
-                fontWeight: FontWeight.w300,
+                fontWeight: FontWeight.w700,
                 decoration: TextDecoration.none
             ),
           ),
@@ -167,106 +260,109 @@ class _MainScreenState extends State<MainScreen> {
     final isDarkMode = themeProvider.isDarkMode;
     final backgroundColor = AppColors.getBackgroundColor(isDarkMode);
 
-    return Scaffold(
-      body: Stack(
-        children: [
-          // Main screen content
-          _screens[_currentIndex],
+    return WillPopScope(
+      onWillPop: _onWillPop,
+      child: Scaffold(
+        body: Stack(
+          children: [
+            // Main screen content
+            _screens[_currentIndex],
 
-          // Overlay for when create is expanded
-          if (isCreateExpanded)
-            GestureDetector(
-              onTap: () {
-                setState(() {
-                  isCreateExpanded = false;
-                });
-              },
-              child: Container(
-                color: Colors.black.withOpacity(0.3),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                  child: Container(
-                    color: Colors.transparent,
-                  ),
-                ),
-              ),
-            ),
-
-          // Create options when expanded
-          if (isCreateExpanded)
-            Positioned(
-              bottom: 20,
-              left: 0,
-              right: 0,
-              child: Center(
+            // Overlay for when create is expanded
+            if (isCreateExpanded)
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    isCreateExpanded = false;
+                  });
+                },
                 child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      Flexible(child: _buildCreateOption(context.loc.gallery, Icons.image, isDarkMode)),
-                      Flexible(child: _buildCreateOption(context.loc.template, Icons.grid_view, isDarkMode)),
-                      Flexible(child: _buildCreateOption(context.loc.resumebuilder, Icons.folder, isDarkMode)),
-                    ],
+                  color: Colors.black.withOpacity(0.3),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                    child: Container(
+                      color: Colors.transparent,
+                    ),
                   ),
                 ),
               ),
-            ),
-        ],
-      ),
-      bottomNavigationBar: Container(
-        height: 70,
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              spreadRadius: 0,
-              blurRadius: 4,
-              offset: Offset(0, -1),
-            ),
+
+            // Create options when expanded
+            if (isCreateExpanded)
+              Positioned(
+                bottom: 20,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        Flexible(child: _buildCreateOption(context.loc.gallery, Icons.image, isDarkMode)),
+                        Flexible(child: _buildCreateOption(context.loc.template, Icons.grid_view, isDarkMode)),
+                        Flexible(child: _buildCreateOption(context.loc.resumebuilder, Icons.folder, isDarkMode)),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
-        child: Stack(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildNavItem(0, 'assets/icons/home Inactive.svg', 'assets/icons/Home Active.svg', context.loc.home),
-                _buildNavItem(1, 'assets/icons/Property 1=Search Inactive.svg', 'assets/icons/Property 1=Search Active.svg', context.loc.search),
-                // Empty space for the center button
-                SizedBox(width: 60),
-                _buildNavItem(3, 'assets/icons/Property 1=Download Inactive.svg', 'assets/icons/Property 1=Download Active.svg', context.loc.files),
-                _buildNavItem(4, 'assets/icons/Property 1=User Inactive.svg', 'assets/icons/Property 1=user Active.svg', context.loc.profile),
-              ],
-            ),
-            Center(
-              child: GestureDetector(
-                onTap: _toggleCreateOptions,
-                child: Container(
-                  width: 52,
-                  height: 52,
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryBlue,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primaryBlue.withOpacity(0.3),
-                        spreadRadius: 1,
-                        blurRadius: 4,
-                        offset: Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Icon(
-                    isCreateExpanded ? Icons.close : Icons.add,
-                    color: isDarkMode ? Colors.black54 : Colors.white,
-                    size: 28,
+        bottomNavigationBar: Container(
+          height: 70,
+          decoration: BoxDecoration(
+            color: backgroundColor,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                spreadRadius: 0,
+                blurRadius: 4,
+                offset: Offset(0, -1),
+              ),
+            ],
+          ),
+          child: Stack(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildNavItem(0, 'assets/icons/home Inactive.svg', 'assets/icons/Home Active.svg', context.loc.home),
+                  _buildNavItem(1, 'assets/icons/Property 1=Search Inactive.svg', 'assets/icons/Property 1=Search Active.svg', context.loc.search),
+                  // Empty space for the center button
+                  SizedBox(width: 60),
+                  _buildNavItem(3, 'assets/icons/Property 1=Download Inactive.svg', 'assets/icons/Property 1=Download Active.svg', context.loc.files),
+                  _buildNavItem(4, 'assets/icons/Property 1=User Inactive.svg', 'assets/icons/Property 1=user Active.svg', context.loc.profile),
+                ],
+              ),
+              Center(
+                child: GestureDetector(
+                  onTap: _toggleCreateOptions,
+                  child: Container(
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryBlue,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primaryBlue.withOpacity(0.3),
+                          spreadRadius: 1,
+                          blurRadius: 4,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      isCreateExpanded ? Icons.close : Icons.add,
+                      color: isDarkMode ? Colors.black54 : Colors.white,
+                      size: 28,
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -284,37 +380,7 @@ class _MainScreenState extends State<MainScreen> {
         Material(
           color: Colors.transparent,
           child: InkWell(
-            onTap: () async {
-              // If tapping on the same tab that's already selected
-              if (index == _currentIndex) {
-                // No need to do anything special when tapping same tab
-                return;
-              }
-
-              // Store old index before updating to new one
-              int oldIndex = _currentIndex;
-
-              // Update the selected index
-              setState(() {
-                _currentIndex = index;
-              });
-
-              // If navigating TO home screen FROM a different screen
-              if (index == 0 && oldIndex != 0) {
-                print("Returning to home screen from another screen");
-
-                // Increment app open count
-                await UserSurveyManager.incrementAppOpenCount();
-
-                // Add a small delay to ensure the counter updated
-                await Future.delayed(Duration(milliseconds: 300));
-
-                // Check for survey
-                if (_homeScreenKey.currentState != null) {
-                  await _homeScreenKey.currentState!.checkAndShowSurvey();
-                }
-              }
-            },
+            onTap: () => _navigateToTab(index),
             splashColor: AppColors.primaryBlue.withOpacity(0.3),
             highlightColor: AppColors.primaryBlue.withOpacity(0.2),
             borderRadius: BorderRadius.circular(24), // Circular border radius

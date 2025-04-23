@@ -21,6 +21,7 @@
   },
   "functions": [
     {
+
       "source": "functions",
       "codebase": "default",
       "ignore": [
@@ -30,7 +31,14 @@
         "firebase-debug.*.log",
         "*.local"
       ],
+
       "predeploy": []
+      
     }
-  ]
+    
+
+  ],
+  "firestore": { "rules": "firestore.rules", 
+    "indexes": "firestore.indexes.json" }
+
 }

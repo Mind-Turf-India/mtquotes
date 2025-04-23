@@ -427,92 +427,98 @@ class _Step2ScreenState extends State<Step2Screen> {
                 const SizedBox(height: 16),
 
                 // Start Date and End Date
-                Row(
-                  children: [
-                    // Start Date
-                    Expanded(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: isDarkMode
-                              ? AppColors.darkSurface.withOpacity(0.7)
-                              : const Color(0xFFF5F5F5),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: AppColors.getDividerColor(isDarkMode),
-                            width: 0.5,
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                controller: _startDateControllers[index],
-                                readOnly: true,
-                                style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
-                                decoration: InputDecoration(
-                                  hintText: 'Start Date',
-                                  hintStyle: TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode)),
-                                  border: InputBorder.none,
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                                ),
-                              ),
-                            ),
-                            IconButton(
-                              icon: Icon(
-                                  Icons.calendar_today,
-                                  color: AppColors.getSecondaryTextColor(isDarkMode),
-                                  size: 20
-                              ),
-                              onPressed: () => _selectDate(context, _startDateControllers[index]),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-
-                    // End Date
-                    Expanded(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: isDarkMode
-                              ? AppColors.darkSurface.withOpacity(0.7)
-                              : const Color(0xFFF5F5F5),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: AppColors.getDividerColor(isDarkMode),
-                            width: 0.5,
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                controller: _endDateControllers[index],
-                                readOnly: true,
-                                style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
-                                decoration: InputDecoration(
-                                  hintText: 'End Date',
-                                  hintStyle: TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode)),
-                                  border: InputBorder.none,
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                                ),
-                              ),
-                            ),
-                            IconButton(
-                              icon: Icon(
-                                  Icons.calendar_today,
-                                  color: AppColors.getSecondaryTextColor(isDarkMode),
-                                  size: 20
-                              ),
-                              onPressed: () => _selectDate(context, _endDateControllers[index]),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
+          // Start Date and End Date Row
+Row(
+  children: [
+    // Start Date
+    Expanded(
+      child: GestureDetector(
+        onTap: () => _selectDate(context, _startDateControllers[index]),
+        child: Container(
+          decoration: BoxDecoration(
+            color: isDarkMode
+                ? AppColors.darkSurface.withOpacity(0.7)
+                : const Color(0xFFF5F5F5),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: AppColors.getDividerColor(isDarkMode),
+              width: 0.5,
+            ),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextFormField(
+                  style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+                  controller: _startDateControllers[index],
+                  readOnly: true,
+                  enabled: false, // Disable direct interaction with TextField
+                  decoration: InputDecoration(
+                    hintText: 'Start Date',
+                    hintStyle: TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode)),
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  ),
                 ),
+              ),
+              IconButton(
+                icon: Icon(
+                    Icons.calendar_today,
+                    color: AppColors.getSecondaryTextColor(isDarkMode)
+                ),
+                onPressed: () => _selectDate(context, _startDateControllers[index]),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+    const SizedBox(width: 16),
+    // End Date
+    Expanded(
+      child: GestureDetector(
+        onTap: () => _selectDate(context, _endDateControllers[index]),
+        child: Container(
+          decoration: BoxDecoration(
+            color: isDarkMode
+                ? AppColors.darkSurface.withOpacity(0.7)
+                : const Color(0xFFF5F5F5),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: AppColors.getDividerColor(isDarkMode),
+              width: 0.5,
+            ),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextFormField(
+                  style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+                  controller: _endDateControllers[index],
+                  readOnly: true,
+                  enabled: false, // Disable direct interaction with TextField
+                  decoration: InputDecoration(
+                    hintText: 'End Date',
+                    hintStyle: TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode)),
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  ),
+                ),
+              ),
+              IconButton(
+                icon: Icon(
+                    Icons.calendar_today,
+                    color: AppColors.getSecondaryTextColor(isDarkMode)
+                ),
+                onPressed: () => _selectDate(context, _endDateControllers[index]),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  ],
+),
                 const SizedBox(height: 16),
 
                 // Location
