@@ -60,8 +60,7 @@ Widget buildProfileImage(String? imagePath,
 }
 
 // Modern Template with modern styling
-// Horizontal Modern Template with modern styling
-// Horizontal Modern Template with modern styling and circular avatar
+
 class ModernTemplate implements ResumeTemplate {
   @override
   String get templateName => 'Modern';
@@ -71,7 +70,18 @@ class ModernTemplate implements ResumeTemplate {
       {bool isPreview = false, double? maxWidth}) {
     final containerWidth = isPreview ? 400 : 595; // A4 width in points
     final containerHeight = isPreview ? 560 : 842; // A4 height in points
-    
+
+    // Check if skills and languages are empty
+    final bool hasSkills = data.skills.isNotEmpty;
+    final bool hasLanguages = data.languages.isNotEmpty;
+    final bool hasEmploymentHistory = data.employmentHistory.isNotEmpty &&
+        data.employmentHistory.any((job) =>
+        job.jobTitle.trim().isNotEmpty ||
+            job.employer.trim().isNotEmpty ||
+            job.description.trim().isNotEmpty);
+    final bool hasEducation = data.education.isNotEmpty;
+    final bool hasSummary = data.professionalSummary.trim().isNotEmpty;
+
     return Container(
       width: containerWidth.toDouble(),
       height: containerHeight.toDouble(),
@@ -101,7 +111,7 @@ class ModernTemplate implements ResumeTemplate {
                           borderColor: Colors.white,
                         ),
                       ),
-                    
+
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -127,7 +137,7 @@ class ModernTemplate implements ResumeTemplate {
                     ),
                   ],
                 ),
-                
+
                 // Contact details below name and role
                 const SizedBox(height: 15),
                 Row(
@@ -167,32 +177,6 @@ class ModernTemplate implements ResumeTemplate {
                         ],
                       ),
                     ),
-                    
-                    // Address
-                    // if (data.personalInfo.address.isNotEmpty)
-                    //   Container(
-                    //     width: 180,
-                    //     child: Row(
-                    //       crossAxisAlignment: CrossAxisAlignment.start,
-                    //       children: [
-                    //         const Icon(
-                    //           Icons.location_on,
-                    //           color: Colors.white,
-                    //           size: 12,
-                    //         ),
-                    //         const SizedBox(width: 5),
-                    //         Expanded(
-                    //           child: Text(
-                    //             '${data.personalInfo.address}, ${data.personalInfo.city}, ${data.personalInfo.country} ${data.personalInfo.postalCode}',
-                    //             style: const TextStyle(
-                    //               fontSize: 10,
-                    //               color: Colors.white,
-                    //             ),
-                    //           ),
-                    //         ),
-                    //       ],
-                    //     ),
-                    //   ),
                   ],
                 ),
               ],
@@ -204,25 +188,27 @@ class ModernTemplate implements ResumeTemplate {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Left sidebar with skills and languages
-                Container(
-                  width: isPreview ? 110 : 150,
-                  color: Colors.blueGrey[50],
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Skills section
-                      const Text(
-                        'SKILLS',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blueGrey,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      ...data.skills.map((skill) => Padding(
+                // Left sidebar with skills and languages - only show if there are skills or languages
+                if (hasSkills || hasLanguages)
+                  Container(
+                    width: isPreview ? 110 : 150,
+                    color: Colors.blueGrey[50],
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Skills section - only show if there are skills
+                        if (hasSkills) ...[
+                          const Text(
+                            'SKILLS',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blueGrey,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          ...data.skills.map((skill) => Padding(
                             padding: const EdgeInsets.only(bottom: 8),
                             child: Text(
                               skill,
@@ -232,20 +218,21 @@ class ModernTemplate implements ResumeTemplate {
                               ),
                             ),
                           )),
+                          if (hasLanguages) const SizedBox(height: 24),
+                        ],
 
-                      const SizedBox(height: 24),
-
-                      // Languages section
-                      const Text(
-                        'LANGUAGE',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blueGrey,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      ...data.languages.map((language) => Padding(
+                        // Languages section - only show if there are languages
+                        if (hasLanguages) ...[
+                          const Text(
+                            'LANGUAGE',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blueGrey,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          ...data.languages.map((language) => Padding(
                             padding: const EdgeInsets.only(bottom: 8),
                             child: Text(
                               language,
@@ -255,9 +242,10 @@ class ModernTemplate implements ResumeTemplate {
                               ),
                             ),
                           )),
-                    ],
+                        ],
+                      ],
+                    ),
                   ),
-                ),
 
                 // Main content with summary, experience, and education
                 Expanded(
@@ -266,116 +254,111 @@ class ModernTemplate implements ResumeTemplate {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Professional Summary
-                        const Text(
-                          'SUMMARY',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.blueGrey,
+                        // Professional Summary - only show if there is a summary
+                        if (hasSummary) ...[
+                          const Text(
+                            'SUMMARY',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blueGrey,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          data.professionalSummary,
-                          style: const TextStyle(
-                            fontSize: 10,
-                            color: Colors.black87,
+                          const SizedBox(height: 10),
+                          Text(
+                            data.professionalSummary,
+                            style: const TextStyle(
+                              fontSize: 10,
+                              color: Colors.black87,
+                            ),
                           ),
-                        ),
+                          const SizedBox(height: 20),
+                        ],
 
-                        const SizedBox(height: 20),
+                        // Work Experience - only show if there is employment history
+                        if (hasEmploymentHistory) ...[
+                          _buildSectionHeader('EXPERIENCE'),
+                          const SizedBox(height: 12),
 
-                        // Work Experience
-                        const Text(
-                          'EXPERIENCE',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.blueGrey,
+                          // Employment history items
+                          ...data.employmentHistory.where((job) =>
+                          job.jobTitle.trim().isNotEmpty ||
+                              job.employer.trim().isNotEmpty ||
+                              job.description.trim().isNotEmpty
+                          ).map((job) => Container(
+                            margin: const EdgeInsets.only(bottom: 16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  job.jobTitle,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '${job.employer} | ${job.location} | ${job.startDate} - ${job.endDate}',
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    fontStyle: FontStyle.italic,
+                                    color: Colors.black54,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  job.description,
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )),
+                          if (hasEducation) const SizedBox(height: 24),
+                        ],
+
+                        // Education - only show if there is education data
+                        if (hasEducation) ...[
+                          const Text(
+                            'EDUCATION',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blueGrey,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 10),
-                        ...data.employmentHistory.map((job) => Padding(
-                              padding: const EdgeInsets.only(bottom: 14),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    job.jobTitle,
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.black87,
-                                    ),
+                          const SizedBox(height: 10),
+                          ...data.education.map((edu) => Padding(
+                            padding: const EdgeInsets.only(bottom: 14),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  edu.title,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black87,
                                   ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    '${job.employer} | ${job.location} | ${job.startDate} - ${job.endDate}',
-                                    style: const TextStyle(
-                                      fontSize: 10,
-                                      fontStyle: FontStyle.italic,
-                                      color: Colors.black54,
-                                    ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '${edu.school} | ${edu.level} | ${edu.startDate} - ${edu.endDate}',
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    fontStyle: FontStyle.italic,
+                                    color: Colors.black54,
                                   ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    job.description,
-                                    style: const TextStyle(
-                                      fontSize: 10,
-                                      color: Colors.black87,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            )),
-
-                        const SizedBox(height: 20),
-
-                        // Education
-                        const Text(
-                          'EDUCATION',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.blueGrey,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        ...data.education.map((edu) => Padding(
-                              padding: const EdgeInsets.only(bottom: 14),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    edu.title,
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.black87,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    '${edu.school} | ${edu.level} | ${edu.startDate} - ${edu.endDate}',
-                                    style: const TextStyle(
-                                      fontSize: 10,
-                                      fontStyle: FontStyle.italic,
-                                      color: Colors.black54,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 6),
-                                //   if (edu.description.isNotEmpty)
-                                //     Text(
-                                //       edu.description,
-                                //       style: const TextStyle(
-                                //         fontSize: 10,
-                                //         color: Colors.black87,
-                                //       ),
-                                //     ),
-                                ],
-                              ),
-                            )),
+                                ),
+                                const SizedBox(height: 6),
+                              ],
+                            ),
+                          )),
+                        ],
                       ],
                     ),
                   ),
@@ -396,19 +379,63 @@ class ClassicTemplate implements ResumeTemplate {
 
   @override
   Widget buildTemplate(
-    ResumeData data, {
-    bool isPreview = false,
-    double? maxWidth,
-  }) {
-    final contentWidth =
-        maxWidth ?? (isPreview ? 400 : 595); // Default to A4 width
+      ResumeData data, {
+        bool isPreview = false,
+        double? maxWidth,
+      }) {
+    final double containerWidth = maxWidth ?? (isPreview ? 400 : 595);
+    final double containerHeight = isPreview ? 600 : 842; // Fixed height for A4
+
+    // Improved check for sections with real data, not just empty entries
+
+    // 1. Check if skills exist and contain non-empty values
+    final bool hasSkills = data.skills.isNotEmpty &&
+        data.skills.any((skill) => skill.trim().isNotEmpty);
+
+    // 2. Check if languages exist and contain non-empty values
+    final bool hasLanguages = data.languages.isNotEmpty &&
+        data.languages.any((lang) => lang.trim().isNotEmpty);
+
+    // 3. Check if employment history exists and contains meaningful data
+    final bool hasEmploymentHistory = data.employmentHistory.isNotEmpty &&
+        data.employmentHistory.any((job) =>
+        job.jobTitle.trim().isNotEmpty ||
+            job.employer.trim().isNotEmpty ||
+            job.description.trim().isNotEmpty);
+
+    // 4. Check if education data exists and contains meaningful content
+    final bool hasEducation = data.education.isNotEmpty &&
+        data.education.any((edu) =>
+        edu.title.trim().isNotEmpty ||
+            edu.school.trim().isNotEmpty);
+
+    // 5. Check if professional summary has actual content
+    final bool hasSummary = data.professionalSummary.trim().isNotEmpty;
+
+    // Filter out empty job entries
+    final List<Employment> validJobs = data.employmentHistory
+        .where((job) =>
+    job.jobTitle.trim().isNotEmpty ||
+        job.employer.trim().isNotEmpty ||
+        job.description.trim().isNotEmpty)
+        .toList();
+
+    // Filter out empty education entries
+    final List<Education> validEducation = data.education
+        .where((edu) =>
+    edu.title.trim().isNotEmpty ||
+        edu.school.trim().isNotEmpty)
+        .toList();
 
     return Container(
-      width: contentWidth,
+      width: containerWidth,
+      // Don't set fixed height if this isn't a preview, let it scroll
+      height: isPreview ? containerHeight : null,
       color: Colors.white,
       padding: const EdgeInsets.all(40),
       child: Column(
-        mainAxisSize: MainAxisSize.min, // Use min to fit content
+        // If not preview, ensure column doesn't try to be infinite height
+        mainAxisSize: isPreview ? MainAxisSize.max : MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header with name and contact info
@@ -421,13 +448,12 @@ class ClassicTemplate implements ResumeTemplate {
                     width: 100,
                     height: 100,
                     margin: const EdgeInsets.only(bottom: 16),
-                     child: buildProfileImage(
+                    child: buildProfileImage(
                       data.personalInfo.profileImagePath,
                       size: 80,
                       borderColor: Colors.black,
                     ),
-                      ),
-                   
+                  ),
 
                 Text(
                   '${data.personalInfo.firstName} ${data.personalInfo.lastName}'
@@ -486,304 +512,294 @@ class ClassicTemplate implements ResumeTemplate {
             ),
           ),
 
-          const SizedBox(height: 16),
+          // Only add spacing if there's a summary
+          if (hasSummary) const SizedBox(height: 16),
 
-          // Professional Summary
-          const Text(
-            'SUMMARY',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
-            ),
-          ),
-          const Divider(thickness: 1),
-          const SizedBox(height: 8),
-          Wrap(
-            children: [
-              Text(
-                data.professionalSummary,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Colors.black87,
-                ),
+          // Professional Summary - only show if there is content
+          if (hasSummary) ...[
+            const Text(
+              'SUMMARY',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
               ),
-            ],
-          ),
-
-          const SizedBox(height: 24),
-
-          // Experience
-          const Text(
-            'EXPERIENCE',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
             ),
-          ),
+            const Divider(thickness: 1),
+            const SizedBox(height: 8),
+            Wrap(
+              children: [
+                Text(
+                  data.professionalSummary,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+          ],
 
-          const Divider(thickness: 1),
-          const SizedBox(height: 8),
+          // Experience - only show if there are valid job entries
+          if (hasEmploymentHistory && validJobs.isNotEmpty) ...[
+            const Text(
+              'EXPERIENCE',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+              ),
+            ),
+            const Divider(thickness: 1),
+            const SizedBox(height: 8),
 
-          // Employment items
-          ...data.employmentHistory.map((job) => Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Job title and dates row
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            job.jobTitle,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
-                            ),
+            // Employment items - only show valid ones
+            ...validJobs.map((job) => Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Job title and dates row
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          job.jobTitle,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
                           ),
                         ),
-                        Text(
-                          '${job.startDate} - ${job.endDate}',
+                      ),
+                      Text(
+                        '${job.startDate} - ${job.endDate}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.black54,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  // Employer and location row
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          job.employer,
                           style: const TextStyle(
                             fontSize: 12,
-                            color: Colors.black54,
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 4),
-
-                    // Employer and location row
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            job.employer,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontStyle: FontStyle.italic,
-                              color: Colors.black87,
-                            ),
-                          ),
-                        ),
-                        Text(
-                          job.location,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Colors.black54,
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 8),
-
-                    // Description with wrap for text overflow
-                    Wrap(
-                      children: [
-                        Text(
-                          job.description,
-                          style: const TextStyle(
-                            fontSize: 12,
+                            fontStyle: FontStyle.italic,
                             color: Colors.black87,
                           ),
                         ),
-                      ],
-                    ),
-                  ],
-                ),
-              )),
+                      ),
+                      Text(
+                        job.location,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.black54,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  // Description with wrap for text overflow
+                  Wrap(
+                    children: [
+                      Text(
+                        job.description,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            )),
 
-          const SizedBox(height: 16),
+            if (hasEducation && validEducation.isNotEmpty) const SizedBox(height: 16),
+          ],
 
-          // Education
-          const Text(
-            'EDUCATION',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
+          // Education - only show if there are valid education entries
+          if (hasEducation && validEducation.isNotEmpty) ...[
+            const Text(
+              'EDUCATION',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+              ),
             ),
-          ),
-          const Divider(thickness: 1),
-          const SizedBox(height: 8),
+            const Divider(thickness: 1),
+            const SizedBox(height: 8),
 
-          // Education items
-          ...data.education.map((edu) => Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Education title and dates row
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            edu.title,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
-                            ),
+            // Education items - only show valid ones
+            ...validEducation.map((edu) => Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Education title and dates row
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          edu.title,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
                           ),
                         ),
-                        Text(
-                          '${edu.startDate} - ${edu.endDate}',
+                      ),
+                      Text(
+                        '${edu.startDate} - ${edu.endDate}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.black54,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 4),
+
+                  // School and location row
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          edu.school,
                           style: const TextStyle(
                             fontSize: 12,
-                            color: Colors.black54,
+                            fontStyle: FontStyle.italic,
+                            color: Colors.black87,
                           ),
                         ),
-                      ],
+                      ),
+                      Text(
+                        edu.location,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.black54,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 4),
+
+                  // Level text
+                  Text(
+                    edu.level,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.black87,
                     ),
+                  ),
+                ],
+              ),
+            )),
 
-                    const SizedBox(height: 4),
+            if (hasSkills || hasLanguages) const SizedBox(height: 16),
+          ],
 
-                    // School and location row
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          // Skills and Languages in a row - only show if there are skills or languages
+          if (hasSkills || hasLanguages)
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Skills section - only show if there are skills
+                if (hasSkills)
+                  Expanded(
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child: Text(
-                            edu.school,
+                        const Text(
+                          'SKILLS',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
+                        ),
+                        const Divider(thickness: 1),
+                        const SizedBox(height: 8),
+                        // Use Wrap for skills to handle overflow - filter out empty skills
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: data.skills
+                              .where((skill) => skill.trim().isNotEmpty)
+                              .map((skill) => Text(
+                            '• $skill',
                             style: const TextStyle(
                               fontSize: 12,
-                              fontStyle: FontStyle.italic,
                               color: Colors.black87,
                             ),
-                          ),
-                        ),
-                        Text(
-                          edu.location,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Colors.black54,
-                          ),
+                          ))
+                              .toList(),
                         ),
                       ],
                     ),
+                  ),
+                if (hasSkills && hasLanguages) const SizedBox(width: 20),
 
-                    const SizedBox(height: 4),
-
-                    // Level text
-                    Text(
-                      edu.level,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.black87,
-                      ),
+                // Languages section - only show if there are languages
+                if (hasLanguages)
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'LANGUAGES',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
+                        ),
+                        const Divider(thickness: 1),
+                        const SizedBox(height: 8),
+                        // Use Wrap for languages to handle overflow - filter out empty languages
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: data.languages
+                              .where((language) => language.trim().isNotEmpty)
+                              .map((language) => Text(
+                            '• $language',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.black87,
+                            ),
+                          ))
+                              .toList(),
+                        ),
+                      ],
                     ),
-
-                    // Description with wrap for text overflow
-                    // if (edu.description.isNotEmpty)
-                    //   Padding(
-                    //     padding: const EdgeInsets.only(top: 4),
-                    //     child: Wrap(
-                    //       children: [
-                    //         Text(
-                    //           edu.description,
-                    //           style: const TextStyle(
-                    //             fontSize: 12,
-                    //             color: Colors.black87,
-                    //           ),
-                    //         ),
-                    //       ],
-                    //     ),
-                    //   ),
-                  ],
-                ),
-              )),
-
-          const SizedBox(height: 16),
-
-          // Skills and Languages in a row
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Skills section
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'SKILLS',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
-                      ),
-                    ),
-                    const Divider(thickness: 1),
-                    const SizedBox(height: 8),
-                    // Use Wrap for skills to handle overflow
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: data.skills
-                          .map((skill) => Text(
-                                '• $skill',
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.black87,
-                                ),
-                              ))
-                          .toList(),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 20),
-
-              // Languages section
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'LANGUAGES',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
-                      ),
-                    ),
-                    const Divider(thickness: 1),
-                    const SizedBox(height: 8),
-                    // Use Wrap for languages to handle overflow
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: data.languages
-                          .map((language) => Text(
-                                '• $language',
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.black87,
-                                ),
-                              ))
-                          .toList(),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+                  ),
+              ],
+            ),
         ],
       ),
     );
   }
 }
+
 
 // Business Template with corporate styling
 class BusinessTemplate implements ResumeTemplate {
@@ -792,20 +808,62 @@ class BusinessTemplate implements ResumeTemplate {
 
   @override
   Widget buildTemplate(
-    ResumeData data, {
-    bool isPreview = false,
-    double? maxWidth,
-  }) {
-    final contentWidth =
-        maxWidth ?? (isPreview ? 400 : 595); // Default to A4 width
+      ResumeData data, {
+        bool isPreview = false,
+        double? maxWidth,
+      }) {
+    final double containerWidth = maxWidth ?? (isPreview ? 400 : 595);
+    final double containerHeight = isPreview ? 600 : 842; // Fixed height for A4
+    // Improved check for sections with real data, not just empty entries
+
+    // 1. Check if skills exist and contain non-empty values
+    final bool hasSkills = data.skills.isNotEmpty &&
+        data.skills.any((skill) => skill.trim().isNotEmpty);
+
+    // 2. Check if languages exist and contain non-empty values
+    final bool hasLanguages = data.languages.isNotEmpty &&
+        data.languages.any((lang) => lang.trim().isNotEmpty);
+
+    // 3. Check if employment history exists and contains meaningful data
+    final bool hasEmploymentHistory = data.employmentHistory.isNotEmpty &&
+        data.employmentHistory.any((job) =>
+        job.jobTitle.trim().isNotEmpty ||
+            job.employer.trim().isNotEmpty ||
+            job.description.trim().isNotEmpty);
+
+    // 4. Check if education data exists and contains meaningful content
+    final bool hasEducation = data.education.isNotEmpty &&
+        data.education.any((edu) =>
+        edu.title.trim().isNotEmpty ||
+            edu.school.trim().isNotEmpty);
+
+    // 5. Check if professional summary has actual content
+    final bool hasSummary = data.professionalSummary.trim().isNotEmpty;
+
+    // Filter out empty job entries
+    final List<Employment> validJobs = data.employmentHistory
+        .where((job) =>
+    job.jobTitle.trim().isNotEmpty ||
+        job.employer.trim().isNotEmpty ||
+        job.description.trim().isNotEmpty)
+        .toList();
+
+    // Filter out empty education entries
+    final List<Education> validEducation = data.education
+        .where((edu) =>
+    edu.title.trim().isNotEmpty ||
+        edu.school.trim().isNotEmpty)
+        .toList();
 
     return SingleChildScrollView(
       physics: isPreview ? const NeverScrollableScrollPhysics() : null,
       child: Container(
-        width: contentWidth,
+        width: containerWidth,
+        // Don't set fixed height if this isn't a preview, let it scroll
+        height: isPreview ? containerHeight : null,
         color: Colors.white,
         child: Column(
-          mainAxisSize: MainAxisSize.min, // Use min to fit content
+          mainAxisSize: isPreview ? MainAxisSize.max : MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header with name, role and contact info
@@ -930,216 +988,207 @@ class BusinessTemplate implements ResumeTemplate {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Professional Summary
-                  _buildSectionHeader('SUMMARY'),
-                  const SizedBox(height: 12),
-                  Container(
-                    // padding: const EdgeInsets.all(16),
-                    // decoration: BoxDecoration(
-                    //   color: Colors.grey[50],
-                    //   border: Border.all(color: Colors.grey[200]!),
-                    //   borderRadius: BorderRadius.circular(4),
-                    // ),
-                    child: Text(
-                      data.professionalSummary,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.black87,
-                        height: 1.5,
+                  // Professional Summary - only show if there is content
+                  if (hasSummary) ...[
+                    _buildSectionHeader('SUMMARY'),
+                    const SizedBox(height: 12),
+                    Container(
+                      child: Text(
+                        data.professionalSummary,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.black87,
+                          height: 1.5,
+                        ),
                       ),
                     ),
-                  ),
+                    const SizedBox(height: 24),
+                  ],
 
-                  const SizedBox(height: 24),
+                  // Experience - only show if there are valid job entries
+                  if (hasEmploymentHistory && validJobs.isNotEmpty) ...[
+                    _buildSectionHeader('EXPERIENCE'),
+                    const SizedBox(height: 12),
 
-                  // Experience
-                  _buildSectionHeader('EXPERIENCE'),
-                  const SizedBox(height: 12),
-
-                  // Employment history items
-                  ...data.employmentHistory.map((job) => Container(
-                        margin: const EdgeInsets.only(bottom: 16),
-                        // padding: const EdgeInsets.all(16),
-                        // decoration: BoxDecoration(
-                        //   color: Colors.grey[50],
-                        //   // border: Border.left(
-                        //   //   color: Colors.indigo[800]!,
-                        //   //   width: 3,
-                        //   // ),
-                        // ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              job.jobTitle,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black87,
-                              ),
+                    // Only show valid employment history items
+                    ...validJobs.map((job) => Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            job.jobTitle,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
                             ),
-                            Text(
-                              '${job.employer} | ${job.location}',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.indigo[700],
-                              ),
+                          ),
+                          Text(
+                            '${job.employer} | ${job.location}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.indigo[700],
                             ),
-                            Text(
-                              '${job.startDate} - ${job.endDate}',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontStyle: FontStyle.italic,
-                                color: Colors.black54,
-                              ),
+                          ),
+                          Text(
+                            '${job.startDate} - ${job.endDate}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontStyle: FontStyle.italic,
+                              color: Colors.black54,
                             ),
-                            const SizedBox(height: 8),
-                            Wrap(
-                              children: [
-                                Text(
-                                  job.description,
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.black87,
-                                    height: 1.5,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      )),
-
-                  const SizedBox(height: 24),
-
-                  // Education
-                  _buildSectionHeader('Education'),
-                  const SizedBox(height: 12),
-
-                  // Education items in grid
-                  GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      childAspectRatio: 2.5,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                    ),
-                    itemCount: data.education.length,
-                    itemBuilder: (context, index) {
-                      final edu = data.education[index];
-                      return Container(
-                        height: 150,
-                        // margin: const EdgeInsets.only(bottom: 16),
-                        // padding: const EdgeInsets.all(1),
-                        // decoration: BoxDecoration(
-                        //   color: Colors.grey[50],
-                        //   border: Border.all(color: Colors.grey[200]!),
-                        //   borderRadius: BorderRadius.circular(4),
-                        // ),
-                        child: SingleChildScrollView(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
                             children: [
                               Text(
-                                edu.title,
+                                job.description,
                                 style: const TextStyle(
                                   fontSize: 12,
-                                  fontWeight: FontWeight.bold,
                                   color: Colors.black87,
+                                  height: 1.5,
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              Text(
-                                edu.school,
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: Colors.indigo[700],
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              Text(
-                                '${edu.startDate} - ${edu.endDate}',
-                                style: const TextStyle(
-                                  fontSize: 10,
-                                  fontStyle: FontStyle.italic,
-                                  color: Colors.black54,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              Text(
-                                edu.level,
-                                style: const TextStyle(
-                                  fontSize: 10,
-                                  color: Colors.black87,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
                               ),
                             ],
                           ),
-                        ),
-                      );
-                    },
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Skills and Languages in two columns with visual styling
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Skills section
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildSectionHeader('Skills'),
-                            const SizedBox(height: 12),
-                            // Use Wrap with skill tags
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: data.skills
-                                  .map((skill) => Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 12,
-                                          vertical: 6,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: Colors.indigo[50],
-                                          borderRadius:
-                                              BorderRadius.circular(16),
-                                        ),
-                                        child: Text(
-                                          skill,
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.indigo[700],
-                                          ),
-                                        ),
-                                      ))
-                                  .toList(),
-                            ),
-                          ],
-                        ),
+                        ],
                       ),
-                      const SizedBox(width: 24),
+                    )),
 
-                      // Languages section with progress indicators
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildSectionHeader('Languages'),
-                            const SizedBox(height: 12),
-                            // Languages with visual bars
-                            ...data.languages.map((language) => Column(
+                    if (hasEducation && validEducation.isNotEmpty) const SizedBox(height: 24),
+                  ],
+
+                  // Education - only show if there are valid education entries
+                  if (hasEducation && validEducation.isNotEmpty) ...[
+                    _buildSectionHeader('Education'),
+                    const SizedBox(height: 12),
+
+                    // Education items in grid - only show valid ones
+                    GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate:
+                      const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        childAspectRatio: 2.5,
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 16,
+                      ),
+                      itemCount: validEducation.length,
+                      itemBuilder: (context, index) {
+                        final edu = validEducation[index];
+                        return Container(
+                          height: 150,
+                          child: SingleChildScrollView(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  edu.title,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black87,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                Text(
+                                  edu.school,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.indigo[700],
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                Text(
+                                  '${edu.startDate} - ${edu.endDate}',
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    fontStyle: FontStyle.italic,
+                                    color: Colors.black54,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                Text(
+                                  edu.level,
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    color: Colors.black87,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+
+                    if (hasSkills || hasLanguages) const SizedBox(height: 24),
+                  ],
+
+                  // Skills and Languages in two columns with visual styling - only show if there are skills or languages
+                  if (hasSkills || hasLanguages)
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Skills section - only show if there are skills
+                        if (hasSkills)
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _buildSectionHeader('Skills'),
+                                const SizedBox(height: 12),
+                                // Use Wrap with skill tags - filter out empty skills
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: data.skills
+                                      .where((skill) => skill.trim().isNotEmpty)
+                                      .map((skill) => Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.indigo[50],
+                                      borderRadius:
+                                      BorderRadius.circular(16),
+                                    ),
+                                    child: Text(
+                                      skill,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.indigo[700],
+                                      ),
+                                    ),
+                                  ))
+                                      .toList(),
+                                ),
+                              ],
+                            ),
+                          ),
+                        if (hasSkills && hasLanguages)
+                          const SizedBox(width: 24),
+
+                        // Languages section - only show if there are languages
+                        if (hasLanguages)
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _buildSectionHeader('Languages'),
+                                const SizedBox(height: 12),
+                                // Languages with text only - filter out empty languages
+                                ...data.languages
+                                    .where((language) => language.trim().isNotEmpty)
+                                    .map((language) => Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
@@ -1150,35 +1199,14 @@ class BusinessTemplate implements ResumeTemplate {
                                         color: Colors.black87,
                                       ),
                                     ),
-                                    const SizedBox(height: 4),
-                                    // Container(
-                                    //   height: 4,
-                                    //   width: double.infinity,
-                                    //   decoration: BoxDecoration(
-                                    //     color: Colors.grey[200],
-                                    //     borderRadius:
-                                    //         BorderRadius.circular(2),
-                                    //   ),
-                                    //   // child: FractionallySizedBox(
-                                    //   //   widthFactor: 0.8,
-                                    //   //   // // Default 80% proficiency
-                                    //   //   // child: Container(
-                                    //   //   //   decoration: BoxDecoration(
-                                    //   //   //     color: Colors.indigo[700],
-                                    //   //   //     borderRadius:
-                                    //   //   //         BorderRadius.circular(2),
-                                    //   //   //   ),
-                                    //   //   // ),
-                                    //   // ),
-                                    // ),
                                     const SizedBox(height: 12),
                                   ],
                                 )),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
                 ],
               ),
             ),
@@ -1214,6 +1242,32 @@ class BusinessTemplate implements ResumeTemplate {
     );
   }
 }
+
+Widget _buildSectionHeader(String title) {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        title.toUpperCase(),
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          color: Colors.indigo[800],
+        ),
+      ),
+      const SizedBox(height: 4),
+      Container(
+        height: 4,
+        width: 40,
+        decoration: BoxDecoration(
+          color: Colors.indigo[800],
+          borderRadius: BorderRadius.circular(2),
+        ),
+      ),
+    ],
+  );
+}
+
 
 // Template Factory
 class TemplateFactory {

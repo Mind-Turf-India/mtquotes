@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mtquotes/screens/User_Home/components/Resume/resume_dashboard.dart';
-import 'package:mtquotes/screens/User_Home/components/Resume/resume_interface.dart';
+import 'package:mtquotes/utils/app_colors.dart'; // Import app colors
 
 class ResumeSelectionScreen extends StatefulWidget {
   final Function(String) onTemplateSelected;
@@ -16,28 +15,42 @@ class ResumeSelectionScreen extends StatefulWidget {
 
 class _ResumeSelectionScreenState extends State<ResumeSelectionScreen> {
   String _selectedTemplate = 'modern'; // Default template
+  bool isDarkMode = false; // Track dark mode
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Get the current theme mode
+    isDarkMode = Theme.of(context).brightness == Brightness.dark;
+  }
 
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
-        // Handle hardware back button press
-        onWillPop: () async {
-      // Return the selected template when back button is pressed
-      Navigator.of(context).pop(_selectedTemplate);
-      return false; // Prevent default back behavior since we're handling it
-    },
+      // Handle hardware back button press
+      onWillPop: () async {
+        // Return the selected template when back button is pressed
+        Navigator.of(context).pop(_selectedTemplate);
+        return false; // Prevent default back behavior since we're handling it
+      },
       child: Scaffold(
-        backgroundColor: const Color(0xFFFAFAFA),
+        backgroundColor: AppColors.getBackgroundColor(isDarkMode),
         appBar: AppBar(
-          backgroundColor: Colors.white,
+          backgroundColor: AppColors.getSurfaceColor(isDarkMode),
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
+            icon: Icon(
+              Icons.arrow_back_ios,
+              color: AppColors.getIconColor(isDarkMode),
+            ),
             onPressed: () => Navigator.pop(context, _selectedTemplate),
           ),
-          title: const Text(
+          title: Text(
             'Select Template',
-            style: TextStyle(color: Colors.black, fontSize: 16),
+            style: TextStyle(
+              color: AppColors.getTextColor(isDarkMode),
+              fontSize: 16,
+            ),
           ),
         ),
         body: Column(
@@ -48,12 +61,12 @@ class _ResumeSelectionScreenState extends State<ResumeSelectionScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Choose a template for your resume',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: Colors.black87,
+                        color: AppColors.getTextColor(isDarkMode),
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -88,42 +101,7 @@ class _ResumeSelectionScreenState extends State<ResumeSelectionScreen> {
               ),
             ),
 
-            // Continue Button
-            // Replace the Continue button code with this:
-      //           Container(
-      //   padding: const EdgeInsets.all(16),
-      //   width: double.infinity,
-      //   child: ElevatedButton(
-      //     onPressed: () {
-      //       // Call the callback to notify parent if needed
-      //       widget.onTemplateSelected(_selectedTemplate);
-
-      //       // Navigate to PersonalDetailsScreen with template parameter
-      //       Navigator.push(
-      //         context,
-      //         MaterialPageRoute(
-      //           builder: (context) => PersonalDetailsScreen(
-      //             initialTemplateType: _selectedTemplate,
-      //           ),
-      //         ),
-      //       );
-      //     },
-      //     style: ElevatedButton.styleFrom(
-      //       backgroundColor: const Color(0xFF2196F3),
-      //       padding: const EdgeInsets.symmetric(vertical: 14),
-      //       shape: RoundedRectangleBorder(
-      //         borderRadius: BorderRadius.circular(8),
-      //       ),
-      //     ),
-      //     child: const Text(
-      //       'Continue',
-      //       style: TextStyle(
-      //         fontSize: 16,
-      //         fontWeight: FontWeight.w500,
-      //       ),
-      //     ),
-      //   ),
-      // ),
+            // This is where the Continue button would go if needed
           ],
         ),
       ),
@@ -147,15 +125,17 @@ class _ResumeSelectionScreenState extends State<ResumeSelectionScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.getSurfaceColor(isDarkMode),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isSelected ? const Color(0xFF2196F3) : const Color(0xFFE0E0E0),
+            color: isSelected ? AppColors.primaryBlue : AppColors.getDividerColor(isDarkMode),
             width: isSelected ? 2 : 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: isDarkMode
+                  ? Colors.black.withOpacity(0.2)
+                  : Colors.black.withOpacity(0.05),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),
@@ -169,9 +149,11 @@ class _ResumeSelectionScreenState extends State<ResumeSelectionScreen> {
               width: 80,
               height: 120,
               decoration: BoxDecoration(
-                color: Colors.grey[50],
+                color: isDarkMode ? Colors.grey[900] : Colors.grey[50],
                 borderRadius: BorderRadius.circular(4),
-                border: Border.all(color: Colors.grey[300]!),
+                border: Border.all(
+                  color: isDarkMode ? Colors.grey[800]! : Colors.grey[300]!,
+                ),
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(4),
@@ -190,16 +172,16 @@ class _ResumeSelectionScreenState extends State<ResumeSelectionScreen> {
                     children: [
                       Text(
                         title,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          color: Colors.black87,
+                          color: AppColors.getTextColor(isDarkMode),
                         ),
                       ),
                       if (isSelected)
-                        const Icon(
+                        Icon(
                           Icons.check_circle,
-                          color: Color(0xFF2196F3),
+                          color: AppColors.primaryBlue,
                           size: 24,
                         ),
                     ],
@@ -207,9 +189,9 @@ class _ResumeSelectionScreenState extends State<ResumeSelectionScreen> {
                   const SizedBox(height: 8),
                   Text(
                     description,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
-                      color: Colors.black54,
+                      color: AppColors.getSecondaryTextColor(isDarkMode),
                     ),
                   ),
                 ],
@@ -223,6 +205,9 @@ class _ResumeSelectionScreenState extends State<ResumeSelectionScreen> {
 
   // Helper to create mini preview of each template
   Widget _buildTemplatePreview(String templateType) {
+    // No need to modify the preview methods, they already use specific colors that look good
+    // in both light and dark themes due to their contrasting nature
+
     switch (templateType) {
       case 'modern':
         return Column(
@@ -479,9 +464,14 @@ class _ResumeSelectionScreenState extends State<ResumeSelectionScreen> {
 
       default:
         return Container(
-          color: Colors.grey[200],
-          child: const Center(
-            child: Text('Preview'),
+          color: isDarkMode ? Colors.grey[800] : Colors.grey[200],
+          child: Center(
+            child: Text(
+              'Preview',
+              style: TextStyle(
+                  color: isDarkMode ? Colors.white : Colors.black54
+              ),
+            ),
           ),
         );
     }

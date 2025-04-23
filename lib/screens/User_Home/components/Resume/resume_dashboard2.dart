@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -342,7 +343,7 @@ class _Step2ScreenState extends State<Step2Screen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Employment History #${index + 1}',
+                  'Experience #${index + 1}',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -350,12 +351,12 @@ class _Step2ScreenState extends State<Step2Screen> {
                   ),
                 ),
                 IconButton(
-                  icon: Icon(
-                    Icons.delete_outline,
-                    color: Colors.red,
+                  icon: SvgPicture.asset(
+                    'assets/icons/trash_12252659.svg',
+                    width: 24, // adjust size as needed
+                    height: 18,
+                    color: Colors.red, // optional, applies if the SVG supports color
                   ),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
                   onPressed: () => _removeEmploymentBlock(index),
                 ),
               ],
@@ -826,7 +827,7 @@ Row(
                           ),
                           // Employment History Section
                           Text(
-                            'Employment History',
+                            'Experience',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,

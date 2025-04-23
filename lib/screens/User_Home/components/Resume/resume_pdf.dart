@@ -17,10 +17,10 @@ class ResumePdfGenerator {
 
     // Load font assets
     final regularFont =
-        await rootBundle.load('assets/fonts/OpenSans-Regular.ttf');
+    await rootBundle.load('assets/fonts/OpenSans-Regular.ttf');
     final boldFont = await rootBundle.load('assets/fonts/OpenSans-Bold.ttf');
     final italicFont =
-        await rootBundle.load('assets/fonts/OpenSans-Italic.ttf');
+    await rootBundle.load('assets/fonts/OpenSans-Italic.ttf');
 
     // Register fonts
     final ttfRegular = pw.Font.ttf(regularFont);
@@ -35,8 +35,6 @@ class ResumePdfGenerator {
     );
 
     // Load profile image if it exists
-
-// Load profile image if it exists
     pw.MemoryImage? profileImage;
     if (data.personalInfo.profileImagePath != null &&
         data.personalInfo.profileImagePath!.isNotEmpty) {
@@ -50,7 +48,7 @@ class ResumePdfGenerator {
 
           // Download the image bytes
           final response =
-              await http.get(Uri.parse(data.personalInfo.profileImagePath!));
+          await http.get(Uri.parse(data.personalInfo.profileImagePath!));
           if (response.statusCode == 200) {
             final bytes = response.bodyBytes;
             if (bytes.isNotEmpty) {
@@ -113,7 +111,6 @@ class ResumePdfGenerator {
     }
 
     // Add pages based on template type and content size
-    // Using MultiPage to handle content overflow automatically
     switch (data.templateType.toLowerCase()) {
       case 'modern':
         pdf.addPage(_buildModernTemplate(data, theme, profileImage));
@@ -131,6 +128,8 @@ class ResumePdfGenerator {
     // Save the PDF to the appropriate directory
     String filePath;
 
+    // Here's the corrected code with null safety fixes:
+
     if (saveToDownloads) {
       // Request storage permission
       await _requestStoragePermission();
@@ -139,87 +138,248 @@ class ResumePdfGenerator {
         Directory? downloadsDir;
 
         if (Platform.isAndroid) {
-          // For Android
-          downloadsDir = Directory('/storage/emulated/0/Download');
-          // Ensure the directory exists
-          if (!await downloadsDir.exists()) {
-            // Fall back to app documents directory
+          // For Android, use correct paths for different Android versions
+          try {
+            // Primary approach for Downloads directory
+            downloadsDir = Directory('/storage/emulated/0/Download');
+
+            // Check if directory exists and is accessible
+            if (downloadsDir != null && !await downloadsDir.exists()) {
+              // Try alternate common locations for Downloads
+              final possibilities = [
+                '/storage/emulated/0/Downloads',  // Some devices use this path
+                '/sdcard/Download',               // Legacy path
+                '/sdcard/Downloads'               // Another common path
+              ];
+
+              bool foundDir = false;
+              for (final path in possibilities) {
+                final dir = Directory(path);
+                if (await dir.exists()) {
+                  downloadsDir = dir;
+                  foundDir = true;
+                  break;
+                }
+              }
+
+              // If still not found, try to get the external storage directory
+              if (!foundDir) {
+                final externalDir = await getExternalStorageDirectory();
+                if (externalDir != null) {
+                  // Navigate to root of external storage
+                  String newPath = "";
+                  List<String> paths = externalDir.path.split("/");
+                  for (int i = 1; i < paths.length; i++) {
+                    String folder = paths[i];
+                    if (folder != "Android") {
+                      newPath += "/" + folder;
+                    } else {
+                      break;
+                    }
+                  }
+                  newPath += "/Download";
+                  downloadsDir = Directory(newPath);
+
+                  // Create directory if it doesn't exist
+                  if (!await downloadsDir.exists()) {
+                    await downloadsDir.create(recursive: true);
+                  }
+                }
+              }
+            }
+          } catch (e) {
+            print("Error finding downloads directory: $e");
+            // Last resort: fall back to app documents directory
             downloadsDir = await getApplicationDocumentsDirectory();
           }
         } else if (Platform.isIOS) {
-          // For iOS, we use the documents directory
+          // For iOS, use the documents directory
+          // iOS doesn't have a concept of a "Downloads" folder like Android
           downloadsDir = await getApplicationDocumentsDirectory();
         } else {
           // For other platforms, just use temp directory
           downloadsDir = await getTemporaryDirectory();
         }
 
-        // Create a file name with timestamp to avoid conflicts
+        // Create a descriptive file name with timestamp to avoid conflicts
         final timestamp = DateTime.now().millisecondsSinceEpoch;
-        filePath =
-            '${downloadsDir.path}/Resume_${data.personalInfo.firstName}_${data.personalInfo.lastName}_$timestamp.pdf';
+        final firstName = data.personalInfo.firstName.isNotEmpty
+            ? data.personalInfo.firstName
+            : "Resume";
+        final lastName = data.personalInfo.lastName.isNotEmpty
+            ? data.personalInfo.lastName
+            : "";
+
+        final fileName = 'Resume_${firstName}_${lastName}_$timestamp.pdf';
+
+        // Make sure downloadsDir is not null before using it
+        if (downloadsDir != null) {
+          filePath = '${downloadsDir.path}/$fileName';
+          print('Saving PDF to: $filePath');
+        } else {
+          // Fall back to temp directory if downloadsDir is null
+          final tempDir = await getTemporaryDirectory();
+          filePath = '${tempDir.path}/$fileName';
+          print('Saving PDF to temp directory: $filePath');
+        }
       } catch (e) {
+        print('Error determining download path: $e');
         // If there's any error, fall back to temporary directory
         final dir = await getTemporaryDirectory();
         final timestamp = DateTime.now().millisecondsSinceEpoch;
-        filePath = '${dir.path}/Resume_${timestamp}.pdf';
+        filePath = '${dir.path}/VakyResume_${timestamp}.pdf';
       }
     } else {
       // Just save to temporary directory if not saving to downloads
       final dir = await getTemporaryDirectory();
       final timestamp = DateTime.now().millisecondsSinceEpoch;
-      filePath = '${dir.path}/Resume_${timestamp}.pdf';
+      filePath = '${dir.path}/VakyResume_${timestamp}.pdf';
     }
 
     // Save the PDF
     final file = File(filePath);
     await file.writeAsBytes(await pdf.save());
 
+    // For Android 11+ (API 30+), we need additional handling to make the file visible
+    // in the Downloads folder via Media Store
+    if (Platform.isAndroid && saveToDownloads) {
+      try {
+        // This would be a good place to implement Media Store integration
+        // For modern Android versions, simply writing to Download may not
+        // make the file visible without proper Media Store integration
+        print('PDF saved. For modern Android devices, additional Media Store integration may be needed.');
+      } catch (e) {
+        print('Note: File saved but might not be visible in gallery: $e');
+      }
+    }
+
     return filePath;
   }
 
-  // Request storage permission
   static Future<void> _requestStoragePermission() async {
     if (Platform.isAndroid) {
-      // Request storage permission on Android
-      var status = await Permission.storage.status;
-      if (!status.isGranted) {
-        status = await Permission.storage.request();
+      // Check Android version to determine which permissions to request
+      // Android 10 (API 29) and below needs Storage permission
+      var storageStatus = await Permission.storage.status;
+      if (!storageStatus.isGranted) {
+        storageStatus = await Permission.storage.request();
+        print('Storage permission status: $storageStatus');
       }
 
-      // On newer Android versions, also request the manageExternalStorage permission
+      // On Android 11+ (API 30+), we need MANAGE_EXTERNAL_STORAGE for direct Downloads access
+      // Note: This is a special permission that users must grant in Settings
       try {
-        // Only needed on Android 11+ (API level 30+)
-        status = await Permission.manageExternalStorage.status;
-        if (!status.isGranted) {
-          status = await Permission.manageExternalStorage.request();
+        var externalStatus = await Permission.manageExternalStorage.status;
+        if (!externalStatus.isGranted) {
+          externalStatus = await Permission.manageExternalStorage.request();
+          print('External storage permission status: $externalStatus');
         }
       } catch (e) {
-        // Ignore errors for older Android versions
-        print('Error requesting manage external storage: $e');
+        // Ignore errors for older Android versions where this permission doesn't exist
+        print('Note: ManageExternalStorage permission check failed, likely on older Android: $e');
       }
     }
   }
 
+  // Helper function to check if there are valid skills
+  static bool hasValidSkills(ResumeData data) {
+    return data.skills.isNotEmpty &&
+        data.skills.any((skill) => skill.trim().isNotEmpty);
+  }
+
+// Helper function to check if there are valid languages
+  static bool hasValidLanguages(ResumeData data) {
+    return data.languages.isNotEmpty &&
+        data.languages.any((language) => language.trim().isNotEmpty);
+  }
+
+// Helper function to check if there is valid employment history
+  static bool hasValidEmploymentHistory(ResumeData data) {
+    return data.employmentHistory.isNotEmpty &&
+        data.employmentHistory.any((job) =>
+        job.jobTitle.trim().isNotEmpty ||
+            job.employer.trim().isNotEmpty ||
+            job.description.trim().isNotEmpty);
+  }
+
+// Helper function to check if there is valid education data
+  static bool hasValidEducation(ResumeData data) {
+    return data.education.isNotEmpty &&
+        data.education.any((edu) =>
+        edu.title.trim().isNotEmpty ||
+            edu.school.trim().isNotEmpty);
+  }
+
+// Helper function to check if there is a valid summary
+  static bool hasValidSummary(ResumeData data) {
+    return data.professionalSummary.trim().isNotEmpty;
+  }
+
+  static List<Employment> getValidEmployment(ResumeData data) {
+    return data.employmentHistory
+        .where((job) =>
+    job.jobTitle.trim().isNotEmpty ||
+        job.employer.trim().isNotEmpty ||
+        job.description.trim().isNotEmpty)
+        .toList();
+  }
+
+// Helper function to filter valid education entries
+  static List<Education> getValidEducation(ResumeData data) {
+    return data.education
+        .where((edu) =>
+    edu.title.trim().isNotEmpty ||
+        edu.school.trim().isNotEmpty)
+        .toList();
+  }
+
+// Helper function to filter valid skills
+  static List<String> getValidSkills(ResumeData data) {
+    return data.skills
+        .where((skill) => skill.trim().isNotEmpty)
+        .toList();
+  }
+
+// Helper function to filter valid languages
+  static List<String> getValidLanguages(ResumeData data) {
+    return data.languages
+        .where((language) => language.trim().isNotEmpty)
+        .toList();
+  }
+
   // Build Modern Template with MultiPage to handle overflow
- static pw.Page _buildModernTemplate(
-  ResumeData data,
-  pw.ThemeData theme,
-  pw.MemoryImage? profileImage,
-) {
-  return pw.MultiPage(
-    theme: theme,
-    pageFormat: PdfPageFormat.a4,
-    margin: const pw.EdgeInsets.all(0),
-    build: (pw.Context context) {
-      return [
-        // Header with name, role, and contact info
-        pw.Container(
-          padding: const pw.EdgeInsets.all(20),
-          color: PdfColors.blueGrey800,
-          child: pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
+  static pw.Page _buildModernTemplate(
+      ResumeData data,
+      pw.ThemeData theme,
+      pw.MemoryImage? profileImage,
+      ) {
+    // Check if sections have valid data
+    final bool hasSkills = hasValidSkills(data);
+    final bool hasLanguages = hasValidLanguages(data);
+    final bool hasEmploymentHistory = hasValidEmploymentHistory(data);
+    final bool hasEducation = hasValidEducation(data);
+    final bool hasSummary = hasValidSummary(data);
+
+    // Get filtered valid entries
+    final validJobs = getValidEmployment(data);
+    final validEducation = getValidEducation(data);
+    final validSkills = getValidSkills(data);
+    final validLanguages = getValidLanguages(data);
+
+
+    return pw.MultiPage(
+      theme: theme,
+      pageFormat: PdfPageFormat.a4,
+      margin: const pw.EdgeInsets.all(0),
+      build: (pw.Context context) {
+        return [
+          // Header (always shown) - No change needed here
+          pw.Container(
+            padding: const pw.EdgeInsets.all(20),
+            color: PdfColors.blueGrey800,
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
               // Name and role with profile image
               pw.Row(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -337,103 +497,109 @@ class ResumePdfGenerator {
         ),
 
         // Main content in two columns
-        pw.Expanded(
-          child: pw.Row(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              // Left sidebar with skills and languages
-              pw.Container(
-                width: 150,
-                color: PdfColors.blueGrey50,
-                padding: const pw.EdgeInsets.all(16),
-                child: pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.start,
-                  children: [
-                    // Skills section
-                    pw.Text(
-                      'SKILLS',
-                      style: pw.TextStyle(
-                        fontSize: 14,
-                        fontWeight: pw.FontWeight.bold,
-                        color: PdfColors.blueGrey,
-                      ),
+          pw.Expanded(
+            child: pw.Row(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                // Left sidebar with skills and languages - Only show if there are valid skills or languages
+                if (hasSkills || hasLanguages)
+                  pw.Container(
+                    width: 150,
+                    color: PdfColors.blueGrey50,
+                    padding: const pw.EdgeInsets.all(16),
+                    child: pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        // Skills section - Only show if there are valid skills
+                        if (hasSkills) ...[
+                          pw.Text(
+                            'SKILLS',
+                            style: pw.TextStyle(
+                              fontSize: 14,
+                              fontWeight: pw.FontWeight.bold,
+                              color: PdfColors.blueGrey,
+                            ),
+                          ),
+                          pw.SizedBox(height: 12),
+                          ...validSkills.map((skill) => pw.Padding(
+                            padding: const pw.EdgeInsets.only(bottom: 8),
+                            child: pw.Text(
+                              skill,
+                              style: const pw.TextStyle(
+                                fontSize: 10,
+                                color: PdfColors.black,
+                              ),
+                            ),
+                          )),
+                          if (hasLanguages) pw.SizedBox(height: 24),
+                        ],
+
+                        // Languages section - Only show if there are valid languages
+                        if (hasLanguages) ...[
+                          pw.Text(
+                            'LANGUAGES',
+                            style: pw.TextStyle(
+                              fontSize: 14,
+                              fontWeight: pw.FontWeight.bold,
+                              color: PdfColors.blueGrey,
+                            ),
+                          ),
+                          pw.SizedBox(height: 12),
+                          ...validLanguages.map((language) => pw.Padding(
+                            padding: const pw.EdgeInsets.only(bottom: 8),
+                            child: pw.Text(
+                              language,
+                              style: const pw.TextStyle(
+                                fontSize: 10,
+                                color: PdfColors.black,
+                              ),
+                            ),
+                          )),
+                        ],
+                      ],
                     ),
-                    pw.SizedBox(height: 12),
-                    ...data.skills.map((skill) => pw.Padding(
-                          padding: const pw.EdgeInsets.only(bottom: 8),
-                          child: pw.Text(
-                            skill,
+                  ),
+
+                // Main content with summary, experience, and education
+                pw.Expanded(
+                  child: pw.Container(
+                    padding: const pw.EdgeInsets.all(20),
+                    child: pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        // Professional Summary - Only show if there's a valid summary
+                        if (hasSummary) ...[
+                          pw.Text(
+                            'PROFESSIONAL SUMMARY',
+                            style: pw.TextStyle(
+                              fontSize: 14,
+                              fontWeight: pw.FontWeight.bold,
+                              color: PdfColors.blueGrey,
+                            ),
+                          ),
+                          pw.SizedBox(height: 10),
+                          pw.Text(
+                            data.professionalSummary,
                             style: const pw.TextStyle(
                               fontSize: 10,
                               color: PdfColors.black,
                             ),
                           ),
-                        )),
+                          pw.SizedBox(height: 20),
+                        ],
 
-                    pw.SizedBox(height: 24),
-
-                    // Languages section
-                    pw.Text(
-                      'LANGUAGES',
-                      style: pw.TextStyle(
-                        fontSize: 14,
-                        fontWeight: pw.FontWeight.bold,
-                        color: PdfColors.blueGrey,
-                      ),
-                    ),
-                    pw.SizedBox(height: 12),
-                    ...data.languages.map((language) => pw.Padding(
-                          padding: const pw.EdgeInsets.only(bottom: 8),
-                          child: pw.Text(
-                            language,
-                            style: const pw.TextStyle(
-                              fontSize: 10,
-                              color: PdfColors.black,
+                        // Work Experience - Only show if there are valid jobs
+                        if (hasEmploymentHistory && validJobs.isNotEmpty) ...[
+                          pw.Text(
+                            'EXPERIENCE',
+                            style: pw.TextStyle(
+                              fontSize: 14,
+                              fontWeight: pw.FontWeight.bold,
+                              color: PdfColors.blueGrey,
                             ),
                           ),
-                        )),
-                  ],
-                ),
-              ),
-
-              // Main content with summary, experience, and education
-              pw.Expanded(
-                child: pw.Container(
-                  padding: const pw.EdgeInsets.all(20),
-                  child: pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      // Professional Summary
-                      pw.Text(
-                        'PROFESSIONAL SUMMARY',
-                        style: pw.TextStyle(
-                          fontSize: 14,
-                          fontWeight: pw.FontWeight.bold,
-                          color: PdfColors.blueGrey,
-                        ),
-                      ),
-                      pw.SizedBox(height: 10),
-                      pw.Text(
-                        data.professionalSummary,
-                        style: const pw.TextStyle(
-                          fontSize: 10,
-                          color: PdfColors.black,
-                        ),
-                      ),
-
-                      pw.SizedBox(height: 20),
-
-                      // Work Experience
-                      pw.Text(
-                        'EXPERIENCE',
-                        style: pw.TextStyle(
-                          fontSize: 14,
-                          fontWeight: pw.FontWeight.bold,
-                          color: PdfColors.blueGrey,
-                        ),
-                      ),
-                      pw.SizedBox(height: 10),
-                      ...data.employmentHistory.map((job) => pw.Padding(
+                          pw.SizedBox(height: 10),
+                          ...validJobs.map((job) => pw.Padding(
                             padding: const pw.EdgeInsets.only(bottom: 14),
                             child: pw.Column(
                               crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -466,20 +632,21 @@ class ResumePdfGenerator {
                               ],
                             ),
                           )),
+                          if (hasEducation && validEducation.isNotEmpty) pw.SizedBox(height: 20),
+                        ],
 
-                      pw.SizedBox(height: 20),
-
-                      // Education
-                      pw.Text(
-                        'EDUCATION',
-                        style: pw.TextStyle(
-                          fontSize: 14,
-                          fontWeight: pw.FontWeight.bold,
-                          color: PdfColors.blueGrey,
-                        ),
-                      ),
-                      pw.SizedBox(height: 10),
-                      ...data.education.map((edu) => pw.Padding(
+                        // Education - Only show if there are valid education entries
+                        if (hasEducation && validEducation.isNotEmpty) ...[
+                          pw.Text(
+                            'EDUCATION',
+                            style: pw.TextStyle(
+                              fontSize: 14,
+                              fontWeight: pw.FontWeight.bold,
+                              color: PdfColors.blueGrey,
+                            ),
+                          ),
+                          pw.SizedBox(height: 10),
+                          ...validEducation.map((edu) => pw.Padding(
                             padding: const pw.EdgeInsets.only(bottom: 14),
                             child: pw.Column(
                               crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -502,35 +669,41 @@ class ResumePdfGenerator {
                                   ),
                                 ),
                                 pw.SizedBox(height: 6),
-                                // if (edu.description.isNotEmpty)
-                                //   pw.Text(
-                                //     edu.description,
-                                //     style: const pw.TextStyle(
-                                //       fontSize: 10,
-                                //       color: PdfColors.black,
-                                //     ),
-                                //   ),
                               ],
                             ),
                           )),
-                    ],
+                        ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ];
-    },
-  );
-}
+        ];
+      },
+    );
+  }
 
   // Build Classic Template with traditional centered design
   static pw.Page _buildClassicTemplate(
-    ResumeData data,
-    pw.ThemeData theme,
-    pw.MemoryImage? profileImage,
-  ) {
+      ResumeData data,
+      pw.ThemeData theme,
+      pw.MemoryImage? profileImage,
+      ) {
+    // Check if sections have valid data
+    final bool hasSkills = hasValidSkills(data);
+    final bool hasLanguages = hasValidLanguages(data);
+    final bool hasEmploymentHistory = hasValidEmploymentHistory(data);
+    final bool hasEducation = hasValidEducation(data);
+    final bool hasSummary = hasValidSummary(data);
+
+    // Get filtered valid entries
+    final validJobs = getValidEmployment(data);
+    final validEducation = getValidEducation(data);
+    final validSkills = getValidSkills(data);
+    final validLanguages = getValidLanguages(data);
+
     return pw.MultiPage(
       theme: theme,
       pageFormat: PdfPageFormat.a4,
@@ -538,8 +711,7 @@ class ResumePdfGenerator {
       build: (pw.Context context) {
         return [
           pw.Padding(
-            padding: const pw.EdgeInsets.all(
-                40), // Increased from 30 to 40 to match interface
+            padding: const pw.EdgeInsets.all(40),
             child: pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
@@ -630,29 +802,32 @@ class ResumePdfGenerator {
                 pw.SizedBox(height: 16), // Updated spacing to match interface
 
                 // Professional Summary
-                pw.Text(
-                  'SUMMARY',
-                  style: pw.TextStyle(
-                    fontSize: 16, // Increased from 14 to 16
-                    fontWeight: pw.FontWeight.bold,
-                    color: PdfColors.black,
-                  ),
-                ),
-                pw.Divider(
-                    thickness: 1,
-                    color: PdfColors.grey400), // Increased thickness to 1
-                pw.SizedBox(height: 8), // Increased from 6 to 8
-                pw.Text(
-                  data.professionalSummary,
-                  style: const pw.TextStyle(
-                    fontSize: 12, // Increased from 10 to 12
-                    color: PdfColors.black,
-                  ),
-                ),
+                if (hasSummary) pw.SizedBox(height: 16),
 
-                pw.SizedBox(height: 24), // Increased from 16 to 24
+                // Professional Summary - Only show if there is valid content
+                if (hasSummary) ...[
+                  pw.Text(
+                    'SUMMARY',
+                    style: pw.TextStyle(
+                      fontSize: 16,
+                      fontWeight: pw.FontWeight.bold,
+                      color: PdfColors.black,
+                    ),
+                  ),
+                  pw.Divider(thickness: 1, color: PdfColors.grey400),
+                  pw.SizedBox(height: 8),
+                  pw.Text(
+                    data.professionalSummary,
+                    style: const pw.TextStyle(
+                      fontSize: 12,
+                      color: PdfColors.black,
+                    ),
+                  ),
+                  pw.SizedBox(height: 24),
+                ],// Increased from 16 to 24
 
                 // Experience
+                if (hasEmploymentHistory && validJobs.isNotEmpty) ...[
                 pw.Text(
                   'EXPERIENCE',
                   style: pw.TextStyle(
@@ -665,7 +840,7 @@ class ResumePdfGenerator {
                     thickness: 1,
                     color: PdfColors.grey400), // Increased thickness to 1
                 pw.SizedBox(height: 8), // Increased from 6 to 8
-                ...data.employmentHistory.map((job) => pw.Padding(
+        ...validJobs.map((job) => pw.Padding(
                       padding: const pw.EdgeInsets.only(
                           bottom: 16), // Increased from 14 to 16
                       child: pw.Column(
@@ -729,10 +904,13 @@ class ResumePdfGenerator {
                         ],
                       ),
                     )),
+                  if (hasEducation && validEducation.isNotEmpty) pw.SizedBox(height: 16),
+                ],
 
-                pw.SizedBox(height: 24), // Increased from 16 to 24
+
 
                 // Education
+        if (hasEducation && validEducation.isNotEmpty) ...[
                 pw.Text(
                   'EDUCATION',
                   style: pw.TextStyle(
@@ -745,7 +923,7 @@ class ResumePdfGenerator {
                     thickness: 1,
                     color: PdfColors.grey400), // Increased thickness to 1
                 pw.SizedBox(height: 8), // Increased from 6 to 8
-                ...data.education.map((edu) => pw.Padding(
+                ...validEducation.map((edu) => pw.Padding(
                       padding: const pw.EdgeInsets.only(
                           bottom: 16), // Increased from 14 to 16
                       child: pw.Column(
@@ -809,87 +987,85 @@ class ResumePdfGenerator {
                         ],
                       ),
                     )),
+          if (hasSkills || hasLanguages) pw.SizedBox(height: 16),
+        ],
 
-                pw.SizedBox(height: 24), // Increased from 16 to 24
 
                 // Skills and Languages
-                pw.Row(
-                  crossAxisAlignment: pw.CrossAxisAlignment.start,
-                  children: [
-                    // Skills section
-                    pw.Expanded(
-                      child: pw.Column(
-                        crossAxisAlignment: pw.CrossAxisAlignment.start,
-                        children: [
-                          pw.Text(
-                            'SKILLS',
-                            style: pw.TextStyle(
-                              fontSize: 16, // Increased from 14 to 16
-                              fontWeight: pw.FontWeight.bold,
-                              color: PdfColors.black,
-                            ),
+                if (hasSkills || hasLanguages)
+                  pw.Row(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      // Skills section - Only show if there are valid skills
+                      if (hasSkills)
+                        pw.Expanded(
+                          child: pw.Column(
+                            crossAxisAlignment: pw.CrossAxisAlignment.start,
+                            children: [
+                              pw.Text(
+                                'SKILLS',
+                                style: pw.TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: pw.FontWeight.bold,
+                                  color: PdfColors.black,
+                                ),
+                              ),
+                              pw.Divider(thickness: 1, color: PdfColors.grey400),
+                              pw.SizedBox(height: 8),
+                              // Use validSkills instead of data.skills
+                              pw.Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: validSkills
+                                    .map((skill) => pw.Text(
+                                  '• $skill',
+                                  style: const pw.TextStyle(
+                                    fontSize: 12,
+                                    color: PdfColors.black,
+                                  ),
+                                ))
+                                    .toList(),
+                              ),
+                            ],
                           ),
-                          pw.Divider(
-                              thickness: 1,
-                              color: PdfColors
-                                  .grey400), // Increased thickness to 1
-                          pw.SizedBox(height: 8), // Increased from 6 to 8
-                          // Changed to Wrap with spacing
-                          pw.Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: data.skills
-                                .map((skill) => pw.Text(
-                                      '• $skill',
-                                      style: const pw.TextStyle(
-                                        fontSize: 12, // Increased from 10 to 12
-                                        color: PdfColors.black,
-                                      ),
-                                    ))
-                                .toList(),
-                          ),
-                        ],
-                      ),
-                    ),
-                    pw.SizedBox(width: 20),
+                        ),
+                      if (hasSkills && hasLanguages) pw.SizedBox(width: 20),
 
-                    // Languages section
-                    pw.Expanded(
-                      child: pw.Column(
-                        crossAxisAlignment: pw.CrossAxisAlignment.start,
-                        children: [
-                          pw.Text(
-                            'LANGUAGES',
-                            style: pw.TextStyle(
-                              fontSize: 16, // Increased from 14 to 16
-                              fontWeight: pw.FontWeight.bold,
-                              color: PdfColors.black,
-                            ),
+                      // Languages section - Only show if there are valid languages
+                      if (hasLanguages)
+                        pw.Expanded(
+                          child: pw.Column(
+                            crossAxisAlignment: pw.CrossAxisAlignment.start,
+                            children: [
+                              pw.Text(
+                                'LANGUAGES',
+                                style: pw.TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: pw.FontWeight.bold,
+                                  color: PdfColors.black,
+                                ),
+                              ),
+                              pw.Divider(thickness: 1, color: PdfColors.grey400),
+                              pw.SizedBox(height: 8),
+                              // Use validLanguages instead of data.languages
+                              pw.Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: validLanguages
+                                    .map((language) => pw.Text(
+                                  '• $language',
+                                  style: const pw.TextStyle(
+                                    fontSize: 12,
+                                    color: PdfColors.black,
+                                  ),
+                                ))
+                                    .toList(),
+                              ),
+                            ],
                           ),
-                          pw.Divider(
-                              thickness: 1,
-                              color: PdfColors
-                                  .grey400), // Increased thickness to 1
-                          pw.SizedBox(height: 8), // Increased from 6 to 8
-                          // Changed to Wrap with spacing
-                          pw.Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: data.languages
-                                .map((language) => pw.Text(
-                                      '• $language',
-                                      style: const pw.TextStyle(
-                                        fontSize: 12, // Increased from 10 to 12
-                                        color: PdfColors.black,
-                                      ),
-                                    ))
-                                .toList(),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+                        ),
+                    ],
+                  ),
               ],
             ),
           ),
@@ -900,17 +1076,30 @@ class ResumePdfGenerator {
 
   // Build Business Template with corporate styling
   static pw.Page _buildBusinessTemplate(
-    ResumeData data,
-    pw.ThemeData theme,
-    pw.MemoryImage? profileImage,
-  ) {
+      ResumeData data,
+      pw.ThemeData theme,
+      pw.MemoryImage? profileImage,
+      ) {
+    // Check if sections have valid data
+    final bool hasSkills = hasValidSkills(data);
+    final bool hasLanguages = hasValidLanguages(data);
+    final bool hasEmploymentHistory = hasValidEmploymentHistory(data);
+    final bool hasEducation = hasValidEducation(data);
+    final bool hasSummary = hasValidSummary(data);
+
+    // Get filtered valid entries
+    final validJobs = getValidEmployment(data);
+    final validEducation = getValidEducation(data);
+    final validSkills = getValidSkills(data);
+    final validLanguages = getValidLanguages(data);
+
     return pw.MultiPage(
       theme: theme,
       pageFormat: PdfPageFormat.a4,
       margin: const pw.EdgeInsets.all(0),
       build: (pw.Context context) {
         return [
-          // Header with name, role and contact info
+          // Header section (always shown) - No change needed
           pw.Container(
             width: double.infinity,
             padding: const pw.EdgeInsets.all(24),
@@ -1068,31 +1257,33 @@ class ResumePdfGenerator {
             child: pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
-                // Professional Summary
-                _buildPdfSectionHeader('SUMMARY'),
-                pw.SizedBox(height: 12),
-                // pw.Divider(color: Pdf, thickness: 1),
-                pw.Text(
-                  data.professionalSummary,
-                  style: const pw.TextStyle(
-                    fontSize: 12,
-                    color: PdfColors.black,
-                    lineSpacing: 1.5,
+                // Professional Summary - Only show if there is valid content
+                if (hasSummary) ...[
+                  _buildPdfSectionHeader('SUMMARY'),
+                  pw.SizedBox(height: 12),
+                  pw.Text(
+                    data.professionalSummary,
+                    style: const pw.TextStyle(
+                      fontSize: 12,
+                      color: PdfColors.black,
+                      lineSpacing: 1.5,
+                    ),
                   ),
-                ),
+                  pw.SizedBox(height: 24),
+                ],
 
-                pw.SizedBox(height: 24),
 
                 // Experience
+                if (hasEmploymentHistory && validJobs.isNotEmpty) ...[
                 _buildPdfSectionHeader('EXPERIENCE'),
                 pw.SizedBox(height: 12),
 
-                // Employment history items
-                ...data.employmentHistory.map((job) => pw.Container(
-                      margin: const pw.EdgeInsets.only(bottom: 16),
-                      child: pw.Column(
-                        crossAxisAlignment: pw.CrossAxisAlignment.start,
-                        children: [
+                // Only use valid jobs
+                ...validJobs.map((job) => pw.Container(
+                margin: const pw.EdgeInsets.only(bottom: 16),
+                child: pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
                           pw.Text(
                             job.jobTitle,
                             style: pw.TextStyle(
@@ -1128,19 +1319,21 @@ class ResumePdfGenerator {
                         ],
                       ),
                     )),
+                  if (hasEducation && validEducation.isNotEmpty) pw.SizedBox(height: 24),
+                ],
 
-                pw.SizedBox(height: 24),
 
                 // Education
-                _buildPdfSectionHeader('Education'),
-                pw.SizedBox(height: 12),
+        if (hasEducation && validEducation.isNotEmpty) ...[
+        _buildPdfSectionHeader('Education'),
+        pw.SizedBox(height: 12),
 
-                // Education in a grid layout with wrapping
-                pw.Wrap(
-                  spacing: 16,
-                  runSpacing: 16,
-                  children: data.education
-                      .map((edu) => pw.Container(
+        // Education in a grid layout with wrapping - Use validEducation
+        pw.Wrap(
+        spacing: 16,
+        runSpacing: 16,
+        children: validEducation
+            .map((edu) => pw.Container(
                             width:
                                 250, // Set a fixed width for each education item
                             child: pw.Column(
@@ -1189,26 +1382,29 @@ class ResumePdfGenerator {
                           ))
                       .toList(),
                 ),
+          if (hasSkills || hasLanguages) pw.SizedBox(height: 24),
+        ],
 
-                pw.SizedBox(height: 24),
 
                 // Skills and Languages in two columns
-                pw.Row(
-                  crossAxisAlignment: pw.CrossAxisAlignment.start,
-                  children: [
-                    // Skills section
-                    pw.Expanded(
-                      child: pw.Column(
-                        crossAxisAlignment: pw.CrossAxisAlignment.start,
-                        children: [
-                          _buildPdfSectionHeader('Skills'),
-                          pw.SizedBox(height: 12),
-                          // Skills with tags
-                          pw.Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: data.skills
-                                .map((skill) => pw.Container(
+                if (hasSkills || hasLanguages)
+                  pw.Row(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      // Skills section - Only show if there are valid skills
+                      if (hasSkills)
+                        pw.Expanded(
+                          child: pw.Column(
+                            crossAxisAlignment: pw.CrossAxisAlignment.start,
+                            children: [
+                              _buildPdfSectionHeader('Skills'),
+                              pw.SizedBox(height: 12),
+                              // Use validSkills for skills tags
+                              pw.Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: validSkills
+                                    .map((skill) => pw.Container(
                                       padding: const pw.EdgeInsets.symmetric(
                                         horizontal: 12,
                                         vertical: 6,
@@ -1231,18 +1427,19 @@ class ResumePdfGenerator {
                         ],
                       ),
                     ),
-                    pw.SizedBox(width: 24),
+                      if (hasSkills && hasLanguages) pw.SizedBox(width: 24),
 
                     // Languages section without progress bars (matching the interface template)
-                    pw.Expanded(
-                      child: pw.Column(
-                        crossAxisAlignment: pw.CrossAxisAlignment.start,
-                        children: [
-                          _buildPdfSectionHeader('Languages'),
-                          pw.SizedBox(height: 12),
-                          // Languages without visual bars
-                          ...data.languages
-                              .map((language) => pw.Column(
+                      if (hasLanguages)
+                        pw.Expanded(
+                          child: pw.Column(
+                            crossAxisAlignment: pw.CrossAxisAlignment.start,
+                            children: [
+                              _buildPdfSectionHeader('Languages'),
+                              pw.SizedBox(height: 12),
+                              // Use validLanguages for language list
+                              ...validLanguages
+                                  .map((language) => pw.Column(
                                     crossAxisAlignment:
                                         pw.CrossAxisAlignment.start,
                                     children: [

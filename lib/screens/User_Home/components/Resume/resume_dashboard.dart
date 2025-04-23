@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
@@ -656,7 +657,12 @@ class _PersonalDetailsScreenState
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.delete_outline, color: Colors.red),
+                icon: SvgPicture.asset(
+                  'assets/icons/trash_12252659.svg',
+                  width: 24, // adjust size as needed
+                  height: 18,
+                  color: Colors.red, // optional, applies if the SVG supports color
+                ),
                 onPressed: () => _removeEducationBlock(index),
               ),
             ],
@@ -675,16 +681,28 @@ class _PersonalDetailsScreenState
                 width: 0.5,
               ),
             ),
-            child: TextField(
+            child: TextFormField(
+              // Changed from TextField to TextFormField
               controller: _educationTitleControllers[index],
               style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
               decoration: InputDecoration(
-                hintText: 'Education Title',
-                hintStyle: TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode)),
+                hintText: 'Education Title *',
+                // Added asterisk for required field
+                hintStyle: TextStyle(
+                    color: AppColors.getSecondaryTextColor(isDarkMode)),
                 border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 14),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                errorStyle: TextStyle(color: Colors.red),
               ),
+              validator: (value) {
+                // Only validate if this is the first education block or if the school field has content
+                if ((index == 0 || _schoolControllers[index].text.isNotEmpty) &&
+                    (value == null || value.isEmpty)) {
+                  return 'Required';
+                }
+                return null;
+              },
             ),
           ),
 
@@ -706,15 +724,31 @@ class _PersonalDetailsScreenState
                       width: 0.5,
                     ),
                   ),
-                  child: TextField(
+                  child: TextFormField(
+                    // Changed from TextField to TextFormField
                     controller: _schoolControllers[index],
                     style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
                     decoration: InputDecoration(
-                      hintText: 'Name Of School',
-                      hintStyle: TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode)),
+                      hintText: 'School *',
+                      // Added asterisk for required field
+                      hintStyle: TextStyle(
+                          color: AppColors.getSecondaryTextColor(isDarkMode)),
                       border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 14),
+                      errorStyle: TextStyle(color: Colors.red),
                     ),
+                    validator: (value) {
+                      // Only validate if this is the first education block or if the title field has content
+                      if ((index == 0 ||
+                              _educationTitleControllers[index]
+                                  .text
+                                  .isNotEmpty) &&
+                          (value == null || value.isEmpty)) {
+                        return 'Required';
+                      }
+                      return null;
+                    },
                   ),
                 ),
               ),
@@ -740,7 +774,6 @@ class _PersonalDetailsScreenState
                     inputFormatters: [
                       FilteringTextInputFormatter.allow(RegExp(r'[0-9.,%+-]')),
                     ],
-
                     decoration: InputDecoration(
                       hintText: 'Aggregate',
                       hintStyle: TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode)),
@@ -756,85 +789,93 @@ class _PersonalDetailsScreenState
           const SizedBox(height: 16),
 
           // Start Date and End Date Row
+          // Start Date and End Date Row
           Row(
             children: [
               // Start Date
               Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: isDarkMode
-                        ? AppColors.darkSurface.withOpacity(0.7)
-                        : const Color(0xFFF5F5F5),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: AppColors.getDividerColor(isDarkMode),
-                      width: 0.5,
+                child: GestureDetector(
+                  onTap: () => _selectDate(context, _startDateControllers[index]),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: isDarkMode
+                          ? AppColors.darkSurface.withOpacity(0.7)
+                          : const Color(0xFFF5F5F5),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: AppColors.getDividerColor(isDarkMode),
+                        width: 0.5,
+                      ),
                     ),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: TextFormField(
-                          style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
-                          controller: _startDateControllers[index],
-                          readOnly: true,
-                          decoration: InputDecoration(
-                            hintText: 'Start Date',
-                            hintStyle: TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode)),
-                            border: InputBorder.none,
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+                            controller: _startDateControllers[index],
+                            readOnly: true,
+                            enabled: false, // Disable direct interaction with TextField
+                            decoration: InputDecoration(
+                              hintText: 'Start Date',
+                              hintStyle: TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode)),
+                              border: InputBorder.none,
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            ),
                           ),
                         ),
-                      ),
-                      IconButton(
-                        icon: Icon(
-                            Icons.calendar_today,
-                            color: AppColors.getSecondaryTextColor(isDarkMode)
+                        IconButton(
+                          icon: Icon(
+                              Icons.calendar_today,
+                              color: AppColors.getSecondaryTextColor(isDarkMode)
+                          ),
+                          onPressed: () => _selectDate(context, _startDateControllers[index]),
                         ),
-                        onPressed: () => _selectDate(context, _startDateControllers[index]),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
               const SizedBox(width: 16),
-
               // End Date
               Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: isDarkMode
-                        ? AppColors.darkSurface.withOpacity(0.7)
-                        : const Color(0xFFF5F5F5),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: AppColors.getDividerColor(isDarkMode),
-                      width: 0.5,
+                child: GestureDetector(
+                  onTap: () => _selectDate(context, _endDateControllers[index]),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: isDarkMode
+                          ? AppColors.darkSurface.withOpacity(0.7)
+                          : const Color(0xFFF5F5F5),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: AppColors.getDividerColor(isDarkMode),
+                        width: 0.5,
+                      ),
                     ),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: TextFormField(
-                          style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
-                          controller: _endDateControllers[index],
-                          readOnly: true,
-                          decoration: InputDecoration(
-                            hintText: 'End Date',
-                            hintStyle: TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode)),
-                            border: InputBorder.none,
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+                            controller: _endDateControllers[index],
+                            readOnly: true,
+                            enabled: false, // Disable direct interaction with TextField
+                            decoration: InputDecoration(
+                              hintText: 'End Date',
+                              hintStyle: TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode)),
+                              border: InputBorder.none,
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            ),
                           ),
                         ),
-                      ),
-                      IconButton(
-                        icon: Icon(
-                            Icons.calendar_today,
-                            color: AppColors.getSecondaryTextColor(isDarkMode)
+                        IconButton(
+                          icon: Icon(
+                              Icons.calendar_today,
+                              color: AppColors.getSecondaryTextColor(isDarkMode)
+                          ),
+                          onPressed: () => _selectDate(context, _endDateControllers[index]),
                         ),
-                        onPressed: () => _selectDate(context, _endDateControllers[index]),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -860,9 +901,11 @@ class _PersonalDetailsScreenState
               style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
               decoration: InputDecoration(
                 hintText: 'Location',
-                hintStyle: TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode)),
+                hintStyle: TextStyle(
+                    color: AppColors.getSecondaryTextColor(isDarkMode)),
                 border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               ),
             ),
           ),
@@ -906,17 +949,24 @@ class _PersonalDetailsScreenState
                         : const Color(0xFFF5F5F5),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: TextField(
+                  child: TextFormField(
                     controller: _roleController,
                     style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
                     decoration: InputDecoration(
-                      hintText: 'Role you want',
+                      hintText: 'Role you want *',
                       hintStyle: TextStyle(
                           color: AppColors.getSecondaryTextColor(isDarkMode)),
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 14),
+                      errorStyle: TextStyle(color: Colors.red),
                     ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your desired role';
+                      }
+                      return null;
+                    },
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -937,19 +987,28 @@ class _PersonalDetailsScreenState
                                   : const Color(0xFFF5F5F5),
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: TextField(
+                            child: TextFormField(
                               controller: _firstNameController,
                               style: TextStyle(
                                   color: AppColors.getTextColor(isDarkMode)),
                               decoration: InputDecoration(
-                                hintText: 'First Name',
+                                hintText: 'First Name *',
                                 hintStyle: TextStyle(
                                     color: AppColors.getSecondaryTextColor(
                                         isDarkMode)),
                                 border: InputBorder.none,
                                 contentPadding: const EdgeInsets.symmetric(
                                     horizontal: 16, vertical: 14),
+                                errorStyle: TextStyle(
+                                    color: Colors.red), // Style for error text
                               ),
+                              // Add validator function
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Required';
+                                }
+                                return null;
+                              },
                             ),
                           ),
                           const SizedBox(height: 16),
@@ -988,7 +1047,8 @@ class _PersonalDetailsScreenState
                       child: Container(
                         width: 110,
                         // Height calculation: 2 text fields (each ~48px) + 16px spacing between them
-                        height: 112, // 48 + 48 + 16
+                        height: 112,
+                        // 48 + 48 + 16
                         decoration: BoxDecoration(
                           color: isDarkMode
                               ? AppColors.darkSurface
@@ -1039,18 +1099,28 @@ class _PersonalDetailsScreenState
                         : const Color(0xFFF5F5F5),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: TextField(
+                  child: TextFormField(
                     controller: _emailController,
                     style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
                     decoration: InputDecoration(
-                      hintText: 'Email',
+                      hintText: 'Email *',
                       hintStyle: TextStyle(
                           color: AppColors.getSecondaryTextColor(isDarkMode)),
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 14),
+                      errorStyle:
+                          TextStyle(color: Colors.red), // Style for error text
                     ),
                     keyboardType: TextInputType.emailAddress,
+
+                    // Add validator function
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Required';
+                      }
+                      return null;
+                    },
                   ),
                 ),
 
@@ -1064,18 +1134,27 @@ class _PersonalDetailsScreenState
                         : const Color(0xFFF5F5F5),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: TextField(
+                  child: TextFormField(
                     controller: _phoneController,
                     style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
                     decoration: InputDecoration(
-                      hintText: 'Phone No.',
+                      hintText: 'Phone No. *',
                       hintStyle: TextStyle(
                           color: AppColors.getSecondaryTextColor(isDarkMode)),
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 14),
+                      errorStyle:
+                      TextStyle(color: Colors.red),
                     ),
                     keyboardType: TextInputType.phone,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Required';
+                      }
+                      return null;
+                    },
+
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -1115,19 +1194,27 @@ class _PersonalDetailsScreenState
                               : const Color(0xFFF5F5F5),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: TextField(
+                        child: TextFormField(
                           controller: _cityController,
                           style: TextStyle(
                               color: AppColors.getTextColor(isDarkMode)),
                           decoration: InputDecoration(
-                            hintText: 'City',
+                            hintText: 'City *',
                             hintStyle: TextStyle(
                                 color: AppColors.getSecondaryTextColor(
                                     isDarkMode)),
                             border: InputBorder.none,
                             contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 14),
+                                horizontal: 16, vertical: 14),errorStyle: TextStyle(
+                              color: Colors.red), // Style for error text
                           ),
+                          // Add validator function
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Required';
+                            }
+                            return null;
+                          },
                         ),
                       ),
                     ),
@@ -1142,19 +1229,27 @@ class _PersonalDetailsScreenState
                               : const Color(0xFFF5F5F5),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: TextField(
+                        child: TextFormField(
                           controller: _countryController,
                           style: TextStyle(
                               color: AppColors.getTextColor(isDarkMode)),
                           decoration: InputDecoration(
-                            hintText: 'Country',
+                            hintText: 'Country *',
                             hintStyle: TextStyle(
                                 color: AppColors.getSecondaryTextColor(
                                     isDarkMode)),
                             border: InputBorder.none,
                             contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 14),
+                                horizontal: 16, vertical: 14),errorStyle: TextStyle(
+                              color: Colors.red), // Style for error text
                           ),
+                          // Add validator function
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Required';
+                            }
+                            return null;
+                          },
                         ),
                       ),
                     ),
@@ -1258,21 +1353,47 @@ class _PersonalDetailsScreenState
                     onPressed: _isLoading
                         ? null
                         : () async {
+                            bool hasEducationData = false;
+
+                            // Check if at least one education entry has required fields filled
+                            for (int i = 0; i < _educationBlocks.length; i++) {
+                              if (_educationTitleControllers[i]
+                                      .text
+                                      .isNotEmpty &&
+                                  _schoolControllers[i].text.isNotEmpty) {
+                                hasEducationData = true;
+                                break;
+                              }
+                            }
+                            if (!hasEducationData) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                      'Please fill in all required fields.'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                              return;
+                            }
                             if (formKey.currentState!.validate()) {
                               // Collect education data
                               List<Education> educationData = [];
                               for (int i = 0;
                                   i < _educationBlocks.length;
                                   i++) {
-                                educationData.add(Education(
-                                  title: _educationTitleControllers[i].text,
-                                  school: _schoolControllers[i].text,
-                                  level: _levelControllers[i].text,
-                                  startDate: _startDateControllers[i].text,
-                                  endDate: _endDateControllers[i].text,
-                                  location: _locationControllers[i].text,
-                                  // description: _descriptionControllers[i].text,
-                                ));
+                                if (_educationTitleControllers[i]
+                                        .text
+                                        .isNotEmpty &&
+                                    _schoolControllers[i].text.isNotEmpty) {
+                                  educationData.add(Education(
+                                    title: _educationTitleControllers[i].text,
+                                    school: _schoolControllers[i].text,
+                                    level: _levelControllers[i].text,
+                                    startDate: _startDateControllers[i].text,
+                                    endDate: _endDateControllers[i].text,
+                                    location: _locationControllers[i].text,
+                                  ));
+                                }
                               }
 
                               // Create Step1Data
@@ -1303,6 +1424,15 @@ class _PersonalDetailsScreenState
                                           step1Data: step1Data,
                                           resumeId: documentId,
                                         )),
+                              );
+                            } else {
+                              // Show error message and scroll to the first error
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                      'Please fill in all required fields'),
+                                  backgroundColor: Colors.red,
+                                ),
                               );
                             }
                           },
