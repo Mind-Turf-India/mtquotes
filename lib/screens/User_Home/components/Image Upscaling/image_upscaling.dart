@@ -1,6 +1,9 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -12,7 +15,8 @@ import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'dart:ui' as ui;
 import 'package:permission_handler/permission_handler.dart';
-import 'package:image/image.dart' as img;
+import 'package:uuid/uuid.dart';
+import 'package:http/http.dart' as http;
 
 import '../../../../utils/theme_provider.dart';
 
@@ -31,8 +35,13 @@ class _ImageUpscalingScreenState extends State<ImageUpscalingScreen> {
   double _quality = 2.0; // Default upscale factor
   bool _isUpscaling = true; // Default mode is upscaling
   final ScrollController _scrollController = ScrollController();
+  double _uploadProgress = 0.0;
+  String _processingStatus = '';
 
   final ImagePicker _picker = ImagePicker();
+  final FirebaseStorage _storage = FirebaseStorage.instance;
+  final FirebaseFunctions _functions = FirebaseFunctions.instance;
+  final _uuid = Uuid();
 
   @override
   void initState() {
@@ -49,17 +58,14 @@ class _ImageUpscalingScreenState extends State<ImageUpscalingScreen> {
   Future<void> _requestPermissions() async {
     await Permission.storage.request();
 
-    // Fixed the Android API level check
     if (Platform.isAndroid) {
       try {
-        // A safer way to check Android SDK version
         final sdkInt =
             int.tryParse(Platform.operatingSystemVersion.split(' ').last) ?? 0;
         if (sdkInt >= 13) {
           await Permission.photos.request();
         }
       } catch (e) {
-        // Fallback - just request photos permission if we can't determine version
         await Permission.photos.request();
         debugPrint('Error checking Android version: $e');
       }
@@ -111,108 +117,93 @@ class _ImageUpscalingScreenState extends State<ImageUpscalingScreen> {
 
     setState(() {
       _isProcessing = true;
+      _uploadProgress = 0.0;
+      _processingStatus = 'Preparing to upload...';
     });
 
     try {
-      // Calculate the target dimensions before processing
-      final originalWidth = _originalImage!.width;
-      final originalHeight = _originalImage!.height;
-
-      // Define size limits to prevent app crashes
-      final int maxOutputDimension = 4000; // Maximum dimension for processed image
-
-      // Calculate output dimensions
-      int targetWidth, targetHeight;
-      if (_isUpscaling) {
-        targetWidth = (originalWidth * _quality).toInt();
-        targetHeight = (originalHeight * _quality).toInt();
-      } else {
-        targetWidth = (originalWidth * _quality).toInt();
-        targetHeight = (originalHeight * _quality).toInt();
-      }
-
-      // Check if output dimensions exceed maximum allowed size
-      if (targetWidth > maxOutputDimension || targetHeight > maxOutputDimension) {
-        // Show warning but continue with capped dimensions
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Image size limited to prevent app crashes'),
-            duration: Duration(seconds: 3),
-          ),
-        );
-
-        // Scale down dimensions while maintaining aspect ratio
-        if (targetWidth > targetHeight) {
-          double ratio = maxOutputDimension / targetWidth;
-          targetWidth = maxOutputDimension;
-          targetHeight = (targetHeight * ratio).toInt();
-        } else {
-          double ratio = maxOutputDimension / targetHeight;
-          targetHeight = maxOutputDimension;
-          targetWidth = (targetWidth * ratio).toInt();
-        }
-      }
-
-      // Process image in background using compute
-      await compute(
-            (Map<String, dynamic> params) async {
-          final bytes = params['bytes'] as Uint8List;
-          final targetWidth = params['targetWidth'] as int;
-          final targetHeight = params['targetHeight'] as int;
-          final isUpscaling = params['isUpscaling'] as bool;
-
-          // Decode image
-          final image = img.decodeImage(bytes);
-          if (image == null) return null;
-
-          // Process image with appropriate interpolation based on mode
-          final img.Image processedImage = img.copyResize(
-            image,
-            width: targetWidth,
-            height: targetHeight,
-            interpolation: isUpscaling
-                ? img.Interpolation.cubic
-                : img.Interpolation.average,
-          );
-
-          // Return processed image bytes
-          return img.encodePng(processedImage);
-        },
-        {
-          'bytes': await _imageFile!.readAsBytes(),
-          'targetWidth': targetWidth,
-          'targetHeight': targetHeight,
-          'isUpscaling': _isUpscaling,
-        },
-      ).then((processedBytes) async {
-        if (processedBytes == null) {
-          throw Exception('Image processing failed');
-        }
-
-        // Convert processed bytes back to ui.Image
-        final codec = await ui.instantiateImageCodec(
-          Uint8List.fromList(processedBytes),
-          targetWidth: targetWidth,
-          targetHeight: targetHeight,
-        );
-        final frameInfo = await codec.getNextFrame();
-
+      // Generate a unique ID for this processing job
+      final String jobId = _uuid.v4();
+      final String fileName = 'upscale_$jobId.jpg';
+      
+      // Reference to the storage location
+      final storageRef = _storage.ref().child('upscale_jobs/$fileName');
+      
+      // Upload image with progress tracking
+      final UploadTask uploadTask = storageRef.putFile(_imageFile!);
+      
+      // Track upload progress
+      uploadTask.snapshotEvents.listen((TaskSnapshot snapshot) {
+        final progress = snapshot.bytesTransferred / snapshot.totalBytes;
         setState(() {
-          _processedImage = frameInfo.image;
-          _isProcessing = false;
-        });
-
-        // Scroll to bottom to show processed image
-        Future.delayed(Duration(milliseconds: 300), () {
-          if (_scrollController.hasClients) {
-            _scrollController.animateTo(
-              _scrollController.position.maxScrollExtent,
-              duration: Duration(milliseconds: 500),
-              curve: Curves.easeOut,
-            );
-          }
+          _uploadProgress = progress;
+          _processingStatus = 'Uploading image: ${(progress * 100).toStringAsFixed(0)}%';
         });
       });
+
+      // Wait for upload to complete
+      await uploadTask.whenComplete(() {
+        setState(() {
+          _processingStatus = 'Image uploaded, starting processing...';
+        });
+      });
+      
+      // Get download URL of the uploaded image
+      final String imageUrl = await storageRef.getDownloadURL();
+      
+      // Call Firebase Cloud Function to process the image
+      setState(() {
+        _processingStatus = 'Processing with ML model...';
+      });
+      
+      final HttpsCallableResult result = await _functions.httpsCallable('upscaleImage').call({
+        'imageUrl': imageUrl,
+        'factor': _quality,
+        'mode': _isUpscaling ? 'upscale' : 'downscale',
+        'jobId': jobId
+      });
+      
+      // Get processed image URL from function result
+      final processedImageUrl = result.data['processedImageUrl'];
+      
+      setState(() {
+        _processingStatus = 'Downloading processed image...';
+      });
+      
+      // Download the processed image
+      final response = await http.get(Uri.parse(processedImageUrl));
+      
+      if (response.statusCode != 200) {
+        throw Exception('Failed to download processed image');
+      }
+      
+      // Convert downloaded bytes to ui.Image
+      final Uint8List bytes = response.bodyBytes;
+      final codec = await ui.instantiateImageCodec(bytes);
+      final frameInfo = await codec.getNextFrame();
+      
+      // Save to temporary file for sharing/saving later
+      final tempDir = await getTemporaryDirectory();
+      final tempPath = '${tempDir.path}/processed_$jobId.jpg';
+      final tempFile = File(tempPath);
+      await tempFile.writeAsBytes(bytes);
+      
+      setState(() {
+        _processedImage = frameInfo.image;
+        _isProcessing = false;
+      });
+      
+      // Scroll to show the processed image
+      Future.delayed(Duration(milliseconds: 300), () {
+        if (_scrollController.hasClients) {
+          _scrollController.animateTo(
+            _scrollController.position.maxScrollExtent,
+            duration: Duration(milliseconds: 500),
+            curve: Curves.easeOut,
+          );
+        }
+      });
+      
     } catch (e) {
       setState(() {
         _isProcessing = false;
@@ -326,7 +317,7 @@ class _ImageUpscalingScreenState extends State<ImageUpscalingScreen> {
     }
   }
 
-// Get Android version as an integer (e.g., 29 for Android 10)
+  // Get Android version as an integer (e.g., 29 for Android 10)
   Future<int> _getAndroidVersion() async {
     if (Platform.isAndroid) {
       try {
@@ -340,7 +331,7 @@ class _ImageUpscalingScreenState extends State<ImageUpscalingScreen> {
     return 0;
   }
 
-// Request permissions for Android 13+ (API level 33+)
+  // Request permissions for Android 13+ (API level 33+)
   Future<bool> _requestAndroid13Permission() async {
     // Check if photos permission is already granted
     bool photosGranted = await Permission.photos.isGranted;
@@ -354,7 +345,7 @@ class _ImageUpscalingScreenState extends State<ImageUpscalingScreen> {
     return photosGranted;
   }
 
-// Helper method to show a dialog when no image is selected
+  // Helper method to show a dialog when no image is selected
   void showNoImageSelectedDialog() {
     showDialog(
       context: context,
@@ -375,7 +366,7 @@ class _ImageUpscalingScreenState extends State<ImageUpscalingScreen> {
     );
   }
 
-// Show loading indicator dialog
+  // Show loading indicator dialog
   void _showLoadingIndicator() {
     showDialog(
       context: context,
@@ -396,7 +387,7 @@ class _ImageUpscalingScreenState extends State<ImageUpscalingScreen> {
     );
   }
 
-// Hide loading indicator
+  // Hide loading indicator
   void _hideLoadingIndicator() {
     Navigator.of(context, rootNavigator: true).pop();
   }
@@ -443,7 +434,7 @@ class _ImageUpscalingScreenState extends State<ImageUpscalingScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text('Upload Image'),
+        title: Text('AI Image Enhancement'),
         centerTitle: true,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios),
@@ -488,7 +479,7 @@ class _ImageUpscalingScreenState extends State<ImageUpscalingScreen> {
                         ),
                         SizedBox(height: 16),
                         Text(
-                          'Drop or select multiple files from your device',
+                          'Select an image to enhance with our AI model',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: Colors.grey[700],
@@ -496,19 +487,41 @@ class _ImageUpscalingScreenState extends State<ImageUpscalingScreen> {
                           ),
                         ),
                         SizedBox(height: 24),
-                        ElevatedButton(
-                          onPressed: _pickImage,
-                          child: Text('Select image'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primaryBlue,
-                            foregroundColor:
-                                Theme.of(context).colorScheme.surface,
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 32, vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            ElevatedButton.icon(
+                              onPressed: _pickImage,
+                              icon: Icon(Icons.photo_library),
+                              label: Text('Gallery'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primaryBlue,
+                                foregroundColor:
+                                    Theme.of(context).colorScheme.surface,
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 24, vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
                             ),
-                          ),
+                            SizedBox(width: 16),
+                            ElevatedButton.icon(
+                              onPressed: _takePhoto,
+                              icon: Icon(Icons.camera_alt),
+                              label: Text('Camera'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.grey[800],
+                                foregroundColor:
+                                    Theme.of(context).colorScheme.surface,
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 24, vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -606,22 +619,6 @@ class _ImageUpscalingScreenState extends State<ImageUpscalingScreen> {
                           ),
                         ],
                       ),
-                      // ElevatedButton(
-                      //   onPressed: () {
-                      //     // Edit button functionality
-                      //   },
-                      //   child: Text('Edit'),
-                      //   style: ElevatedButton.styleFrom(
-                      //     backgroundColor: AppColors.primaryBlue,
-                      //     foregroundColor:
-                      //         Theme.of(context).colorScheme.surface,
-                      //     padding: EdgeInsets.symmetric(
-                      //         horizontal: 24, vertical: 12),
-                      //     shape: RoundedRectangleBorder(
-                      //       borderRadius: BorderRadius.circular(8),
-                      //     ),
-                      //   ),
-                      // ),
                     ],
                   ),
                 ),
@@ -691,6 +688,55 @@ class _ImageUpscalingScreenState extends State<ImageUpscalingScreen> {
                       ),
                       SizedBox(height: 16),
 
+                      // AI Model selection (new)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: Row(
+                          children: [
+                            Text(
+                              'AI Model:',
+                              style: TextStyle(
+                                color: Colors.grey[700],
+                              ),
+                            ),
+                            SizedBox(width: 12),
+                            Expanded(
+                              child: Container(
+                                padding: EdgeInsets.symmetric(horizontal: 12),
+                                decoration: BoxDecoration(
+                                  border: Border.all(color: Colors.grey[300]!),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: DropdownButton<String>(
+                                  value: 'esrgan',
+                                  isExpanded: true,
+                                  underline: SizedBox(),
+                                  items: [
+                                    DropdownMenuItem(
+                                      value: 'esrgan',
+                                      child: Text('ESRGAN (Best Quality)'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'fsrcnn',
+                                      child: Text('FSRCNN (Faster)'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'lapsrn',
+                                      child: Text('LapSRN (Balanced)'),
+                                    ),
+                                  ],
+                                  onChanged: (value) {
+                                    // In the future, you can update the model selection
+                                  },
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      SizedBox(height: 16),
+
                       // Quality Slider
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -749,7 +795,7 @@ class _ImageUpscalingScreenState extends State<ImageUpscalingScreen> {
                                 value: _quality,
                                 min: _isUpscaling ? 1.0 : 0.1,
                                 max: _isUpscaling ? 4.0 : 0.9,
-                                divisions: _isUpscaling ? 3 : 8,
+                                divisions: _isUpscaling ? 6 : 8,
                                 onChanged: (value) {
                                   setState(() {
                                     _quality = value;
@@ -787,7 +833,7 @@ class _ImageUpscalingScreenState extends State<ImageUpscalingScreen> {
                                   ],
                                 )
                               : Text(
-                                  '${_isUpscaling ? "Upscale" : "Downscale"} Now'),
+                                  'Enhance with AI'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primaryBlue,
                             foregroundColor:
@@ -830,49 +876,183 @@ class _ImageUpscalingScreenState extends State<ImageUpscalingScreen> {
                       ),
                     ],
                   ),
-                  child: Row(
+                  child: Column(
                     children: [
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .primary
-                              .withOpacity(0.1),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Center(
-                          child: SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(
-                              color: AppColors.primaryBlue,
-                              strokeWidth: 2,
+                      Row(
+                        children: [
+                          Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .primary
+                                  .withOpacity(0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Center(
+                              child: SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  color: AppColors.primaryBlue,
+                                  strokeWidth: 2,
+                                ),
+                              ),
                             ),
                           ),
-                        ),
+                          SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'AI Processing in progress...',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                    color: AppColors.getTextColor(
+                                        Theme.of(context).brightness ==
+                                            Brightness.dark),
+                                  ),
+                                ),
+                                Text(
+                                  _processingStatus,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                      SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                      SizedBox(height: 16),
+                      LinearProgressIndicator(
+                        value: _uploadProgress,
+                        backgroundColor:
+                            Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                            Theme.of(context).colorScheme.primary),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'This may take up to 30 seconds depending on image size',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                          fontStyle: FontStyle.italic,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+
+              // Processed Image Display
+              if (_processedImage != null) ...[
+                Container(
+                  margin: EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                        color: AppColors.getDividerColor(
+                            Theme.of(context).brightness == Brightness.dark)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Row(
                           children: [
+                            Icon(
+                              Icons.check_circle,
+                              color: Colors.green,
+                              size: 20,
+                            ),
+                            SizedBox(width: 8),
                             Text(
-                              '${_isUpscaling ? "Upscaling" : "Downscaling"} in progress...',
+                              'Enhanced Result',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16,
-                                   color: AppColors.getTextColor(Theme.of(context).brightness == Brightness.dark),
+                                color: AppColors.getTextColor(
+                                    Theme.of(context).brightness ==
+                                        Brightness.dark),
                               ),
                             ),
-                            SizedBox(height: 4),
-                            Text(
-                              'Please wait while we enhance your image with ${_quality.toStringAsFixed(1)}x factor.',
-                              style: TextStyle(
-                                // color: Colors.grey[600],
-                                fontSize: 14,
-                                   color: AppColors.getTextColor(Theme.of(context).brightness == Brightness.dark),
+                          ],
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: Text(
+                          'Resolution: ${_processedImage!.width} x ${_processedImage!.height}',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 16),
+                      AspectRatio(
+                        aspectRatio: 1.0,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          child: RawImage(
+                            image: _processedImage,
+                            fit: BoxFit.contain,
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 16),
+                      Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: _saveImage,
+                                icon: Icon(Icons.save),
+                                label: Text('Save'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primaryGreen,
+                                  foregroundColor:
+                                      Theme.of(context).colorScheme.surface,
+                                  padding: EdgeInsets.symmetric(vertical: 12),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            SizedBox(width: 12),
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: _shareImage,
+                                icon: Icon(Icons.share),
+                                label: Text('Share'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primaryBlue,
+                                  foregroundColor:
+                                      Theme.of(context).colorScheme.surface,
+                                  padding: EdgeInsets.symmetric(vertical: 12),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
                               ),
                             ),
                           ],
@@ -881,143 +1061,202 @@ class _ImageUpscalingScreenState extends State<ImageUpscalingScreen> {
                     ],
                   ),
                 ),
-              ],
-
-              // Processed Image Preview with animated appearance
-              if (_processedImage != null && !_isProcessing) ...[
-                TweenAnimationBuilder<double>(
-                  tween: Tween<double>(begin: 0.0, end: 1.0),
-                  duration: Duration(milliseconds: 500),
-                  builder: (context, value, child) {
-                    return Opacity(
-                      opacity: value,
-                      child: Transform.translate(
-                        offset: Offset(0, 20 * (1 - value)),
-                        child: child,
+                
+                // Compare Button
+                ElevatedButton.icon(
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) => Dialog(
+                        child: Container(
+                          padding: EdgeInsets.all(16),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Before & After Comparison',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                ),
+                              ),
+                              SizedBox(height: 16),
+                              AspectRatio(
+                                aspectRatio: 1.0,
+                                child: PageView(
+                                  children: [
+                                    Column(
+                                      children: [
+                                        Text('Original'),
+                                        Expanded(
+                                          child: RawImage(
+                                            image: _originalImage,
+                                            fit: BoxFit.contain,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    Column(
+                                      children: [
+                                        Text('Enhanced'),
+                                        Expanded(
+                                          child: RawImage(
+                                            image: _processedImage,
+                                            fit: BoxFit.contain,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              SizedBox(height: 16),
+                              Text(
+                                'Swipe to compare images',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                              SizedBox(height: 16),
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                },
+                                child: Text('Close'),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     );
                   },
-                  child: Container(
-                    margin: EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.green.shade200),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.green.withOpacity(0.1),
-                          blurRadius: 10,
-                          offset: Offset(0, 5),
-                        ),
-                      ],
+                  icon: Icon(Icons.compare),
+                  label: Text('Compare Before & After'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.grey[800],
+                    foregroundColor: Theme.of(context).colorScheme.surface,
+                    padding: EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
                     ),
+                    minimumSize: Size(double.infinity, 50),
+                  ),
+                ),
+              ],
+
+              // Information and FAQ
+              SizedBox(height: 24),
+              ExpansionTile(
+                title: Text(
+                  'About Image Enhancement',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.getTextColor(
+                        Theme.of(context).brightness == Brightness.dark),
+                  ),
+                ),
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Row(
-                            children: [
-                              Icon(Icons.check_circle, color: Colors.green),
-                              SizedBox(width: 8),
-                              Text(
-                                'Enhanced Image Ready!',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.primaryGreen,
-                                ),
-                              ),
-                            ],
+                        Text(
+                          'Our AI image enhancement uses advanced deep learning models to:',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
                           ),
                         ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                          child: Text(
-                            'Your image has been successfully ${_isUpscaling ? "upscaled" : "downscaled"} with ${_quality.toStringAsFixed(1)}x factor.',
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                            ),
-                          ),
+                        SizedBox(height: 8),
+                        _buildInfoItem(
+                          '• Increase resolution while preserving details',
+                        ),
+                        _buildInfoItem(
+                          '• Reduce noise and artifacts from low-quality images',
+                        ),
+                        _buildInfoItem(
+                          '• Recover lost details and textures',
+                        ),
+                        _buildInfoItem(
+                          '• Optimize for different types of images',
                         ),
                         SizedBox(height: 16),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                  color: AppColors.getDividerColor(
-                                      Theme.of(context).brightness ==
-                                          Brightness.dark)),
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: AspectRatio(
-                                aspectRatio: 1.0,
-                                child: RawImage(
-                                  image: _processedImage,
-                                  fit: BoxFit.contain,
-                                ),
-                              ),
-                            ),
+                        Text(
+                          'Frequently Asked Questions:',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
                           ),
                         ),
-                        SizedBox(height: 16),
-                        Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: ElevatedButton.icon(
-                                  onPressed: _saveImage,
-                                  icon: Icon(Icons.download),
-                                  label: Text('Save'),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppColors.primaryBlue,
-                                    foregroundColor:
-                                        Theme.of(context).colorScheme.surface,
-                                    padding: EdgeInsets.symmetric(vertical: 12),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              SizedBox(width: 12),
-                              Expanded(
-                                child: ElevatedButton.icon(
-                                  onPressed: _shareImage,
-                                  icon: Icon(Icons.share),
-                                  label: Text('Share'),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.grey[200],
-                                    foregroundColor: Colors.black87,
-                                    padding: EdgeInsets.symmetric(vertical: 12),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
+                        SizedBox(height: 8),
+                        _buildFaqItem(
+                          'What file types are supported?',
+                          'JPEG, PNG, and most common image formats are supported.',
+                        ),
+                        _buildFaqItem(
+                          'Is there a file size limit?',
+                          'Yes, images up to 10MB can be processed.',
+                        ),
+                        _buildFaqItem(
+                          'How long does processing take?',
+                          'Processing typically takes 5-30 seconds depending on image size and server load.',
+                        ),
+                        _buildFaqItem(
+                          'Are my images stored on your servers?',
+                          'Images are only temporarily stored during processing and then automatically deleted.',
                         ),
                       ],
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ],
           ),
         ),
       ),
     );
   }
+
+  Widget _buildInfoItem(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: Colors.grey[700],
+          fontSize: 14,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFaqItem(String question, String answer) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            question,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+              color: AppColors.getTextColor(
+                  Theme.of(context).brightness == Brightness.dark),
+            ),
+          ),
+          SizedBox(height: 4),
+          Text(
+            answer,
+            style: TextStyle(
+              color: Colors.grey[700],
+              fontSize: 14,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
-
-
-
-
-
-

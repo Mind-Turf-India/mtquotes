@@ -448,10 +448,13 @@ class _Step3ScreenState extends BaseStepScreenState<Step3Screen> {
                   ),
                   child: TextField(
                     controller: _skillControllers[i],
-                    style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+                    style: TextStyle(color: AppColors.getTextColor(isDarkMode),
+                    fontSize: 11,),
                     decoration: InputDecoration(
                       hintText: 'Add skill ${i + 1}',
-                      hintStyle: TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode)),
+                      hintStyle: TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode),
+                      fontSize: 11,
+                      ),
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     ),
@@ -497,8 +500,6 @@ class _Step3ScreenState extends BaseStepScreenState<Step3Screen> {
 
 
             const SizedBox(height: 32),
-
-
             // Languages Section
             Text(
               'Languages',
@@ -509,8 +510,6 @@ class _Step3ScreenState extends BaseStepScreenState<Step3Screen> {
               ),
             ),
             const SizedBox(height: 16),
-
-
             // Language Input Fields
             for (int i = 0; i < _languageControllers.length; i++)
               Padding(
@@ -522,10 +521,12 @@ class _Step3ScreenState extends BaseStepScreenState<Step3Screen> {
                   ),
                   child: TextField(
                     controller: _languageControllers[i],
-                    style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+                    style: TextStyle(color: AppColors.getTextColor(isDarkMode),
+                    fontSize: 11,),
                     decoration: InputDecoration(
                       hintText: 'Add language ${i + 1}',
-                      hintStyle: TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode)),
+                      hintStyle: TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode),
+                      fontSize: 11,),
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     ),
