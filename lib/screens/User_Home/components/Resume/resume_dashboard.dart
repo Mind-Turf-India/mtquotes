@@ -82,6 +82,7 @@ abstract class BaseStepScreenState<T extends BaseStepScreen> extends State<T> {
               'Step 1',
               style: TextStyle(
                 fontSize: 16,
+               
                 color: widget.currentStep == 1
                     ? AppColors.primaryBlue
                     : AppColors.getSecondaryTextColor(isDarkMode),
@@ -465,16 +466,54 @@ class _PersonalDetailsScreenState
       firstDate: DateTime(1900),
       lastDate: DateTime(2100),
       builder: (context, child) {
+        // This more aggressively overrides styles for the date input
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: AppColors.primaryBlue,
-              onPrimary: Colors.white,
-              surface: AppColors.getSurfaceColor(isDarkMode),
-              onSurface: AppColors.getTextColor(isDarkMode),
+            colorScheme: isDarkMode
+                ? ColorScheme.dark(
+                    primary: AppColors.primaryBlue,
+                    onPrimary: Colors.white,
+                    surface: AppColors.getSurfaceColor(isDarkMode),
+                    onSurface: AppColors.getTextColor(isDarkMode),
+                  )
+                : ColorScheme.light(
+                    primary: AppColors.primaryBlue,
+                    onPrimary: Colors.white,
+                    surface: AppColors.getSurfaceColor(isDarkMode),
+                    onSurface: Colors.black,
+                  ),
+            // Apply a direct override for text selection and input
+            textSelectionTheme: TextSelectionThemeData(
+              cursorColor: isDarkMode ? Colors.white : Colors.black,
+              selectionColor: AppColors.primaryBlue.withOpacity(0.3),
+              selectionHandleColor: AppColors.primaryBlue,
             ),
+            // Override text field defaults
+            textTheme: Typography.material2021().black.copyWith(
+                  bodyLarge: TextStyle(
+                      color: isDarkMode ? Colors.white : Colors.black),
+                  bodyMedium: TextStyle(
+                      color: isDarkMode ? Colors.white : Colors.black),
+                  titleMedium: TextStyle(
+                      color: isDarkMode ? Colors.white : Colors.black),
+                ),
+            // Override primary text theme
+            primaryTextTheme: Typography.material2021().black.copyWith(
+                  bodyLarge: TextStyle(
+                      color: isDarkMode ? Colors.white : Colors.black),
+                  bodyMedium: TextStyle(
+                      color: isDarkMode ? Colors.white : Colors.black),
+                  titleMedium: TextStyle(
+                      color: isDarkMode ? Colors.white : Colors.black),
+                ),
           ),
-          child: child!,
+          child: MediaQuery(
+            // Force text scale factor to ensure visibility
+            data: MediaQuery.of(context).copyWith(
+              textScaleFactor: 1.0,
+            ),
+            child: child!,
+          ),
         );
       },
     );
@@ -661,7 +700,8 @@ class _PersonalDetailsScreenState
                   'assets/icons/trash_12252659.svg',
                   width: 24, // adjust size as needed
                   height: 18,
-                  color: Colors.red, // optional, applies if the SVG supports color
+                  color:
+                      Colors.red, // optional, applies if the SVG supports color
                 ),
                 onPressed: () => _removeEducationBlock(index),
               ),
@@ -684,12 +724,14 @@ class _PersonalDetailsScreenState
             child: TextFormField(
               // Changed from TextField to TextFormField
               controller: _educationTitleControllers[index],
-              style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+              style: TextStyle(color: AppColors.getTextColor(isDarkMode),
+              fontSize: 11),
               decoration: InputDecoration(
                 hintText: 'Education Title *',
                 // Added asterisk for required field
                 hintStyle: TextStyle(
-                    color: AppColors.getSecondaryTextColor(isDarkMode)),
+                    color: AppColors.getSecondaryTextColor(isDarkMode),
+                    fontSize: 11),
                 border: InputBorder.none,
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -727,12 +769,14 @@ class _PersonalDetailsScreenState
                   child: TextFormField(
                     // Changed from TextField to TextFormField
                     controller: _schoolControllers[index],
-                    style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+                    style: TextStyle(color: AppColors.getTextColor(isDarkMode),
+                    fontSize: 11),
                     decoration: InputDecoration(
                       hintText: 'School *',
                       // Added asterisk for required field
                       hintStyle: TextStyle(
-                          color: AppColors.getSecondaryTextColor(isDarkMode)),
+                          color: AppColors.getSecondaryTextColor(isDarkMode),
+                          fontSize: 11),
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 14),
@@ -769,16 +813,20 @@ class _PersonalDetailsScreenState
                   ),
                   child: TextField(
                     controller: _levelControllers[index],
-                    style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+                    style: TextStyle(color: AppColors.getTextColor(isDarkMode),
+                    fontSize: 11),
                     keyboardType: TextInputType.text,
                     inputFormatters: [
                       FilteringTextInputFormatter.allow(RegExp(r'[0-9.,%+-]')),
                     ],
                     decoration: InputDecoration(
                       hintText: 'Aggregate',
-                      hintStyle: TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode)),
+                      hintStyle: TextStyle(
+                          color: AppColors.getSecondaryTextColor(isDarkMode),
+                          fontSize: 11),
                       border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 14),
                     ),
                   ),
                 ),
@@ -789,13 +837,13 @@ class _PersonalDetailsScreenState
           const SizedBox(height: 16),
 
           // Start Date and End Date Row
-          // Start Date and End Date Row
           Row(
             children: [
               // Start Date
               Expanded(
                 child: GestureDetector(
-                  onTap: () => _selectDate(context, _startDateControllers[index]),
+                  onTap: () =>
+                      _selectDate(context, _startDateControllers[index]),
                   child: Container(
                     decoration: BoxDecoration(
                       color: isDarkMode
@@ -811,24 +859,40 @@ class _PersonalDetailsScreenState
                       children: [
                         Expanded(
                           child: TextFormField(
-                            style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+                            style: TextStyle(
+                              color: AppColors.getTextColor(isDarkMode),
+                              fontSize:
+                                  11, // Reduced font size to fit date better
+                            ),
                             controller: _startDateControllers[index],
                             readOnly: true,
-                            enabled: false, // Disable direct interaction with TextField
+                            enabled: false,
                             decoration: InputDecoration(
                               hintText: 'Start Date',
-                              hintStyle: TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode)),
+                              hintStyle: TextStyle(
+                                color:
+                                    AppColors.getSecondaryTextColor(isDarkMode),
+                                fontSize: 11, // Matching hint text size
+                              ),
                               border: InputBorder.none,
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 14),
+                              isDense: true, // Makes the field more compact
                             ),
                           ),
                         ),
                         IconButton(
                           icon: Icon(
-                              Icons.calendar_today,
-                              color: AppColors.getSecondaryTextColor(isDarkMode)
+                            Icons.calendar_today,
+                            color: AppColors.getSecondaryTextColor(isDarkMode),
+                            size: 18, // Slightly smaller icon
                           ),
-                          onPressed: () => _selectDate(context, _startDateControllers[index]),
+                          padding: EdgeInsets.all(
+                              8), // Smaller padding for the icon button
+                          constraints:
+                              BoxConstraints(), // Removes minimum size constraints
+                          onPressed: () => _selectDate(
+                              context, _startDateControllers[index]),
                         ),
                       ],
                     ),
@@ -855,24 +919,40 @@ class _PersonalDetailsScreenState
                       children: [
                         Expanded(
                           child: TextFormField(
-                            style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+                            style: TextStyle(
+                              color: AppColors.getTextColor(isDarkMode),
+                              fontSize:
+                                  11, 
+                            ),
                             controller: _endDateControllers[index],
                             readOnly: true,
-                            enabled: false, // Disable direct interaction with TextField
+                            enabled: false,
                             decoration: InputDecoration(
                               hintText: 'End Date',
-                              hintStyle: TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode)),
+                              hintStyle: TextStyle(
+                                color:
+                                    AppColors.getSecondaryTextColor(isDarkMode),
+                                fontSize:
+                                    11, 
+                              ),
                               border: InputBorder.none,
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 14),
+                              isDense: true,
                             ),
                           ),
                         ),
                         IconButton(
                           icon: Icon(
-                              Icons.calendar_today,
-                              color: AppColors.getSecondaryTextColor(isDarkMode)
+                            Icons.calendar_today,
+                            color: AppColors.getSecondaryTextColor(isDarkMode),
+                            size:
+                                18, 
                           ),
-                          onPressed: () => _selectDate(context, _endDateControllers[index]),
+                          padding: EdgeInsets.all(8),
+                          constraints: BoxConstraints(),
+                          onPressed: () =>
+                              _selectDate(context, _endDateControllers[index]),
                         ),
                       ],
                     ),
@@ -898,11 +978,13 @@ class _PersonalDetailsScreenState
             ),
             child: TextField(
               controller: _locationControllers[index],
-              style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+              style: TextStyle(color: AppColors.getTextColor(isDarkMode),
+              fontSize: 11),
               decoration: InputDecoration(
                 hintText: 'Location',
                 hintStyle: TextStyle(
-                    color: AppColors.getSecondaryTextColor(isDarkMode)),
+                    color: AppColors.getSecondaryTextColor(isDarkMode),
+                    fontSize: 11),
                 border: InputBorder.none,
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -951,11 +1033,13 @@ class _PersonalDetailsScreenState
                   ),
                   child: TextFormField(
                     controller: _roleController,
-                    style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+                    style: TextStyle(color: AppColors.getTextColor(isDarkMode),
+                    fontSize: 11),
                     decoration: InputDecoration(
                       hintText: 'Role you want *',
                       hintStyle: TextStyle(
-                          color: AppColors.getSecondaryTextColor(isDarkMode)),
+                          color: AppColors.getSecondaryTextColor(isDarkMode),
+                          fontSize: 11),
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 14),
@@ -990,12 +1074,14 @@ class _PersonalDetailsScreenState
                             child: TextFormField(
                               controller: _firstNameController,
                               style: TextStyle(
-                                  color: AppColors.getTextColor(isDarkMode)),
+                                  color: AppColors.getTextColor(isDarkMode),
+                                  fontSize: 11),
                               decoration: InputDecoration(
                                 hintText: 'First Name *',
                                 hintStyle: TextStyle(
                                     color: AppColors.getSecondaryTextColor(
-                                        isDarkMode)),
+                                        isDarkMode),
+                                        fontSize: 11),
                                 border: InputBorder.none,
                                 contentPadding: const EdgeInsets.symmetric(
                                     horizontal: 16, vertical: 14),
@@ -1023,12 +1109,14 @@ class _PersonalDetailsScreenState
                             child: TextField(
                               controller: _lastNameController,
                               style: TextStyle(
-                                  color: AppColors.getTextColor(isDarkMode)),
+                                  color: AppColors.getTextColor(isDarkMode),
+                                  fontSize: 11),
                               decoration: InputDecoration(
                                 hintText: 'Last Name',
                                 hintStyle: TextStyle(
                                     color: AppColors.getSecondaryTextColor(
-                                        isDarkMode)),
+                                        isDarkMode),
+                                        fontSize: 11),
                                 border: InputBorder.none,
                                 contentPadding: const EdgeInsets.symmetric(
                                     horizontal: 16, vertical: 14),
@@ -1101,11 +1189,13 @@ class _PersonalDetailsScreenState
                   ),
                   child: TextFormField(
                     controller: _emailController,
-                    style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+                    style: TextStyle(color: AppColors.getTextColor(isDarkMode),
+                    fontSize: 11),
                     decoration: InputDecoration(
                       hintText: 'Email *',
                       hintStyle: TextStyle(
-                          color: AppColors.getSecondaryTextColor(isDarkMode)),
+                          color: AppColors.getSecondaryTextColor(isDarkMode),
+                          fontSize: 11),
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 14),
@@ -1136,16 +1226,17 @@ class _PersonalDetailsScreenState
                   ),
                   child: TextFormField(
                     controller: _phoneController,
-                    style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+                    style: TextStyle(color: AppColors.getTextColor(isDarkMode),
+                    fontSize: 11),
                     decoration: InputDecoration(
                       hintText: 'Phone No. *',
                       hintStyle: TextStyle(
-                          color: AppColors.getSecondaryTextColor(isDarkMode)),
+                          color: AppColors.getSecondaryTextColor(isDarkMode),
+                          fontSize: 11),
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 14),
-                      errorStyle:
-                      TextStyle(color: Colors.red),
+                      errorStyle: TextStyle(color: Colors.red),
                     ),
                     keyboardType: TextInputType.phone,
                     validator: (value) {
@@ -1154,7 +1245,6 @@ class _PersonalDetailsScreenState
                       }
                       return null;
                     },
-
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -1169,11 +1259,13 @@ class _PersonalDetailsScreenState
                   ),
                   child: TextField(
                     controller: _addressController,
-                    style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+                    style: TextStyle(color: AppColors.getTextColor(isDarkMode),
+                    fontSize: 11),
                     decoration: InputDecoration(
                       hintText: 'Address',
                       hintStyle: TextStyle(
-                          color: AppColors.getSecondaryTextColor(isDarkMode)),
+                          color: AppColors.getSecondaryTextColor(isDarkMode),
+                          fontSize: 11),
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 14),
@@ -1197,16 +1289,19 @@ class _PersonalDetailsScreenState
                         child: TextFormField(
                           controller: _cityController,
                           style: TextStyle(
-                              color: AppColors.getTextColor(isDarkMode)),
+                              color: AppColors.getTextColor(isDarkMode),
+                              fontSize: 11),
                           decoration: InputDecoration(
                             hintText: 'City *',
                             hintStyle: TextStyle(
                                 color: AppColors.getSecondaryTextColor(
-                                    isDarkMode)),
+                                    isDarkMode),
+                                    fontSize: 11),
                             border: InputBorder.none,
                             contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 14),errorStyle: TextStyle(
-                              color: Colors.red), // Style for error text
+                                horizontal: 16, vertical: 14),
+                            errorStyle: TextStyle(
+                                color: Colors.red), // Style for error text
                           ),
                           // Add validator function
                           validator: (value) {
@@ -1232,16 +1327,19 @@ class _PersonalDetailsScreenState
                         child: TextFormField(
                           controller: _countryController,
                           style: TextStyle(
-                              color: AppColors.getTextColor(isDarkMode)),
+                              color: AppColors.getTextColor(isDarkMode),
+                              fontSize: 11),
                           decoration: InputDecoration(
                             hintText: 'Country *',
                             hintStyle: TextStyle(
                                 color: AppColors.getSecondaryTextColor(
-                                    isDarkMode)),
+                                    isDarkMode),
+                                    fontSize: 11),
                             border: InputBorder.none,
                             contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 14),errorStyle: TextStyle(
-                              color: Colors.red), // Style for error text
+                                horizontal: 16, vertical: 14),
+                            errorStyle: TextStyle(
+                                color: Colors.red), // Style for error text
                           ),
                           // Add validator function
                           validator: (value) {
@@ -1267,11 +1365,13 @@ class _PersonalDetailsScreenState
                   ),
                   child: TextField(
                     controller: _postalCodeController,
-                    style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+                    style: TextStyle(color: AppColors.getTextColor(isDarkMode),
+                    fontSize: 11),
                     decoration: InputDecoration(
                       hintText: 'Postal Code',
                       hintStyle: TextStyle(
-                          color: AppColors.getSecondaryTextColor(isDarkMode)),
+                          color: AppColors.getSecondaryTextColor(isDarkMode),
+                          fontSize: 11),
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 14),

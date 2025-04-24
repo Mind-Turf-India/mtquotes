@@ -1,11 +1,48 @@
 require('dotenv').config();
+const { storage } = require("firebase-functions"); 
 const functions = require("firebase-functions");
 const functionsV2 = require("firebase-functions/v2");
 const admin = require("firebase-admin");
 const { onDocumentCreated, onDocumentUpdated } = require('firebase-functions/v2/firestore');
 const nodemailer = require('nodemailer');
+const { exec } = require("child_process");
+const path = require("path");
+const os = require("os");
+const fs = require("fs");
+const { onObjectFinalized } = require("firebase-functions/v2/storage");
+
 
 admin.initializeApp();
+
+exports.upscaleImage = onObjectFinalized(async (event) => {
+  const object = event.data;
+  const filePath = object.name;
+  const fileName = path.basename(filePath);
+  const tempFilePath = path.join(os.tmpdir(), fileName);
+  const bucket = admin.storage().bucket(object.bucket);
+
+  if (!filePath.startsWith("raw/")) return null;
+
+  await bucket.file(filePath).download({ destination: tempFilePath });
+
+  const outputFilePath = path.join(os.tmpdir(), "upscaled-" + fileName);
+
+  return new Promise((resolve, reject) => {
+    exec(`python3 upscale.py "${tempFilePath}" "${outputFilePath}"`, { cwd: __dirname }, async (error) => {
+      if (error) {
+        console.error("Error:", error);
+        reject(error);
+        return;
+      }
+
+      const outputStoragePath = filePath.replace("raw/", "enhanced/");
+      await bucket.upload(outputFilePath, { destination: outputStoragePath });
+      fs.unlinkSync(tempFilePath);
+      fs.unlinkSync(outputFilePath);
+      resolve();
+    });
+  });
+});
 
 // Check if running in Firebase environment or local
 const emailHost = process.env.EMAIL_HOST || functions.config().email?.host;

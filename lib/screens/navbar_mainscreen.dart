@@ -21,6 +21,8 @@ import 'User_Home/components/Resume/resume_selection.dart';
 import 'User_Home/search_screen.dart';
 
 class MainScreen extends StatefulWidget {
+  const MainScreen({super.key});
+
   @override
   State<MainScreen> createState() => _MainScreenState();
 }
@@ -28,12 +30,13 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
   bool isCreateExpanded = false;
-  
+
   // Stack to keep track of navigation history
   final List<int> _navigationStack = [0]; // Start with home screen
 
   // Create a key to access the HomeScreen state
-  final GlobalKey<HomeScreenState> _homeScreenKey = GlobalKey<HomeScreenState>();
+  final GlobalKey<HomeScreenState> _homeScreenKey =
+      GlobalKey<HomeScreenState>();
 
   // Late initialize the screens with the key
   late List<Widget> _screens;
@@ -52,60 +55,87 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   // Handle back button press
-Future<bool> _onWillPop() async {
-  // If create menu is expanded, close it
-  if (isCreateExpanded) {
-    setState(() {
-      isCreateExpanded = false;
-    });
-    return false;
-  }
-  
-  // If we're already at the home screen or navigation stack is empty
-  if (_navigationStack.length <= 1 || _currentIndex == 0) {
-    // Show exit confirmation dialog
-    final shouldExit = await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: Text("Exit Vaky"),
-            content: Text('Are you sure you want to exit Vaky?'),
-            actions: <Widget>[
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                child: Text('OK'),
-              ),
-            ],
-          ),
-        ) ??
-        false;
-    
-    // If user confirmed exit, close the app
-    if (shouldExit) {
-      // Close the app properly based on platform
-      if (Platform.isAndroid) {
-        SystemNavigator.pop(); // Exits app on Android
-      } else if (Platform.isIOS) {
-        exit(0); // Force exits app on iOS
-      }
-      return true; // This line may not be reached on some platforms
+  Future<bool> _onWillPop() async {
+    // If create menu is expanded, close it
+    if (isCreateExpanded) {
+      setState(() {
+        isCreateExpanded = false;
+      });
+      return false;
     }
-    return false;
+
+    // If we're already at the home screen or navigation stack is empty
+    if (_navigationStack.length <= 1 || _currentIndex == 0) {
+      // Show exit confirmation dialog
+      final shouldExit = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              backgroundColor: Theme.of(context).colorScheme.surface,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16.0),
+              ),
+              title: Text(
+                "Exit Vaky?",
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  
+                ),
+              ),
+              content: Text(
+                'Are you sure you want to exit Vaky?',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: Text(
+                    'Cancel',
+                    style: TextStyle(
+                      color: AppColors.primaryBlue,
+                    ),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryBlue,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
+                  ),
+                  child: Text('OK'),
+                ),
+              ],
+            ),
+          ) ??
+          false;
+
+      // If user confirmed exit, close the app
+      if (shouldExit) {
+        // Close the app properly based on platform
+        if (Platform.isAndroid) {
+          SystemNavigator.pop(); // Exits app on Android
+        } else if (Platform.isIOS) {
+          exit(0); // Force exits app on iOS
+        }
+        return true; // This line may not be reached on some platforms
+      }
+      return false;
+    }
+
+    // Pop the current screen from stack
+    _navigationStack.removeLast();
+
+    // Navigate to the previous screen
+    setState(() {
+      _currentIndex = _navigationStack.last;
+    });
+
+    return false; // Don't exit the app
   }
-  
-  // Pop the current screen from stack
-  _navigationStack.removeLast();
-  
-  // Navigate to the previous screen
-  setState(() {
-    _currentIndex = _navigationStack.last;
-  });
-  
-  return false; // Don't exit the app
-}
 
   void _navigateToTab(int index) async {
     // If tapping on the same tab that's already selected
@@ -192,14 +222,13 @@ Future<bool> _onWillPop() async {
                   color: Colors.white,
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
-                  decoration: TextDecoration.none
-              ),
+                  decoration: TextDecoration.none),
             ),
           ],
         ),
       );
     }
-    
+
     // Otherwise use the default icon implementation
     return GestureDetector(
       onTap: () {
@@ -215,7 +244,9 @@ Future<bool> _onWillPop() async {
         } else if (label == context.loc.gallery) {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => EditScreen(title: context.loc.imageeditor)),
+            MaterialPageRoute(
+                builder: (context) =>
+                    EditScreen(title: context.loc.imageeditor)),
           );
         }
       },
@@ -246,8 +277,7 @@ Future<bool> _onWillPop() async {
                 color: Colors.white,
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
-                decoration: TextDecoration.none
-            ),
+                decoration: TextDecoration.none),
           ),
         ],
       ),
@@ -299,9 +329,15 @@ Future<bool> _onWillPop() async {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        Flexible(child: _buildCreateOption(context.loc.gallery, Icons.image, isDarkMode)),
-                        Flexible(child: _buildCreateOption(context.loc.template, Icons.grid_view, isDarkMode)),
-                        Flexible(child: _buildCreateOption(context.loc.resumebuilder, Icons.folder, isDarkMode)),
+                        Flexible(
+                            child: _buildCreateOption(
+                                context.loc.gallery, Icons.image, isDarkMode)),
+                        Flexible(
+                            child: _buildCreateOption(context.loc.template,
+                                Icons.grid_view, isDarkMode)),
+                        Flexible(
+                            child: _buildCreateOption(context.loc.resumebuilder,
+                                Icons.folder, isDarkMode)),
                       ],
                     ),
                   ),
@@ -327,12 +363,25 @@ Future<bool> _onWillPop() async {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _buildNavItem(0, 'assets/icons/home Inactive.svg', 'assets/icons/Home Active.svg', context.loc.home),
-                  _buildNavItem(1, 'assets/icons/Property 1=Search Inactive.svg', 'assets/icons/Property 1=Search Active.svg', context.loc.search),
+                  _buildNavItem(0, 'assets/icons/home Inactive.svg',
+                      'assets/icons/Home Active.svg', context.loc.home),
+                  _buildNavItem(
+                      1,
+                      'assets/icons/Property 1=Search Inactive.svg',
+                      'assets/icons/Property 1=Search Active.svg',
+                      context.loc.search),
                   // Empty space for the center button
                   SizedBox(width: 60),
-                  _buildNavItem(3, 'assets/icons/Property 1=Download Inactive.svg', 'assets/icons/Property 1=Download Active.svg', context.loc.files),
-                  _buildNavItem(4, 'assets/icons/Property 1=User Inactive.svg', 'assets/icons/Property 1=user Active.svg', context.loc.profile),
+                  _buildNavItem(
+                      3,
+                      'assets/icons/Property 1=Download Inactive.svg',
+                      'assets/icons/Property 1=Download Active.svg',
+                      context.loc.files),
+                  _buildNavItem(
+                      4,
+                      'assets/icons/Property 1=User Inactive.svg',
+                      'assets/icons/Property 1=user Active.svg',
+                      context.loc.profile),
                 ],
               ),
               Center(
@@ -368,7 +417,8 @@ Future<bool> _onWillPop() async {
     );
   }
 
-  Widget _buildNavItem(int index, String iconPath, String activeIconPath, String label) {
+  Widget _buildNavItem(
+      int index, String iconPath, String activeIconPath, String label) {
     final isSelected = _currentIndex == index;
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDarkMode = themeProvider.isDarkMode;
