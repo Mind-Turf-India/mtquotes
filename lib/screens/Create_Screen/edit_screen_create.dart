@@ -1109,7 +1109,7 @@ class _EditScreenState extends State<EditScreen> {
                       backgroundColor: primaryColor,
                       foregroundColor: Colors.white,
                       padding:
-                          EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                          EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                     ),
                   ),
                   ElevatedButton.icon(
@@ -1152,7 +1152,7 @@ class _EditScreenState extends State<EditScreen> {
                       backgroundColor: primaryColor,
                       foregroundColor: Colors.white,
                       padding:
-                          EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                          EdgeInsets.symmetric(horizontal: 21, vertical: 12),
                     ),
                   ),
                 ],

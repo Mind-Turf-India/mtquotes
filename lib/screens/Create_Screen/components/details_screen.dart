@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mtquotes/screens/Create_Screen/edit_screen_create.dart';
 import 'package:mtquotes/screens/Payment_Screen/subscription_screen.dart';
@@ -399,7 +400,12 @@ class _DetailsScreenState extends State<DetailsScreen>
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.lock, color: Colors.amber, size: 40),
+                            SvgPicture.asset(
+                              'assets/icons/premium_1659060.svg',
+                              width: 24,
+                              height: 24,
+                              color: Colors.amber,
+                            ),
                             SizedBox(height: 8),
                             Text(
                               context.loc.premiumTemplate,
@@ -651,7 +657,12 @@ class _DetailsScreenState extends State<DetailsScreen>
                 top: 0,
                 bottom: 0,
                 child: Center(
-                  child: Icon(Icons.lock, color: Colors.yellow),
+                  child: SvgPicture.asset(
+                    'assets/icons/premium_1659060.svg',
+                    width: 24,
+                    height: 24,
+                    color: Colors.amber,
+                  ),
                 ),
               ),
             ],
@@ -827,7 +838,12 @@ class _DetailsScreenState extends State<DetailsScreen>
                 ),
               ),
               if (!widget.isPaidUser)
-                Icon(Icons.lock, color: Colors.yellow, size: 16),
+                SvgPicture.asset(
+                  'assets/icons/premium_1659060.svg',
+                  width: 24,
+                  height: 24,
+                  color: Colors.amber,
+                ),
             ],
           ),
 
@@ -1103,7 +1119,12 @@ class _DetailsScreenState extends State<DetailsScreen>
                 ),
               ),
               if (!widget.isPaidUser)
-                Icon(Icons.lock, color: Colors.yellow, size: 16),
+                SvgPicture.asset(
+                  'assets/icons/premium_1659060.svg',
+                  width: 24,
+                  height: 24,
+                  color: Colors.amber,
+                ),
             ],
           ),
 

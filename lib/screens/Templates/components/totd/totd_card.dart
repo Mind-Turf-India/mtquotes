@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:mtquotes/screens/Create_Screen/edit_screen_create.dart';
 import 'package:mtquotes/screens/Templates/components/totd/totd_service.dart';
 import 'package:mtquotes/utils/theme_provider.dart';
 import 'package:provider/provider.dart';
+
+import '../../../User_Home/components/tapp_effect.dart';
 
 
 class TimeOfDayPostComponent extends StatelessWidget {
@@ -25,8 +28,10 @@ class TimeOfDayPostComponent extends StatelessWidget {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDarkMode = themeProvider.isDarkMode;
 
-    return GestureDetector(
+    return TapEffectWidget(
       onTap: onTap,
+      scaleEffect: 0.85, // More noticeable scale effect
+      opacityEffect: 0.99, // Sub
       child: Container(
         width: 100,
         height: 80,
@@ -83,25 +88,16 @@ class TimeOfDayPostComponent extends StatelessWidget {
                   top: 5,
                   right: 5,
                   child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: EdgeInsets.symmetric(horizontal: 2, vertical: 2),
                     decoration: BoxDecoration(
                       color: Colors.black.withOpacity(0.7),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.lock, color: Colors.amber, size: 12),
-                        SizedBox(width: 2),
-                        Text(
-                          'PRO',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
+                    child: SvgPicture.asset(
+                      'assets/icons/premium_1659060.svg',
+                      width: 24,
+                      height: 24,
+                      color: Colors.amber,
                     ),
                   ),
                 ),

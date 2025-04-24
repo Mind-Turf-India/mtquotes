@@ -26,7 +26,7 @@
     static const Color lightIcon = Colors.black87;
 
     // Dark theme
-    static const Color darkBackground = Color(0xFF121212);
+    static const Color darkBackground = Color(0xFF252525);
     static const Color darkSurface = Color(0xFF1E1E1E);
     static const Color darkText = Colors.white;
     static const Color darkTextBlack = Colors.black;

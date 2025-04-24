@@ -39,6 +39,7 @@ import '../Templates/components/recent/recent_service.dart';
 import '../Templates/components/template/template_service.dart';
 import 'components/Categories/category_screen.dart';
 import 'components/app_open_tracker.dart';
+import 'components/tapp_effect.dart';
 import 'components/templates_list.dart';
 import 'components/user_survey.dart';
 
@@ -614,7 +615,10 @@ class HomeScreenState extends State<HomeScreen> {
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  GestureDetector(
+                Material(
+                color: Colors.transparent, // Keep background transparent
+                borderRadius: BorderRadius.circular(8), // Adjust the roundness here
+                child: InkWell(
                     onTap: () async {
                       final pickedImage = await _pickImage();
                       if (pickedImage != null) {
@@ -639,7 +643,7 @@ class HomeScreenState extends State<HomeScreen> {
                               color: AppColors.getIconColor(!isDarkMode))
                           : null,
                     ),
-                  ),
+                  ),),
                   TextField(
                     controller: nameController,
                     decoration: InputDecoration(
@@ -996,7 +1000,10 @@ class HomeScreenState extends State<HomeScreen> {
               elevation: 0,
               title: Row(
                 children: [
-                  GestureDetector(
+                Material(
+                color: Colors.transparent, // Keep background transparent
+                borderRadius: BorderRadius.circular(8), // Adjust the roundness here
+                child: InkWell(
                       onTap: () {
                         Navigator.pushReplacement(
                           context,
@@ -1014,7 +1021,7 @@ class HomeScreenState extends State<HomeScreen> {
                             profileImageUrl == null || profileImageUrl!.isEmpty
                                 ? Icon(LucideIcons.user, color: Colors.black)
                                 : null,
-                      )),
+                      )),),
                   SizedBox(width: 20),
                   Text(
                     "Hi, $userName\n$greetings",
@@ -1027,7 +1034,10 @@ class HomeScreenState extends State<HomeScreen> {
                   ),
                   Spacer(),
                   //image enhancer icon.
-                  GestureDetector(
+              Material(
+                color: Colors.transparent, // Keep background transparent
+                borderRadius: BorderRadius.circular(10), // Adjust the roundness here
+                child: InkWell(
                     onTap: () {
                       Navigator.push(
                         context,
@@ -1044,20 +1054,29 @@ class HomeScreenState extends State<HomeScreen> {
                         color: AppColors.getTextColor(isDarkMode),
                       ),
                     ),
-                  ),
+                  ),),
                   //notifcation icon
-                  GestureDetector(
-                    onTap: showNotificationsSheet,
-                    child: SvgPicture.asset(
-                      'assets/icons/notification_3002272.svg',
-                      width: 24,
-                      height: 24,
-                      colorFilter: ColorFilter.mode(
-                        AppColors.getTextColor(isDarkMode),
-                        BlendMode.srcIn,
+                  Material(
+                    color: Colors.transparent, // Keep background transparent
+                    borderRadius: BorderRadius.circular(8), // Adjust the roundness here
+                    child: InkWell(
+                      onTap: showNotificationsSheet,
+                      borderRadius: BorderRadius.circular(8), // Match this with Material's radius
+                      child: Padding( // Optional: add padding for better touch target
+                        padding: EdgeInsets.all(4),
+                        child: SvgPicture.asset(
+                          'assets/icons/notification_3002272.svg',
+                          width: 24,
+                          height: 24,
+                          colorFilter: ColorFilter.mode(
+                            AppColors.getTextColor(isDarkMode),
+                            BlendMode.srcIn,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
+                  )
+
                 ],
               ),
             ),
@@ -1178,7 +1197,7 @@ class HomeScreenState extends State<HomeScreen> {
                                     context.loc.recents,
                                     style: GoogleFonts.poppins(
                                       fontSize: fontSize,
-                                      fontWeight: FontWeight.bold,
+                                      fontWeight: FontWeight.w700,
                                       color: AppColors.getTextColor(isDarkMode),
                                     ),
                                   ),
@@ -1206,156 +1225,86 @@ class HomeScreenState extends State<HomeScreen> {
                                             ),
                                           )
                                         : ListView.builder(
-                                            scrollDirection: Axis.horizontal,
-                                            itemCount: _recentTemplates.length,
-                                            itemBuilder: (context, index) {
-                                              final template =
-                                                  _recentTemplates[index];
-                                              return GestureDetector(
-                                                onTap: () =>
-                                                    _handleRecentTemplateSelection(
-                                                        template),
-                                                child: Container(
-                                                  width: 100,
-                                                  margin: EdgeInsets.only(
-                                                      right: 10),
-                                                  decoration: BoxDecoration(
-                                                    color: isDarkMode
-                                                        ? Colors.grey[800]
-                                                        : Colors.white,
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            8),
-                                                    boxShadow: [
-                                                      BoxShadow(
-                                                          color: isDarkMode
-                                                              ? Colors.black
-                                                                  .withOpacity(
-                                                                      0.3)
-                                                              : Colors.grey
-                                                                  .shade300,
-                                                          blurRadius: 5)
-                                                    ],
+                                  scrollDirection: Axis.horizontal,
+                                  itemCount: _recentTemplates.length,
+                                  itemBuilder: (context, index) {
+                                    final template = _recentTemplates[index];
+                                    return TapEffectWidget(
+                                      scaleEffect: 0.85, // Slightly more pronounced effect
+                                      opacityEffect: 0.99,
+                                      onTap: () => _handleRecentTemplateSelection(template),
+                                      child: Container(
+                                        width: 100,
+                                        margin: EdgeInsets.only(right: 10),
+                                        decoration: BoxDecoration(
+                                          color: isDarkMode ? Colors.grey[800] : Colors.white,
+                                          borderRadius: BorderRadius.circular(8),
+                                          boxShadow: [
+                                            BoxShadow(
+                                                color: isDarkMode
+                                                    ? Colors.black.withOpacity(0.3)
+                                                    : Colors.grey.shade300,
+                                                blurRadius: 5
+                                            )
+                                          ],
+                                        ),
+                                        child: ClipRRect(
+                                          borderRadius: BorderRadius.circular(8),
+                                          child: Stack(
+                                            fit: StackFit.expand,
+                                            children: [
+                                              // Image background
+                                              template.imageUrl.isNotEmpty
+                                                  ? CachedNetworkImage(
+                                                imageUrl: template.imageUrl,
+                                                placeholder: (context, url) => _buildTemplateImageShimmer(isDarkMode),
+                                                errorWidget: (context, url, error) {
+                                                  print("Image error: $error for URL: $url");
+                                                  return Container(
+                                                    color: isDarkMode ? Colors.grey[700] : Colors.grey[300],
+                                                    child: Icon(Icons.error, color: isDarkMode
+                                                        ? Colors.grey[500]
+                                                        : Colors.grey[600]),
+                                                  );
+                                                },
+                                                fit: BoxFit.cover,
+                                              )
+                                                  : Container(
+                                                color: isDarkMode ? Colors.grey[700] : Colors.grey[200],
+                                                child: Center(
+                                                  child: Icon(
+                                                    Icons.image_not_supported,
+                                                    color: isDarkMode ? Colors.grey[500] : Colors.grey,
                                                   ),
-                                                  child: ClipRRect(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            8),
-                                                    child: Stack(
-                                                      fit: StackFit.expand,
-                                                      children: [
-                                                        // Image background
-                                                        template.imageUrl
-                                                                .isNotEmpty
-                                                            ? CachedNetworkImage(
-                                                                imageUrl: template
-                                                                    .imageUrl,
-                                                                placeholder: (context,
-                                                                        url) =>
-                                                                    _buildTemplateImageShimmer(
-                                                                        isDarkMode),
-                                                                errorWidget:
-                                                                    (context,
-                                                                        url,
-                                                                        error) {
-                                                                  print(
-                                                                      "Image error: $error for URL: $url");
-                                                                  return Container(
-                                                                    color: isDarkMode
-                                                                        ? Colors.grey[
-                                                                            700]
-                                                                        : Colors
-                                                                            .grey[300],
-                                                                    child: Icon(
-                                                                        Icons
-                                                                            .error,
-                                                                        color: isDarkMode
-                                                                            ? Colors.grey[500]
-                                                                            : Colors.grey[600]),
-                                                                  );
-                                                                },
-                                                                fit: BoxFit
-                                                                    .cover,
-                                                              )
-                                                            : Container(
-                                                                color: isDarkMode
-                                                                    ? Colors.grey[
-                                                                        700]
-                                                                    : Colors.grey[
-                                                                        200],
-                                                                child: Center(
-                                                                  child: Icon(
-                                                                    Icons
-                                                                        .image_not_supported,
-                                                                    color: isDarkMode
-                                                                        ? Colors.grey[
-                                                                            500]
-                                                                        : Colors
-                                                                            .grey,
-                                                                  ),
-                                                                ),
-                                                              ),
+                                                ),
+                                              ),
 
-                                                        // Premium indicator
-                                                        if (template.isPaid)
-                                                          Positioned(
-                                                            top: 5,
-                                                            right: 5,
-                                                            child: Container(
-                                                              padding: EdgeInsets
-                                                                  .symmetric(
-                                                                      horizontal:
-                                                                          6,
-                                                                      vertical:
-                                                                          2),
-                                                              decoration:
-                                                                  BoxDecoration(
-                                                                color: Colors
-                                                                    .black
-                                                                    .withOpacity(
-                                                                        0.7),
-                                                                borderRadius:
-                                                                    BorderRadius
-                                                                        .circular(
-                                                                            10),
-                                                              ),
-                                                              child: Row(
-                                                                mainAxisSize:
-                                                                    MainAxisSize
-                                                                        .min,
-                                                                children: [
-                                                                  Icon(
-                                                                      Icons
-                                                                          .lock,
-                                                                      color: Colors
-                                                                          .amber,
-                                                                      size: 12),
-                                                                  SizedBox(
-                                                                      width: 2),
-                                                                  Text(
-                                                                    'PRO',
-                                                                    style:
-                                                                        TextStyle(
-                                                                      color: Colors
-                                                                          .white,
-                                                                      fontSize:
-                                                                          12,
-                                                                      fontWeight:
-                                                                          FontWeight
-                                                                              .bold,
-                                                                    ),
-                                                                  ),
-                                                                ],
-                                                              ),
-                                                            ),
-                                                          ),
-                                                      ],
+                                              // Premium indicator
+                                              if (template.isPaid)
+                                                Positioned(
+                                                  top: 5,
+                                                  right: 5,
+                                                  child: Container(
+                                                    padding: EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.black.withOpacity(0.7),
+                                                      borderRadius: BorderRadius.circular(10),
+                                                    ),
+                                                    child: SvgPicture.asset(
+                                                      'assets/icons/premium_1659060.svg',
+                                                      width: 24,
+                                                      height: 24,
+                                                      color: Colors.amber,
                                                     ),
                                                   ),
                                                 ),
-                                              );
-                                            },
+                                            ],
                                           ),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
                               ),
                             ],
                           ),
@@ -1384,7 +1333,7 @@ class HomeScreenState extends State<HomeScreen> {
                               ),
                               SizedBox(height: 20),
                               SizedBox(
-                                height: 100,
+                                height: 130,
                                 child: ListView(
                                   scrollDirection: Axis.horizontal,
                                   children: [
@@ -1410,8 +1359,8 @@ class HomeScreenState extends State<HomeScreen> {
                                         isDarkMode),
                                     categoryCard(
                                         'assets/icons/sad.svg',
-                                        context.loc.life,
-                                        Colors.purple,
+                                        context.loc.sad,
+                                        Colors.yellowAccent,
                                         isDarkMode),
                                   ],
                                 ),
@@ -1434,12 +1383,15 @@ class HomeScreenState extends State<HomeScreen> {
                                       context.loc.trendingQuotes,
                                       style: GoogleFonts.poppins(
                                         fontSize: fontSize,
-                                        fontWeight: FontWeight.bold,
+                                        fontWeight: FontWeight.w700,
                                         color: AppColors.getTextColor(
                                             isDarkMode), // Ensure text color respects theme
                                       ),
                                     ),
-                                    GestureDetector(
+                                    Material(
+                                      color: Colors.transparent, // Keep background transparent
+                                      borderRadius: BorderRadius.circular(8), // Adjust the roundness here
+                                      child: InkWell(
                                       onTap: () {
                                         Navigator.push(
                                           context,
@@ -1462,7 +1414,7 @@ class HomeScreenState extends State<HomeScreen> {
                                         ),
                                       ),
                                     ),
-                                  ],
+                                    )],
                                 ),
                                 TemplateSection(
                                   title: '',
@@ -1487,12 +1439,15 @@ class HomeScreenState extends State<HomeScreen> {
                                             context.loc.newtemplate,
                                             style: GoogleFonts.poppins(
                                               fontSize: fontSize,
-                                              fontWeight: FontWeight.bold,
+                                              fontWeight: FontWeight.w700,
                                               color: AppColors.getTextColor(
                                                   isDarkMode), // Ensure text color respects theme
                                             ),
                                           ),
-                                          GestureDetector(
+                                          Material(
+                                            color: Colors.transparent, // Keep background transparent
+                                            borderRadius: BorderRadius.circular(8), // Adjust the roundness here
+                                            child: InkWell(
                                             onTap: () {
                                               Navigator.push(
                                                 context,
@@ -1515,7 +1470,7 @@ class HomeScreenState extends State<HomeScreen> {
                                                 fontWeight: FontWeight.w500,
                                               ),
                                             ),
-                                          ),
+                                          ),)
                                         ],
                                       ),
                                       SizedBox(height: 20),
@@ -1586,7 +1541,7 @@ class HomeScreenState extends State<HomeScreen> {
                                                           GoogleFonts.poppins(
                                                         fontSize: fontSize,
                                                         fontWeight:
-                                                            FontWeight.bold,
+                                                            FontWeight.w700,
                                                         color: AppColors
                                                             .getTextColor(
                                                                 isDarkMode),
@@ -1608,7 +1563,10 @@ class HomeScreenState extends State<HomeScreen> {
                                               ),
 
                                               // Right side with View All
-                                              GestureDetector(
+                                              Material(
+                                                color: Colors.transparent, // Keep background transparent
+                                                borderRadius: BorderRadius.circular(8), // Adjust the roundness here
+                                                child: InkWell(
                                                 onTap: () {
                                                   Navigator.push(
                                                     context,
@@ -1635,7 +1593,7 @@ class HomeScreenState extends State<HomeScreen> {
                                                   ),
                                                 ),
                                               ),
-                                            ],
+                                              )],
                                           ),
                                           SizedBox(height: 20),
                                           SizedBox(
@@ -1765,25 +1723,16 @@ class HomeScreenState extends State<HomeScreen> {
                   top: 5,
                   right: 5,
                   child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: EdgeInsets.symmetric(horizontal: 2, vertical: 2),
                     decoration: BoxDecoration(
                       color: Colors.black.withOpacity(0.7),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.lock, color: Colors.amber, size: 12),
-                        SizedBox(width: 2),
-                        Text(
-                          'PRO',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
+                    child: SvgPicture.asset(
+                      'assets/icons/premium_1659060.svg',
+                      width: 24,
+                      height: 24,
+                      color: Colors.amber,
                     ),
                   ),
                 ),
@@ -1796,57 +1745,72 @@ class HomeScreenState extends State<HomeScreen> {
 
   // Update the categoryCard function in your HomeScreen class
   Widget categoryCard(
-  String svgAssetPath, String title, Color color, bool isDarkMode) {
-  return GestureDetector(
-    onTap: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => CategoryScreen(
-            categoryName: title,
-            categoryColor: color,
-            categorySvgPath: svgAssetPath,
-          ),
-        ),
-      );
-    },
-    child: Padding(
-      padding: EdgeInsets.only(right: 12),
-      child: Column(
-        children: [
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              color: color.withOpacity(isDarkMode ? 0.3 : 0.2),
-              borderRadius: BorderRadius.circular(12),
+      String svgAssetPath, String title, Color color, bool isDarkMode) {
+    return TapEffectWidget(
+      scaleEffect: 0.85, // Slightly more pronounced effect
+      opacityEffect: 0.99,
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => CategoryScreen(
+              categoryName: title,
+              categoryColor: color,
+              categorySvgPath: svgAssetPath,
             ),
-            child: Center(
-              child: SvgPicture.asset(
-                svgAssetPath,
-                width: 35,  // Reduced from 30 to 24
-                height: 35, // Reduced from 30 to 24
-                color: color,
+          ),
+        );
+      },
+      child: Padding(
+        padding: EdgeInsets.only(right: 12),
+        child: Column(
+          children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: color.withOpacity(isDarkMode ? 0.3 : 0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Center(
+                child: SvgPicture.asset(
+                  svgAssetPath,
+                  width: 40,
+                  height: 40,
+                  color: color,
+                ),
               ),
             ),
-          ),
-          SizedBox(
-            height: 5,
-            width: 10,
-          ),
-          Text(
-            title,
-            style: GoogleFonts.poppins(
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-              color: AppColors.getTextColor(isDarkMode),
+            SizedBox(
+              height: 5,
             ),
-          ),
-        ],
+            Column(
+              children: [
+                Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.getTextColor(isDarkMode),
+                  ),
+                ),
+                Text(
+                  context.loc.quotes,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.getTextColor(isDarkMode),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   //shimmer widgets starts
   Widget _buildQotdShimmer(bool isDarkMode) {

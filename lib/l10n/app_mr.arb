@@ -192,6 +192,9 @@
   "errorSharingImage": "प्रतिमा शेअर करण्यात त्रुटी: {error}",
   "shareUpscaledText": "हे वाढवलेले प्रतिमा पहा!",
   "shareDownscaledText": "हे कमी केलेले प्रतिमा पहा!",
+  "quotes": "उद्धरण",
+  "sad": "दुःखी",
+
 
   "@languageChanged": {
     "placeholders": {

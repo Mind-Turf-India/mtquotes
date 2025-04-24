@@ -7,6 +7,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:http/http.dart' as http;
 import 'package:mtquotes/l10n/app_localization.dart';
 import 'package:mtquotes/screens/Create_Screen/edit_screen_create.dart';
@@ -477,6 +479,9 @@ class FestivalHandler {
       FestivalPost festival,
       bool isPaidUser,
       ) {
+    // Debug print
+    print('_showFestivalInfoBox called: isPaidUser=$isPaidUser, festivalIsPaid=${festival.isPaid}');
+
     final ThemeData theme = Theme.of(context);
     final bool isDarkMode = theme.brightness == Brightness.dark;
     final Color backgroundColor = isDarkMode ? AppColors.darkSurface : AppColors.lightSurface;
@@ -486,6 +491,21 @@ class FestivalHandler {
     final Color iconColor = isDarkMode ? AppColors.darkIcon : AppColors.lightIcon;
     final textSizeProvider = Provider.of<TextSizeProvider>(context, listen: false);
     final fontSize = textSizeProvider.fontSize;
+
+    // Get username and profile image from current user
+    String userName = 'User';
+    String userProfileImageUrl = '';
+
+    // Try to get current user info synchronously - this should be replaced with your actual user data retrieval logic
+    try {
+      final User? currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser != null) {
+        userName = currentUser.displayName ?? 'User';
+        userProfileImageUrl = currentUser.photoURL ?? '';
+      }
+    } catch (e) {
+      print('Error getting user data: $e');
+    }
 
     showDialog(
       context: context,
@@ -531,99 +551,165 @@ class FestivalHandler {
                           RepaintBoundary(
                             key: festivalImageKey,
                             child: Container(
-                              height: 400,
                               width: double.infinity,
                               decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(8),
-                                // Remove the DecorationImage to use CachedNetworkImage instead
+                                borderRadius: BorderRadius.circular(12),
                                 color: isDarkMode ? Colors.grey.shade800 : Colors.grey.shade200,
                               ),
-                              child: Stack(
-                                fit: StackFit.expand,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  // Main image with shimmer loading state
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: CachedNetworkImage(
-                                      imageUrl: festival.imageUrl,
-                                      fit: BoxFit.cover,
-                                      placeholder: (context, url) => ShimmerLoader(
-                                        width: double.infinity,
-                                        height: double.infinity,
-                                        isDarkMode: isDarkMode,
-                                        type: ShimmerType.template,
-                                        margin: EdgeInsets.zero,
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      errorWidget: (context, url, error) => Center(
-                                        child: Column(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            Icon(
-                                              Icons.error_outline,
-                                              color: Colors.red,
-                                              size: 48,
-                                            ),
-                                            SizedBox(height: 16),
-                                            Text(
-                                              context.loc.failedToLoadImage,
-                                              style: TextStyle(
-                                                color: textColor,
-                                                fontSize: fontSize - 2,
-                                                fontWeight: FontWeight.w500,
+                                  // Main container with image and content
+                                  Stack(
+                                    children: [
+                                      // Main image
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+                                        child: CachedNetworkImage(
+                                          imageUrl: festival.imageUrl,
+                                          fit: BoxFit.cover,
+                                          width: double.infinity,
+                                          height: 400,
+                                          placeholder: (context, url) {
+                                            return ShimmerLoader(
+                                              width: double.infinity,
+                                              height: 400,
+                                              isDarkMode: isDarkMode,
+                                              type: ShimmerType.template,
+                                              margin: EdgeInsets.zero,
+                                              borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+                                            );
+                                          },
+                                          errorWidget: (context, url, error) {
+                                            print('Error loading festival image: $error');
+                                            return Center(
+                                              child: Column(
+                                                mainAxisAlignment: MainAxisAlignment.center,
+                                                children: [
+                                                  Icon(
+                                                    Icons.error_outline,
+                                                    color: Colors.red,
+                                                    size: 48,
+                                                  ),
+                                                  SizedBox(height: 16),
+                                                  Text(
+                                                    context.loc.failedToLoadImage,
+                                                    style: TextStyle(
+                                                      color: textColor,
+                                                      fontSize: fontSize - 2,
+                                                      fontWeight: FontWeight.w500,
+                                                    ),
+                                                  ),
+                                                ],
                                               ),
-                                            ),
-                                          ],
+                                            );
+                                          },
+                                          cacheKey: '${festival.id}_dialog',
+                                          memCacheWidth: 600,
+                                          maxHeightDiskCache: 800,
                                         ),
                                       ),
-                                      // Add these options for better caching behavior
-                                      cacheKey: '${festival.id}_dialog',
-                                      memCacheWidth: 600, // Optimize memory cache size
-                                      maxHeightDiskCache: 800, // Optimize disk cache size
-                                    ),
+
+                                      // PRO badge for paid content
+                                      if (festival.isPaid)
+                                        Positioned(
+                                          top: 5,
+                                          right: 5,
+                                          child: Container(
+                                            padding: EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: Colors.black.withOpacity(0.7),
+                                              borderRadius: BorderRadius.circular(10),
+                                            ),
+                                            child: SvgPicture.asset(
+                                              'assets/icons/premium_1659060.svg',
+                                              width: 24,
+                                              height: 24,
+                                              color: Colors.amber,
+                                            ),
+                                          ),
+                                        ),
+
+                                      // Watermark in top right (for non-paid users)
+                                      if (!isPaidUser || !festival.isPaid)
+                                        Positioned(
+                                          top: 16,  // Position from top with padding
+                                          right: 16, // Position from right edge with padding
+                                          child: Opacity(
+                                            opacity: 0.6, // Semi-transparent effect
+                                            child: Image.asset(
+                                              'assets/logo.png',
+                                              width: 50,  // Fixed width size
+                                              height: 50, // Fixed height size
+                                              fit: BoxFit.contain,
+                                            ),
+                                          ),
+                                        ),
+                                    ],
                                   ),
 
-                                  // PRO badge for paid content
-                                  if (festival.isPaid)
-                                    Positioned(
-                                      top: 10,
-                                      right: 10,
-                                      child: Container(
-                                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                        decoration: BoxDecoration(
-                                          color: Colors.black.withOpacity(0.7),
-                                          borderRadius: BorderRadius.circular(12),
-                                        ),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Icon(Icons.lock, color: Colors.amber, size: 14),
-                                            SizedBox(width: 4),
-                                            Text(
-                                              'PRO',
+                                  // User info at the bottom (similar to your example image)
+                                  Container(
+                                    width: double.infinity,
+                                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.vertical(bottom: Radius.circular(12)),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        // User name in container similar to example
+                                        Expanded(
+                                          child: Container(
+                                            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                            decoration: BoxDecoration(
+                                              border: Border.all(color: Colors.grey.shade300),
+                                              borderRadius: BorderRadius.circular(8),
+                                            ),
+                                            child: Text(
+                                              userName,
                                               style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.bold,
+                                                color: Colors.black87,
+                                                fontWeight: FontWeight.w500,
+                                                fontSize: 16,
                                               ),
                                             ),
-                                          ],
+                                          ),
                                         ),
-                                      ),
-                                    ),
 
-                                  // Bottom-right watermark for paid users
-                                  if (isPaidUser)
-                                    Align(
-                                      alignment: Alignment.bottomRight,
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(10.0),
-                                        child: Container(
-                                          padding: EdgeInsets.symmetric(
-                                              horizontal: 8, vertical: 4),
+                                        SizedBox(width: 8),
+
+                                        // User profile image
+                                        Container(
+                                          width: 40,
+                                          height: 40,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            border: Border.all(color: Colors.grey.shade300, width: 1),
+                                          ),
+                                          child: ClipRRect(
+                                            borderRadius: BorderRadius.circular(20),
+                                            child: userProfileImageUrl.isNotEmpty
+                                                ? CachedNetworkImage(
+                                              imageUrl: userProfileImageUrl,
+                                              fit: BoxFit.cover,
+                                              placeholder: (context, url) => CircularProgressIndicator(),
+                                              errorWidget: (context, url, error) => Icon(
+                                                Icons.person,
+                                                color: Colors.grey,
+                                                size: 24,
+                                              ),
+                                            )
+                                                : Icon(
+                                              Icons.person,
+                                              color: Colors.grey,
+                                              size: 24,
+                                            ),
+                                          ),
                                         ),
-                                      ),
+                                      ],
                                     ),
+                                  ),
                                 ],
                               ),
                             ),

@@ -192,6 +192,8 @@
   "errorSharingImage": "ଛବି ସେୟାର କରିବାରେ ତ୍ରୁଟି: {error}",
   "shareUpscaledText": "ଏହି ବଡ଼ କରାଯାଇଥିବା ଛବି ଦେଖନ୍ତୁ!",
   "shareDownscaledText": "ଏହି ଛୋଟ କରାଯାଇଥିବା ଛବି ଦେଖନ୍ତୁ!",
+  "quotes": "ଉଦ୍ଧୃତି",
+  "sad": "ଦୁଃଖିତ",
 
   "@languageChanged": {
     "placeholders": {

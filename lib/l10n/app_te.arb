@@ -193,9 +193,12 @@
   "errorSharingImage": "చిత్రాన్ని షేర్ చేయడంలో లోపం: {error}",
   "shareUpscaledText": "ఈ పరిమాణం పెంచిన చిత్రాన్ని చూడండి!",
   "shareDownscaledText": "ఈ పరిమాణం తగ్గించిన చిత్రాన్ని చూడండి!",
-  
+  "quotes": "సూక్తులు",
+  "sad": "విషాదం",
 
-"@languageChanged": {
+
+
+  "@languageChanged": {
     "placeholders": {
       "language": {
         "type": "Object"

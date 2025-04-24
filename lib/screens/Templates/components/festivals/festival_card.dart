@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mtquotes/screens/Templates/components/festivals/festival_post.dart';
+import 'package:mtquotes/screens/User_Home/components/tapp_effect.dart';
 import 'package:mtquotes/utils/app_colors.dart';
 import 'package:mtquotes/utils/theme_provider.dart';
 import 'package:provider/provider.dart';
@@ -50,7 +52,9 @@ class _FestivalCardState extends State<FestivalCard> {
     final isDarkMode = themeProvider.isDarkMode;
     final theme = Theme.of(context);
     
-    return GestureDetector(
+    return TapEffectWidget(
+      scaleEffect: 0.85, // Slightly more pronounced effect
+      opacityEffect: 0.99,
       onTap: _handleTap,
       child: Container(
         width: 100, // Same as TemplateCard
@@ -61,8 +65,8 @@ class _FestivalCardState extends State<FestivalCard> {
           borderRadius: BorderRadius.circular(8),
           boxShadow: [
             BoxShadow(
-              color: isDarkMode 
-                ? Colors.black.withOpacity(0.3) 
+              color: isDarkMode
+                ? Colors.black.withOpacity(0.3)
                 : Colors.grey.shade300,
               blurRadius: 5
             )
@@ -105,27 +109,16 @@ class _FestivalCardState extends State<FestivalCard> {
                   top: 5,
                   right: 5,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: EdgeInsets.symmetric(horizontal: 2, vertical: 2),
                     decoration: BoxDecoration(
-                      color: isDarkMode 
-                        ? Colors.black.withOpacity(0.8) 
-                        : Colors.black.withOpacity(0.7),
+                      color: Colors.black.withOpacity(0.7),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.lock, color: Colors.amber, size: 12),
-                        const SizedBox(width: 2),
-                        const Text(
-                          'PRO',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
+                    child: SvgPicture.asset(
+                      'assets/icons/premium_1659060.svg',
+                      width: 24,
+                      height: 24,
+                      color: Colors.amber,
                     ),
                   ),
                 ),

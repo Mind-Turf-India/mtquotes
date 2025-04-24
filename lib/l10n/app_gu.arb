@@ -193,6 +193,8 @@
   "errorSharingImage": "ચિત્ર શેર કરવામાં ભૂલ: {error}",
   "shareUpscaledText": "આ મોટું કરેલું ચિત્ર જુઓ!",
   "shareDownscaledText": "આ નાનું કરેલું ચિત્ર જુઓ!",
+  "quotes": "ઉક્તિ",
+  "sad": "દુ:ખી",
 
 "@languageChanged":{
     "placeholders": {

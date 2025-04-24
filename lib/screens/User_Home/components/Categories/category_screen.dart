@@ -14,6 +14,8 @@ import '../../../../utils/shimmer.dart';
 import '../../../../utils/theme_provider.dart';
 import 'package:mtquotes/l10n/app_localization.dart';
 
+import '../tapp_effect.dart';
+
 class CategoryScreen extends StatefulWidget {
   final String categoryName;
   final Color categoryColor;
@@ -268,7 +270,9 @@ class _CategoryScreenState extends State<CategoryScreen> {
                             delegate: SliverChildBuilderDelegate(
                               (context, index) {
                                 final template = _categoryTemplates[index];
-                                return GestureDetector(
+                                return TapEffectWidget(
+                                  scaleEffect: 0.85, // Slightly more pronounced effect
+                                  opacityEffect: 0.99,
                                   onTap: () => _handleTemplateSelection(template),
                                   child: ClipRRect(
                                     borderRadius: BorderRadius.circular(12),
@@ -300,35 +304,19 @@ class _CategoryScreenState extends State<CategoryScreen> {
                                         // PRO badge for paid templates
                                         if (template.isPaid)
                                           Positioned(
-                                            top: 8,
-                                            right: 8,
+                                            top: 5,
+                                            right: 5,
                                             child: Container(
-                                              padding: EdgeInsets.symmetric(
-                                                horizontal: 8,
-                                                vertical: 4,
-                                              ),
+                                              padding: EdgeInsets.symmetric(horizontal: 2, vertical: 2),
                                               decoration: BoxDecoration(
                                                 color: Colors.black.withOpacity(0.7),
-                                                borderRadius: BorderRadius.circular(12),
+                                                borderRadius: BorderRadius.circular(10),
                                               ),
-                                              child: Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  Icon(
-                                                    Icons.lock,
-                                                    color: Colors.amber,
-                                                    size: 14,
-                                                  ),
-                                                  SizedBox(width: 4),
-                                                  Text(
-                                                    'PRO',
-                                                    style: TextStyle(
-                                                      color: Colors.white,
-                                                      fontSize: 12,
-                                                      fontWeight: FontWeight.bold,
-                                                    ),
-                                                  ),
-                                                ],
+                                              child: SvgPicture.asset(
+                                                'assets/icons/premium_1659060.svg',
+                                                width: 24,
+                                                height: 24,
+                                                color: Colors.amber,
                                               ),
                                             ),
                                           ),

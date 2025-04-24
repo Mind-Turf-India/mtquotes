@@ -192,6 +192,8 @@
   "errorSharingImage": "चित्र साझा करने में त्रुटि: {error}",
   "shareUpscaledText": "इस बड़े किए गए चित्र को देखें!",
   "shareDownscaledText": "इस छोटे किए गए चित्र को देखें!",
+  "quotes": "उद्धरण",
+  "sad": "दुखी",
 
 "@languageChanged": {
     "placeholders": {

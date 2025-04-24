@@ -9,6 +9,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:http/http.dart' as http;
 import 'package:mtquotes/l10n/app_localization.dart';
 import 'package:mtquotes/screens/Templates/components/totd/totd_service.dart';
@@ -465,6 +466,21 @@ class TimeOfDayHandler {
     final Color dividerColor =
     isDarkMode ? AppColors.darkDivider : AppColors.lightDivider;
 
+    // Get username and profile image from current user
+    String userName = 'User';
+    String userProfileImageUrl = '';
+
+    // Try to get current user info synchronously - replace with your actual user data retrieval logic
+    try {
+      final User? currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser != null) {
+        userName = currentUser.displayName ?? 'User';
+        userProfileImageUrl = currentUser.photoURL ?? '';
+      }
+    } catch (e) {
+      print('Error getting user data: $e');
+    }
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -507,28 +523,26 @@ class TimeOfDayHandler {
                         RepaintBoundary(
                           key: totdImageKey,
                           child: Container(
-                            height: 400,
                             width: double.infinity,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(8),
-                              color: isDarkMode ? Colors.grey.shade800 : Colors.grey.shade200,
-                            ),
+                            height: 420, // Slightly taller to account for overlap
                             child: Stack(
-                              fit: StackFit.expand,
+                              clipBehavior: Clip.none, // Important: don't clip children
                               children: [
                                 // Main image with shimmer loading state
                                 ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
+                                  borderRadius: BorderRadius.circular(12),
                                   child: CachedNetworkImage(
                                     imageUrl: post.imageUrl,
                                     fit: BoxFit.cover,
+                                    width: double.infinity,
+                                    height: 400,
                                     placeholder: (context, url) => ShimmerLoader(
                                       width: double.infinity,
                                       height: double.infinity,
                                       isDarkMode: isDarkMode,
                                       type: ShimmerType.template,
                                       margin: EdgeInsets.zero,
-                                      borderRadius: BorderRadius.circular(8),
+                                      borderRadius: BorderRadius.circular(12),
                                     ),
                                     errorWidget: (context, url, error) => Center(
                                       child: Column(
@@ -561,36 +575,119 @@ class TimeOfDayHandler {
                                 // PRO badge (only for paid users)
                                 if (post.isPaid)
                                   Positioned(
-                                    top: 10,
-                                    right: 10,
+                                    top: 5,
+                                    right: 5,
                                     child: Container(
-                                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      padding: EdgeInsets.symmetric(horizontal: 2, vertical: 2),
                                       decoration: BoxDecoration(
                                         color: Colors.black.withOpacity(0.7),
-                                        borderRadius: BorderRadius.circular(12),
+                                        borderRadius: BorderRadius.circular(10),
                                       ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(Icons.lock, color: Colors.amber, size: 14),
-                                          SizedBox(width: 4),
-                                          Text(
-                                            'PRO',
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ],
+                                      child: SvgPicture.asset(
+                                        'assets/icons/premium_1659060.svg',
+                                        width: 24,
+                                        height: 24,
+                                        color: Colors.amber,
                                       ),
                                     ),
                                   ),
+
+                                // Watermark (for non-paid users or non-paid content)
+                                if (!isPaidUser || !post.isPaid)
+                                  Positioned(
+                                    top: 16,  // Position from top with padding
+                                    right: 16, // Position from right edge with padding
+                                    child: Opacity(
+                                      opacity: 0.6, // Semi-transparent effect
+                                      child: Image.asset(
+                                        'assets/logo.png',
+                                        width: 50,  // Fixed width size
+                                        height: 50, // Fixed height size
+                                        fit: BoxFit.contain,
+                                      ),
+                                    ),
+                                  ),
+
+                                // User profile container - positioned at the bottom, overlapping the image
+                                Positioned(
+                                  bottom: -15, // Negative value creates overlap effect
+                                  left: 0,
+                                  right: 0,
+                                  child: Container(
+                                    width: double.infinity,
+                                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(12),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.1),
+                                          blurRadius: 4,
+                                          offset: Offset(0, -2),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        // User name in container similar to example
+                                        Expanded(
+                                          child: Container(
+                                            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                            decoration: BoxDecoration(
+                                              border: Border.all(color: Colors.grey.shade300),
+                                              borderRadius: BorderRadius.circular(8),
+                                            ),
+                                            child: Text(
+                                              userName,
+                                              style: TextStyle(
+                                                color: Colors.black87,
+                                                fontWeight: FontWeight.w500,
+                                                fontSize: 16,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+
+                                        SizedBox(width: 8),
+
+                                        // User profile image
+                                        Container(
+                                          width: 40,
+                                          height: 40,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            border: Border.all(color: Colors.grey.shade300, width: 1),
+                                          ),
+                                          child: ClipRRect(
+                                            borderRadius: BorderRadius.circular(20),
+                                            child: userProfileImageUrl.isNotEmpty
+                                                ? CachedNetworkImage(
+                                              imageUrl: userProfileImageUrl,
+                                              fit: BoxFit.cover,
+                                              placeholder: (context, url) => CircularProgressIndicator(),
+                                              errorWidget: (context, url, error) => Icon(
+                                                Icons.person,
+                                                color: Colors.grey,
+                                                size: 24,
+                                              ),
+                                            )
+                                                : Icon(
+                                              Icons.person,
+                                              color: Colors.grey,
+                                              size: 24,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
                               ],
                             ),
                           ),
                         ),
-                        SizedBox(height: 24),
+
+                        SizedBox(height: 30),
                         Text(
                           context.loc.doYouWishToContinue,
                           style: TextStyle(

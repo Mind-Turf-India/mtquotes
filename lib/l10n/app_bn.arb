@@ -192,7 +192,11 @@
   "errorSharingImage": "ছবি শেয়ার করতে ত্রুটি: {error}",
   "shareUpscaledText": "এই বড় করা ছবিটি দেখুন!",
   "shareDownscaledText": "এই ছোট করা ছবিটি দেখুন!",
-"@languageChanged":{
+  "quotes": "উদ্ধৃতি",
+  "sad": "দু:খিত",
+
+
+  "@languageChanged":{
     "placeholders": {
       "language": {
         "type": "Object"

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mtquotes/screens/Templates/components/template/quote_template.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -179,25 +180,16 @@ class RecentTemplatesSection extends StatelessWidget {
                   top: 5,
                   right: 5,
                   child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: EdgeInsets.symmetric(horizontal: 2, vertical: 2),
                     decoration: BoxDecoration(
                       color: Colors.black.withOpacity(0.7),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.lock, color: Colors.amber, size: 12),
-                        SizedBox(width: 2),
-                        Text(
-                          'PRO',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
+                    child: SvgPicture.asset(
+                      'assets/icons/premium_1659060.svg',
+                      width: 24,
+                      height: 24,
+                      color: Colors.amber,
                     ),
                   ),
                 ),
