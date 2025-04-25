@@ -112,7 +112,7 @@ class _CreateBottomSheetState extends State<CreateBottomSheet> {
         } else if (label == context.loc.gallery) {
           _navigateToScreen(context, EditScreen(title: context.loc.imageeditor));
         } else if (label == context.loc.downloads) {
-          _navigateToScreen(context, ImageUpscalingScreen());
+          // _navigateToScreen(context, ImageUpscalingScreen());
         }
       },
       child: Column(

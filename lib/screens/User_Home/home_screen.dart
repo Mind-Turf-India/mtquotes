@@ -1038,13 +1038,13 @@ class HomeScreenState extends State<HomeScreen> {
                 color: Colors.transparent, // Keep background transparent
                 borderRadius: BorderRadius.circular(10), // Adjust the roundness here
                 child: InkWell(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => ImageUpscalingScreen()),
-                      );
-                    },
+                    // onTap: () {
+                    //   Navigator.push(
+                    //     context,
+                    //     MaterialPageRoute(
+                    //         builder: (context) => ImageUpscalingScreen()),
+                    //   );
+                    // },
                     child: Padding(
                       padding: const EdgeInsets.only(right: 15),
                       child: SvgPicture.asset(
