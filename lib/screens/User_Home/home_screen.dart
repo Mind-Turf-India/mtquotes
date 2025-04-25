@@ -13,7 +13,6 @@ import 'package:mtquotes/screens/Templates/components/totd/totd_handler.dart';
 import 'package:mtquotes/screens/Templates/components/totd/totd_service.dart';
 import 'package:mtquotes/screens/Payment_Screen/subscription_popup.dart';
 import 'package:mtquotes/screens/Templates/components/template/template_section.dart';
-import 'package:mtquotes/screens/User_Home/components/Image%20Upscaling/image_upscaling.dart';
 import 'package:mtquotes/screens/User_Home/components/daily_check_in.dart';
 import 'package:mtquotes/screens/User_Home/components/Notifications/notifications.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -38,6 +37,7 @@ import '../Templates/components/recent/recent_section.dart';
 import '../Templates/components/recent/recent_service.dart';
 import '../Templates/components/template/template_service.dart';
 import 'components/Categories/category_screen.dart';
+import 'components/Doc Scanner/doc_scanner.dart';
 import 'components/app_open_tracker.dart';
 import 'components/tapp_effect.dart';
 import 'components/templates_list.dart';
@@ -1038,13 +1038,13 @@ class HomeScreenState extends State<HomeScreen> {
                 color: Colors.transparent, // Keep background transparent
                 borderRadius: BorderRadius.circular(10), // Adjust the roundness here
                 child: InkWell(
-                    // onTap: () {
-                    //   Navigator.push(
-                    //     context,
-                    //     MaterialPageRoute(
-                    //         builder: (context) => ImageUpscalingScreen()),
-                    //   );
-                    // },
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => DocScanner()),
+                      );
+                    },
                     child: Padding(
                       padding: const EdgeInsets.only(right: 15),
                       child: SvgPicture.asset(

@@ -82,6 +82,8 @@ dependencies:
   pdf: ^3.11.3
   printing: ^5.14.2
   cloud_functions: ^5.4.0
+  flutter_doc_scanner: ^0.0.16
+  open_file: ^3.5.10
 
 
   

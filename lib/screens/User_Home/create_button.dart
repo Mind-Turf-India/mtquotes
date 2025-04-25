@@ -9,7 +9,6 @@ import 'package:mtquotes/screens/User_Home/files_screen.dart';
 import 'package:provider/provider.dart';
 import '../../providers/text_size_provider.dart';
 import '../Create_screen/template_screen_create.dart';
-import 'components/Image Upscaling/image_upscaling.dart';
 
 class CreateBottomSheet extends StatefulWidget {
   @override

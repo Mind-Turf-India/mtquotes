@@ -16,7 +16,6 @@ import '../utils/app_colors.dart';
 import '../utils/theme_provider.dart';
 import 'Create_Screen/edit_screen_create.dart';
 import 'Create_Screen/template_screen_create.dart';
-import 'User_Home/components/Image Upscaling/image_upscaling.dart';
 import 'User_Home/components/Resume/resume_selection.dart';
 import 'User_Home/search_screen.dart';
 
