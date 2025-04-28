@@ -84,6 +84,9 @@ dependencies:
   cloud_functions: ^5.4.0
   flutter_doc_scanner: ^0.0.16
   open_file: ^3.5.10
+  syncfusion_flutter_signaturepad: ^29.1.38
+  syncfusion_flutter_pdf: ^29.1.38
+  syncfusion_flutter_pdfviewer: ^29.1.38
 
 
   

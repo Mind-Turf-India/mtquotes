@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_doc_scanner/flutter_doc_scanner.dart';
+import 'package:mtquotes/screens/User_Home/components/Doc%20Scanner/pdf_signature.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:image_picker/image_picker.dart';
@@ -27,7 +28,7 @@ class _DocScannerState extends State<DocScanner> {
     _requestPermissions();
     _createVakyFolder();
   }
-
+  
   Future<void> _requestPermissions() async {
     // Request basic permissions
     Map<Permission, PermissionStatus> statuses = await [
@@ -83,8 +84,6 @@ class _DocScannerState extends State<DocScanner> {
       );
     }
   }
-
-
 
   Future<void> _createVakyFolder() async {
     try {
@@ -156,6 +155,55 @@ class _DocScannerState extends State<DocScanner> {
     return File('$path/$filename');
   }
 
+  // Add this method to show options after scanning
+  void _showScanResultOptions(String filePath) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Document Scanned Successfully',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 16),
+              ListTile(
+                leading: Icon(Icons.download, color: Colors.blue),
+                title: Text('Download PDF'),
+                onTap: () {
+                  Navigator.pop(context);
+                  // Show the downloaded file path
+                  setState(() {
+                    _savedFilePath = filePath;
+                  });
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.edit, color: Colors.green),
+                title: Text('Fill & Sign PDF'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => PdfSignatureScreen(pdfPath: filePath),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> scanDocument() async {
     setState(() {
       _isLoading = true;
@@ -190,6 +238,15 @@ class _DocScannerState extends State<DocScanner> {
             await file.writeAsBytes(bytes);
             _savedFilePath = file.path;
             print('PDF saved to: ${file.path}');
+            
+            // Show options for the saved PDF
+            if (!mounted) return;
+            setState(() {
+              _isLoading = false;
+              _scannedDocuments = scannedDocuments;
+            });
+            _showScanResultOptions(file.path);
+            return;
           } else {
             print('Source file does not exist: $filePath');
           }
@@ -235,71 +292,6 @@ class _DocScannerState extends State<DocScanner> {
     });
   }
 
-  // Future<void> scanDocumentAsImages() async {
-  //   setState(() {
-  //     _isLoading = true;
-  //     _savedFilePath = null;
-  //     _savedImagePaths = null;
-  //   });
-  //
-  //   dynamic scannedDocuments;
-  //   try {
-  //     scannedDocuments =
-  //         await FlutterDocScanner().getScannedDocumentAsImages(page: 4) ??
-  //             'Unknown platform documents';
-  //
-  //     print('Raw scan result as images: $scannedDocuments');
-  //
-  //     if (scannedDocuments is List && scannedDocuments.isNotEmpty) {
-  //       _savedImagePaths = [];
-  //
-  //       for (int i = 0; i < scannedDocuments.length; i++) {
-  //         final filename = 'scanned_image_${DateTime.now().millisecondsSinceEpoch}_$i.jpg';
-  //         final file = await _getVakyFile(filename);
-  //
-  //         // Save the image data to a file
-  //         if (scannedDocuments[i] is XFile) {
-  //           final xFile = scannedDocuments[i] as XFile;
-  //           final savedFile = await File(xFile.path).copy(file.path);
-  //           _savedImagePaths!.add(savedFile.path);
-  //           print('Image saved to: ${savedFile.path}');
-  //         } else if (scannedDocuments[i] is File) {
-  //           final savedFile = await scannedDocuments[i].copy(file.path);
-  //           _savedImagePaths!.add(savedFile.path);
-  //           print('Image saved to: ${savedFile.path}');
-  //         } else if (scannedDocuments[i] is String) {
-  //           try {
-  //             // Try to decode as base64
-  //             final bytes = base64Decode(scannedDocuments[i]);
-  //             await file.writeAsBytes(bytes);
-  //             _savedImagePaths!.add(file.path);
-  //             print('Image saved to: ${file.path}');
-  //           } catch (e) {
-  //             // If it's not base64, it might be a file path
-  //             if (await File(scannedDocuments[i]).exists()) {
-  //               final savedFile = await File(scannedDocuments[i]).copy(file.path);
-  //               _savedImagePaths!.add(savedFile.path);
-  //               print('Image saved to: ${savedFile.path}');
-  //             }
-  //           }
-  //         }
-  //       }
-  //     }
-  //   } on PlatformException catch (e) {
-  //     scannedDocuments = 'Failed to get scanned documents as images: ${e.message}';
-  //     print(scannedDocuments);
-  //   } catch (e) {
-  //     scannedDocuments = 'Error: ${e.toString()}';
-  //     print(scannedDocuments);
-  //   }
-  //
-  //   if (!mounted) return;
-  //   setState(() {
-  //     _scannedDocuments = scannedDocuments;
-  //     _isLoading = false;
-  //   });
-  // }
-
   Future<void> scanDocumentAsPdf() async {
     setState(() {
       _isLoading = true;
@@ -329,6 +321,15 @@ class _DocScannerState extends State<DocScanner> {
             await inputFile.copy(file.path);
             _savedFilePath = file.path;
             print('PDF saved to: ${file.path}');
+            
+            // Show options instead of just setting state
+            if (!mounted) return;
+            setState(() {
+              _isLoading = false;
+              _scannedDocuments = scannedDocuments;
+            });
+            _showScanResultOptions(file.path);
+            return;
           }
         } catch (e) {
           print('Error copying PDF: $e');
@@ -347,12 +348,30 @@ class _DocScannerState extends State<DocScanner> {
               await File(cleanPath).copy(file.path);
               _savedFilePath = file.path;
               print('PDF saved to: ${file.path}');
+              
+              // Show options
+              if (!mounted) return;
+              setState(() {
+                _isLoading = false;
+                _scannedDocuments = scannedDocuments;
+              });
+              _showScanResultOptions(file.path);
+              return;
             }
           } else if (await File(scannedDocuments).exists()) {
             // It's a file path, copy it
             await File(scannedDocuments).copy(file.path);
             _savedFilePath = file.path;
             print('PDF saved to: ${file.path}');
+            
+            // Show options
+            if (!mounted) return;
+            setState(() {
+              _isLoading = false;
+              _scannedDocuments = scannedDocuments;
+            });
+            _showScanResultOptions(file.path);
+            return;
           } else {
             // Try to decode as base64
             try {
@@ -360,6 +379,15 @@ class _DocScannerState extends State<DocScanner> {
               await file.writeAsBytes(bytes);
               _savedFilePath = file.path;
               print('PDF saved to: ${file.path}');
+              
+              // Show options
+              if (!mounted) return;
+              setState(() {
+                _isLoading = false;
+                _scannedDocuments = scannedDocuments;
+              });
+              _showScanResultOptions(file.path);
+              return;
             } catch (e) {
               print('Could not decode as base64: $e');
             }
@@ -415,6 +443,15 @@ class _DocScannerState extends State<DocScanner> {
             await File(filePath).copy(file.path);
             _savedFilePath = file.path;
             print('URI document saved to: ${file.path}');
+            
+            // Show options
+            if (!mounted) return;
+            setState(() {
+              _isLoading = false;
+              _scannedDocuments = scannedDocuments;
+            });
+            _showScanResultOptions(file.path);
+            return;
           }
         } catch (e) {
           print('Error saving URI document: $e');
@@ -483,95 +520,115 @@ class _DocScannerState extends State<DocScanner> {
                         style: const TextStyle(fontSize: 16),
                       ),
                       const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: () => _openFile(_savedFilePath!),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                        ),
-                        child: const Text('Open Document'),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          ElevatedButton(
+                            onPressed: () => _openFile(_savedFilePath!),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                            ),
+                            child: const Text('Open Document'),
+                          ),
+                          const SizedBox(width: 16),
+                          ElevatedButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => PdfSignatureScreen(pdfPath: _savedFilePath!),
+                                ),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue,
+                            ),
+                            child: const Text('Fill & Sign'),
+                          ),
+                        ],
                       ),
                     ],
                   ),
                 )
               else if (_savedImagePaths != null && _savedImagePaths!.isNotEmpty)
-                  Expanded(
+                Expanded(
+                  child: Column(
+                    children: [
+                      const Text(
+                        'Images Saved:',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Expanded(
+                        child: ListView.builder(
+                          itemCount: _savedImagePaths!.length,
+                          itemBuilder: (context, index) {
+                            return Column(
+                              children: [
+                                Text(
+                                  'Image ${index + 1}:',
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Image.file(
+                                  File(_savedImagePaths![index]),
+                                  height: 200,
+                                  fit: BoxFit.contain,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  _savedImagePaths![index],
+                                  style: const TextStyle(fontSize: 12),
+                                ),
+                                const SizedBox(height: 8),
+                                ElevatedButton(
+                                  onPressed: () => _openFile(_savedImagePaths![index]),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.green,
+                                  ),
+                                  child: const Text('Open Image'),
+                                ),
+                                const Divider(),
+                              ],
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else if (_scannedDocuments != null)
+                Expanded(
+                  child: SingleChildScrollView(
                     child: Column(
                       children: [
                         const Text(
-                          'Images Saved:',
+                          'Scan Result:',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                         const SizedBox(height: 16),
-                        Expanded(
-                          child: ListView.builder(
-                            itemCount: _savedImagePaths!.length,
-                            itemBuilder: (context, index) {
-                              return Column(
-                                children: [
-                                  Text(
-                                    'Image ${index + 1}:',
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Image.file(
-                                    File(_savedImagePaths![index]),
-                                    height: 200,
-                                    fit: BoxFit.contain,
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    _savedImagePaths![index],
-                                    style: const TextStyle(fontSize: 12),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  ElevatedButton(
-                                    onPressed: () => _openFile(_savedImagePaths![index]),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.green,
-                                    ),
-                                    child: const Text('Open Image'),
-                                  ),
-                                  const Divider(),
-                                ],
-                              );
-                            },
-                          ),
+                        Text(
+                          _scannedDocuments.toString(),
+                          style: const TextStyle(fontSize: 16),
                         ),
                       ],
                     ),
-                  )
-                else if (_scannedDocuments != null)
-                    Expanded(
-                      child: SingleChildScrollView(
-                        child: Column(
-                          children: [
-                            const Text(
-                              'Scan Result:',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              _scannedDocuments.toString(),
-                              style: const TextStyle(fontSize: 16),
-                            ),
-                          ],
-                        ),
-                      ),
-                    )
-                  else
-                    const Text(
-                      "No Documents Scanned",
-                      style: TextStyle(fontSize: 18),
-                    ),
+                  ),
+                )
+              else
+                const Text(
+                  "No Documents Scanned",
+                  style: TextStyle(fontSize: 18),
+                ),
               const SizedBox(height: 20),
               const Text(
                 'Select a scanning option:',
@@ -583,12 +640,6 @@ class _DocScannerState extends State<DocScanner> {
                 scanDocument,
                 Colors.blue,
               ),
-              // const SizedBox(height: 10),
-              // _buildScanButton(
-              //   "Scan Documents As Images",
-              //   scanDocumentAsImages,
-              //   Colors.green,
-              // ),
               const SizedBox(height: 10),
               _buildScanButton(
                 "Scan Documents As PDF",
