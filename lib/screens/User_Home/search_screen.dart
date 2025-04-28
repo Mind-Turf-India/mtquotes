@@ -293,20 +293,29 @@ class _SearchScreenState extends State<SearchScreen> {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDarkMode = themeProvider.isDarkMode;
     double fontSize = textSizeProvider.fontSize;
-    return Scaffold(
-      backgroundColor: AppColors.getBackgroundColor(isDarkMode),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text(
-          context.loc.search,
-          style: GoogleFonts.poppins(
-            fontSize: fontSize + 6,
-            fontWeight: FontWeight.w600,
-            color: AppColors.getTextColor(isDarkMode),
-          ),
+     return Scaffold(
+    backgroundColor: AppColors.getBackgroundColor(isDarkMode),
+    appBar: AppBar(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      leading: IconButton(
+        icon: Icon(
+          Icons.arrow_back_ios,
+          color: AppColors.getIconColor(isDarkMode),
+        ),
+        onPressed: () {
+          MainScreen.of(context)?.navigateBack(context);
+        },
+      ),
+      title: Text(
+        context.loc.search,
+        style: GoogleFonts.poppins(
+          fontSize: fontSize + 6,
+          fontWeight: FontWeight.w600,
+          color: AppColors.getTextColor(isDarkMode),
         ),
       ),
+    ),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -412,7 +421,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   categoryCard('assets/icons/friendship.svg',
                       context.loc.friendship, Colors.blue, isDarkMode),
                   categoryCard('assets/icons/sad.svg', context.loc.sad,
-                      Colors.yellowAccent, isDarkMode),
+                      const Color(0xFFFBF982), isDarkMode),
                 ],
               ),
             ),

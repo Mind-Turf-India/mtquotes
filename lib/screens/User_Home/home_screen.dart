@@ -615,35 +615,38 @@ class HomeScreenState extends State<HomeScreen> {
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                Material(
-                color: Colors.transparent, // Keep background transparent
-                borderRadius: BorderRadius.circular(8), // Adjust the roundness here
-                child: InkWell(
-                    onTap: () async {
-                      final pickedImage = await _pickImage();
-                      if (pickedImage != null) {
-                        setDialogState(() {
-                          selectedImage = pickedImage;
-                        });
-                      }
-                    },
-                    child: CircleAvatar(
-                      radius: 40,
-                      backgroundImage: selectedImage != null
-                          ? FileImage(selectedImage!)
-                          : (profileImageUrl != null &&
-                                  profileImageUrl!.isNotEmpty
-                              ? NetworkImage(profileImageUrl!) as ImageProvider
-                              : null),
-                      child: (selectedImage == null &&
-                              (profileImageUrl == null ||
-                                  profileImageUrl!.isEmpty))
-                          ? Icon(Icons.camera_alt,
-                              size: 40,
-                              color: AppColors.getIconColor(!isDarkMode))
-                          : null,
+                  Material(
+                    color: Colors.transparent, // Keep background transparent
+                    borderRadius:
+                        BorderRadius.circular(8), // Adjust the roundness here
+                    child: InkWell(
+                      onTap: () async {
+                        final pickedImage = await _pickImage();
+                        if (pickedImage != null) {
+                          setDialogState(() {
+                            selectedImage = pickedImage;
+                          });
+                        }
+                      },
+                      child: CircleAvatar(
+                        radius: 40,
+                        backgroundImage: selectedImage != null
+                            ? FileImage(selectedImage!)
+                            : (profileImageUrl != null &&
+                                    profileImageUrl!.isNotEmpty
+                                ? NetworkImage(profileImageUrl!)
+                                    as ImageProvider
+                                : null),
+                        child: (selectedImage == null &&
+                                (profileImageUrl == null ||
+                                    profileImageUrl!.isEmpty))
+                            ? Icon(Icons.camera_alt,
+                                size: 40,
+                                color: AppColors.getIconColor(!isDarkMode))
+                            : null,
+                      ),
                     ),
-                  ),),
+                  ),
                   TextField(
                     controller: nameController,
                     decoration: InputDecoration(
@@ -1000,10 +1003,11 @@ class HomeScreenState extends State<HomeScreen> {
               elevation: 0,
               title: Row(
                 children: [
-                Material(
-                color: Colors.transparent, // Keep background transparent
-                borderRadius: BorderRadius.circular(8), // Adjust the roundness here
-                child: InkWell(
+                  Material(
+                    color: Colors.transparent, // Keep background transparent
+                    borderRadius:
+                        BorderRadius.circular(8), // Adjust the roundness here
+                    child: InkWell(
                       onTap: () {
                         Navigator.pushReplacement(
                           context,
@@ -1013,15 +1017,25 @@ class HomeScreenState extends State<HomeScreen> {
                       },
                       child: CircleAvatar(
                         backgroundColor: Colors.grey[300],
-                        backgroundImage: profileImageUrl != null &&
+                        child: profileImageUrl != null &&
                                 profileImageUrl!.isNotEmpty
-                            ? NetworkImage(profileImageUrl!)
-                            : null,
-                        child:
-                            profileImageUrl == null || profileImageUrl!.isEmpty
-                                ? Icon(LucideIcons.user, color: Colors.black)
-                                : null,
-                      )),),
+                            ? ClipOval(
+                                child: Image.network(
+                                  profileImageUrl!,
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                ),
+                              )
+                            : SvgPicture.asset(
+                                'assets/icons/user_12344961.svg',
+                                width: 24, // Adjust size as needed
+                                height: 24, // Adjust size as needed
+                                color: Colors.black, // Optional: set color
+                              ),
+                      ),
+                    ),
+                  ),
                   SizedBox(width: 20),
                   Text(
                     "Hi, $userName\n$greetings",
@@ -1034,35 +1048,39 @@ class HomeScreenState extends State<HomeScreen> {
                   ),
                   Spacer(),
                   //image enhancer icon.
-              Material(
-                color: Colors.transparent, // Keep background transparent
-                borderRadius: BorderRadius.circular(10), // Adjust the roundness here
-                child: InkWell(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => DocScanner()),
-                      );
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.only(right: 15),
-                      child: SvgPicture.asset(
-                        'assets/image_enhancer.svg',
-                        width: 24,
-                        height: 24,
-                        color: AppColors.getTextColor(isDarkMode),
+                  Material(
+                    color: Colors.transparent, // Keep background transparent
+                    borderRadius:
+                        BorderRadius.circular(10), // Adjust the roundness here
+                    child: InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => DocScanner()),
+                        );
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.only(right: 15),
+                        child: SvgPicture.asset(
+                          'assets/icons/doc_scanner.svg',
+                          width: 24,
+                          height: 24,
+                          color: AppColors.getTextColor(isDarkMode),
+                        ),
                       ),
                     ),
-                  ),),
+                  ),
                   //notifcation icon
                   Material(
                     color: Colors.transparent, // Keep background transparent
-                    borderRadius: BorderRadius.circular(8), // Adjust the roundness here
+                    borderRadius:
+                        BorderRadius.circular(8), // Adjust the roundness here
                     child: InkWell(
                       onTap: showNotificationsSheet,
-                      borderRadius: BorderRadius.circular(8), // Match this with Material's radius
-                      child: Padding( // Optional: add padding for better touch target
+                      borderRadius: BorderRadius.circular(
+                          8), // Match this with Material's radius
+                      child: Padding(
+                        // Optional: add padding for better touch target
                         padding: EdgeInsets.all(4),
                         child: SvgPicture.asset(
                           'assets/icons/notification_3002272.svg',
@@ -1076,7 +1094,6 @@ class HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                   )
-
                 ],
               ),
             ),
@@ -1225,86 +1242,139 @@ class HomeScreenState extends State<HomeScreen> {
                                             ),
                                           )
                                         : ListView.builder(
-                                  scrollDirection: Axis.horizontal,
-                                  itemCount: _recentTemplates.length,
-                                  itemBuilder: (context, index) {
-                                    final template = _recentTemplates[index];
-                                    return TapEffectWidget(
-                                      scaleEffect: 0.85, // Slightly more pronounced effect
-                                      opacityEffect: 0.99,
-                                      onTap: () => _handleRecentTemplateSelection(template),
-                                      child: Container(
-                                        width: 100,
-                                        margin: EdgeInsets.only(right: 10),
-                                        decoration: BoxDecoration(
-                                          color: isDarkMode ? Colors.grey[800] : Colors.white,
-                                          borderRadius: BorderRadius.circular(8),
-                                          boxShadow: [
-                                            BoxShadow(
-                                                color: isDarkMode
-                                                    ? Colors.black.withOpacity(0.3)
-                                                    : Colors.grey.shade300,
-                                                blurRadius: 5
-                                            )
-                                          ],
-                                        ),
-                                        child: ClipRRect(
-                                          borderRadius: BorderRadius.circular(8),
-                                          child: Stack(
-                                            fit: StackFit.expand,
-                                            children: [
-                                              // Image background
-                                              template.imageUrl.isNotEmpty
-                                                  ? CachedNetworkImage(
-                                                imageUrl: template.imageUrl,
-                                                placeholder: (context, url) => _buildTemplateImageShimmer(isDarkMode),
-                                                errorWidget: (context, url, error) {
-                                                  print("Image error: $error for URL: $url");
-                                                  return Container(
-                                                    color: isDarkMode ? Colors.grey[700] : Colors.grey[300],
-                                                    child: Icon(Icons.error, color: isDarkMode
-                                                        ? Colors.grey[500]
-                                                        : Colors.grey[600]),
-                                                  );
-                                                },
-                                                fit: BoxFit.cover,
-                                              )
-                                                  : Container(
-                                                color: isDarkMode ? Colors.grey[700] : Colors.grey[200],
-                                                child: Center(
-                                                  child: Icon(
-                                                    Icons.image_not_supported,
-                                                    color: isDarkMode ? Colors.grey[500] : Colors.grey,
+                                            scrollDirection: Axis.horizontal,
+                                            itemCount: _recentTemplates.length,
+                                            itemBuilder: (context, index) {
+                                              final template =
+                                                  _recentTemplates[index];
+                                              return TapEffectWidget(
+                                                scaleEffect:
+                                                    0.85, // Slightly more pronounced effect
+                                                opacityEffect: 0.99,
+                                                onTap: () =>
+                                                    _handleRecentTemplateSelection(
+                                                        template),
+                                                child: Container(
+                                                  width: 100,
+                                                  margin: EdgeInsets.only(
+                                                      right: 10),
+                                                  decoration: BoxDecoration(
+                                                    color: isDarkMode
+                                                        ? Colors.grey[800]
+                                                        : Colors.white,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            8),
+                                                    boxShadow: [
+                                                      BoxShadow(
+                                                          color: isDarkMode
+                                                              ? Colors.black
+                                                                  .withOpacity(
+                                                                      0.3)
+                                                              : Colors.grey
+                                                                  .shade300,
+                                                          blurRadius: 5)
+                                                    ],
                                                   ),
-                                                ),
-                                              ),
+                                                  child: ClipRRect(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            8),
+                                                    child: Stack(
+                                                      fit: StackFit.expand,
+                                                      children: [
+                                                        // Image background
+                                                        template.imageUrl
+                                                                .isNotEmpty
+                                                            ? CachedNetworkImage(
+                                                                imageUrl: template
+                                                                    .imageUrl,
+                                                                placeholder: (context,
+                                                                        url) =>
+                                                                    _buildTemplateImageShimmer(
+                                                                        isDarkMode),
+                                                                errorWidget:
+                                                                    (context,
+                                                                        url,
+                                                                        error) {
+                                                                  print(
+                                                                      "Image error: $error for URL: $url");
+                                                                  return Container(
+                                                                    color: isDarkMode
+                                                                        ? Colors.grey[
+                                                                            700]
+                                                                        : Colors
+                                                                            .grey[300],
+                                                                    child: Icon(
+                                                                        Icons
+                                                                            .error,
+                                                                        color: isDarkMode
+                                                                            ? Colors.grey[500]
+                                                                            : Colors.grey[600]),
+                                                                  );
+                                                                },
+                                                                fit: BoxFit
+                                                                    .cover,
+                                                              )
+                                                            : Container(
+                                                                color: isDarkMode
+                                                                    ? Colors.grey[
+                                                                        700]
+                                                                    : Colors.grey[
+                                                                        200],
+                                                                child: Center(
+                                                                  child: Icon(
+                                                                    Icons
+                                                                        .image_not_supported,
+                                                                    color: isDarkMode
+                                                                        ? Colors.grey[
+                                                                            500]
+                                                                        : Colors
+                                                                            .grey,
+                                                                  ),
+                                                                ),
+                                                              ),
 
-                                              // Premium indicator
-                                              if (template.isPaid)
-                                                Positioned(
-                                                  top: 5,
-                                                  right: 5,
-                                                  child: Container(
-                                                    padding: EdgeInsets.symmetric(horizontal: 2, vertical: 2),
-                                                    decoration: BoxDecoration(
-                                                      color: Colors.black.withOpacity(0.7),
-                                                      borderRadius: BorderRadius.circular(10),
-                                                    ),
-                                                    child: SvgPicture.asset(
-                                                      'assets/icons/premium_1659060.svg',
-                                                      width: 24,
-                                                      height: 24,
-                                                      color: Colors.amber,
+                                                        // Premium indicator
+                                                        if (template.isPaid)
+                                                          Positioned(
+                                                            top: 5,
+                                                            right: 5,
+                                                            child: Container(
+                                                              padding: EdgeInsets
+                                                                  .symmetric(
+                                                                      horizontal:
+                                                                          2,
+                                                                      vertical:
+                                                                          2),
+                                                              decoration:
+                                                                  BoxDecoration(
+                                                                color: Colors
+                                                                    .black
+                                                                    .withOpacity(
+                                                                        0.7),
+                                                                borderRadius:
+                                                                    BorderRadius
+                                                                        .circular(
+                                                                            10),
+                                                              ),
+                                                              child: SvgPicture
+                                                                  .asset(
+                                                                'assets/icons/premium_1659060.svg',
+                                                                width: 24,
+                                                                height: 24,
+                                                                color: Colors
+                                                                    .amber,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                      ],
                                                     ),
                                                   ),
                                                 ),
-                                            ],
+                                              );
+                                            },
                                           ),
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
                               ),
                             ],
                           ),
@@ -1360,7 +1430,7 @@ class HomeScreenState extends State<HomeScreen> {
                                     categoryCard(
                                         'assets/icons/sad.svg',
                                         context.loc.sad,
-                                        Colors.yellowAccent,
+                                          const Color(0xFFFBF982),
                                         isDarkMode),
                                   ],
                                 ),
@@ -1389,32 +1459,36 @@ class HomeScreenState extends State<HomeScreen> {
                                       ),
                                     ),
                                     Material(
-                                      color: Colors.transparent, // Keep background transparent
-                                      borderRadius: BorderRadius.circular(8), // Adjust the roundness here
+                                      color: Colors
+                                          .transparent, // Keep background transparent
+                                      borderRadius: BorderRadius.circular(
+                                          8), // Adjust the roundness here
                                       child: InkWell(
-                                      onTap: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) =>
-                                                TemplatesListScreen(
-                                              title: context.loc.trendingQuotes,
-                                              listType:
-                                                  TemplateListType.trending,
+                                        onTap: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  TemplatesListScreen(
+                                                title:
+                                                    context.loc.trendingQuotes,
+                                                listType:
+                                                    TemplateListType.trending,
+                                              ),
                                             ),
+                                          );
+                                        },
+                                        child: Text(
+                                          context.loc.viewall,
+                                          style: GoogleFonts.poppins(
+                                            fontSize: fontSize - 2,
+                                            color: Colors.blue,
+                                            fontWeight: FontWeight.w500,
                                           ),
-                                        );
-                                      },
-                                      child: Text(
-                                        context.loc.viewall,
-                                        style: GoogleFonts.poppins(
-                                          fontSize: fontSize - 2,
-                                          color: Colors.blue,
-                                          fontWeight: FontWeight.w500,
                                         ),
                                       ),
-                                    ),
-                                    )],
+                                    )
+                                  ],
                                 ),
                                 TemplateSection(
                                   title: '',
@@ -1445,32 +1519,35 @@ class HomeScreenState extends State<HomeScreen> {
                                             ),
                                           ),
                                           Material(
-                                            color: Colors.transparent, // Keep background transparent
-                                            borderRadius: BorderRadius.circular(8), // Adjust the roundness here
+                                            color: Colors
+                                                .transparent, // Keep background transparent
+                                            borderRadius: BorderRadius.circular(
+                                                8), // Adjust the roundness here
                                             child: InkWell(
-                                            onTap: () {
-                                              Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                  builder: (context) =>
-                                                      TemplatesListScreen(
-                                                    title:
-                                                        context.loc.newtemplate,
-                                                    listType: TemplateListType
-                                                        .festival,
+                                              onTap: () {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (context) =>
+                                                        TemplatesListScreen(
+                                                      title: context
+                                                          .loc.newtemplate,
+                                                      listType: TemplateListType
+                                                          .festival,
+                                                    ),
                                                   ),
+                                                );
+                                              },
+                                              child: Text(
+                                                context.loc.viewall,
+                                                style: GoogleFonts.poppins(
+                                                  fontSize: fontSize - 2,
+                                                  color: Colors.blue,
+                                                  fontWeight: FontWeight.w500,
                                                 ),
-                                              );
-                                            },
-                                            child: Text(
-                                              context.loc.viewall,
-                                              style: GoogleFonts.poppins(
-                                                fontSize: fontSize - 2,
-                                                color: Colors.blue,
-                                                fontWeight: FontWeight.w500,
                                               ),
                                             ),
-                                          ),)
+                                          )
                                         ],
                                       ),
                                       SizedBox(height: 20),
@@ -1564,36 +1641,40 @@ class HomeScreenState extends State<HomeScreen> {
 
                                               // Right side with View All
                                               Material(
-                                                color: Colors.transparent, // Keep background transparent
-                                                borderRadius: BorderRadius.circular(8), // Adjust the roundness here
+                                                color: Colors
+                                                    .transparent, // Keep background transparent
+                                                borderRadius: BorderRadius.circular(
+                                                    8), // Adjust the roundness here
                                                 child: InkWell(
-                                                onTap: () {
-                                                  Navigator.push(
-                                                    context,
-                                                    MaterialPageRoute(
-                                                      builder: (context) =>
-                                                          TemplatesListScreen(
-                                                        title:
-                                                            "${context.loc.foryou} • ${_currentTimeOfDay.capitalize()}",
-                                                        listType:
-                                                            TemplateListType
-                                                                .timeOfDay,
-                                                        timeOfDay:
-                                                            _currentTimeOfDay,
+                                                  onTap: () {
+                                                    Navigator.push(
+                                                      context,
+                                                      MaterialPageRoute(
+                                                        builder: (context) =>
+                                                            TemplatesListScreen(
+                                                          title:
+                                                              "${context.loc.foryou} • ${_currentTimeOfDay.capitalize()}",
+                                                          listType:
+                                                              TemplateListType
+                                                                  .timeOfDay,
+                                                          timeOfDay:
+                                                              _currentTimeOfDay,
+                                                        ),
                                                       ),
+                                                    );
+                                                  },
+                                                  child: Text(
+                                                    context.loc.viewall,
+                                                    style: GoogleFonts.poppins(
+                                                      fontSize: fontSize - 2,
+                                                      color: Colors.blue,
+                                                      fontWeight:
+                                                          FontWeight.w500,
                                                     ),
-                                                  );
-                                                },
-                                                child: Text(
-                                                  context.loc.viewall,
-                                                  style: GoogleFonts.poppins(
-                                                    fontSize: fontSize - 2,
-                                                    color: Colors.blue,
-                                                    fontWeight: FontWeight.w500,
                                                   ),
                                                 ),
-                                              ),
-                                              )],
+                                              )
+                                            ],
                                           ),
                                           SizedBox(height: 20),
                                           SizedBox(

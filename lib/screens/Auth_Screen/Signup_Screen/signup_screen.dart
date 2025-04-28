@@ -396,6 +396,8 @@ Future<String?> _getPendingReferralCode() async {
   return null; // Return null if no pending referral code
 }
   Future<void> _signInWithGoogle() async {
+
+    
   _showLoadingDialog();
   try {
     await GoogleSignIn().signOut();

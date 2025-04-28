@@ -13,6 +13,7 @@ import 'package:mtquotes/screens/User_Home/components/Settings/about_us.dart';
 import 'package:mtquotes/screens/User_Home/components/Notifications/notifications.dart';
 import 'package:mtquotes/screens/User_Home/components/Settings/support.dart';
 import 'package:mtquotes/screens/User_Home/components/Settings/refferral_screen.dart';
+import 'package:mtquotes/screens/navbar_mainscreen.dart';
 import 'package:provider/provider.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/theme_provider.dart';
@@ -450,7 +451,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     color: AppColors.getIconColor(isDarkMode),
                   ),
                   onPressed: () {
-                    Navigator.pushReplacementNamed(context, '/nav_bar');
+                       // Use the same back logic as the physical back button
+                MainScreen.of(context)?.navigateBack(context);
                   },
                 ),
                 const Spacer(),

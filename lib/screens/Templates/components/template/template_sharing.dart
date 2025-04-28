@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:mtquotes/l10n/app_localization.dart';
 import 'package:mtquotes/screens/Templates/components/template/quote_template.dart';
 import 'package:mtquotes/screens/Templates/components/template/template_handler.dart';
@@ -369,7 +370,13 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                             context,
                             isPaid: false,
                           ),
-                          icon: Icon(Icons.share, color: Colors.white),
+                          icon: SvgPicture.asset(
+                        'assets/icons/share.svg',
+                        colorFilter:
+                            ColorFilter.mode(Colors.white, BlendMode.srcIn),
+                        width: 24, // Adjust size as needed
+                        height: 24, // Adjust size as needed
+                      ),
                           label: Text(context.loc.shareBasic),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primaryBlue,

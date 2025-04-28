@@ -523,7 +523,18 @@ class _TemplatePageState extends State<TemplatePage> {
                   hintStyle: GoogleFonts.poppins(
                     color: secondaryTextColor,
                   ),
-                  prefixIcon: Icon(Icons.search, color: secondaryTextColor),
+                  prefixIcon: Padding(
+                    padding: const EdgeInsets.all(12.0),
+                    child: SvgPicture.asset(
+                      'assets/icons/search_button.svg',
+                      width: 20,
+                      height: 20,
+                      colorFilter: ColorFilter.mode(
+                        isDarkMode ? Colors.grey[400]! : Colors.grey[600]!,
+                        BlendMode.srcIn,
+                      ),
+                    ),
+                  ),
                   suffixIcon: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -541,12 +552,27 @@ class _TemplatePageState extends State<TemplatePage> {
                             });
                           },
                         ),
-                      IconButton(
-                        icon: Icon(
-                          _isListening ? Icons.mic : Icons.mic_none,
-                          color: _isListening
-                              ? AppColors.primaryBlue
-                              : secondaryTextColor,
+                           IconButton(
+                        icon: _isListening
+                            ? SvgPicture.asset(
+                          'assets/icons/microphone open.svg',
+                          width: 20,
+                          height: 34,
+                          colorFilter: ColorFilter.mode(
+                            AppColors.primaryBlue,
+                            BlendMode.srcIn,
+                          ),
+                        )
+                            : SvgPicture.asset(
+                          'assets/icons/microphone close.svg',
+                          width: 20,
+                          height: 20,
+                          colorFilter: ColorFilter.mode(
+                            isDarkMode
+                                ? Colors.grey[400]!
+                                : Colors.grey[600]!,
+                            BlendMode.srcIn,
+                          ),
                         ),
                         onPressed: _toggleListening,
                       ),
@@ -768,7 +794,7 @@ class _TemplatePageState extends State<TemplatePage> {
                   categoryCard('assets/icons/friendship.svg',
                       context.loc.friendship, Colors.blue, isDarkMode),
                   categoryCard('assets/icons/sad.svg', context.loc.sad,
-                      Colors.yellowAccent, isDarkMode),
+                      const Color(0xFFFBF982), isDarkMode),
                 ],
               ),
             ),

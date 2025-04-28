@@ -7,6 +7,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:image_editor_plus/image_editor_plus.dart';
 import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
 import 'package:image_picker/image_picker.dart';
@@ -468,7 +469,6 @@ class _EditScreenState extends State<EditScreen> {
 
       // Show error dialog
       if (mounted) {
-
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text("Error loading template image"),
@@ -1009,12 +1009,18 @@ class _EditScreenState extends State<EditScreen> {
             ),
             Spacer(),
             IconButton(
-              icon: Icon(Icons.share, color: primaryColor),
+              icon: SvgPicture.asset(
+                'assets/icons/share.svg',
+                colorFilter: ColorFilter.mode(primaryColor, BlendMode.srcIn),
+                width: 24, // Adjust size as needed
+                height: 24, // Adjust size as needed
+              ),
               onPressed: shareImage,
             ),
             TextButton(
               onPressed: downloadImage,
-              child: Text(context.loc.downloads, style: TextStyle(color: textColor)),
+              child: Text(context.loc.downloads,
+                  style: TextStyle(color: textColor)),
             ),
           ],
         ),
@@ -1123,8 +1129,10 @@ class _EditScreenState extends State<EditScreen> {
                           var editedImage = await Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) =>
-                                  ImageEditor(image: imageData),
+                              builder: (context) => ImageEditor(
+                                image: imageData,
+                          
+                              ),
                             ),
                           );
 

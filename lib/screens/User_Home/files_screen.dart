@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mtquotes/l10n/app_localization.dart';
+import 'package:mtquotes/screens/navbar_mainscreen.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:provider/provider.dart';
 import 'package:mtquotes/providers/text_size_provider.dart';
@@ -265,7 +266,15 @@ class _FilesPageState extends State<FilesPage> {
     return Scaffold(
       backgroundColor: AppColors.getBackgroundColor(isDarkMode),
       appBar: AppBar(
-
+        leading: IconButton(
+        icon: Icon(
+          Icons.arrow_back_ios,
+          color: AppColors.getIconColor(isDarkMode),
+        ),
+        onPressed: () {
+          MainScreen.of(context)?.navigateBack(context);
+        },
+      ),
         title: Text(
           context.loc.files,
           style: GoogleFonts.poppins(

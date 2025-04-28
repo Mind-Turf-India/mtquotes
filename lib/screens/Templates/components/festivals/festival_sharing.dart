@@ -6,6 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:mtquotes/l10n/app_localization.dart';
 import 'package:mtquotes/providers/text_size_provider.dart';
 import 'package:mtquotes/screens/Templates/components/festivals/festival_post.dart';
@@ -34,7 +35,7 @@ class FestivalSharingPage extends StatefulWidget {
     required this.userProfileImageUrl,
     required this.isPaidUser,
     GlobalKey? brandedImageKey,
-  }) : _brandedImageKey = brandedImageKey ?? GlobalKey(),
+  })  : _brandedImageKey = brandedImageKey ?? GlobalKey(),
         super(key: key);
 
   @override
@@ -82,8 +83,8 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
     });
 
     try {
-      final http.Response response = await http.get(
-          Uri.parse(widget.festival.imageUrl));
+      final http.Response response =
+          await http.get(Uri.parse(widget.festival.imageUrl));
       if (response.statusCode == 200) {
         final decodedImage = await decodeImageFromList(response.bodyBytes);
 
@@ -134,7 +135,8 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
   }) {
     final bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final Color loadingColor = AppColors.primaryBlue;
-    final Color loadingBackground = isDarkMode ? AppColors.darkSurface : AppColors.lightSurface;
+    final Color loadingBackground =
+        isDarkMode ? AppColors.darkSurface : AppColors.lightSurface;
 
     if (_isImageLoading) {
       return _buildImageContainer(
@@ -200,12 +202,18 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final bool isDarkMode = theme.brightness == Brightness.dark;
-    final Color backgroundColor = isDarkMode ? AppColors.darkBackground : AppColors.lightBackground;
-    final Color cardBackgroundColor = isDarkMode ? AppColors.darkSurface : AppColors.lightSurface;
-    final Color textColor = isDarkMode ? AppColors.darkText : AppColors.lightText;
-    final Color secondaryTextColor = isDarkMode ? AppColors.darkSecondaryText : AppColors.lightSecondaryText;
-    final Color dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.lightDivider;
-    final Color iconColor = isDarkMode ? AppColors.darkIcon : AppColors.lightIcon;
+    final Color backgroundColor =
+        isDarkMode ? AppColors.darkBackground : AppColors.lightBackground;
+    final Color cardBackgroundColor =
+        isDarkMode ? AppColors.darkSurface : AppColors.lightSurface;
+    final Color textColor =
+        isDarkMode ? AppColors.darkText : AppColors.lightText;
+    final Color secondaryTextColor =
+        isDarkMode ? AppColors.darkSecondaryText : AppColors.lightSecondaryText;
+    final Color dividerColor =
+        isDarkMode ? AppColors.darkDivider : AppColors.lightDivider;
+    final Color iconColor =
+        isDarkMode ? AppColors.darkIcon : AppColors.lightIcon;
 
     final textSizeProvider = Provider.of<TextSizeProvider>(context);
     final fontSize = textSizeProvider.fontSize;
@@ -225,9 +233,8 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
           icon: Icon(Icons.arrow_back_ios, color: iconColor),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        systemOverlayStyle: isDarkMode
-            ? SystemUiOverlayStyle.light
-            : SystemUiOverlayStyle.dark,
+        systemOverlayStyle:
+            isDarkMode ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -267,7 +274,8 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
                       SizedBox(height: 12),
                       Row(
                         children: [
-                          Icon(Icons.check_circle, color: AppColors.primaryGreen),
+                          Icon(Icons.check_circle,
+                              color: AppColors.primaryGreen),
                           SizedBox(width: 8),
                           Expanded(
                             child: Text(
@@ -384,7 +392,9 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                   side: BorderSide(
-                    color: widget.isPaidUser ? AppColors.primaryBlue : dividerColor,
+                    color: widget.isPaidUser
+                        ? AppColors.primaryBlue
+                        : dividerColor,
                     width: 2,
                   ),
                 ),
@@ -404,7 +414,8 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
                       SizedBox(height: 12),
                       Row(
                         children: [
-                          Icon(Icons.check_circle, color: AppColors.primaryGreen),
+                          Icon(Icons.check_circle,
+                              color: AppColors.primaryGreen),
                           SizedBox(width: 8),
                           Expanded(
                             child: Text(
@@ -420,7 +431,8 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
                       SizedBox(height: 8),
                       Row(
                         children: [
-                          Icon(Icons.check_circle, color: AppColors.primaryGreen),
+                          Icon(Icons.check_circle,
+                              color: AppColors.primaryGreen),
                           SizedBox(width: 8),
                           Expanded(
                             child: Text(
@@ -436,7 +448,8 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
                       SizedBox(height: 8),
                       Row(
                         children: [
-                          Icon(Icons.check_circle, color: AppColors.primaryGreen),
+                          Icon(Icons.check_circle,
+                              color: AppColors.primaryGreen),
                           SizedBox(width: 8),
                           Expanded(
                             child: Text(
@@ -452,7 +465,8 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
                       SizedBox(height: 8),
                       Row(
                         children: [
-                          Icon(Icons.check_circle, color: AppColors.primaryGreen),
+                          Icon(Icons.check_circle,
+                              color: AppColors.primaryGreen),
                           SizedBox(width: 8),
                           Expanded(
                             child: Text(
@@ -472,18 +486,18 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
                         future: FirebaseFirestore.instance
                             .collection('users')
                             .doc(FirebaseAuth.instance.currentUser?.email
-                            ?.replaceAll('.', '_'))
+                                ?.replaceAll('.', '_'))
                             .get(),
                         builder: (context, snapshot) {
                           String userName = '';
                           String userProfileUrl = '';
 
                           // Extract user data if available
-                          if (snapshot.hasData && snapshot.data != null &&
+                          if (snapshot.hasData &&
+                              snapshot.data != null &&
                               snapshot.data!.exists) {
-                            final userData = snapshot.data!.data() as Map<
-                                String,
-                                dynamic>;
+                            final userData =
+                                snapshot.data!.data() as Map<String, dynamic>;
                             userName = userData['name'] ?? '';
                             userProfileUrl = userData['profileImage'] ?? '';
                           }
@@ -500,36 +514,42 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
                                   // Festival image with proper aspect ratio
                                   _isImageLoading
                                       ? _buildImageContainer(
-                                    aspectRatio: _aspectRatio,
-                                    borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
-                                    child: Center(
-                                      child: CircularProgressIndicator(
-                                        color: AppColors.primaryBlue,
-                                        backgroundColor: isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
-                                      ),
-                                    ),
-                                  )
+                                          aspectRatio: _aspectRatio,
+                                          borderRadius: BorderRadius.vertical(
+                                              top: Radius.circular(8)),
+                                          child: Center(
+                                            child: CircularProgressIndicator(
+                                              color: AppColors.primaryBlue,
+                                              backgroundColor: isDarkMode
+                                                  ? AppColors.darkSurface
+                                                  : AppColors.lightSurface,
+                                            ),
+                                          ),
+                                        )
                                       : AspectRatio(
-                                    aspectRatio: _aspectRatio,
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.vertical(
-                                            top: Radius.circular(8)),
-                                        image: DecorationImage(
-                                          image: NetworkImage(
-                                              widget.festival.imageUrl),
-                                          fit: BoxFit.contain,
+                                          aspectRatio: _aspectRatio,
+                                          child: Container(
+                                            decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.vertical(
+                                                      top: Radius.circular(8)),
+                                              image: DecorationImage(
+                                                image: NetworkImage(
+                                                    widget.festival.imageUrl),
+                                                fit: BoxFit.contain,
+                                              ),
+                                            ),
+                                          ),
                                         ),
-                                      ),
-                                    ),
-                                  ),
 
                                   // Info box at the bottom
                                   Container(
                                     width: double.infinity,
                                     padding: EdgeInsets.all(12),
                                     decoration: BoxDecoration(
-                                      color: isDarkMode ? AppColors.darkSurface : Colors.white,
+                                      color: isDarkMode
+                                          ? AppColors.darkSurface
+                                          : Colors.white,
                                       borderRadius: BorderRadius.vertical(
                                           bottom: Radius.circular(8)),
                                     ),
@@ -539,20 +559,24 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
                                         CircleAvatar(
                                           radius: 20,
                                           backgroundImage: userProfileUrl
-                                              .isNotEmpty
+                                                  .isNotEmpty
                                               ? NetworkImage(userProfileUrl)
                                               : AssetImage(
-                                              'assets/profile_placeholder.png') as ImageProvider,
+                                                      'assets/profile_placeholder.png')
+                                                  as ImageProvider,
                                         ),
                                         SizedBox(width: 12),
 
                                         // User details
                                         Expanded(
                                           child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
                                               Text(
-                                                userName.isEmpty ? widget.userName : userName,
+                                                userName.isEmpty
+                                                    ? widget.userName
+                                                    : userName,
                                                 style: TextStyle(
                                                   fontWeight: FontWeight.bold,
                                                   fontSize: fontSize - 1,
@@ -578,11 +602,13 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
                         child: ElevatedButton.icon(
                           onPressed: widget.isPaidUser
                               ? () => _shareFestival(
-                            context,
-                            isPaid: true,
-                          )
-                              : () => Navigator.pushNamed(context, '/subscription'),
-                          icon: Icon(widget.isPaidUser ? Icons.share : Icons.lock),
+                                    context,
+                                    isPaid: true,
+                                  )
+                              : () =>
+                                  Navigator.pushNamed(context, '/subscription'),
+                          icon: Icon(
+                              widget.isPaidUser ? Icons.share : Icons.lock),
                           label: Text(
                             widget.isPaidUser
                                 ? context.loc.shareNow
@@ -613,14 +639,14 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
   // Method to capture widget as image with branding
   Future<Uint8List?> _captureBrandedImage() async {
     try {
-      final RenderRepaintBoundary boundary = widget._brandedImageKey
-          .currentContext!
-          .findRenderObject() as RenderRepaintBoundary;
+      final RenderRepaintBoundary boundary =
+          widget._brandedImageKey.currentContext!.findRenderObject()
+              as RenderRepaintBoundary;
 
       // Use a higher pixel ratio for better quality
       final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
-      final ByteData? byteData = await image.toByteData(
-          format: ui.ImageByteFormat.png);
+      final ByteData? byteData =
+          await image.toByteData(format: ui.ImageByteFormat.png);
       return byteData?.buffer.asUint8List();
     } catch (e) {
       print('Error capturing branded image: $e');
@@ -632,20 +658,16 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
   Future<Uint8List?> _addBrandingToImage(Uint8List originalImageBytes) async {
     try {
       // Decode the original image
-      final ui.Image originalImage = await decodeImageFromList(
-          originalImageBytes);
+      final ui.Image originalImage =
+          await decodeImageFromList(originalImageBytes);
 
       // Create a recorder and canvas
       final ui.PictureRecorder recorder = ui.PictureRecorder();
       final Canvas canvas = Canvas(recorder);
 
       // Draw the original image - use the full size
-      final Rect originalRect = Rect.fromLTWH(
-          0,
-          0,
-          originalImage.width.toDouble(),
-          originalImage.height.toDouble()
-      );
+      final Rect originalRect = Rect.fromLTWH(0, 0,
+          originalImage.width.toDouble(), originalImage.height.toDouble());
       canvas.drawImageRect(
         originalImage,
         originalRect,
@@ -657,8 +679,8 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
       ui.Image? profileImage;
       if (widget.userProfileImageUrl.isNotEmpty) {
         try {
-          final http.Response response = await http.get(
-              Uri.parse(widget.userProfileImageUrl));
+          final http.Response response =
+              await http.get(Uri.parse(widget.userProfileImageUrl));
           if (response.statusCode == 200) {
             profileImage = await decodeImageFromList(response.bodyBytes);
           }
@@ -674,14 +696,13 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
       // Make branding proportional to image size
       final double brandingWidth = width * 0.4;
       final double brandingHeight = height * 0.06;
-      final double brandingX = width - brandingWidth -
-          width * 0.025; // 2.5% padding
-      final double brandingY = height - brandingHeight -
-          height * 0.025; // 2.5% padding
+      final double brandingX =
+          width - brandingWidth - width * 0.025; // 2.5% padding
+      final double brandingY =
+          height - brandingHeight - height * 0.025; // 2.5% padding
 
       // Draw branding background
-      final Paint bgPaint = Paint()
-        ..color = Colors.black.withOpacity(0.6);
+      final Paint bgPaint = Paint()..color = Colors.black.withOpacity(0.6);
       canvas.drawRRect(
         RRect.fromRectAndRadius(
           Rect.fromLTWH(brandingX, brandingY, brandingWidth, brandingHeight),
@@ -697,8 +718,7 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
         final double profileY = brandingY + (brandingHeight - profileSize) / 2;
 
         // Draw circle for profile image
-        final Paint circlePaint = Paint()
-          ..color = Colors.white;
+        final Paint circlePaint = Paint()..color = Colors.white;
         canvas.drawCircle(
           Offset(profileX + profileSize / 2, profileY + profileSize / 2),
           profileSize / 2,
@@ -745,8 +765,9 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
         ..addText(widget.userName);
 
       final ui.Paragraph paragraph = paragraphBuilder.build()
-        ..layout(ui.ParagraphConstraints(width: brandingWidth -
-            (profileImage != null ? brandingHeight * 0.8 + 12 : 8)));
+        ..layout(ui.ParagraphConstraints(
+            width: brandingWidth -
+                (profileImage != null ? brandingHeight * 0.8 + 12 : 8)));
 
       canvas.drawParagraph(
           paragraph, Offset(textX, textY - paragraph.height / 2));
@@ -759,8 +780,8 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
       );
 
       // Convert image to bytes
-      final ByteData? byteData = await renderedImage.toByteData(
-          format: ui.ImageByteFormat.png);
+      final ByteData? byteData =
+          await renderedImage.toByteData(format: ui.ImageByteFormat.png);
       return byteData?.buffer.asUint8List();
     } catch (e) {
       print('Error adding branding to image: $e');
@@ -772,8 +793,8 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
   Future<Uint8List?> _addWatermarkToImage(Uint8List originalImageBytes) async {
     try {
       // Decode the original image
-      final ui.Image originalImage = await decodeImageFromList(
-          originalImageBytes);
+      final ui.Image originalImage =
+          await decodeImageFromList(originalImageBytes);
 
       // Create a recorder and canvas
       final ui.PictureRecorder recorder = ui.PictureRecorder();
@@ -784,8 +805,8 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
 
       // Load the logo watermark
       final ByteData logoData = await rootBundle.load('assets/logo.png');
-      final ui.Image logo = await decodeImageFromList(
-          logoData.buffer.asUint8List());
+      final ui.Image logo =
+          await decodeImageFromList(logoData.buffer.asUint8List());
 
       // Calculate size and position for the watermark in center (same as template sharing)
       final double width = originalImage.width.toDouble();
@@ -800,12 +821,8 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
       canvas.drawImageRect(
         logo,
         Rect.fromLTWH(0, 0, logo.width.toDouble(), logo.height.toDouble()),
-        Rect.fromLTWH(
-            (width - watermarkSize) / 2,
-            (height - watermarkSize) / 2,
-            watermarkSize,
-            watermarkSize
-        ),
+        Rect.fromLTWH((width - watermarkSize) / 2, (height - watermarkSize) / 2,
+            watermarkSize, watermarkSize),
         watermarkPaint,
       );
 
@@ -817,15 +834,14 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
       );
 
       // Convert image to bytes
-      final ByteData? byteData = await renderedImage.toByteData(
-          format: ui.ImageByteFormat.png);
+      final ByteData? byteData =
+          await renderedImage.toByteData(format: ui.ImageByteFormat.png);
       return byteData?.buffer.asUint8List();
     } catch (e) {
       print('Error adding watermark to image: $e');
       return null;
     }
   }
-
 
   // Sharing implementation with fixes
   Future<void> _shareFestival(BuildContext context,
@@ -962,7 +978,8 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
     final textSizeProvider = Provider.of<TextSizeProvider>(context);
     final fontSize = textSizeProvider.fontSize;
     final bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final Color textColor = isDarkMode ? AppColors.darkText : AppColors.lightText;
+    final Color textColor =
+        isDarkMode ? AppColors.darkText : AppColors.lightText;
 
     return Container(
       width: double.infinity,
@@ -1031,7 +1048,8 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
                       child: ElevatedButton(
                         onPressed: onCancelPressed,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: isDarkMode ? AppColors.darkSurface : Colors.white,
+                          backgroundColor:
+                              isDarkMode ? AppColors.darkSurface : Colors.white,
                           foregroundColor: textColor,
                           elevation: 0,
                           shape: RoundedRectangleBorder(
@@ -1054,7 +1072,13 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
                     width: 140,
                     child: ElevatedButton.icon(
                       onPressed: onSharePressed,
-                      icon: Icon(Icons.share),
+                      icon: SvgPicture.asset(
+                        'assets/icons/share.svg',
+                        colorFilter:
+                            ColorFilter.mode(Colors.white, BlendMode.srcIn),
+                        width: 24, // Adjust size as needed
+                        height: 24, // Adjust size as needed
+                      ),
                       label: Text(
                         context.loc.share,
                         style: TextStyle(fontSize: fontSize - 2),
@@ -1108,12 +1132,10 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) =>
-                          DetailsScreen(
-                            template: template,
-                            isPaidUser: widget.isPaidUser,
-
-                          ),
+                      builder: (context) => DetailsScreen(
+                        template: template,
+                        isPaidUser: widget.isPaidUser,
+                      ),
                     ),
                   );
                 },
@@ -1125,9 +1147,6 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
                 contentWidget: RepaintBoundary(
                   key: widget._brandedImageKey,
                   child: AspectRatio(
-
-
-
                     aspectRatio: _aspectRatio,
                     child: Container(
                       decoration: BoxDecoration(
@@ -1139,41 +1158,43 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
                       ),
                       child: widget.isPaidUser
                           ? Align(
-                        alignment: Alignment.bottomRight,
-                        child: Padding(
-                          padding: const EdgeInsets.all(10.0),
-                          child: Container(
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.6),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                CircleAvatar(
-                                  radius: 10,
-                                  backgroundImage: widget.userProfileImageUrl
-                                      .isNotEmpty
-                                      ? NetworkImage(widget.userProfileImageUrl)
-                                      : AssetImage(
-                                      'assets/profile_placeholder.png') as ImageProvider,
-                                ),
-                                SizedBox(width: 4),
-                                Text(
-                                  widget.userName,
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
+                              alignment: Alignment.bottomRight,
+                              child: Padding(
+                                padding: const EdgeInsets.all(10.0),
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withOpacity(0.6),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      CircleAvatar(
+                                        radius: 10,
+                                        backgroundImage: widget
+                                                .userProfileImageUrl.isNotEmpty
+                                            ? NetworkImage(
+                                                widget.userProfileImageUrl)
+                                            : AssetImage(
+                                                    'assets/profile_placeholder.png')
+                                                as ImageProvider,
+                                      ),
+                                      SizedBox(width: 4),
+                                      Text(
+                                        widget.userName,
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      )
+                              ),
+                            )
                           : null,
                     ),
                   ),
@@ -1191,89 +1212,90 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
     double rating = 0;
     final ThemeData theme = Theme.of(context);
     final bool isDarkMode = theme.brightness == Brightness.dark;
-    final Color backgroundColor = isDarkMode ? AppColors.darkSurface : AppColors.lightSurface;
-    final Color textColor = isDarkMode ? AppColors.darkText : AppColors.lightText;
+    final Color backgroundColor =
+        isDarkMode ? AppColors.darkSurface : AppColors.lightSurface;
+    final Color textColor =
+        isDarkMode ? AppColors.darkText : AppColors.lightText;
 
     // Get font size from TextSizeProvider
-    final textSizeProvider = Provider.of<TextSizeProvider>(context, listen: false);
+    final textSizeProvider =
+        Provider.of<TextSizeProvider>(context, listen: false);
     final fontSize = textSizeProvider.fontSize;
 
     return showDialog<double>(
       context: context,
       builder: (BuildContext dialogContext) {
-        return StatefulBuilder(
-            builder: (context, setState) {
-              return AlertDialog(
-                title: Text(
-                  context.loc.rateThisContent,
+        return StatefulBuilder(builder: (context, setState) {
+          return AlertDialog(
+            title: Text(
+              context.loc.rateThisContent,
+              style: TextStyle(
+                fontSize: fontSize,
+                fontWeight: FontWeight.bold,
+                color: textColor,
+              ),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  context.loc.howWouldYouRateExperience,
                   style: TextStyle(
-                    fontSize: fontSize,
-                    fontWeight: FontWeight.bold,
+                    fontSize: fontSize - 2,
                     color: textColor,
                   ),
                 ),
-                content: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      context.loc.howWouldYouRateExperience,
-                      style: TextStyle(
-                        fontSize: fontSize - 2,
-                        color: textColor,
-                      ),
-                    ),
-                    SizedBox(height: 20),
-                    FittedBox(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: List.generate(5, (index) {
-                          return IconButton(
-                            icon: Icon(
-                              index < rating ? Icons.star : Icons.star_border,
-                              color: index < rating ? Colors.amber : Colors.grey,
-                              size: 36,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                rating = index + 1;
-                              });
-                            },
-                          );
-                        }),
-                      ),
-                    )
-                  ],
+                SizedBox(height: 20),
+                FittedBox(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: List.generate(5, (index) {
+                      return IconButton(
+                        icon: Icon(
+                          index < rating ? Icons.star : Icons.star_border,
+                          color: index < rating ? Colors.amber : Colors.grey,
+                          size: 36,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            rating = index + 1;
+                          });
+                        },
+                      );
+                    }),
+                  ),
+                )
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(dialogContext).pop(null);
+                },
+                child: Text(
+                  context.loc.skip,
+                  style: TextStyle(
+                    fontSize: fontSize - 2,
+                    color: AppColors.primaryBlue,
+                  ),
                 ),
-                actions: [
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(dialogContext).pop(null);
-                    },
-                    child: Text(
-                      context.loc.skip,
-                      style: TextStyle(
-                        fontSize: fontSize - 2,
-                        color: AppColors.primaryBlue,
-                      ),
-                    ),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.of(dialogContext).pop(rating);
+                  Navigator.of(context).pushReplacementNamed('/nav_bar');
+                },
+                child: Text(
+                  context.loc.submit,
+                  style: TextStyle(
+                    fontSize: fontSize - 2,
+                    color: AppColors.primaryBlue,
                   ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(dialogContext).pop(rating);
-                      Navigator.of(context).pushReplacementNamed('/nav_bar');
-                    },
-                    child: Text(
-                      context.loc.submit,
-                      style: TextStyle(
-                        fontSize: fontSize - 2,
-                        color: AppColors.primaryBlue,
-                      ),
-                    ),
-                  ),
-                ],
-              );
-            }
-        );
+                ),
+              ),
+            ],
+          );
+        });
       },
     ).then((value) {
       if (value != null && value > 0) {
@@ -1294,8 +1316,8 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
   }
 
 // Submit rating function
-  static Future<void> _submitRating(double rating,
-      FestivalPost festival) async {
+  static Future<void> _submitRating(
+      double rating, FestivalPost festival) async {
     try {
       final DateTime now = DateTime.now();
 
@@ -1324,11 +1346,12 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
     }
   }
 
-  static Future<void> _updateFestivalAverageRating(String festivalId,
-      double newRating) async {
+  static Future<void> _updateFestivalAverageRating(
+      String festivalId, double newRating) async {
     try {
       // Get reference to the festival document
-      final festivalRef = FirebaseFirestore.instance.collection('festivals')
+      final festivalRef = FirebaseFirestore.instance
+          .collection('festivals')
           .doc(festivalId.split('_')[0]);
 
       // Run this as a transaction to ensure data consistency
@@ -1344,8 +1367,8 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
           int ratingCount = data['ratingCount'] ?? 0;
 
           int newRatingCount = ratingCount + 1;
-          double newAvgRating = ((currentAvgRating * ratingCount) + newRating) /
-              newRatingCount;
+          double newAvgRating =
+              ((currentAvgRating * ratingCount) + newRating) / newRatingCount;
 
           // Update the festival with the new average rating
           transaction.update(festivalRef, {

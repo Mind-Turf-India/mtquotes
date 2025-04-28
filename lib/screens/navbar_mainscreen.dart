@@ -21,6 +21,10 @@ import 'User_Home/search_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
+  // Add this static method to MainScreen class
+static _MainScreenState? of(BuildContext context) {
+  return context.findAncestorStateOfType<_MainScreenState>();
+}
 
   @override
   State<MainScreen> createState() => _MainScreenState();
@@ -52,6 +56,11 @@ class _MainScreenState extends State<MainScreen> {
       ProfileScreen(),
     ];
   }
+// Add this to _MainScreenState class
+void navigateBack(BuildContext context) {
+  _onWillPop();
+}
+
 
   // Handle back button press
   Future<bool> _onWillPop() async {
@@ -362,12 +371,12 @@ class _MainScreenState extends State<MainScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _buildNavItem(0, 'assets/icons/home Inactive.svg',
-                      'assets/icons/Home Active.svg', context.loc.home),
+                  _buildNavItem(0, 'assets/icons/navbar_home_inactive.svg',
+                      'assets/icons/navbar_home_active.svg', context.loc.home),
                   _buildNavItem(
                       1,
-                      'assets/icons/Property 1=Search Inactive.svg',
-                      'assets/icons/Property 1=Search Active.svg',
+                      'assets/icons/navbar_search_inactive.svg',
+                      'assets/icons/navbar_search_active.svg',
                       context.loc.search),
                   // Empty space for the center button
                   SizedBox(width: 60),
@@ -438,8 +447,8 @@ class _MainScreenState extends State<MainScreen> {
               padding: EdgeInsets.all(8),
               child: SvgPicture.asset(
                 isSelected ? activeIconPath : iconPath,
-                width: 24,
-                height: 24,
+                width: 28,
+                height: 28,
                 colorFilter: ColorFilter.mode(
                   isSelected ? AppColors.primaryBlue : Colors.grey,
                   BlendMode.srcIn,
