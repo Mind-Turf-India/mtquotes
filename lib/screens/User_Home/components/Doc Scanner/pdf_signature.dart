@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
-import 'dart:ui';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:open_file/open_file.dart';
@@ -11,6 +11,20 @@ import 'package:syncfusion_flutter_signaturepad/signaturepad.dart';
 
 import 'package:syncfusion_flutter_pdf/pdf.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
+
+class SignatureInfo {
+  final Uint8List signatureImage;
+  final Offset position;
+  final Size size;
+  final int pageNumber;
+
+  SignatureInfo({
+    required this.signatureImage,
+    required this.position,
+    required this.size,
+    required this.pageNumber,
+  });
+}
 
 class PdfSignatureScreen extends StatefulWidget {
   final String pdfPath;
@@ -27,13 +41,16 @@ class _PdfSignatureScreenState extends State<PdfSignatureScreen> {
   bool _isSignaturePanelOpen = false;
   bool _isSaving = false;
   String? _savedSignedPdfPath;
-  
+
+  // For tracking multiple signatures
+  List<SignatureInfo> _signatures = [];
+
   // For draggable signature
-  Uint8List? _signatureImage;
-  Offset _signaturePosition = Offset.zero;
+  Uint8List? _currentSignatureImage;
+  Offset _currentSignaturePosition = Offset.zero;
   bool _isPositioningSignature = false;
   Size _signatureSize = const Size(150, 50);
-  
+
   // For signature styling
   Color _signatureColor = Colors.black;
   double _strokeWidth = 2.0;
@@ -44,6 +61,9 @@ class _PdfSignatureScreenState extends State<PdfSignatureScreen> {
     Colors.green,
     Colors.purple,
   ];
+
+  // For keeping track of signature mode
+  bool _showSignaturesList = false;
 
   @override
   Widget build(BuildContext context) {
@@ -58,6 +78,16 @@ class _PdfSignatureScreenState extends State<PdfSignatureScreen> {
               onPressed: () {
                 setState(() {
                   _isSignaturePanelOpen = true;
+                });
+              },
+            ),
+          if (!_isSignaturePanelOpen && !_isPositioningSignature && _signatures.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.list),
+              tooltip: 'View Signatures',
+              onPressed: () {
+                setState(() {
+                  _showSignaturesList = !_showSignaturesList;
                 });
               },
             ),
@@ -90,7 +120,7 @@ class _PdfSignatureScreenState extends State<PdfSignatureScreen> {
               onPressed: () {
                 setState(() {
                   _isPositioningSignature = false;
-                  _signatureImage = null;
+                  _currentSignatureImage = null;
                 });
               },
             ),
@@ -106,28 +136,39 @@ class _PdfSignatureScreenState extends State<PdfSignatureScreen> {
           // PDF Viewer
           _savedSignedPdfPath != null
               ? SfPdfViewer.file(
-                  File(_savedSignedPdfPath!),
-                  controller: _pdfViewerController,
-                )
+            File(_savedSignedPdfPath!),
+            controller: _pdfViewerController,
+          )
               : SfPdfViewer.file(
-                  File(widget.pdfPath),
-                  controller: _pdfViewerController,
+            File(widget.pdfPath),
+            controller: _pdfViewerController,
+          ),
+
+          // Display existing signatures overlay
+          if (!_isPositioningSignature && !_isSignaturePanelOpen)
+            Positioned.fill(
+              child: CustomPaint(
+                painter: SignatureOverlayPainter(
+                  signatures: _signatures,
+                  currentPage: _pdfViewerController.pageNumber,
                 ),
-          
+              ),
+            ),
+
           // Draggable signature overlay
-          if (_isPositioningSignature && _signatureImage != null)
+          if (_isPositioningSignature && _currentSignatureImage != null)
             Positioned.fill(
               child: GestureDetector(
                 onPanUpdate: (details) {
                   setState(() {
-                    _signaturePosition += details.delta;
+                    _currentSignaturePosition += details.delta;
                   });
                 },
                 child: Stack(
                   children: [
                     Positioned(
-                      left: _signaturePosition.dx,
-                      top: _signaturePosition.dy,
+                      left: _currentSignaturePosition.dx,
+                      top: _currentSignaturePosition.dy,
                       child: Container(
                         width: _signatureSize.width,
                         height: _signatureSize.height,
@@ -135,7 +176,7 @@ class _PdfSignatureScreenState extends State<PdfSignatureScreen> {
                           border: Border.all(color: Colors.blue, width: 1),
                         ),
                         child: Image.memory(
-                          _signatureImage!,
+                          _currentSignatureImage!,
                           fit: BoxFit.contain,
                         ),
                       ),
@@ -176,7 +217,7 @@ class _PdfSignatureScreenState extends State<PdfSignatureScreen> {
                                 ],
                               ),
                               Text(
-                                'Drag signature to position it, then tap ✓ to apply',
+                                'Page: ${_pdfViewerController.pageNumber} - Drag signature to position it, then tap ✓',
                                 style: TextStyle(
                                   fontStyle: FontStyle.italic,
                                   fontSize: 12,
@@ -192,7 +233,7 @@ class _PdfSignatureScreenState extends State<PdfSignatureScreen> {
                 ),
               ),
             ),
-          
+
           // Signature pad panel
           if (_isSignaturePanelOpen)
             Positioned(
@@ -253,7 +294,7 @@ class _PdfSignatureScreenState extends State<PdfSignatureScreen> {
                         ),
                       ],
                     ),
-                    
+
                     // Stroke width slider
                     Row(
                       children: [
@@ -277,24 +318,26 @@ class _PdfSignatureScreenState extends State<PdfSignatureScreen> {
                         Text(_strokeWidth.toStringAsFixed(1)),
                       ],
                     ),
-                    
-                    // Signature pad
+
+                    // Signature pad with transparent background
                     Expanded(
                       child: Container(
                         decoration: BoxDecoration(
                           border: Border.all(color: Colors.grey.shade300),
                           borderRadius: BorderRadius.circular(8),
+                          // Checkerboard pattern to indicate transparency
+                          color: Colors.grey.shade200,
                         ),
                         child: SfSignaturePad(
                           key: _signaturePadKey,
-                          backgroundColor: Colors.white,
+                          backgroundColor: Colors.transparent, // Transparent background
                           strokeColor: _signatureColor,
                           minimumStrokeWidth: _strokeWidth,
                           maximumStrokeWidth: _strokeWidth + 2,
                         ),
                       ),
                     ),
-                    
+
                     // Bottom buttons
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
@@ -311,7 +354,77 @@ class _PdfSignatureScreenState extends State<PdfSignatureScreen> {
                 ),
               ),
             ),
-          
+
+          // Signatures list panel
+          if (_showSignaturesList)
+            Positioned(
+              right: 0,
+              top: 0,
+              bottom: 0,
+              width: 200,
+              child: Container(
+                color: Colors.white,
+                padding: EdgeInsets.all(8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Signatures', style: TextStyle(fontWeight: FontWeight.bold)),
+                        IconButton(
+                          icon: Icon(Icons.close, size: 20),
+                          onPressed: () {
+                            setState(() {
+                              _showSignaturesList = false;
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                    Divider(),
+                    Expanded(
+                      child: _signatures.isEmpty
+                          ? Center(child: Text('No signatures added'))
+                          : ListView.builder(
+                        itemCount: _signatures.length,
+                        itemBuilder: (context, index) {
+                          final sig = _signatures[index];
+                          return ListTile(
+                            contentPadding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                            leading: Container(
+                              width: 50,
+                              height: 30,
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey.shade300),
+                              ),
+                              child: Image.memory(sig.signatureImage),
+                            ),
+                            title: Text('Page ${sig.pageNumber}'),
+                            trailing: IconButton(
+                              icon: Icon(Icons.delete, size: 20),
+                              onPressed: () {
+                                setState(() {
+                                  _signatures.removeAt(index);
+                                });
+                              },
+                            ),
+                            onTap: () {
+                              // Navigate to the signature's page
+                              _pdfViewerController.jumpToPage(sig.pageNumber);
+                              setState(() {
+                                _showSignaturesList = false;
+                              });
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
           // Loading indicator
           if (_isSaving)
             Container(
@@ -327,8 +440,11 @@ class _PdfSignatureScreenState extends State<PdfSignatureScreen> {
 
   Future<void> _getSignatureAndPosition() async {
     try {
-      // Get the signature as image
-      final signatureData = await _signaturePadKey.currentState?.toImage();
+      // Get the signature as image with transparent background
+      final signatureData = await _signaturePadKey.currentState?.toImage(
+        pixelRatio: 3.0, // Higher resolution
+      );
+
       if (signatureData == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('No signature found')),
@@ -336,16 +452,20 @@ class _PdfSignatureScreenState extends State<PdfSignatureScreen> {
         return;
       }
 
-      final byteData = await signatureData.toByteData(format: ImageByteFormat.png);
+      // Convert to byte data with PNG format (to preserve transparency)
+      final byteData = await signatureData.toByteData(format: ui.ImageByteFormat.png);
       final uint8List = byteData!.buffer.asUint8List();
+
+      // Process the image to make the background transparent
+      final transparentSignature = await _makeSignatureTransparent(uint8List);
 
       // Set initial position to center of screen
       final screenSize = MediaQuery.of(context).size;
       setState(() {
-        _signatureImage = uint8List;
+        _currentSignatureImage = transparentSignature;
         _isSignaturePanelOpen = false;
         _isPositioningSignature = true;
-        _signaturePosition = Offset(
+        _currentSignaturePosition = Offset(
           (screenSize.width - _signatureSize.width) / 2,
           (screenSize.height - _signatureSize.height) / 2,
         );
@@ -357,8 +477,20 @@ class _PdfSignatureScreenState extends State<PdfSignatureScreen> {
     }
   }
 
+  Future<Uint8List> _makeSignatureTransparent(Uint8List imageData) async {
+    // This is a simplified approach - for advanced cases, you might need to use
+    // a package like image or compute to process the image more efficiently
+
+    // For now, we'll just return the original image as PNG format already
+    // preserves transparency from the signature pad (since we set backgroundColor: Colors.transparent)
+    return imageData;
+
+    // For more complex processing, you could use a package like 'image' to
+    // programmatically remove white pixels or use Compute for better performance
+  }
+
   Future<void> _applySignature() async {
-    if (_signatureImage == null) {
+    if (_currentSignatureImage == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('No signature to apply')),
       );
@@ -369,43 +501,124 @@ class _PdfSignatureScreenState extends State<PdfSignatureScreen> {
       // Get current page
       final currentPage = _pdfViewerController.pageNumber;
 
-      // Process the PDF
+      // Add signature to our list
+      _signatures.add(
+        SignatureInfo(
+          signatureImage: _currentSignatureImage!,
+          position: _currentSignaturePosition,
+          size: _signatureSize,
+          pageNumber: currentPage,
+        ),
+      );
+
       setState(() {
-        _isSaving = true;
+        _isPositioningSignature = false;
+        _currentSignatureImage = null;
       });
 
+      // Update the PDF immediately
+      await _updatePdfWithSignatures();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Signature applied to PDF')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error applying signature: $e')),
+      );
+    }
+  }
+
+  Future<void> _updatePdfWithSignatures() async {
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
       // Load the existing PDF
       final PdfDocument document =
-          PdfDocument(inputBytes: File(widget.pdfPath).readAsBytesSync());
+      PdfDocument(inputBytes: File(widget.pdfPath).readAsBytesSync());
 
-      // Create PdfBitmap from the signature
-      final PdfBitmap image = PdfBitmap(_signatureImage!);
+      // Group signatures by page number for more efficient processing
+      Map<int, List<SignatureInfo>> signaturesByPage = {};
+      for (var sig in _signatures) {
+        if (!signaturesByPage.containsKey(sig.pageNumber)) {
+          signaturesByPage[sig.pageNumber] = [];
+        }
+        signaturesByPage[sig.pageNumber]!.add(sig);
+      }
 
-      // Get the page
-      final page = document.pages[currentPage - 1];
-      final pageSize = page.size;
-      
-      // Calculate position on the PDF page
-      // Convert screen coordinates to PDF coordinates
-      final viewportSize = MediaQuery.of(context).size;
-      final x = (_signaturePosition.dx / viewportSize.width) * pageSize.width;
-      final y = (_signaturePosition.dy / viewportSize.height) * pageSize.height;
-      
-      // Calculate size on PDF page
-      final signatureWidth = (_signatureSize.width / viewportSize.width) * pageSize.width;
-      final signatureHeight = (_signatureSize.height / viewportSize.height) * pageSize.height;
+      // Get app bar height for position adjustment
+      final appBarHeight = AppBar().preferredSize.height;
 
-      // Add the signature to the PDF
-      page.graphics.drawImage(
-        image,
-        Rect.fromLTWH(x, y, signatureWidth, signatureHeight),
-      );
+      // Process each page that has signatures
+      signaturesByPage.forEach((pageNumber, sigs) {
+        final page = document.pages[pageNumber - 1];
+        final pageSize = page.size;
+
+        // Get the actual viewable area (excluding AppBar)
+        final viewportSize = MediaQuery.of(context).size;
+        final viewableHeight = viewportSize.height - appBarHeight;
+
+        // Calculate the scaling factor between PDF and viewport
+        // Assuming PDF is fitted to width in the viewer
+        final scaleX = pageSize.width / viewportSize.width;
+
+        // Calculate the effective height of the PDF in the viewport
+        final pdfAspectRatio = pageSize.height / pageSize.width;
+        final effectivePdfHeight = viewportSize.width * pdfAspectRatio;
+
+        // Calculate vertical offset if PDF doesn't fill the entire view height
+        final verticalOffset = (viewableHeight - effectivePdfHeight) / 2;
+
+        // Add each signature to the page
+        for (var sig in sigs) {
+          // Create PdfBitmap from the signature
+          final PdfBitmap image = PdfBitmap(sig.signatureImage);
+
+          // Adjust Y position to account for AppBar
+          final adjustedY = sig.position.dy - appBarHeight;
+
+          // Calculate position on the PDF page with adjusted coordinates
+          final x = sig.position.dx * scaleX;
+
+          // For Y position, we need to adjust for the viewable area
+          // and scale relative to the content area
+          double y;
+          if (effectivePdfHeight < viewableHeight) {
+            // If PDF is shorter than viewable area, adjust for vertical centering
+            if (adjustedY < verticalOffset) {
+              // Signature is above the PDF
+              y = 0;
+            } else if (adjustedY > verticalOffset + effectivePdfHeight) {
+              // Signature is below the PDF
+              y = pageSize.height;
+            } else {
+              // Signature is within the PDF area
+              y = (adjustedY - verticalOffset) * (pageSize.height / effectivePdfHeight);
+            }
+          } else {
+            // PDF is taller than the viewable area
+            y = adjustedY * (pageSize.height / viewableHeight);
+          }
+
+          // Calculate size on PDF page with proper scaling
+          final signatureWidth = sig.size.width * scaleX;
+          final signatureHeight = sig.size.height * scaleX; // Use same scale for aspect ratio preservation
+
+          // Add the signature to the PDF
+          page.graphics.drawImage(
+            image,
+            Rect.fromLTWH(x, y, signatureWidth, signatureHeight),
+          );
+        }
+      });
 
       // Save the modified PDF
       final directory = await getApplicationDocumentsDirectory();
       final String signedPdfPath =
           '${directory.path}/signed_${DateTime.now().millisecondsSinceEpoch}.pdf';
-      
+
       final File signedPdfFile = File(signedPdfPath);
       await signedPdfFile.writeAsBytes(await document.save());
 
@@ -413,34 +626,33 @@ class _PdfSignatureScreenState extends State<PdfSignatureScreen> {
       document.dispose();
 
       setState(() {
-        _isPositioningSignature = false;
         _isSaving = false;
-        _signatureImage = null;
         _savedSignedPdfPath = signedPdfPath;
       });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Signature applied to PDF')),
-      );
     } catch (e) {
       setState(() {
         _isSaving = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error applying signature: $e')),
+        SnackBar(content: Text('Error updating PDF: $e')),
       );
     }
   }
 
   Future<void> _savePdf() async {
     try {
+      // Make sure the PDF is updated with all signatures
+      if (_signatures.isNotEmpty) {
+        await _updatePdfWithSignatures();
+      }
+
       final pdfPath = _savedSignedPdfPath ?? widget.pdfPath;
-      
+
       // Create a copy in the vaky directory
       final directory = await _getVakyDirectory();
       final filename = 'signed_doc_${DateTime.now().millisecondsSinceEpoch}.pdf';
       final savedFile = File('${directory.path}/$filename');
-      
+
       await File(pdfPath).copy(savedFile.path);
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -498,5 +710,51 @@ class _PdfSignatureScreenState extends State<PdfSignatureScreen> {
       }
       return vakyDir;
     }
+  }
+}
+
+// Custom painter to show existing signatures on the PDF
+class SignatureOverlayPainter extends CustomPainter {
+  final List<SignatureInfo> signatures;
+  final int currentPage;
+
+  SignatureOverlayPainter({required this.signatures, required this.currentPage});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Only show signatures for the current page
+    final signaturesOnCurrentPage = signatures.where((sig) => sig.pageNumber == currentPage).toList();
+
+    for (var sig in signaturesOnCurrentPage) {
+      // Draw a light border around the signature
+      final rect = Rect.fromLTWH(
+        sig.position.dx,
+        sig.position.dy,
+        sig.size.width,
+        sig.size.height,
+      );
+
+      final paint = Paint()
+        ..color = Colors.blue.withOpacity(0.3)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.0;
+
+      canvas.drawRect(rect, paint);
+
+      // Use a decoder to draw the signature image
+      // This is just a placeholder - in a real app you would use a more efficient approach
+      final ui.Image image = Image.memory(sig.signatureImage).image as ui.Image;
+      paintImage(
+        canvas: canvas,
+        rect: rect,
+        image: image,
+        fit: BoxFit.contain,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) {
+    return true;
   }
 }

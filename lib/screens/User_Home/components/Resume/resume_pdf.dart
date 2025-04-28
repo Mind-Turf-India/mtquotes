@@ -34,6 +34,11 @@ class ResumePdfGenerator {
       italic: ttfItalic,
     );
 
+    // Load icon assets
+    final emailIcon = await loadIconAsset('assets/icons/email_resume.png');
+    final phoneIcon = await loadIconAsset('assets/icons/phone_resume.png');
+    final locationIcon = await loadIconAsset('assets/icons/location_resume.png');
+
     // Load profile image if it exists
     pw.MemoryImage? profileImage;
     if (data.personalInfo.profileImagePath != null &&
@@ -119,7 +124,7 @@ class ResumePdfGenerator {
         pdf.addPage(_buildClassicTemplate(data, theme, profileImage));
         break;
       case 'business':
-        pdf.addPage(_buildBusinessTemplate(data, theme, profileImage));
+        pdf.addPage(_buildBusinessTemplate(data, theme, profileImage,emailIcon,phoneIcon,locationIcon));
         break;
       default:
         pdf.addPage(_buildModernTemplate(data, theme, profileImage));
@@ -254,6 +259,11 @@ class ResumePdfGenerator {
     }
 
     return filePath;
+  }
+
+  static Future<pw.MemoryImage> loadIconAsset(String assetPath) async {
+    final ByteData data = await rootBundle.load(assetPath);
+    return pw.MemoryImage(data.buffer.asUint8List());
   }
 
   static Future<void> _requestStoragePermission() async {
@@ -1079,6 +1089,9 @@ class ResumePdfGenerator {
       ResumeData data,
       pw.ThemeData theme,
       pw.MemoryImage? profileImage,
+      pw.MemoryImage emailIcon,
+      pw.MemoryImage phoneIcon,
+      pw.MemoryImage locationIcon,
       ) {
     // Check if sections have valid data
     final bool hasSkills = hasValidSkills(data);
@@ -1160,25 +1173,24 @@ class ResumePdfGenerator {
                 pw.SizedBox(height: 16),
 
                 // Contact info in row
-                pw.Row(
-                  children: [
-                    pw.Expanded(
-                      child: pw.Row(
-                        children: [
-                          pw.Container(
-                            width: 16,
-                            height: 16,
-                            margin: const pw.EdgeInsets.only(right: 8),
-                            child: pw.Center(
-                              child: pw.Text(
-                                '✉',
-                                style: const pw.TextStyle(
-                                  fontSize: 12,
-                                  color: PdfColors.grey200,
-                                ),
-                              ),
-                            ),
-                          ),
+            pw.Container(
+              width: double.infinity,
+              child: pw.Wrap(
+                spacing: 20, // Gap between items
+                runSpacing: 10, // Gap between rows if wrapping occurs
+                children: [
+                  // Email item
+                  pw.ConstrainedBox(
+                    constraints: const pw.BoxConstraints(minWidth: 120),
+                    child: pw.Row(
+                      mainAxisSize: pw.MainAxisSize.min,
+                      children: [
+                        pw.Container(
+                          width: 16,
+                          height: 16,
+                          margin: const pw.EdgeInsets.only(right: 8),
+                          child: pw.Image(emailIcon),
+                        ),
                           pw.Text(
                             data.personalInfo.email,
                             style: const pw.TextStyle(
@@ -1197,15 +1209,7 @@ class ResumePdfGenerator {
                             width: 16,
                             height: 16,
                             margin: const pw.EdgeInsets.only(right: 8),
-                            child: pw.Center(
-                              child: pw.Text(
-                                '✆',
-                                style: const pw.TextStyle(
-                                  fontSize: 12,
-                                  color: PdfColors.grey200,
-                                ),
-                              ),
-                            ),
+                            child: pw.Image(phoneIcon),
                           ),
                           pw.Text(
                             data.personalInfo.phone,
@@ -1224,15 +1228,7 @@ class ResumePdfGenerator {
                             width: 16,
                             height: 16,
                             margin: const pw.EdgeInsets.only(right: 8),
-                            child: pw.Center(
-                              child: pw.Text(
-                                '⌂',
-                                style: const pw.TextStyle(
-                                  fontSize: 12,
-                                  color: PdfColors.grey200,
-                                ),
-                              ),
-                            ),
+                            child: pw.Image(locationIcon),
                           ),
                           pw.Text(
                             '${data.personalInfo.city}, ${data.personalInfo.country}',
@@ -1247,7 +1243,7 @@ class ResumePdfGenerator {
                     ),
                   ],
                 ),
-              ],
+            )],
             ),
           ),
 

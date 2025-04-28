@@ -815,7 +815,7 @@ class _PersonalDetailsScreenState
                     controller: _levelControllers[index],
                     style: TextStyle(color: AppColors.getTextColor(isDarkMode),
                     fontSize: 11),
-                    keyboardType: TextInputType.text,
+                    keyboardType: TextInputType.phone,
                     inputFormatters: [
                       FilteringTextInputFormatter.allow(RegExp(r'[0-9.,%+-]')),
                     ],

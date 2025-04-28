@@ -9,6 +9,8 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:open_file/open_file.dart';
 
+import 'gallery_selection.dart';
+
 class DocScanner extends StatefulWidget {
   const DocScanner({Key? key}) : super(key: key);
 
@@ -21,6 +23,7 @@ class _DocScannerState extends State<DocScanner> {
   bool _isLoading = false;
   String? _savedFilePath;
   List<String>? _savedImagePaths;
+  final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
@@ -28,7 +31,7 @@ class _DocScannerState extends State<DocScanner> {
     _requestPermissions();
     _createVakyFolder();
   }
-  
+
   Future<void> _requestPermissions() async {
     // Request basic permissions
     Map<Permission, PermissionStatus> statuses = await [
@@ -204,6 +207,139 @@ class _DocScannerState extends State<DocScanner> {
     );
   }
 
+  // Replace the current _pickImageFromGallery method with this one
+  // Future<void> _pickImageFromGallery() async {
+  //   try {
+  //     final List<XFile>? pickedFiles = await _picker.pickMultiImage();
+  //
+  //     if (pickedFiles != null && pickedFiles.isNotEmpty) {
+  //       // Navigate to the gallery selection page
+  //       final result = await Navigator.push(
+  //         context,
+  //         MaterialPageRoute(
+  //           builder: (context) => GallerySelectionPage(selectedImages: pickedFiles),
+  //         ),
+  //       );
+  //
+  //       // Check if result is a Map (new format) or List (old format)
+  //       if (result != null) {
+  //         bool shouldLaunchScanner = false;
+  //         List<XFile> selectedImages = [];
+  //
+  //         if (result is Map) {
+  //           // New format with launchScanner flag
+  //           selectedImages = result['images'] as List<XFile>;
+  //           shouldLaunchScanner = result['launchScanner'] ?? false;
+  //         } else if (result is List<XFile>) {
+  //           // Old format for backward compatibility
+  //           selectedImages = result;
+  //         }
+  //
+  //         if (selectedImages.isNotEmpty) {
+  //           setState(() {
+  //             _isLoading = true;
+  //             _savedFilePath = null;
+  //             _savedImagePaths = null;
+  //           });
+  //
+  //           _savedImagePaths = [];
+  //
+  //           // Process each selected image
+  //           for (int i = 0; i < selectedImages.length; i++) {
+  //             final filename = 'gallery_doc_${DateTime.now().millisecondsSinceEpoch}_$i.jpg';
+  //             final file = await _getVakyFile(filename);
+  //
+  //             // Copy the image file to our vaky folder
+  //             final bytes = await File(selectedImages[i].path).readAsBytes();
+  //             await file.writeAsBytes(bytes);
+  //             _savedImagePaths!.add(file.path);
+  //             print('Gallery image saved to: ${file.path}');
+  //           }
+  //
+  //           // If should launch scanner and there are images, launch the document scanner
+  //           if (shouldLaunchScanner) {
+  //             // Call the scanDocument method to open the scanner
+  //             // First finish the current operation
+  //             setState(() {
+  //               _isLoading = false;
+  //             });
+  //
+  //             // Then launch the scanner
+  //             await scanDocument();
+  //             return;
+  //           }
+  //
+  //           // If not launching scanner, continue with normal flow
+  //           // If there's only one image, consider converting it to PDF
+  //           if (_savedImagePaths!.length == 1) {
+  //             final imagePath = _savedImagePaths![0];
+  //             setState(() {
+  //               _isLoading = false;
+  //               _scannedDocuments = 'Imported from gallery';
+  //             });
+  //             // Show options dialog for the single image
+  //             _showSingleImageOptions(imagePath);
+  //           } else {
+  //             setState(() {
+  //               _isLoading = false;
+  //               _scannedDocuments = 'Imported multiple images from gallery';
+  //             });
+  //           }
+  //         }
+  //       }
+  //     }
+  //   } catch (e) {
+  //     print('Error picking images from gallery: $e');
+  //     setState(() {
+  //       _isLoading = false;
+  //       _scannedDocuments = 'Error: ${e.toString()}';
+  //     });
+  //   }
+  // }
+
+  // Show options for a single imported image
+  // void _showSingleImageOptions(String imagePath) {
+  //   showModalBottomSheet(
+  //     context: context,
+  //     builder: (BuildContext context) {
+  //       return Container(
+  //         padding: const EdgeInsets.all(16),
+  //         child: Column(
+  //           mainAxisSize: MainAxisSize.min,
+  //           children: [
+  //             Text(
+  //               'Image Imported Successfully',
+  //               style: TextStyle(
+  //                 fontSize: 18,
+  //                 fontWeight: FontWeight.bold,
+  //               ),
+  //             ),
+  //             SizedBox(height: 16),
+  //             ListTile(
+  //               leading: Icon(Icons.image, color: Colors.blue),
+  //               title: Text('View Image'),
+  //               onTap: () {
+  //                 Navigator.pop(context);
+  //                 _openFile(imagePath);
+  //               },
+  //             ),
+  //             ListTile(
+  //               leading: Icon(Icons.picture_as_pdf, color: Colors.red),
+  //               title: Text('Convert to PDF'),
+  //               onTap: () {
+  //                 Navigator.pop(context);
+  //                 ScaffoldMessenger.of(context).showSnackBar(
+  //                   SnackBar(content: Text('PDF conversion will be implemented soon')),
+  //                 );
+  //               },
+  //             ),
+  //           ],
+  //         ),
+  //       );
+  //     },
+  //   );
+  // }
+
   Future<void> scanDocument() async {
     setState(() {
       _isLoading = true;
@@ -238,7 +374,7 @@ class _DocScannerState extends State<DocScanner> {
             await file.writeAsBytes(bytes);
             _savedFilePath = file.path;
             print('PDF saved to: ${file.path}');
-            
+
             // Show options for the saved PDF
             if (!mounted) return;
             setState(() {
@@ -321,7 +457,7 @@ class _DocScannerState extends State<DocScanner> {
             await inputFile.copy(file.path);
             _savedFilePath = file.path;
             print('PDF saved to: ${file.path}');
-            
+
             // Show options instead of just setting state
             if (!mounted) return;
             setState(() {
@@ -348,7 +484,7 @@ class _DocScannerState extends State<DocScanner> {
               await File(cleanPath).copy(file.path);
               _savedFilePath = file.path;
               print('PDF saved to: ${file.path}');
-              
+
               // Show options
               if (!mounted) return;
               setState(() {
@@ -363,7 +499,7 @@ class _DocScannerState extends State<DocScanner> {
             await File(scannedDocuments).copy(file.path);
             _savedFilePath = file.path;
             print('PDF saved to: ${file.path}');
-            
+
             // Show options
             if (!mounted) return;
             setState(() {
@@ -379,7 +515,7 @@ class _DocScannerState extends State<DocScanner> {
               await file.writeAsBytes(bytes);
               _savedFilePath = file.path;
               print('PDF saved to: ${file.path}');
-              
+
               // Show options
               if (!mounted) return;
               setState(() {
@@ -411,67 +547,6 @@ class _DocScannerState extends State<DocScanner> {
     });
   }
 
-  Future<void> scanDocumentUri() async {
-    setState(() {
-      _isLoading = true;
-      _savedFilePath = null;
-      _savedImagePaths = null;
-    });
-
-    // This feature is only supported for Android
-    dynamic scannedDocuments;
-    try {
-      scannedDocuments =
-          await FlutterDocScanner().getScanDocumentsUri(page: 4) ??
-              'Unknown platform documents';
-
-      print('Raw scan result URI: $scannedDocuments');
-
-      // If we got a URI, save a copy to our vaky folder
-      if (scannedDocuments is String && scannedDocuments.isNotEmpty) {
-        final filename = 'scanned_document_uri_${DateTime.now().millisecondsSinceEpoch}.pdf';
-        final file = await _getVakyFile(filename);
-
-        try {
-          // Handle file:// prefix if present
-          String filePath = scannedDocuments;
-          if (filePath.startsWith('file://')) {
-            filePath = filePath.replaceFirst('file://', '');
-          }
-
-          if (await File(filePath).exists()) {
-            await File(filePath).copy(file.path);
-            _savedFilePath = file.path;
-            print('URI document saved to: ${file.path}');
-            
-            // Show options
-            if (!mounted) return;
-            setState(() {
-              _isLoading = false;
-              _scannedDocuments = scannedDocuments;
-            });
-            _showScanResultOptions(file.path);
-            return;
-          }
-        } catch (e) {
-          print('Error saving URI document: $e');
-        }
-      }
-    } on PlatformException catch (e) {
-      scannedDocuments = 'Failed to get scanned documents URI: ${e.message}';
-      print(scannedDocuments);
-    } catch (e) {
-      scannedDocuments = 'Error: ${e.toString()}';
-      print(scannedDocuments);
-    }
-
-    if (!mounted) return;
-    setState(() {
-      _scannedDocuments = scannedDocuments;
-      _isLoading = false;
-    });
-  }
-
   Future<void> _openFile(String filePath) async {
     try {
       final result = await OpenFile.open(filePath);
@@ -490,193 +565,330 @@ class _DocScannerState extends State<DocScanner> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Document Scanner'),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: const Text(
+          'Document Scanner',
+          style: TextStyle(color: Colors.black87),
+        ),
+        iconTheme: IconThemeData(color: Colors.black87),
       ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+      body: _isLoading
+          ? Center(child: CircularProgressIndicator(color: Colors.blue))
+          : _buildContent(),
+    );
+  }
+
+  Widget _buildContent() {
+    // If we have a saved file or images, show them
+    if (_savedFilePath != null || (_savedImagePaths != null && _savedImagePaths!.isNotEmpty)) {
+      return _buildScanResults();
+    }
+
+    // Otherwise show the main scanner interface
+    return Column(
+      children: [
+        Expanded(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text(
+                  'Scan Your',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                const Text(
+                  'Documents Here...',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 40),
+                // Document scanning illustration
+                Image.asset(
+                  'assets/icons/scandoc.png', // Make sure to add this image to your assets
+                  width: 260,
+                  height: 260,
+                  fit: BoxFit.contain,
+                ),
+              ],
+            ),
+          ),
+        ),
+        // Bottom action buttons
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          child: Row(
             children: [
-              if (_isLoading)
-                const CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
-                )
-              else if (_savedFilePath != null)
-                Expanded(
-                  child: Column(
-                    children: [
-                      const Text(
-                        'Document Saved:',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        _savedFilePath!,
-                        style: const TextStyle(fontSize: 16),
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          ElevatedButton(
-                            onPressed: () => _openFile(_savedFilePath!),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green,
-                            ),
-                            child: const Text('Open Document'),
-                          ),
-                          const SizedBox(width: 16),
-                          ElevatedButton(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => PdfSignatureScreen(pdfPath: _savedFilePath!),
-                                ),
-                              );
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue,
-                            ),
-                            child: const Text('Fill & Sign'),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                )
-              else if (_savedImagePaths != null && _savedImagePaths!.isNotEmpty)
-                Expanded(
-                  child: Column(
-                    children: [
-                      const Text(
-                        'Images Saved:',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Expanded(
-                        child: ListView.builder(
-                          itemCount: _savedImagePaths!.length,
-                          itemBuilder: (context, index) {
-                            return Column(
-                              children: [
-                                Text(
-                                  'Image ${index + 1}:',
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Image.file(
-                                  File(_savedImagePaths![index]),
-                                  height: 200,
-                                  fit: BoxFit.contain,
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  _savedImagePaths![index],
-                                  style: const TextStyle(fontSize: 12),
-                                ),
-                                const SizedBox(height: 8),
-                                ElevatedButton(
-                                  onPressed: () => _openFile(_savedImagePaths![index]),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.green,
-                                  ),
-                                  child: const Text('Open Image'),
-                                ),
-                                const Divider(),
-                              ],
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              else if (_scannedDocuments != null)
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      children: [
-                        const Text(
-                          'Scan Result:',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
+              // Camera button
+              Expanded(
+                child: GestureDetector(
+                  onTap: scanDocument,
+                  child: Container(
+                    height: 50,
+                    margin: const EdgeInsets.only(right: 8),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey[300]!),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: const [
+                        Icon(Icons.camera_alt, color: Colors.black54),
+                        SizedBox(width: 8),
                         Text(
-                          _scannedDocuments.toString(),
-                          style: const TextStyle(fontSize: 16),
+                          'Camera',
+                          style: TextStyle(
+                            color: Colors.black87,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ],
                     ),
                   ),
-                )
-              else
-                const Text(
-                  "No Documents Scanned",
-                  style: TextStyle(fontSize: 18),
                 ),
-              const SizedBox(height: 20),
-              const Text(
-                'Select a scanning option:',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: 16),
-              _buildScanButton(
-                "Scan Documents",
-                scanDocument,
-                Colors.blue,
-              ),
-              const SizedBox(height: 10),
-              _buildScanButton(
-                "Scan Documents As PDF",
-                scanDocumentAsPdf,
-                Colors.orange,
-              ),
-              const SizedBox(height: 10),
-              _buildScanButton(
-                "Get Scan Documents URI (Android Only)",
-                scanDocumentUri,
-                Colors.purple,
-              ),
+              // Gallery button
+              // Expanded(
+              //   child: GestureDetector(
+              //     onTap: _pickImageFromGallery,
+              //     child: Container(
+              //       height: 50,
+              //       margin: const EdgeInsets.only(left: 8),
+              //       decoration: BoxDecoration(
+              //         color: Colors.blue,
+              //         borderRadius: BorderRadius.circular(12),
+              //       ),
+              //       child: Row(
+              //         mainAxisAlignment: MainAxisAlignment.center,
+              //         children: const [
+              //           Icon(Icons.image, color: Colors.white),
+              //           SizedBox(width: 8),
+              //           Text(
+              //             'Gallery',
+              //             style: TextStyle(
+              //               color: Colors.white,
+              //               fontSize: 16,
+              //               fontWeight: FontWeight.w500,
+              //             ),
+              //           ),
+              //         ],
+              //       ),
+              //     ),
+              //   ),
+              // ),
             ],
           ),
         ),
-      ),
+      ],
     );
   }
 
-  Widget _buildScanButton(String title, VoidCallback onPressed, Color color) {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: _isLoading ? null : onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: color,
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          textStyle: const TextStyle(fontSize: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+  Widget _buildScanResults() {
+    if (_savedFilePath != null) {
+      // Show PDF result
+      return Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.green, size: 24),
+                SizedBox(width: 8),
+                Text(
+                  'Document Saved',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            Expanded(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.picture_as_pdf,
+                      size: 80,
+                      color: Colors.red,
+                    ),
+                    SizedBox(height: 16),
+                    Text(
+                      'PDF Document',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      _savedFilePath!.split('/').last,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[700],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    icon: Icon(Icons.visibility),
+                    label: Text('View'),
+                    onPressed: () => _openFile(_savedFilePath!),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 16),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    icon: Icon(Icons.edit),
+                    label: Text('Fill & Sign document'),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => PdfSignatureScreen(pdfPath: _savedFilePath!),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 16),
+            ElevatedButton.icon(
+              icon: Icon(Icons.refresh),
+              label: Text('Scan New Document'),
+              onPressed: () {
+                setState(() {
+                  _savedFilePath = null;
+                  _savedImagePaths = null;
+                  _scannedDocuments = null;
+                });
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.grey[300],
+                foregroundColor: Colors.black87,
+                padding: EdgeInsets.symmetric(vertical: 12),
+              ),
+            ),
+          ],
         ),
-        child: Text(
-          title,
-          style: const TextStyle(color: Colors.white),
+      );
+    } else if (_savedImagePaths != null && _savedImagePaths!.isNotEmpty) {
+      // Show image results
+      return Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.green, size: 24),
+                SizedBox(width: 8),
+                Text(
+                  _savedImagePaths!.length > 1
+                      ? '${_savedImagePaths!.length} Images Saved'
+                      : 'Image Saved',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 16),
+            Expanded(
+              child: ListView.builder(
+                itemCount: _savedImagePaths!.length,
+                itemBuilder: (context, index) {
+                  return Card(
+                    margin: EdgeInsets.only(bottom: 16),
+                    child: Column(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+                          child: Image.file(
+                            File(_savedImagePaths![index]),
+                            height: 200,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.all(12.0),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  'Image ${index + 1}',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              IconButton(
+                                icon: Icon(Icons.visibility, color: Colors.blue),
+                                onPressed: () => _openFile(_savedImagePaths![index]),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+            SizedBox(height: 16),
+            ElevatedButton.icon(
+              icon: Icon(Icons.refresh),
+              label: Text('Scan New Document'),
+              onPressed: () {
+                setState(() {
+                  _savedFilePath = null;
+                  _savedImagePaths = null;
+                  _scannedDocuments = null;
+                });
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.grey[300],
+                foregroundColor: Colors.black87,
+                padding: EdgeInsets.symmetric(vertical: 12),
+              ),
+            ),
+          ],
         ),
-      ),
+      );
+    }
+
+    // Fallback - should not reach here
+    return Center(
+      child: Text('Something went wrong. Please try again.'),
     );
   }
 }

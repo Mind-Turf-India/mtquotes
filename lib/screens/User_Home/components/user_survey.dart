@@ -584,7 +584,7 @@ class _SurveyDialogState extends State<SurveyDialog> {
             // Emojis right above the Next button
             Padding(
               padding: EdgeInsets.only(),
-              child: Image.asset('assets/emoji.png', height: 30),
+              child: SvgPicture.asset('assets/icons/emoji_submit.svg', height: 30),
             ),
 
             // Submit button

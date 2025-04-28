@@ -212,29 +212,33 @@ class _SettingsLanguageState extends State<SettingsLanguage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Stack(
-              alignment: Alignment.center,
-              children: [
-                Text(
-                  symbol,
-                  style: TextStyle(
-                    fontSize: 56,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primaryBlue,
-                  ),
-                ),
-                Positioned(
-                  top: 0,
-                  left: 8,
-                  child: Text(
-                    topSymbol,
+            Container(
+              width: double.infinity,
+              height: 80, // Fixed height for the symbol container
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Text(
+                    symbol,
                     style: TextStyle(
-                      fontSize: 24,
-                      color: AppColors.primaryBlue.withOpacity(0.7),
+                      fontSize: 56,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primaryBlue,
                     ),
                   ),
-                ),
-              ],
+                  Positioned(
+                    top: 2, // Adjusted from -5 to 8 to prevent clipping
+                    left: 40, // Increased the left value to move it more towards the left
+                    child: Text(
+                      topSymbol,
+                      style: TextStyle(
+                        fontSize: 24,
+                        color: AppColors.primaryBlue.withOpacity(0.7),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 12),
             Text(
@@ -249,5 +253,4 @@ class _SettingsLanguageState extends State<SettingsLanguage> {
         ),
       ),
     );
-  }
-}
+  }}
