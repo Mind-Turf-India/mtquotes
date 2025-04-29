@@ -591,7 +591,13 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
                             isPaid: true,
                           )
                               : () => Navigator.pushNamed(context, '/subscription'),
-                          icon: Icon(widget.isPaidUser ? Icons.share : Icons.lock),
+                          icon: widget.isPaidUser
+                                        ? SvgPicture.asset(
+                                            'assets/icons/share.svg',
+                                            colorFilter:
+                                ColorFilter.mode(Colors.white, BlendMode.srcIn),)
+                                        : SvgPicture.asset(
+                                            'assets/icons/premium_1659060.svg'),
                           label: Text(widget.isPaidUser ? context.loc.shareNow
                               : context.loc.upgradeToPro,),
                           style: ElevatedButton.styleFrom(

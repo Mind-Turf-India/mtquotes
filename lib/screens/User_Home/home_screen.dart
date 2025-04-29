@@ -1028,7 +1028,7 @@ class HomeScreenState extends State<HomeScreen> {
                                 ),
                               )
                             : SvgPicture.asset(
-                                'assets/icons/user_12344961.svg',
+                                'assets/icons/user_profile_new.svg',
                                 width: 24, // Adjust size as needed
                                 height: 24, // Adjust size as needed
                                 color: Colors.black, // Optional: set color
@@ -1425,12 +1425,12 @@ class HomeScreenState extends State<HomeScreen> {
                                     categoryCard(
                                         'assets/icons/friendship.svg',
                                         context.loc.friendship,
-                                        Colors.blue,
+                                        const Color(0xFF9E4282),
                                         isDarkMode),
                                     categoryCard(
                                         'assets/icons/sad.svg',
                                         context.loc.sad,
-                                          const Color(0xFFFBF982),
+                                        const Color(0xFFAADA0D),
                                         isDarkMode),
                                   ],
                                 ),

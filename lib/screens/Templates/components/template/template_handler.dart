@@ -130,12 +130,14 @@ class TemplateHandler {
     );
   }
 
-  static void hideLoadingIndicator(BuildContext context) {
-    if (Navigator.of(context, rootNavigator: true).canPop()) {
-      Navigator.of(context, rootNavigator: true).pop();
-    }
+  
+// Fixed hideLoadingIndicator function
+static void hideLoadingIndicator(BuildContext context) {
+  // Check if the context is still mounted before trying to pop
+  if (context.mounted && Navigator.of(context, rootNavigator: true).canPop()) {
+    Navigator.of(context, rootNavigator: true).pop();
   }
-
+}
   // Function to capture the template with user details as an image
   static Future<Uint8List?> captureTemplateImage() async {
     try {

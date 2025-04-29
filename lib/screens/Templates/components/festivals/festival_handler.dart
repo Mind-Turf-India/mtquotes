@@ -548,9 +548,13 @@ class FestivalHandler {
                           ),
 
                           // Festival Image with RepaintBoundary for capture
-                          RepaintBoundary(
-                            key: festivalImageKey,
+                          Container(
+                            // key: festivalImageKey,
+                            height: 460, // Increased from 420 to allow more space
+                            width: double.infinity,
+                            
                             child: Container(
+                              height: 460,
                               width: double.infinity,
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(12),
@@ -561,6 +565,7 @@ class FestivalHandler {
                                 children: [
                                   // Main container with image and content
                                   Stack(
+                                    
                                     children: [
                                       // Main image
                                       ClipRRect(

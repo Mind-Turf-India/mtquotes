@@ -494,7 +494,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   : null,
               child: _profileImageUrl == null || _profileImageUrl!.isEmpty
                   ? SvgPicture.asset(
-                'assets/icons/user_12344961.svg',
+                'assets/icons/user_profile_new.svg',
                 width: 50,
                 height: 50,
                 colorFilter: ColorFilter.mode(

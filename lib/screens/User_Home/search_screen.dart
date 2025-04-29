@@ -411,18 +411,33 @@ class _SearchScreenState extends State<SearchScreen> {
               height: 130,
               child: ListView(
                 scrollDirection: Axis.horizontal,
-                children: [
-                  categoryCard('assets/icons/motivation.svg',
-                      context.loc.motivational, Colors.green, isDarkMode),
-                  categoryCard('assets/icons/love.svg', context.loc.love,
-                      Colors.red, isDarkMode),
-                  categoryCard('assets/icons/funny.svg', context.loc.funny,
-                      Colors.orange, isDarkMode),
-                  categoryCard('assets/icons/friendship.svg',
-                      context.loc.friendship, Colors.blue, isDarkMode),
-                  categoryCard('assets/icons/sad.svg', context.loc.sad,
-                      const Color(0xFFFBF982), isDarkMode),
-                ],
+                    children: [
+                                    categoryCard(
+                                        'assets/icons/motivation.svg',
+                                        context.loc.motivational,
+                                        Colors.green,
+                                        isDarkMode),
+                                    categoryCard(
+                                        'assets/icons/love.svg',
+                                        context.loc.love,
+                                        Colors.red,
+                                        isDarkMode),
+                                    categoryCard(
+                                        'assets/icons/funny.svg',
+                                        context.loc.funny,
+                                        Colors.orange,
+                                        isDarkMode),
+                                    categoryCard(
+                                        'assets/icons/friendship.svg',
+                                        context.loc.friendship,
+                                        const Color(0xFF9E4282),
+                                        isDarkMode),
+                                    categoryCard(
+                                        'assets/icons/sad.svg',
+                                        context.loc.sad,
+                                        const Color(0xFFAADA0D),
+                                        isDarkMode),
+                                  ],
               ),
             ),
             SizedBox(height: 30),

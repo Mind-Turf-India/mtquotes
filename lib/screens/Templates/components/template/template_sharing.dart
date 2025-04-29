@@ -50,11 +50,11 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
   Uint8List? _customImageData;
   bool _isImageLoading = true;
 
-
   @override
   void initState() {
     super.initState();
-    print('TemplateSharingPage initState with template: ${widget.template.id}, imageUrl: ${widget.template.imageUrl}');
+    print(
+        'TemplateSharingPage initState with template: ${widget.template.id}, imageUrl: ${widget.template.imageUrl}');
     _currentImageUrl = widget.template.imageUrl;
     _customImageData = widget.customImageData; // Store the custom image data
     _loadOriginalImage();
@@ -68,8 +68,10 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
     if (oldWidget.template.id != widget.template.id ||
         oldWidget.template.imageUrl != widget.template.imageUrl ||
         oldWidget.customImageData != widget.customImageData) {
-      print('Template changed: Old: ${oldWidget.template.id}, ${oldWidget.template.imageUrl}');
-      print('Template changed: New: ${widget.template.id}, ${widget.template.imageUrl}');
+      print(
+          'Template changed: Old: ${oldWidget.template.id}, ${oldWidget.template.imageUrl}');
+      print(
+          'Template changed: New: ${widget.template.id}, ${widget.template.imageUrl}');
 
       setState(() {
         _currentImageUrl = widget.template.imageUrl;
@@ -85,7 +87,8 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
   Future<void> _addToRecentTemplates() async {
     try {
       await RecentTemplateService.addRecentTemplate(widget.template);
-      print('Added template to recents from sharing page: ${widget.template.id}');
+      print(
+          'Added template to recents from sharing page: ${widget.template.id}');
     } catch (e) {
       print('Error adding template to recents from sharing page: $e');
     }
@@ -98,8 +101,8 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
     });
 
     try {
-      final http.Response response = await http.get(
-          Uri.parse(widget.template.imageUrl));
+      final http.Response response =
+          await http.get(Uri.parse(widget.template.imageUrl));
       if (response.statusCode == 200) {
         final decodedImage = await decodeImageFromList(response.bodyBytes);
 
@@ -150,7 +153,8 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
   }) {
     final bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final Color loadingColor = AppColors.primaryBlue;
-    final Color loadingBackground = isDarkMode ? AppColors.darkSurface : AppColors.lightSurface;
+    final Color loadingBackground =
+        isDarkMode ? AppColors.darkSurface : AppColors.lightSurface;
 
     if (_isImageLoading) {
       return _buildImageContainer(
@@ -235,14 +239,20 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
     final textSizeProvider = Provider.of<TextSizeProvider>(context);
 
     // Theme colors
-    final Color backgroundColor = isDarkMode ? AppColors.darkBackground : AppColors.lightBackground;
-    final Color cardColor = isDarkMode ? AppColors.darkSurface : AppColors.lightSurface;
-    final Color textColor = isDarkMode ? AppColors.darkText : AppColors.lightText;
-    final Color secondaryTextColor = isDarkMode ? AppColors.darkSecondaryText : AppColors.lightSecondaryText;
-    final Color dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.lightDivider;
-    final Color iconColor = isDarkMode ? AppColors.darkIcon : AppColors.lightIcon;
-    final Color cardBackgroundColor = isDarkMode ? AppColors.darkSurface : AppColors.lightSurface;
-
+    final Color backgroundColor =
+        isDarkMode ? AppColors.darkBackground : AppColors.lightBackground;
+    final Color cardColor =
+        isDarkMode ? AppColors.darkSurface : AppColors.lightSurface;
+    final Color textColor =
+        isDarkMode ? AppColors.darkText : AppColors.lightText;
+    final Color secondaryTextColor =
+        isDarkMode ? AppColors.darkSecondaryText : AppColors.lightSecondaryText;
+    final Color dividerColor =
+        isDarkMode ? AppColors.darkDivider : AppColors.lightDivider;
+    final Color iconColor =
+        isDarkMode ? AppColors.darkIcon : AppColors.lightIcon;
+    final Color cardBackgroundColor =
+        isDarkMode ? AppColors.darkSurface : AppColors.lightSurface;
 
     // Force rebuild when template changes by using these in widget tree
     final String currentTemplateId = widget.template.id;
@@ -250,118 +260,117 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
     final bool hasCustomImage = _customImageData != null;
     double fontSize = textSizeProvider.fontSize;
 
-    print('Building sharing UI with template: $currentTemplateId, imageUrl: $currentImageUrl, hasCustomImage: $hasCustomImage');
+    print(
+        'Building sharing UI with template: $currentTemplateId, imageUrl: $currentImageUrl, hasCustomImage: $hasCustomImage');
 
-
-      return Scaffold(
+    return Scaffold(
+      backgroundColor: backgroundColor,
+      appBar: AppBar(
         backgroundColor: backgroundColor,
-        appBar: AppBar(
-          backgroundColor: backgroundColor,
-          title: Text(
-            context.loc.shareContent,
-            style: TextStyle(
-              color: textColor,
-              fontSize: fontSize,
-            ),
+        title: Text(
+          context.loc.shareContent,
+          style: TextStyle(
+            color: textColor,
+            fontSize: fontSize,
           ),
-          leading: IconButton(
-            icon: Icon(Icons.arrow_back_ios, color: iconColor),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-          systemOverlayStyle: isDarkMode
-              ? SystemUiOverlayStyle.light
-              : SystemUiOverlayStyle.dark,
         ),
-        body: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Free sharing option (moved to the top)
-                Text(
-                  context.loc.freeSharing,
-                  style: TextStyle(
-                    fontSize: fontSize + 2,
-                    fontWeight: FontWeight.bold,
-                    color: textColor,
-                  ),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios, color: iconColor),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        systemOverlayStyle:
+            isDarkMode ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
+      ),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Free sharing option (moved to the top)
+              Text(
+                context.loc.freeSharing,
+                style: TextStyle(
+                  fontSize: fontSize + 2,
+                  fontWeight: FontWeight.bold,
+                  color: textColor,
                 ),
-                SizedBox(height: 16),
-                Card(
-                  elevation: 2,
-                  color: cardBackgroundColor,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          context.loc.basicSharing,
-                          style: TextStyle(
-                            fontSize: fontSize,
-                            fontWeight: FontWeight.w600,
-                            color: textColor,
+              ),
+              SizedBox(height: 16),
+              Card(
+                elevation: 2,
+                color: cardBackgroundColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        context.loc.basicSharing,
+                        style: TextStyle(
+                          fontSize: fontSize,
+                          fontWeight: FontWeight.w600,
+                          color: textColor,
+                        ),
+                      ),
+                      SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Icon(Icons.check_circle,
+                              color: AppColors.primaryGreen),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              context.loc.shareWithoutPersonalBranding,
+                              style: TextStyle(
+                                color: textColor,
+                                fontSize: fontSize - 2,
+                              ),
+                            ),
                           ),
-                        ),
-                        SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Icon(Icons.check_circle, color: AppColors.primaryGreen),
-                            SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                context.loc.shareWithoutPersonalBranding,
-                                style: TextStyle(
-                                  color: textColor,
-                                  fontSize: fontSize - 2,
-                                ),
+                        ],
+                      ),
+                      SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Icon(Icons.close, color: Colors.red),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              context.loc.noPersonalBranding,
+                              style: TextStyle(
+                                color: textColor,
+                                fontSize: fontSize - 2,
                               ),
                             ),
-                          ],
-                        ),
-                        SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Icon(Icons.close, color: Colors.red),
-                            SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                context.loc.noPersonalBranding,
-                                style: TextStyle(
-                                  color: textColor,
-                                  fontSize: fontSize - 2,
-                                ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Icon(Icons.close, color: Colors.red),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              context.loc.standardQualityExport,
+                              style: TextStyle(
+                                color: textColor,
+                                fontSize: fontSize - 2,
                               ),
                             ),
-                          ],
-                        ),
-                        SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Icon(Icons.close, color: Colors.red),
-                            SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                context.loc.standardQualityExport,
-                                style: TextStyle(
-                                  color: textColor,
-                                  fontSize: fontSize - 2,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 16),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 16),
 
                       // Preview of template without branding but with watermark - FIXED
-                        _buildTrendingImage(showWatermark: true),
+                      _buildTrendingImage(showWatermark: true),
 
-
-                        SizedBox(height: 16),
+                      SizedBox(height: 16),
                       // Free share button only
                       SizedBox(
                         width: double.infinity,
@@ -371,12 +380,12 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                             isPaid: false,
                           ),
                           icon: SvgPicture.asset(
-                        'assets/icons/share.svg',
-                        colorFilter:
-                            ColorFilter.mode(Colors.white, BlendMode.srcIn),
-                        width: 24, // Adjust size as needed
-                        height: 24, // Adjust size as needed
-                      ),
+                            'assets/icons/share.svg',
+                            colorFilter:
+                                ColorFilter.mode(Colors.white, BlendMode.srcIn),
+                            width: 24, // Adjust size as needed
+                            height: 24, // Adjust size as needed
+                          ),
                           label: Text(context.loc.shareBasic),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primaryBlue,
@@ -394,125 +403,131 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
               ),
 
               // Divider
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 24.0),
-                  child: Row(
-                    children: [
-                      Expanded(child: Divider(color: dividerColor)),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        child: Text(
-                          context.loc.or,
-                          style: TextStyle(
-                            color: secondaryTextColor,
-                            fontWeight: FontWeight.bold,
-                            fontSize: fontSize - 2,
-                          ),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24.0),
+                child: Row(
+                  children: [
+                    Expanded(child: Divider(color: dividerColor)),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Text(
+                        context.loc.or,
+                        style: TextStyle(
+                          color: secondaryTextColor,
+                          fontWeight: FontWeight.bold,
+                          fontSize: fontSize - 2,
                         ),
                       ),
-                      Expanded(child: Divider(color: dividerColor)),
-                    ],
-                  ),
-                ),
-
-                // Premium sharing option
-                Text(
-                  context.loc.premiumSharing,
-                  style: TextStyle(
-                    fontSize: fontSize + 2,
-                    fontWeight: FontWeight.bold,
-                    color: textColor,
-                  ),
-                ),
-                SizedBox(height: 16),
-                Card(
-                  elevation: 2,
-                  color: cardBackgroundColor,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    side: BorderSide(
-                      color: widget.isPaidUser ? AppColors.primaryBlue : dividerColor,
-                      width: 2,
                     ),
+                    Expanded(child: Divider(color: dividerColor)),
+                  ],
+                ),
+              ),
+
+              // Premium sharing option
+              Text(
+                context.loc.premiumSharing,
+                style: TextStyle(
+                  fontSize: fontSize + 2,
+                  fontWeight: FontWeight.bold,
+                  color: textColor,
+                ),
+              ),
+              SizedBox(height: 16),
+              Card(
+                elevation: 2,
+                color: cardBackgroundColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(
+                    color: widget.isPaidUser
+                        ? AppColors.primaryBlue
+                        : dividerColor,
+                    width: 2,
                   ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          context.loc.shareWithYourBranding,
-                          style: TextStyle(
-                            fontSize: fontSize,
-                            fontWeight: FontWeight.w600,
-                            color: textColor,
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        context.loc.shareWithYourBranding,
+                        style: TextStyle(
+                          fontSize: fontSize,
+                          fontWeight: FontWeight.w600,
+                          color: textColor,
+                        ),
+                      ),
+                      SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Icon(Icons.check_circle,
+                              color: AppColors.primaryGreen),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              context.loc.includename,
+                              style: TextStyle(
+                                color: textColor,
+                                fontSize: fontSize - 2,
+                              ),
+                            ),
                           ),
-                        ),
-                        SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Icon(Icons.check_circle, color: AppColors.primaryGreen),
-                            SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                context.loc.includename,
-                                style: TextStyle(
-                                  color: textColor,
-                                  fontSize: fontSize - 2,
-                                ),
+                        ],
+                      ),
+                      SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Icon(Icons.check_circle,
+                              color: AppColors.primaryGreen),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              context.loc.personalizedSharingMessage,
+                              style: TextStyle(
+                                color: textColor,
+                                fontSize: fontSize - 2,
                               ),
                             ),
-                          ],
-                        ),
-                        SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Icon(Icons.check_circle, color: AppColors.primaryGreen),
-                            SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                context.loc.personalizedSharingMessage,
-                                style: TextStyle(
-                                  color: textColor,
-                                  fontSize: fontSize - 2,
-                                ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Icon(Icons.check_circle,
+                              color: AppColors.primaryGreen),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              context.loc.noWatermarkCleanLook,
+                              style: TextStyle(
+                                color: textColor,
+                                fontSize: fontSize - 2,
                               ),
                             ),
-                          ],
-                        ),
-                        SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Icon(Icons.check_circle, color: AppColors.primaryGreen),
-                            SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                context.loc.noWatermarkCleanLook,
-                                style: TextStyle(
-                                  color: textColor,
-                                  fontSize: fontSize - 2,
-                                ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Icon(Icons.check_circle,
+                              color: AppColors.primaryGreen),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              context.loc.highQualityExport,
+                              style: TextStyle(
+                                color: textColor,
+                                fontSize: fontSize - 2,
                               ),
                             ),
-                          ],
-                        ),
-                        SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Icon(Icons.check_circle, color: AppColors.primaryGreen),
-                            SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                context.loc.highQualityExport,
-                                style: TextStyle(
-                                  color: textColor,
-                                  fontSize: fontSize - 2,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 16),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 16),
 
                       // If we have custom image data, show just the image for paid users
                       if (_customImageData != null && widget.isPaidUser)
@@ -539,7 +554,8 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                             SizedBox(
                               width: double.infinity,
                               child: ElevatedButton.icon(
-                                onPressed: () => _shareTemplate(context, isPaid: true),
+                                onPressed: () =>
+                                    _shareTemplate(context, isPaid: true),
                                 icon: Icon(Icons.share, color: Colors.white),
                                 label: Text(context.loc.shareNow),
                                 style: ElevatedButton.styleFrom(
@@ -557,10 +573,12 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                       // Otherwise show the template with user info box for both paid and unpaid users
                       else
                         FutureBuilder<DocumentSnapshot>(
-                          key: ValueKey("premium_preview_${currentTemplateId}_${currentImageUrl}"),
+                          key: ValueKey(
+                              "premium_preview_${currentTemplateId}_${currentImageUrl}"),
                           future: FirebaseFirestore.instance
                               .collection('users')
-                              .doc(FirebaseAuth.instance.currentUser?.email?.replaceAll('.', '_'))
+                              .doc(FirebaseAuth.instance.currentUser?.email
+                                  ?.replaceAll('.', '_'))
                               .get(),
                           builder: (context, snapshot) {
                             String userName = '';
@@ -572,8 +590,11 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                             bool isBusinessProfile = false;
 
                             // Extract user data if available
-                            if (snapshot.hasData && snapshot.data != null && snapshot.data!.exists) {
-                              final userData = snapshot.data!.data() as Map<String, dynamic>;
+                            if (snapshot.hasData &&
+                                snapshot.data != null &&
+                                snapshot.data!.exists) {
+                              final userData =
+                                  snapshot.data!.data() as Map<String, dynamic>;
                               userName = userData['name'] ?? '';
 
                               // Only override profile URL if the passed one is empty
@@ -587,7 +608,9 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                                 userDescription = userData['description'] ?? '';
                                 userSocialMedia = userData['socialMedia'] ?? '';
                                 companyName = userData['companyName'] ?? '';
-                                isBusinessProfile = userData['lastActiveProfileTab'] == 'business';
+                                isBusinessProfile =
+                                    userData['lastActiveProfileTab'] ==
+                                        'business';
                               }
                             }
 
@@ -606,29 +629,40 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                                         // Template image with proper aspect ratio
                                         _isImageLoading
                                             ? _buildImageContainer(
-                                          aspectRatio: _aspectRatio,
-                                          borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
-                                          child: Center(
-                                            child: CircularProgressIndicator(
-                                              color: AppColors.primaryBlue,
-                                              backgroundColor: isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
-                                            ),
-                                          ),
-                                        )
+                                                aspectRatio: _aspectRatio,
+                                                borderRadius:
+                                                    BorderRadius.vertical(
+                                                        top:
+                                                            Radius.circular(8)),
+                                                child: Center(
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                    color:
+                                                        AppColors.primaryBlue,
+                                                    backgroundColor: isDarkMode
+                                                        ? AppColors.darkSurface
+                                                        : AppColors
+                                                            .lightSurface,
+                                                  ),
+                                                ),
+                                              )
                                             : AspectRatio(
-                                          aspectRatio: _aspectRatio,
-                                          child: Container(
-                                            decoration: BoxDecoration(
-                                              borderRadius: BorderRadius.vertical(
-                                                  top: Radius.circular(8)),
-                                              image: DecorationImage(
-                                                image: NetworkImage(
-                                                    widget.template.imageUrl),
-                                                fit: BoxFit.contain,
+                                                aspectRatio: _aspectRatio,
+                                                child: Container(
+                                                  decoration: BoxDecoration(
+                                                    borderRadius:
+                                                        BorderRadius.vertical(
+                                                            top:
+                                                                Radius.circular(
+                                                                    8)),
+                                                    image: DecorationImage(
+                                                      image: NetworkImage(widget
+                                                          .template.imageUrl),
+                                                      fit: BoxFit.contain,
+                                                    ),
+                                                  ),
+                                                ),
                                               ),
-                                            ),
-                                          ),
-                                        ),
 
                                         // Info box with basic or detailed user info based on paid status
                                         Container(
@@ -636,89 +670,131 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                                           padding: EdgeInsets.all(12),
                                           decoration: BoxDecoration(
                                             color: cardColor,
-                                            borderRadius: BorderRadius.vertical(bottom: Radius.circular(8)),
+                                            borderRadius: BorderRadius.vertical(
+                                                bottom: Radius.circular(8)),
                                           ),
                                           child: Row(
                                             children: [
                                               // Profile image
                                               CircleAvatar(
                                                 radius: 20,
-                                                backgroundImage: userProfileUrl.isNotEmpty
-                                                    ? NetworkImage(userProfileUrl)
-                                                    : AssetImage('assets/profile_placeholder.png') as ImageProvider,
+                                                backgroundImage: userProfileUrl
+                                                        .isNotEmpty
+                                                    ? NetworkImage(
+                                                        userProfileUrl)
+                                                    : AssetImage(
+                                                            'assets/profile_placeholder.png')
+                                                        as ImageProvider,
                                               ),
                                               SizedBox(width: 12),
 
                                               // User details - simplified for unpaid users
                                               Expanded(
                                                 child: Column(
-                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
                                                   children: widget.isPaidUser
                                                       ? [
-                                                    // Show Company Name first if business profile (paid users only)
-                                                    if (isBusinessProfile && companyName.isNotEmpty)
-                                                      Text(
-                                                        companyName,
-                                                        style: TextStyle(
-                                                          fontWeight: FontWeight.bold,
-                                                          fontSize: fontSize,
-                                                          color: textColor,
-                                                        ),
-                                                      ),
+                                                          // Show Company Name first if business profile (paid users only)
+                                                          if (isBusinessProfile &&
+                                                              companyName
+                                                                  .isNotEmpty)
+                                                            Text(
+                                                              companyName,
+                                                              style: TextStyle(
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                                fontSize:
+                                                                    fontSize,
+                                                                color:
+                                                                    textColor,
+                                                              ),
+                                                            ),
 
-                                                    // Show user name
-                                                    Text(
-                                                      userName.isNotEmpty ? userName : widget.userName,
-                                                      style: TextStyle(
-                                                        fontWeight: isBusinessProfile ? FontWeight.normal : FontWeight.bold,
-                                                        fontSize: isBusinessProfile ? 14 : 16,
-                                                        color: textColor,
-                                                      ),
-                                                    ),
+                                                          // Show user name
+                                                          Text(
+                                                            userName.isNotEmpty
+                                                                ? userName
+                                                                : widget
+                                                                    .userName,
+                                                            style: TextStyle(
+                                                              fontWeight:
+                                                                  isBusinessProfile
+                                                                      ? FontWeight
+                                                                          .normal
+                                                                      : FontWeight
+                                                                          .bold,
+                                                              fontSize:
+                                                                  isBusinessProfile
+                                                                      ? 14
+                                                                      : 16,
+                                                              color: textColor,
+                                                            ),
+                                                          ),
 
-                                                    // Show location if available (paid users only)
-                                                    if (userLocation.isNotEmpty)
-                                                      Text(
-                                                        userLocation,
-                                                        style: TextStyle(
-                                                          fontSize: fontSize,
-                                                          color: secondaryTextColor,
-                                                        ),
-                                                      ),
+                                                          // Show location if available (paid users only)
+                                                          if (userLocation
+                                                              .isNotEmpty)
+                                                            Text(
+                                                              userLocation,
+                                                              style: TextStyle(
+                                                                fontSize:
+                                                                    fontSize,
+                                                                color:
+                                                                    secondaryTextColor,
+                                                              ),
+                                                            ),
 
-                                                    // Show social media for business profiles (paid users only)
-                                                    if (isBusinessProfile && userSocialMedia.isNotEmpty)
-                                                      Text(
-                                                        userSocialMedia,
-                                                        style: TextStyle(
-                                                          fontSize: fontSize,
-                                                          color: AppColors.primaryBlue,
-                                                        ),
-                                                      ),
+                                                          // Show social media for business profiles (paid users only)
+                                                          if (isBusinessProfile &&
+                                                              userSocialMedia
+                                                                  .isNotEmpty)
+                                                            Text(
+                                                              userSocialMedia,
+                                                              style: TextStyle(
+                                                                fontSize:
+                                                                    fontSize,
+                                                                color: AppColors
+                                                                    .primaryBlue,
+                                                              ),
+                                                            ),
 
-                                                    // Show description for business profiles (paid users only)
-                                                    if (isBusinessProfile && userDescription.isNotEmpty)
-                                                      Text(
-                                                        userDescription,
-                                                        style: TextStyle(
-                                                          fontSize: fontSize,
-                                                          color: secondaryTextColor,
-                                                        ),
-                                                        maxLines: 2,
-                                                        overflow: TextOverflow.ellipsis,
-                                                      ),
-                                                  ]
+                                                          // Show description for business profiles (paid users only)
+                                                          if (isBusinessProfile &&
+                                                              userDescription
+                                                                  .isNotEmpty)
+                                                            Text(
+                                                              userDescription,
+                                                              style: TextStyle(
+                                                                fontSize:
+                                                                    fontSize,
+                                                                color:
+                                                                    secondaryTextColor,
+                                                              ),
+                                                              maxLines: 2,
+                                                              overflow:
+                                                                  TextOverflow
+                                                                      .ellipsis,
+                                                            ),
+                                                        ]
                                                       : [
-                                                    // Basic info for unpaid users - just the name
-                                                    Text(
-                                                      userName.isNotEmpty ? userName : widget.userName,
-                                                      style: TextStyle(
-                                                        fontWeight: FontWeight.bold,
-                                                        fontSize: fontSize,
-                                                        color: textColor,
-                                                      ),
-                                                    ),
-                                                  ],
+                                                          // Basic info for unpaid users - just the name
+                                                          Text(
+                                                            userName.isNotEmpty
+                                                                ? userName
+                                                                : widget
+                                                                    .userName,
+                                                            style: TextStyle(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                              fontSize:
+                                                                  fontSize,
+                                                              color: textColor,
+                                                            ),
+                                                          ),
+                                                        ],
                                                 ),
                                               ),
                                             ],
@@ -735,14 +811,25 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                                   width: double.infinity,
                                   child: ElevatedButton.icon(
                                     onPressed: widget.isPaidUser
-                                        ? () => _shareTemplate(context, isPaid: true)
-                                        : () => Navigator.pushNamed(context, '/subscription'),
-                                    icon: Icon(widget.isPaidUser ? Icons.share : Icons.lock),
-                                    label: Text(widget.isPaidUser ? 'Share Now' : 'Upgrade to Pro'),
+                                        ? () => _shareTemplate(context,
+                                            isPaid: true)
+                                        : () => Navigator.pushNamed(
+                                            context, '/subscription'),
+                                    icon: widget.isPaidUser
+                                        ? SvgPicture.asset(
+                                            'assets/icons/share.svg',
+                                            colorFilter:
+                                ColorFilter.mode(Colors.white, BlendMode.srcIn),)
+                                        : SvgPicture.asset(
+                                            'assets/icons/premium_1659060.svg'),
+                                    label: Text(widget.isPaidUser
+                                        ? 'Share Now'
+                                        : 'Upgrade to Pro'),
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: AppColors.primaryBlue,
                                       foregroundColor: Colors.white,
-                                      padding: EdgeInsets.symmetric(vertical: 12),
+                                      padding:
+                                          EdgeInsets.symmetric(vertical: 12),
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(24),
                                       ),
@@ -776,7 +863,8 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
 
       // Use a higher pixel ratio for better quality
       final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
-      final ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      final ByteData? byteData =
+          await image.toByteData(format: ui.ImageByteFormat.png);
       return byteData?.buffer.asUint8List();
     } catch (e) {
       print('Error capturing branded image: $e');
@@ -784,12 +872,12 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
     }
   }
 
-
   // Method to add branding to image programmatically for paid users
   Future<Uint8List?> _addBrandingToImage(Uint8List originalImageBytes) async {
     try {
       // Decode the original image
-      final ui.Image originalImage = await decodeImageFromList(originalImageBytes);
+      final ui.Image originalImage =
+          await decodeImageFromList(originalImageBytes);
 
       // Create a recorder and canvas with the ORIGINAL image dimensions
       final ui.PictureRecorder recorder = ui.PictureRecorder();
@@ -802,7 +890,8 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
       ui.Image? profileImage;
       if (widget.userProfileImageUrl.isNotEmpty) {
         try {
-          final http.Response response = await http.get(Uri.parse(widget.userProfileImageUrl));
+          final http.Response response =
+              await http.get(Uri.parse(widget.userProfileImageUrl));
           if (response.statusCode == 200) {
             profileImage = await decodeImageFromList(response.bodyBytes);
           }
@@ -846,11 +935,13 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
         // Draw the profile image in a circle
         canvas.save(); // Save the canvas state before clipping
         final Path clipPath = Path()
-          ..addOval(Rect.fromLTWH(profileX, profileY, profileSize, profileSize));
+          ..addOval(
+              Rect.fromLTWH(profileX, profileY, profileSize, profileSize));
         canvas.clipPath(clipPath);
         canvas.drawImageRect(
           profileImage,
-          Rect.fromLTWH(0, 0, profileImage.width.toDouble(), profileImage.height.toDouble()),
+          Rect.fromLTWH(0, 0, profileImage.width.toDouble(),
+              profileImage.height.toDouble()),
           Rect.fromLTWH(profileX, profileY, profileSize, profileSize),
           Paint(),
         );
@@ -874,9 +965,11 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
 
       final ui.Paragraph paragraph = paragraphBuilder.build()
         ..layout(ui.ParagraphConstraints(
-            width: brandingWidth - (profileImage != null ? brandingHeight * 0.8 + 12 : 8)));
+            width: brandingWidth -
+                (profileImage != null ? brandingHeight * 0.8 + 12 : 8)));
 
-      canvas.drawParagraph(paragraph, Offset(textX, textY - paragraph.height / 2));
+      canvas.drawParagraph(
+          paragraph, Offset(textX, textY - paragraph.height / 2));
 
       // Convert canvas to image
       final ui.Picture picture = recorder.endRecording();
@@ -886,7 +979,8 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
       );
 
       // Convert image to bytes
-      final ByteData? byteData = await renderedImage.toByteData(format: ui.ImageByteFormat.png);
+      final ByteData? byteData =
+          await renderedImage.toByteData(format: ui.ImageByteFormat.png);
       return byteData?.buffer.asUint8List();
     } catch (e) {
       print('Error adding branding to image: $e');
@@ -898,7 +992,8 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
   Future<Uint8List?> _addWatermarkToImage(Uint8List originalImageBytes) async {
     try {
       // Decode the original image
-      final ui.Image originalImage = await decodeImageFromList(originalImageBytes);
+      final ui.Image originalImage =
+          await decodeImageFromList(originalImageBytes);
 
       // Create a recorder and canvas
       final ui.PictureRecorder recorder = ui.PictureRecorder();
@@ -909,13 +1004,16 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
 
       // Load the logo watermark
       final ByteData logoData = await rootBundle.load('assets/logo.png');
-      final ui.Image logo = await decodeImageFromList(logoData.buffer.asUint8List());
+      final ui.Image logo =
+          await decodeImageFromList(logoData.buffer.asUint8List());
 
       // Calculate size and position for the watermark in top right corner
       final double width = originalImage.width.toDouble();
       final double height = originalImage.height.toDouble();
-      final double watermarkSize = width * 0.2; // 20% of the image width (smaller than before)
-      final double watermarkX = width - watermarkSize - 16; // Position from right edge with padding
+      final double watermarkSize =
+          width * 0.2; // 20% of the image width (smaller than before)
+      final double watermarkX =
+          width - watermarkSize - 16; // Position from right edge with padding
       final double watermarkY = 16; // Position from top with padding
 
       // Apply semi-transparent effect to the watermark
@@ -937,8 +1035,8 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
       );
 
       // Convert image to bytes
-      final ByteData? byteData = await renderedImage.toByteData
-        (format: ui.ImageByteFormat.png);
+      final ByteData? byteData =
+          await renderedImage.toByteData(format: ui.ImageByteFormat.png);
       return byteData?.buffer.asUint8List();
     } catch (e) {
       print('Error adding watermark to image: $e');
@@ -947,7 +1045,8 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
   }
 
   // Integrated sharing functionality with proper branding for paid users and watermark for free users
-  Future<void> _shareTemplate(BuildContext context, {required bool isPaid}) async {
+  Future<void> _shareTemplate(BuildContext context,
+      {required bool isPaid}) async {
     try {
       // Show loading indicator
       showDialog(
@@ -968,7 +1067,8 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
         originalImageBytes = _customImageData!;
       } else if (widget.template.imageUrl.startsWith('file:/')) {
         // Load from local file
-        final String filePath = widget.template.imageUrl.replaceFirst('file:/', '');
+        final String filePath =
+            widget.template.imageUrl.replaceFirst('file:/', '');
         final File imageFile = File(filePath);
         if (await imageFile.exists()) {
           originalImageBytes = await imageFile.readAsBytes();
@@ -1001,11 +1101,13 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
 
           // Final fallback to original image
           if (imageBytes == null) {
-            print('Both branding approaches failed, falling back to direct download');
+            print(
+                'Both branding approaches failed, falling back to direct download');
             imageBytes = originalImageBytes;
           }
         } catch (e) {
-          print('Error in premium capture: $e, falling back to direct download');
+          print(
+              'Error in premium capture: $e, falling back to direct download');
           imageBytes = originalImageBytes;
         }
       } else {
@@ -1081,11 +1183,14 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
     double rating = 0;
     final ThemeData theme = Theme.of(context);
     final bool isDarkMode = theme.brightness == Brightness.dark;
-    final Color backgroundColor = isDarkMode ? AppColors.darkSurface : AppColors.lightSurface;
-    final Color textColor = isDarkMode ? AppColors.darkText : AppColors.lightText;
+    final Color backgroundColor =
+        isDarkMode ? AppColors.darkSurface : AppColors.lightSurface;
+    final Color textColor =
+        isDarkMode ? AppColors.darkText : AppColors.lightText;
 
     // Get font size from TextSizeProvider
-    final textSizeProvider = Provider.of<TextSizeProvider>(context, listen: false);
+    final textSizeProvider =
+        Provider.of<TextSizeProvider>(context, listen: false);
     final fontSize = textSizeProvider.fontSize;
 
     return showDialog<double>(
@@ -1093,12 +1198,14 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
       builder: (BuildContext dialogContext) {
         return StatefulBuilder(builder: (context, setState) {
           return AlertDialog(
-            title: Text(context.loc.rateThisContent,
-            style: TextStyle(
-              fontSize: fontSize,
-              fontWeight: FontWeight.bold,
-              color: textColor,
-            ),),
+            title: Text(
+              context.loc.rateThisContent,
+              style: TextStyle(
+                fontSize: fontSize,
+                fontWeight: FontWeight.bold,
+                color: textColor,
+              ),
+            ),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -1257,7 +1364,7 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
     try {
       // Get reference to the template document
       final templateRef =
-      FirebaseFirestore.instance.collection('templates').doc(templateId);
+          FirebaseFirestore.instance.collection('templates').doc(templateId);
 
       // Run this as a transaction to ensure data consistency
       await FirebaseFirestore.instance.runTransaction((transaction) async {

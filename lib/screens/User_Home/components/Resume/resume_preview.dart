@@ -1,7 +1,7 @@
-
 import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:mtquotes/screens/User_Home/components/Resume/resume_data.dart';
 import 'package:mtquotes/screens/User_Home/components/Resume/resume_interface.dart';
 import 'package:mtquotes/screens/User_Home/components/Resume/resume_pdf.dart';
@@ -11,7 +11,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:share_plus/share_plus.dart';
-
 
 class ResumePreviewScreen extends StatefulWidget {
   final ResumeData resumeData;
@@ -49,12 +48,15 @@ class _ResumePreviewScreenState extends State<ResumePreviewScreen> {
     // Base colors from app theme
     final primaryColor = AppColors.primaryBlue;
     final accentColor = AppColors.primaryGreen;
-    final backgroundColor = isDarkMode ? AppColors.darkBackground : AppColors.lightBackground;
+    final backgroundColor =
+        isDarkMode ? AppColors.darkBackground : AppColors.lightBackground;
     final textColor = isDarkMode ? AppColors.darkText : AppColors.lightText;
-    final secondaryTextColor = isDarkMode ? AppColors.darkSecondaryText : AppColors.lightSecondaryText;
-    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.lightDivider;
-    final shadowColor = isDarkMode 
-        ? Colors.black.withOpacity(0.3) 
+    final secondaryTextColor =
+        isDarkMode ? AppColors.darkSecondaryText : AppColors.lightSecondaryText;
+    final dividerColor =
+        isDarkMode ? AppColors.darkDivider : AppColors.lightDivider;
+    final shadowColor = isDarkMode
+        ? Colors.black.withOpacity(0.3)
         : Colors.black.withOpacity(0.1);
 
     switch (templateType.toLowerCase()) {
@@ -76,7 +78,8 @@ class _ResumePreviewScreenState extends State<ResumePreviewScreen> {
             fontWeight: FontWeight.bold,
             letterSpacing: 1.0,
           ),
-          instructionsBoxColor: isDarkMode ? AppColors.darkSurface : Colors.grey[200]!,
+          instructionsBoxColor:
+              isDarkMode ? AppColors.darkSurface : Colors.grey[200]!,
           instructionsBoxBorderColor: dividerColor,
           shadowColor: shadowColor,
         );
@@ -98,8 +101,8 @@ class _ResumePreviewScreenState extends State<ResumePreviewScreen> {
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
-          instructionsBoxColor: isDarkMode 
-              ? AppColors.darkSurface 
+          instructionsBoxColor: isDarkMode
+              ? AppColors.darkSurface
               : AppColors.primaryBlue.withOpacity(0.1),
           instructionsBoxBorderColor: dividerColor,
           shadowColor: shadowColor,
@@ -123,8 +126,8 @@ class _ResumePreviewScreenState extends State<ResumePreviewScreen> {
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
-          instructionsBoxColor: isDarkMode 
-              ? AppColors.darkSurface 
+          instructionsBoxColor: isDarkMode
+              ? AppColors.darkSurface
               : AppColors.lightBlue.withOpacity(0.1),
           instructionsBoxBorderColor: dividerColor,
           shadowColor: shadowColor,
@@ -133,7 +136,8 @@ class _ResumePreviewScreenState extends State<ResumePreviewScreen> {
   }
 
   // Generate PDF file
-  static Future<String> generatePdf(ResumeData data, {bool saveToDownloads = true}) async {
+  static Future<String> generatePdf(ResumeData data,
+      {bool saveToDownloads = true}) async {
     // Create PDF document
     final pdf = pw.Document();
     String filePath;
@@ -188,7 +192,8 @@ class _ResumePreviewScreenState extends State<ResumePreviewScreen> {
 
         // Create a file name with timestamp to avoid conflicts
         final timestamp = DateTime.now().millisecondsSinceEpoch;
-        final fileName = 'Resume_${data.personalInfo.firstName}_${data.personalInfo.lastName}_$timestamp.pdf';
+        final fileName =
+            'Resume_${data.personalInfo.firstName}_${data.personalInfo.lastName}_$timestamp.pdf';
         filePath = '${downloadsDir?.path}/$fileName';
 
         // Save the PDF
@@ -239,10 +244,10 @@ class _ResumePreviewScreenState extends State<ResumePreviewScreen> {
       setState(() {
         _isGeneratingPdf = true;
       });
-      
+
       try {
         _pdfPath = await generatePdf(widget.resumeData, saveToDownloads: true);
-        
+
         await Share.shareXFiles(
           [XFile(_pdfPath!)],
           text: 'My Resume',
@@ -345,23 +350,28 @@ class _ResumePreviewScreenState extends State<ResumePreviewScreen> {
   Widget build(BuildContext context) {
     // Get current theme brightness
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    
+
     // Get template style based on current theme and template type
     _style = _getTemplateStyle(widget.resumeData.templateType, isDarkMode);
-    
+
     // Check if template is business type
-    final bool isBusinessTemplate = widget.resumeData.templateType.toLowerCase() == 'business';
+    final bool isBusinessTemplate =
+        widget.resumeData.templateType.toLowerCase() == 'business';
 
     // Get theme colors
-    final backgroundColor = isDarkMode ? AppColors.darkBackground : AppColors.lightBackground;
+    final backgroundColor =
+        isDarkMode ? AppColors.darkBackground : AppColors.lightBackground;
     final textColor = isDarkMode ? AppColors.darkText : AppColors.lightText;
     final iconColor = isDarkMode ? AppColors.darkIcon : AppColors.lightIcon;
-    final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.lightSurface;
+    final surfaceColor =
+        isDarkMode ? AppColors.darkSurface : AppColors.lightSurface;
 
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(
-        backgroundColor: isBusinessTemplate ? _style.primaryColor : (isDarkMode ? AppColors.darkSurface : AppColors.lightBackground),
+        backgroundColor: isBusinessTemplate
+            ? _style.primaryColor
+            : (isDarkMode ? AppColors.darkSurface : AppColors.lightBackground),
         elevation: 0,
         leading: IconButton(
           icon: Icon(
@@ -384,8 +394,8 @@ class _ResumePreviewScreenState extends State<ResumePreviewScreen> {
         actions: [
           // Share icon in app bar
           IconButton(
-            icon: Icon(
-              Icons.share,
+            icon: SvgPicture.asset(
+              'assets/icons/share.svg',
               color: isBusinessTemplate ? Colors.white : iconColor,
             ),
             onPressed: _isGeneratingPdf ? null : _sharePdf,
@@ -403,7 +413,8 @@ class _ResumePreviewScreenState extends State<ResumePreviewScreen> {
                 ),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.white, // Resume preview always white for better readability
+                    color: Colors
+                        .white, // Resume preview always white for better readability
                     boxShadow: [
                       BoxShadow(
                         color: _style.shadowColor,
@@ -445,8 +456,10 @@ class _ResumePreviewScreenState extends State<ResumePreviewScreen> {
                     padding: const EdgeInsets.only(right: 8.0),
                     child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: isDarkMode ? Colors.grey[800] : Colors.grey[200],
-                        foregroundColor: isDarkMode ? Colors.white70 : Colors.black87,
+                        backgroundColor:
+                            isDarkMode ? Colors.grey[800] : Colors.grey[200],
+                        foregroundColor:
+                            isDarkMode ? Colors.white70 : Colors.black87,
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -536,4 +549,3 @@ class TemplateStyle {
     required this.shadowColor,
   });
 }
-
