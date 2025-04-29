@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -8,9 +7,10 @@ import 'package:open_file/open_file.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:syncfusion_flutter_signaturepad/signaturepad.dart';
-
 import 'package:syncfusion_flutter_pdf/pdf.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
+import '../../../../utils/app_colors.dart';
+import '../../../../utils/app_theme.dart';
 
 class SignatureInfo {
   final Uint8List signatureImage;
@@ -67,9 +67,17 @@ class _PdfSignatureScreenState extends State<PdfSignatureScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Use theme properties from the current theme
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Fill & Sign PDF'),
+        title: Text('Fill & Sign PDF'),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios),
+          onPressed: () => Navigator.pop(context),
+        ),
         actions: [
           if (!_isSignaturePanelOpen && !_isPositioningSignature)
             IconButton(
@@ -133,25 +141,45 @@ class _PdfSignatureScreenState extends State<PdfSignatureScreen> {
       ),
       body: Stack(
         children: [
-          // PDF Viewer
+          // PDF Viewer - Use a key to force rebuild when savedSignedPdfPath changes
           _savedSignedPdfPath != null
               ? SfPdfViewer.file(
             File(_savedSignedPdfPath!),
             controller: _pdfViewerController,
+            key: ValueKey(_savedSignedPdfPath),
           )
               : SfPdfViewer.file(
             File(widget.pdfPath),
             controller: _pdfViewerController,
+            key: ValueKey(widget.pdfPath),
           ),
 
-          // Display existing signatures overlay
+          // Display existing signatures overlay - Using Stack of positioned widgets instead of CustomPaint
           if (!_isPositioningSignature && !_isSignaturePanelOpen)
             Positioned.fill(
-              child: CustomPaint(
-                painter: SignatureOverlayPainter(
-                  signatures: _signatures,
-                  currentPage: _pdfViewerController.pageNumber,
-                ),
+              child: Stack(
+                children: _signatures
+                    .where((sig) => sig.pageNumber == _pdfViewerController.pageNumber)
+                    .map((sig) {
+                  return Positioned(
+                    left: sig.position.dx,
+                    top: sig.position.dy,
+                    width: sig.size.width,
+                    height: sig.size.height,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: theme.colorScheme.primary.withOpacity(0.3),
+                          width: 1,
+                        ),
+                      ),
+                      child: Image.memory(
+                        sig.signatureImage,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                  );
+                }).toList(),
               ),
             ),
 
@@ -173,7 +201,7 @@ class _PdfSignatureScreenState extends State<PdfSignatureScreen> {
                         width: _signatureSize.width,
                         height: _signatureSize.height,
                         decoration: BoxDecoration(
-                          border: Border.all(color: Colors.blue, width: 1),
+                          border: Border.all(color: theme.colorScheme.primary, width: 1),
                         ),
                         child: Image.memory(
                           _currentSignatureImage!,
@@ -221,6 +249,7 @@ class _PdfSignatureScreenState extends State<PdfSignatureScreen> {
                                 style: TextStyle(
                                   fontStyle: FontStyle.italic,
                                   fontSize: 12,
+                                  color: theme.textTheme.bodySmall?.color,
                                 ),
                                 textAlign: TextAlign.center,
                               ),
@@ -244,10 +273,10 @@ class _PdfSignatureScreenState extends State<PdfSignatureScreen> {
                 height: 280,
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: theme.colorScheme.surface,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.grey.withOpacity(0.5),
+                      color: Colors.black.withOpacity(0.3),
                       spreadRadius: 1,
                       blurRadius: 5,
                       offset: const Offset(0, -3),
@@ -283,7 +312,7 @@ class _PdfSignatureScreenState extends State<PdfSignatureScreen> {
                                       color: color,
                                       shape: BoxShape.circle,
                                       border: _signatureColor == color
-                                          ? Border.all(color: Colors.blue, width: 2)
+                                          ? Border.all(color: theme.colorScheme.primary, width: 2)
                                           : null,
                                     ),
                                   ),
@@ -308,6 +337,8 @@ class _PdfSignatureScreenState extends State<PdfSignatureScreen> {
                             min: 1,
                             max: 5,
                             divisions: 4,
+                            activeColor: theme.colorScheme.primary,
+                            inactiveColor: theme.colorScheme.primary.withOpacity(0.3),
                             onChanged: (value) {
                               setState(() {
                                 _strokeWidth = value;
@@ -319,22 +350,37 @@ class _PdfSignatureScreenState extends State<PdfSignatureScreen> {
                       ],
                     ),
 
-                    // Signature pad with transparent background
+                    // Signature pad with appropriate background
                     Expanded(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey.shade300),
-                          borderRadius: BorderRadius.circular(8),
-                          // Checkerboard pattern to indicate transparency
-                          color: Colors.grey.shade200,
-                        ),
-                        child: SfSignaturePad(
-                          key: _signaturePadKey,
-                          backgroundColor: Colors.transparent, // Transparent background
-                          strokeColor: _signatureColor,
-                          minimumStrokeWidth: _strokeWidth,
-                          maximumStrokeWidth: _strokeWidth + 2,
-                        ),
+                      child: Stack(
+                        children: [
+                          // Checkerboard pattern background
+                          Positioned.fill(
+                            child: CustomPaint(
+                              painter: CheckerboardPainter(
+                                color1: Colors.grey.shade200,
+                                color2: Colors.white,
+                                size: 10.0,
+                              ),
+                            ),
+                          ),
+                          // Transparent signature pad
+                          Positioned.fill(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                border: Border.all(color: theme.dividerTheme.color ?? Colors.grey.shade300),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: SfSignaturePad(
+                                key: _signaturePadKey,
+                                backgroundColor: Colors.transparent,
+                                strokeColor: _signatureColor,
+                                minimumStrokeWidth: _strokeWidth,
+                                maximumStrokeWidth: _strokeWidth + 2,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
 
@@ -363,7 +409,7 @@ class _PdfSignatureScreenState extends State<PdfSignatureScreen> {
               bottom: 0,
               width: 200,
               child: Container(
-                color: Colors.white,
+                color: theme.colorScheme.surface,
                 padding: EdgeInsets.all(8),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -396,7 +442,8 @@ class _PdfSignatureScreenState extends State<PdfSignatureScreen> {
                               width: 50,
                               height: 30,
                               decoration: BoxDecoration(
-                                border: Border.all(color: Colors.grey.shade300),
+                                border: Border.all(color: theme.dividerTheme.color ?? Colors.grey.shade300),
+                                color: isDarkMode ? Colors.grey.shade800 : Colors.grey.shade200,
                               ),
                               child: Image.memory(sig.signatureImage),
                             ),
@@ -429,8 +476,10 @@ class _PdfSignatureScreenState extends State<PdfSignatureScreen> {
           if (_isSaving)
             Container(
               color: Colors.black.withOpacity(0.3),
-              child: const Center(
-                child: CircularProgressIndicator(),
+              child: Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
+                ),
               ),
             ),
         ],
@@ -478,15 +527,9 @@ class _PdfSignatureScreenState extends State<PdfSignatureScreen> {
   }
 
   Future<Uint8List> _makeSignatureTransparent(Uint8List imageData) async {
-    // This is a simplified approach - for advanced cases, you might need to use
-    // a package like image or compute to process the image more efficiently
-
-    // For now, we'll just return the original image as PNG format already
-    // preserves transparency from the signature pad (since we set backgroundColor: Colors.transparent)
+    // The SfSignaturePad with backgroundColor: Colors.transparent already creates
+    // a transparent PNG, so we just need to return it as is
     return imageData;
-
-    // For more complex processing, you could use a package like 'image' to
-    // programmatically remove white pixels or use Compute for better performance
   }
 
   Future<void> _applySignature() async {
@@ -516,15 +559,20 @@ class _PdfSignatureScreenState extends State<PdfSignatureScreen> {
         _currentSignatureImage = null;
       });
 
-      // Update the PDF immediately
-      await _updatePdfWithSignatures();
-
+      // Don't automatically update the PDF here, just show a success message
+      // We'll only update the PDF when saving
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Signature applied to PDF')),
+        const SnackBar(
+          content: Text('Signature placed successfully'),
+          backgroundColor: AppColors.primaryGreen,
+        ),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error applying signature: $e')),
+        SnackBar(
+          content: Text('Error applying signature: $e'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
@@ -625,22 +673,33 @@ class _PdfSignatureScreenState extends State<PdfSignatureScreen> {
       // Dispose the document
       document.dispose();
 
+      // Clear the signatures array since they are now in the PDF
+      // This will prevent them from being rendered twice on screen
       setState(() {
         _isSaving = false;
         _savedSignedPdfPath = signedPdfPath;
+        _signatures = []; // Clear the signatures array
       });
     } catch (e) {
       setState(() {
         _isSaving = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error updating PDF: $e')),
+        SnackBar(
+          content: Text('Error updating PDF: $e'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
 
   Future<void> _savePdf() async {
     try {
+      // Show saving indicator
+      setState(() {
+        _isSaving = true;
+      });
+
       // Make sure the PDF is updated with all signatures
       if (_signatures.isNotEmpty) {
         await _updatePdfWithSignatures();
@@ -655,106 +714,133 @@ class _PdfSignatureScreenState extends State<PdfSignatureScreen> {
 
       await File(pdfPath).copy(savedFile.path);
 
+      // Hide saving indicator
+      setState(() {
+        _isSaving = false;
+      });
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('PDF saved to: ${savedFile.path}'),
+          backgroundColor: AppColors.primaryGreen,
           action: SnackBarAction(
             label: 'Open',
+            textColor: Colors.white,
             onPressed: () => OpenFile.open(savedFile.path),
           ),
         ),
       );
     } catch (e) {
+      // Hide saving indicator even if there's an error
+      setState(() {
+        _isSaving = false;
+      });
+
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error saving PDF: $e')),
+        SnackBar(
+          content: Text('Error saving PDF: $e'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
+}
 
-  Future<Directory> _getVakyDirectory() async {
-    if (Platform.isAndroid) {
-      Directory? directory;
+Future<Directory> _getVakyDirectory() async {
+  if (Platform.isAndroid) {
+    Directory? directory;
 
-      if (await Permission.manageExternalStorage.isGranted) {
-        try {
-          directory = Directory('/storage/emulated/0/Vaky');
-          if (!await directory.exists()) {
-            await directory.create(recursive: true);
-          }
-          return directory;
-        } catch (e) {
-          print('Error accessing external storage: $e');
+    if (await Permission.manageExternalStorage.isGranted) {
+      try {
+        directory = Directory('/storage/emulated/0/Vaky');
+        if (!await directory.exists()) {
+          await directory.create(recursive: true);
         }
+        return directory;
+      } catch (e) {
+        print('Error accessing external storage: $e');
       }
+    }
 
-      directory = await getExternalStorageDirectory();
-      if (directory != null) {
-        final vakyDir = Directory('${directory.path}/vaky');
-        if (!await vakyDir.exists()) {
-          await vakyDir.create(recursive: true);
-        }
-        return vakyDir;
-      }
-
-      final appDir = await getApplicationDocumentsDirectory();
-      final vakyDir = Directory('${appDir.path}/vaky');
-      if (!await vakyDir.exists()) {
-        await vakyDir.create(recursive: true);
-      }
-      return vakyDir;
-    } else {
-      final directory = await getApplicationDocumentsDirectory();
+    directory = await getExternalStorageDirectory();
+    if (directory != null) {
       final vakyDir = Directory('${directory.path}/vaky');
       if (!await vakyDir.exists()) {
         await vakyDir.create(recursive: true);
       }
       return vakyDir;
     }
+
+    final appDir = await getApplicationDocumentsDirectory();
+    final vakyDir = Directory('${appDir.path}/vaky');
+    if (!await vakyDir.exists()) {
+      await vakyDir.create(recursive: true);
+    }
+    return vakyDir;
+  } else {
+    final directory = await getApplicationDocumentsDirectory();
+    final vakyDir = Directory('${directory.path}/vaky');
+    if (!await vakyDir.exists()) {
+      await vakyDir.create(recursive: true);
+    }
+    return vakyDir;
   }
 }
 
-// Custom painter to show existing signatures on the PDF
-class SignatureOverlayPainter extends CustomPainter {
-  final List<SignatureInfo> signatures;
-  final int currentPage;
 
-  SignatureOverlayPainter({required this.signatures, required this.currentPage});
+// Custom painter for creating a checkerboard pattern to indicate transparency
+class CheckerboardPainter extends CustomPainter {
+  final Color color1;
+  final Color color2;
+  final double size;
+
+  CheckerboardPainter({
+    required this.color1,
+    required this.color2,
+    required this.size,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Only show signatures for the current page
-    final signaturesOnCurrentPage = signatures.where((sig) => sig.pageNumber == currentPage).toList();
+    final Paint paint1 = Paint()..color = color1;
+    final Paint paint2 = Paint()..color = color2;
 
-    for (var sig in signaturesOnCurrentPage) {
-      // Draw a light border around the signature
-      final rect = Rect.fromLTWH(
-        sig.position.dx,
-        sig.position.dy,
-        sig.size.width,
-        sig.size.height,
-      );
+    final numSquaresX = (size.width / this.size).ceil();
+    final numSquaresY = (size.height / this.size).ceil();
 
-      final paint = Paint()
-        ..color = Colors.blue.withOpacity(0.3)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.0;
-
-      canvas.drawRect(rect, paint);
-
-      // Use a decoder to draw the signature image
-      // This is just a placeholder - in a real app you would use a more efficient approach
-      final ui.Image image = Image.memory(sig.signatureImage).image as ui.Image;
-      paintImage(
-        canvas: canvas,
-        rect: rect,
-        image: image,
-        fit: BoxFit.contain,
-      );
+    for (int y = 0; y < numSquaresY; y++) {
+      for (int x = 0; x < numSquaresX; x++) {
+        final paint = (x + y) % 2 == 0 ? paint1 : paint2;
+        canvas.drawRect(
+          Rect.fromLTWH(
+            x * this.size,
+            y * this.size,
+            this.size,
+            this.size,
+          ),
+          paint,
+        );
+      }
     }
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) {
-    return true;
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+// Create a themed app with your AppTheme class
+class PdfSignatureApp extends StatelessWidget {
+  final String pdfPath;
+
+  const PdfSignatureApp({Key? key, required this.pdfPath}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      theme: AppTheme.getLightTheme(),
+      darkTheme: AppTheme.getDarkTheme(),
+      themeMode: ThemeMode.system, // Use system theme by default
+      home: PdfSignatureScreen(pdfPath: pdfPath),
+    );
   }
 }

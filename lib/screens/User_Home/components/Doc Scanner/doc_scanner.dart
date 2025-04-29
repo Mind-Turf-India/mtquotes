@@ -8,8 +8,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:open_file/open_file.dart';
-
-import 'gallery_selection.dart';
+import '../../../../utils/app_colors.dart';
 
 class DocScanner extends StatefulWidget {
   const DocScanner({Key? key}) : super(key: key);
@@ -33,58 +32,24 @@ class _DocScannerState extends State<DocScanner> {
   }
 
   Future<void> _requestPermissions() async {
-    // Request basic permissions
-    Map<Permission, PermissionStatus> statuses = await [
+    // Request camera and storage permissions with native dialogs
+    final statuses = await [
       Permission.storage,
       Permission.camera,
+      if (Platform.isAndroid) Permission.manageExternalStorage, // Optional for Android 11+
     ].request();
 
-    // For Android 11+, handle MANAGE_EXTERNAL_STORAGE separately
-    if (Platform.isAndroid) {
-      if (!await Permission.manageExternalStorage.isGranted) {
-        // Show a dialog explaining why you need this permission
-        final result = await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: Text('Storage Permission Required'),
-            content: Text('To save documents to external storage, please grant "All Files Access" permission in the next screen.'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: Text('Continue'),
-              ),
-            ],
-          ),
-        );
-
-        if (result == true) {
-          await Permission.manageExternalStorage.request();
-
-          // If still not granted, open app settings
-          if (!await Permission.manageExternalStorage.isGranted) {
-            final settingsOpened = await openAppSettings();
-            if (!settingsOpened) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Please open app settings and grant "All Files Access" permission')),
-              );
-            }
-          }
-        }
-      }
-    }
-
-    // Check final status
-    if (statuses[Permission.storage]!.isDenied ||
-        statuses[Permission.camera]!.isDenied) {
+    // Check if any permission is denied
+    if (statuses.values.any((status) => status.isDenied || status.isPermanentlyDenied)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Permissions are required to use the document scanner'),
         ),
       );
+      // Optionally open settings for permanently denied
+      if (statuses.values.any((status) => status.isPermanentlyDenied)) {
+        openAppSettings();
+      }
     }
   }
 
@@ -160,8 +125,11 @@ class _DocScannerState extends State<DocScanner> {
 
   // Add this method to show options after scanning
   void _showScanResultOptions(String filePath) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     showModalBottomSheet(
       context: context,
+      backgroundColor: AppColors.getSurfaceColor(isDarkMode),
       builder: (BuildContext context) {
         return Container(
           padding: const EdgeInsets.all(16),
@@ -173,12 +141,16 @@ class _DocScannerState extends State<DocScanner> {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
+                  color: AppColors.getTextColor(isDarkMode),
                 ),
               ),
               SizedBox(height: 16),
               ListTile(
-                leading: Icon(Icons.download, color: Colors.blue),
-                title: Text('Download PDF'),
+                leading: Icon(Icons.download, color: AppColors.primaryBlue),
+                title: Text(
+                  'Download PDF',
+                  style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+                ),
                 onTap: () {
                   Navigator.pop(context);
                   // Show the downloaded file path
@@ -188,8 +160,11 @@ class _DocScannerState extends State<DocScanner> {
                 },
               ),
               ListTile(
-                leading: Icon(Icons.edit, color: Colors.green),
-                title: Text('Fill & Sign PDF'),
+                leading: Icon(Icons.edit, color: AppColors.primaryGreen),
+                title: Text(
+                  'Fill & Sign PDF',
+                  style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+                ),
                 onTap: () {
                   Navigator.pop(context);
                   Navigator.push(
@@ -206,139 +181,6 @@ class _DocScannerState extends State<DocScanner> {
       },
     );
   }
-
-  // Replace the current _pickImageFromGallery method with this one
-  // Future<void> _pickImageFromGallery() async {
-  //   try {
-  //     final List<XFile>? pickedFiles = await _picker.pickMultiImage();
-  //
-  //     if (pickedFiles != null && pickedFiles.isNotEmpty) {
-  //       // Navigate to the gallery selection page
-  //       final result = await Navigator.push(
-  //         context,
-  //         MaterialPageRoute(
-  //           builder: (context) => GallerySelectionPage(selectedImages: pickedFiles),
-  //         ),
-  //       );
-  //
-  //       // Check if result is a Map (new format) or List (old format)
-  //       if (result != null) {
-  //         bool shouldLaunchScanner = false;
-  //         List<XFile> selectedImages = [];
-  //
-  //         if (result is Map) {
-  //           // New format with launchScanner flag
-  //           selectedImages = result['images'] as List<XFile>;
-  //           shouldLaunchScanner = result['launchScanner'] ?? false;
-  //         } else if (result is List<XFile>) {
-  //           // Old format for backward compatibility
-  //           selectedImages = result;
-  //         }
-  //
-  //         if (selectedImages.isNotEmpty) {
-  //           setState(() {
-  //             _isLoading = true;
-  //             _savedFilePath = null;
-  //             _savedImagePaths = null;
-  //           });
-  //
-  //           _savedImagePaths = [];
-  //
-  //           // Process each selected image
-  //           for (int i = 0; i < selectedImages.length; i++) {
-  //             final filename = 'gallery_doc_${DateTime.now().millisecondsSinceEpoch}_$i.jpg';
-  //             final file = await _getVakyFile(filename);
-  //
-  //             // Copy the image file to our vaky folder
-  //             final bytes = await File(selectedImages[i].path).readAsBytes();
-  //             await file.writeAsBytes(bytes);
-  //             _savedImagePaths!.add(file.path);
-  //             print('Gallery image saved to: ${file.path}');
-  //           }
-  //
-  //           // If should launch scanner and there are images, launch the document scanner
-  //           if (shouldLaunchScanner) {
-  //             // Call the scanDocument method to open the scanner
-  //             // First finish the current operation
-  //             setState(() {
-  //               _isLoading = false;
-  //             });
-  //
-  //             // Then launch the scanner
-  //             await scanDocument();
-  //             return;
-  //           }
-  //
-  //           // If not launching scanner, continue with normal flow
-  //           // If there's only one image, consider converting it to PDF
-  //           if (_savedImagePaths!.length == 1) {
-  //             final imagePath = _savedImagePaths![0];
-  //             setState(() {
-  //               _isLoading = false;
-  //               _scannedDocuments = 'Imported from gallery';
-  //             });
-  //             // Show options dialog for the single image
-  //             _showSingleImageOptions(imagePath);
-  //           } else {
-  //             setState(() {
-  //               _isLoading = false;
-  //               _scannedDocuments = 'Imported multiple images from gallery';
-  //             });
-  //           }
-  //         }
-  //       }
-  //     }
-  //   } catch (e) {
-  //     print('Error picking images from gallery: $e');
-  //     setState(() {
-  //       _isLoading = false;
-  //       _scannedDocuments = 'Error: ${e.toString()}';
-  //     });
-  //   }
-  // }
-
-  // Show options for a single imported image
-  // void _showSingleImageOptions(String imagePath) {
-  //   showModalBottomSheet(
-  //     context: context,
-  //     builder: (BuildContext context) {
-  //       return Container(
-  //         padding: const EdgeInsets.all(16),
-  //         child: Column(
-  //           mainAxisSize: MainAxisSize.min,
-  //           children: [
-  //             Text(
-  //               'Image Imported Successfully',
-  //               style: TextStyle(
-  //                 fontSize: 18,
-  //                 fontWeight: FontWeight.bold,
-  //               ),
-  //             ),
-  //             SizedBox(height: 16),
-  //             ListTile(
-  //               leading: Icon(Icons.image, color: Colors.blue),
-  //               title: Text('View Image'),
-  //               onTap: () {
-  //                 Navigator.pop(context);
-  //                 _openFile(imagePath);
-  //               },
-  //             ),
-  //             ListTile(
-  //               leading: Icon(Icons.picture_as_pdf, color: Colors.red),
-  //               title: Text('Convert to PDF'),
-  //               onTap: () {
-  //                 Navigator.pop(context);
-  //                 ScaffoldMessenger.of(context).showSnackBar(
-  //                   SnackBar(content: Text('PDF conversion will be implemented soon')),
-  //                 );
-  //               },
-  //             ),
-  //           ],
-  //         ),
-  //       );
-  //     },
-  //   );
-  // }
 
   Future<void> scanDocument() async {
     setState(() {
@@ -564,27 +406,33 @@ class _DocScannerState extends State<DocScanner> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.getBackgroundColor(isDarkMode),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.getBackgroundColor(isDarkMode),
         elevation: 0,
-        title: const Text(
+        title: Text(
           'Document Scanner',
-          style: TextStyle(color: Colors.black87),
+          style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
         ),
-        iconTheme: IconThemeData(color: Colors.black87),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios),
+          onPressed: () => Navigator.pop(context),
+        ),
+        iconTheme: IconThemeData(color: AppColors.getIconColor(isDarkMode)),
       ),
       body: _isLoading
-          ? Center(child: CircularProgressIndicator(color: Colors.blue))
-          : _buildContent(),
+          ? Center(child: CircularProgressIndicator(color: AppColors.primaryBlue))
+          : _buildContent(isDarkMode),
     );
   }
 
-  Widget _buildContent() {
+  Widget _buildContent(bool isDarkMode) {
     // If we have a saved file or images, show them
     if (_savedFilePath != null || (_savedImagePaths != null && _savedImagePaths!.isNotEmpty)) {
-      return _buildScanResults();
+      return _buildScanResults(isDarkMode);
     }
 
     // Otherwise show the main scanner interface
@@ -595,29 +443,35 @@ class _DocScannerState extends State<DocScanner> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text(
+                Text(
                   'Scan Your',
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    color: AppColors.getTextColor(isDarkMode),
                   ),
                 ),
-                const Text(
+                Text(
                   'Documents Here...',
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    color: AppColors.getTextColor(isDarkMode),
                   ),
                 ),
                 const SizedBox(height: 40),
-                // Document scanning illustration
-                Image.asset(
-                  'assets/icons/scandoc.png', // Make sure to add this image to your assets
-                  width: 260,
-                  height: 260,
-                  fit: BoxFit.contain,
+                // Document scanning illustration - Consider having light/dark versions
+                ColorFiltered(
+                  colorFilter: ColorFilter.mode(
+                    isDarkMode ? Colors.white.withOpacity(0.8) : Colors.transparent,
+                    isDarkMode ? BlendMode.srcATop : BlendMode.dst,
+                  ),
+                  child: Image.asset(
+                    'assets/icons/scandoc.png',
+                    width: 260,
+                    height: 260,
+                    fit: BoxFit.contain,
+                  ),
                 ),
               ],
             ),
@@ -636,18 +490,18 @@ class _DocScannerState extends State<DocScanner> {
                     height: 50,
                     margin: const EdgeInsets.only(right: 8),
                     decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey[300]!),
+                      border: Border.all(color: isDarkMode ? AppColors.darkDivider : AppColors.lightDivider),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
-                        Icon(Icons.camera_alt, color: Colors.black54),
+                      children: [
+                        Icon(Icons.camera_alt, color: AppColors.getIconColor(isDarkMode)),
                         SizedBox(width: 8),
                         Text(
                           'Camera',
                           style: TextStyle(
-                            color: Colors.black87,
+                            color: AppColors.getTextColor(isDarkMode),
                             fontSize: 16,
                             fontWeight: FontWeight.w500,
                           ),
@@ -657,35 +511,6 @@ class _DocScannerState extends State<DocScanner> {
                   ),
                 ),
               ),
-              // Gallery button
-              // Expanded(
-              //   child: GestureDetector(
-              //     onTap: _pickImageFromGallery,
-              //     child: Container(
-              //       height: 50,
-              //       margin: const EdgeInsets.only(left: 8),
-              //       decoration: BoxDecoration(
-              //         color: Colors.blue,
-              //         borderRadius: BorderRadius.circular(12),
-              //       ),
-              //       child: Row(
-              //         mainAxisAlignment: MainAxisAlignment.center,
-              //         children: const [
-              //           Icon(Icons.image, color: Colors.white),
-              //           SizedBox(width: 8),
-              //           Text(
-              //             'Gallery',
-              //             style: TextStyle(
-              //               color: Colors.white,
-              //               fontSize: 16,
-              //               fontWeight: FontWeight.w500,
-              //             ),
-              //           ),
-              //         ],
-              //       ),
-              //     ),
-              //   ),
-              // ),
             ],
           ),
         ),
@@ -693,7 +518,7 @@ class _DocScannerState extends State<DocScanner> {
     );
   }
 
-  Widget _buildScanResults() {
+  Widget _buildScanResults(bool isDarkMode) {
     if (_savedFilePath != null) {
       // Show PDF result
       return Padding(
@@ -701,19 +526,6 @@ class _DocScannerState extends State<DocScanner> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Icon(Icons.check_circle, color: Colors.green, size: 24),
-                SizedBox(width: 8),
-                Text(
-                  'Document Saved',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
             const SizedBox(height: 24),
             Expanded(
               child: Center(
@@ -731,6 +543,7 @@ class _DocScannerState extends State<DocScanner> {
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
+                        color: AppColors.getTextColor(isDarkMode),
                       ),
                     ),
                     SizedBox(height: 8),
@@ -738,7 +551,7 @@ class _DocScannerState extends State<DocScanner> {
                       _savedFilePath!.split('/').last,
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.grey[700],
+                        color: AppColors.getSecondaryTextColor(isDarkMode),
                       ),
                     ),
                   ],
@@ -753,7 +566,8 @@ class _DocScannerState extends State<DocScanner> {
                     label: Text('View'),
                     onPressed: () => _openFile(_savedFilePath!),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
+                      backgroundColor: AppColors.primaryBlue,
+                      foregroundColor: Colors.white,
                       padding: EdgeInsets.symmetric(vertical: 12),
                     ),
                   ),
@@ -762,7 +576,7 @@ class _DocScannerState extends State<DocScanner> {
                 Expanded(
                   child: ElevatedButton.icon(
                     icon: Icon(Icons.edit),
-                    label: Text('Fill & Sign document'),
+                    label: Text('Fill & Sign'),
                     onPressed: () {
                       Navigator.push(
                         context,
@@ -772,28 +586,31 @@ class _DocScannerState extends State<DocScanner> {
                       );
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      padding: EdgeInsets.symmetric(vertical: 12),
+                      backgroundColor: AppColors.primaryGreen,
+                      foregroundColor: Colors.white,
+                      padding: EdgeInsets.symmetric(vertical: 15),
                     ),
                   ),
                 ),
               ],
             ),
             SizedBox(height: 16),
-            ElevatedButton.icon(
-              icon: Icon(Icons.refresh),
-              label: Text('Scan New Document'),
-              onPressed: () {
-                setState(() {
-                  _savedFilePath = null;
-                  _savedImagePaths = null;
-                  _scannedDocuments = null;
-                });
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.grey[300],
-                foregroundColor: Colors.black87,
-                padding: EdgeInsets.symmetric(vertical: 12),
+            Center(
+              child: ElevatedButton.icon(
+                icon: Icon(Icons.refresh),
+                label: Text('Scan New Document'),
+                onPressed: () {
+                  setState(() {
+                    _savedFilePath = null;
+                    _savedImagePaths = null;
+                    _scannedDocuments = null;
+                  });
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: isDarkMode ? AppColors.darkSurface : Colors.grey[300],
+                  foregroundColor: AppColors.getTextColor(isDarkMode),
+                  padding: EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+                ),
               ),
             ),
           ],
@@ -808,7 +625,7 @@ class _DocScannerState extends State<DocScanner> {
           children: [
             Row(
               children: [
-                Icon(Icons.check_circle, color: Colors.green, size: 24),
+                Icon(Icons.check_circle, color: AppColors.primaryGreen, size: 24),
                 SizedBox(width: 8),
                 Text(
                   _savedImagePaths!.length > 1
@@ -817,6 +634,7 @@ class _DocScannerState extends State<DocScanner> {
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
+                    color: AppColors.getTextColor(isDarkMode),
                   ),
                 ),
               ],
@@ -827,6 +645,7 @@ class _DocScannerState extends State<DocScanner> {
                 itemCount: _savedImagePaths!.length,
                 itemBuilder: (context, index) {
                   return Card(
+                    color: AppColors.getSurfaceColor(isDarkMode),
                     margin: EdgeInsets.only(bottom: 16),
                     child: Column(
                       children: [
@@ -848,11 +667,12 @@ class _DocScannerState extends State<DocScanner> {
                                   'Image ${index + 1}',
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
+                                    color: AppColors.getTextColor(isDarkMode),
                                   ),
                                 ),
                               ),
                               IconButton(
-                                icon: Icon(Icons.visibility, color: Colors.blue),
+                                icon: Icon(Icons.visibility, color: AppColors.primaryBlue),
                                 onPressed: () => _openFile(_savedImagePaths![index]),
                               ),
                             ],
@@ -876,8 +696,8 @@ class _DocScannerState extends State<DocScanner> {
                 });
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.grey[300],
-                foregroundColor: Colors.black87,
+                backgroundColor: isDarkMode ? AppColors.darkSurface : Colors.grey[300],
+                foregroundColor: AppColors.getTextColor(isDarkMode),
                 padding: EdgeInsets.symmetric(vertical: 12),
               ),
             ),
@@ -888,7 +708,10 @@ class _DocScannerState extends State<DocScanner> {
 
     // Fallback - should not reach here
     return Center(
-      child: Text('Something went wrong. Please try again.'),
+      child: Text(
+        'Something went wrong. Please try again.',
+        style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+      ),
     );
   }
 }

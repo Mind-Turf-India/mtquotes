@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -451,10 +452,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     color: AppColors.getIconColor(isDarkMode),
                   ),
                   onPressed: () {
-                       // Use the same back logic as the physical back button
-                MainScreen.of(context)?.navigateBack(context);
+                    Navigator.of(context).pushReplacementNamed('/nav_bar');
                   },
                 ),
+
                 const Spacer(),
                 IconButton(
                   icon: SvgPicture.asset(

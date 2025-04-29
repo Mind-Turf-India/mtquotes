@@ -1214,7 +1214,7 @@ class HomeScreenState extends State<HomeScreen> {
                                     context.loc.recents,
                                     style: GoogleFonts.poppins(
                                       fontSize: fontSize,
-                                      fontWeight: FontWeight.w700,
+                                      fontWeight: FontWeight.w600,
                                       color: AppColors.getTextColor(isDarkMode),
                                     ),
                                   ),
@@ -1394,7 +1394,7 @@ class HomeScreenState extends State<HomeScreen> {
                                     context.loc.categories,
                                     style: GoogleFonts.poppins(
                                       fontSize: fontSize,
-                                      fontWeight: FontWeight.bold,
+                                      fontWeight: FontWeight.w600,
                                       color: AppColors.getTextColor(
                                           isDarkMode), // Ensure text color respects theme
                                     ),
@@ -1453,7 +1453,7 @@ class HomeScreenState extends State<HomeScreen> {
                                       context.loc.trendingQuotes,
                                       style: GoogleFonts.poppins(
                                         fontSize: fontSize,
-                                        fontWeight: FontWeight.w700,
+                                        fontWeight: FontWeight.w600,
                                         color: AppColors.getTextColor(
                                             isDarkMode), // Ensure text color respects theme
                                       ),
@@ -1513,7 +1513,7 @@ class HomeScreenState extends State<HomeScreen> {
                                             context.loc.newtemplate,
                                             style: GoogleFonts.poppins(
                                               fontSize: fontSize,
-                                              fontWeight: FontWeight.w700,
+                                              fontWeight: FontWeight.w600,
                                               color: AppColors.getTextColor(
                                                   isDarkMode), // Ensure text color respects theme
                                             ),
@@ -1618,7 +1618,7 @@ class HomeScreenState extends State<HomeScreen> {
                                                           GoogleFonts.poppins(
                                                         fontSize: fontSize,
                                                         fontWeight:
-                                                            FontWeight.w700,
+                                                            FontWeight.w600,
                                                         color: AppColors
                                                             .getTextColor(
                                                                 isDarkMode),
