@@ -389,7 +389,7 @@ static void hideLoadingIndicator(BuildContext context) {
     final bool isDarkMode = theme.brightness == Brightness.dark;
     final Color backgroundColor =
     isDarkMode ? AppColors.darkSurface : AppColors.lightSurface;
-    final Color textColor =g
+    final Color textColor =
     isDarkMode ? AppColors.darkText : AppColors.lightText;
     final Color dividerColor =
     isDarkMode ? AppColors.darkDivider : AppColors.lightDivider;

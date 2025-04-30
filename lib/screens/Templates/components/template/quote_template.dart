@@ -13,6 +13,8 @@ class QuoteTemplate {
   // Add rating fields
   final double avgRating;
   final int ratingCount;
+  // Add language field
+  final String? language;
 
   QuoteTemplate({
     required this.id,
@@ -25,6 +27,7 @@ class QuoteTemplate {
     this.festivalName,
     this.avgRating = 0.0,
     this.ratingCount = 0,
+    this.language, // Default to null, meaning no language specified
   });
 
   factory QuoteTemplate.fromFirestore(DocumentSnapshot doc) {
@@ -42,6 +45,7 @@ class QuoteTemplate {
       festivalName: data['festivalName'],
       avgRating: (data['avgRating'] ?? 0.0).toDouble(),
       ratingCount: data['ratingCount'] ?? 0,
+      language: data['language'], // Add language from Firestore
     );
   }
 
@@ -56,6 +60,7 @@ class QuoteTemplate {
       'festivalName': festivalName,
       'avgRating': avgRating,
       'ratingCount': ratingCount,
+      'language': language, // Include language in Firestore document
     };
   }
 }
