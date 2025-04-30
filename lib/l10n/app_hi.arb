@@ -194,8 +194,12 @@
   "shareDownscaledText": "इस छोटे किए गए चित्र को देखें!",
   "quotes": "उद्धरण",
   "sad": "दुखी",
+  "free": "नि:शुल्क",
+  "premium": "प्रीमियम",
+  "ratings": "रेटिंग्स",
 
-"@languageChanged": {
+
+  "@languageChanged": {
     "placeholders": {
       "language": {
         "type": "Object"

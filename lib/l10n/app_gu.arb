@@ -195,8 +195,12 @@
   "shareDownscaledText": "આ નાનું કરેલું ચિત્ર જુઓ!",
   "quotes": "ઉક્તિ",
   "sad": "દુ:ખી",
+  "free": "મફત",
+  "premium": "પ્રીમિયમ",
+  "ratings": "રેટિંગ્સ",
 
-"@languageChanged":{
+
+  "@languageChanged":{
     "placeholders": {
       "language": {
         "type": "Object"

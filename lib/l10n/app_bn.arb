@@ -194,6 +194,10 @@
   "shareDownscaledText": "এই ছোট করা ছবিটি দেখুন!",
   "quotes": "উদ্ধৃতি",
   "sad": "দু:খিত",
+  "free" : "বিনামূল্যে",
+  "premium" :"প্রিমিয়াম",
+  "ratings" :" রেটিংস",
+
 
 
   "@languageChanged":{

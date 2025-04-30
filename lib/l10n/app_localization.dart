@@ -26,3 +26,17 @@ List<Locale> get supportedLocales => [
  const Locale('or'),
  const Locale('mr'),
 ];
+
+
+extension AppLocalizationsExtensions on AppLocalizations {
+ String get filters => 'Filters';
+ String get selectMinimumRating => 'Select Minimum Rating';
+ String get selectLanguage => 'Select Language';
+ String get allLanguages => 'All Languages';
+ String get allRatings => 'All Ratings';
+ String get discard => 'Discard';
+ String get apply => 'Apply';
+ String get clearAll => 'Clear All';
+ String get noResultsFound => 'No results found';
+ String get tryRemovingFilters => 'Try removing some filters';
+}
