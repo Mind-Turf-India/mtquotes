@@ -16,6 +16,7 @@ import '../utils/app_colors.dart';
 import '../utils/theme_provider.dart';
 import 'Create_Screen/edit_screen_create.dart';
 import 'Create_Screen/template_screen_create.dart';
+import 'User_Home/components/Invoice/invoice_welcome.dart';
 import 'User_Home/components/Resume/resume_selection.dart';
 import 'User_Home/search_screen.dart';
 
@@ -254,7 +255,7 @@ void navigateBack(BuildContext context) {
             context,
             MaterialPageRoute(
                 builder: (context) =>
-                    EditScreen(title: context.loc.imageeditor)),
+                InvoiceHomeScreen()),
           );
         }
       },

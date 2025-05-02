@@ -300,49 +300,6 @@ class _FilesPageState extends State<FilesPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Uncomment and update this if you want to include search box
-            /*
-            Container(
-              decoration: BoxDecoration(
-                color: isDarkMode ? Colors.grey[800] : Colors.grey[100],
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: TextField(
-                controller: _searchController,
-                style: TextStyle(
-                  fontSize: fontSize,
-                  color: AppColors.getTextColor(isDarkMode),
-                ),
-                decoration: InputDecoration(
-                  hintText: context.loc.searchfiles,
-                  hintStyle: GoogleFonts.poppins(
-                    fontSize: fontSize,
-                    color: isDarkMode ? Colors.grey[400] : Colors.grey[500],
-                  ),
-                  prefixIcon: Icon(
-                    Icons.search,
-                    color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                  ),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _isListening ? Icons.mic : Icons.mic_none,
-                      color: _isListening ? AppColors.primaryBlue :
-                             isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                    ),
-                    onPressed: _toggleListening,
-                  ),
-                  border: InputBorder.none,
-                  contentPadding:
-                  EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                ),
-                onChanged: (value) {
-                  setState(() {
-                    _searchQuery = value;
-                  });
-                },
-              ),
-            ),
-            */
             SizedBox(height: 20),
             Text(
               context.loc.downloadedimages,

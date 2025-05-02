@@ -21,6 +21,8 @@ import '../../../Create_Screen/components/details_screen.dart';
 import '../recent/recent_service.dart';
 import 'package:transparent_image/transparent_image.dart';
 
+import 'festival_service.dart';
+
 class FestivalSharingPage extends StatefulWidget {
   final FestivalPost festival;
   final String userName;
@@ -613,7 +615,9 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
                                             colorFilter:
                                 ColorFilter.mode(Colors.white, BlendMode.srcIn),)
                                         : SvgPicture.asset(
-                                            'assets/icons/premium_1659060.svg'),
+                                            'assets/icons/premium_1659060.svg',width: 25,
+                            height: 25,
+                            color: Colors.white,),
                           label: Text(
                             widget.isPaidUser
                                 ? context.loc.shareNow
@@ -809,7 +813,7 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
       canvas.drawImage(originalImage, Offset.zero, Paint());
 
       // Load the logo watermark
-      final ByteData logoData = await rootBundle.load('assets/logo.png');
+      final ByteData logoData = await rootBundle.load('assets/Vaky_bnw.png');
       final ui.Image logo =
           await decodeImageFromList(logoData.buffer.asUint8List());
 
@@ -1321,33 +1325,75 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
   }
 
 // Submit rating function
-  static Future<void> _submitRating(
-      double rating, FestivalPost festival) async {
+  static Future<void> _submitRating(double rating, FestivalPost festival) async {
     try {
-      final DateTime now = DateTime.now();
+      // 1. Get the festival ID and template ID
+      String festivalId = "festival_id_1";
+      String templateId = festival.templateId;
 
-      // Create a rating object
-      final Map<String, dynamic> ratingData = {
-        'festivalId': festival.id,
-        'rating': rating,
-        'category': festival.category,
-        'createdAt': now,
-        // Firestore will convert this to Timestamp
-        'imageUrl': festival.imageUrl,
-        'isPaid': festival.isPaid,
-        'name': festival.name,
-        'userId': FirebaseAuth.instance.currentUser?.uid ?? 'anonymous',
-        // Get user ID if logged in
-      };
+      // 2. Log what we're doing
+      print('NEW RATING: Submitting rating $rating for festival $festivalId and template $templateId');
 
-      await FirebaseFirestore.instance
-          .collection('festival_ratings')
-          .add(ratingData);
+      // 3. Get reference to the festival document
+      final festivalRef = FirebaseFirestore.instance.collection('festivals').doc(festivalId);
 
-      // Update the festival's average rating
-      await _updateFestivalAverageRating(festival.id, rating);
+      // 4. Get the document data first to find the template
+      DocumentSnapshot docSnapshot = await festivalRef.get();
+
+      if (!docSnapshot.exists) {
+        print('NEW RATING: Document not found: $festivalId');
+        return;
+      }
+
+      final data = docSnapshot.data() as Map<String, dynamic>;
+      List<dynamic> templatesArray = List.from(data['templates'] ?? []);
+
+      // 5. Find the template index
+      int templateIndex = -1;
+      for (int i = 0; i < templatesArray.length; i++) {
+        if (templatesArray[i]['id'] == templateId) {
+          templateIndex = i;
+          break;
+        }
+      }
+
+      if (templateIndex == -1) {
+        print('NEW RATING: Template not found with ID: $templateId');
+        for (var template in templatesArray) {
+          print('NEW RATING: Available template ID: ${template['id']}');
+        }
+        return;
+      }
+
+      // 6. Update the template data
+      Map<String, dynamic> templateData = Map<String, dynamic>.from(templatesArray[templateIndex]);
+
+      // Calculate the new rating
+      double currentAvgRating = (templateData['avgRating'] as num?)?.toDouble() ?? 0.0;
+      int ratingCount = (templateData['ratingCount'] as int?) ?? 0;
+
+      int newRatingCount = ratingCount + 1;
+      double newAvgRating = ((currentAvgRating * ratingCount) + rating) / newRatingCount;
+
+      print('NEW RATING: Old rating: $currentAvgRating, count: $ratingCount');
+      print('NEW RATING: New rating: $newAvgRating, count: $newRatingCount');
+
+      // Update the template data
+      templateData['avgRating'] = newAvgRating;
+      templateData['ratingCount'] = newRatingCount;
+
+      // Update the array
+      templatesArray[templateIndex] = templateData;
+
+      // 7. Update the document - simplified approach without transaction
+      await festivalRef.update({
+        'templates': templatesArray,
+      });
+
+      print('NEW RATING: Successfully updated rating!');
     } catch (e) {
-      print('Error submitting rating: $e');
+      print('NEW RATING ERROR: $e');
+      print('NEW RATING STACK: ${StackTrace.current}');
     }
   }
 

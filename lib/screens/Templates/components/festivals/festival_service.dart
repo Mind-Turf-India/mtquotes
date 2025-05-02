@@ -46,11 +46,15 @@ class FestivalTemplate {
   final String id;
   final String imageUrl;
   final bool isPaid;
+  final double avgRating;  // Added field for template-specific rating
+  final int ratingCount;   // Added field for template-specific rating count
 
   FestivalTemplate({
     required this.id,
     required this.imageUrl,
     this.isPaid = false,
+    this.avgRating = 0.0,   // Default value
+    this.ratingCount = 0,   // Default value
   });
 
   factory FestivalTemplate.fromMap(Map<String, dynamic> map) {
@@ -58,7 +62,20 @@ class FestivalTemplate {
       id: map['id'] ?? '',
       imageUrl: map['imageURL'] ?? '',
       isPaid: map['isPaid'] ?? false,
+      avgRating: (map['avgRating'] as num?)?.toDouble() ?? 0.0,
+      ratingCount: map['ratingCount'] ?? 0,
     );
+  }
+
+  // Add a toMap method for easier updates
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'imageURL': imageUrl,
+      'isPaid': isPaid,
+      'avgRating': avgRating,
+      'ratingCount': ratingCount,
+    };
   }
 }
 
@@ -307,6 +324,201 @@ class FestivalService {
         'userName': 'User',
         'profileImageUrl': '',
       };
+    }
+  }
+
+
+  Future<List<FestivalPost>> getTopRatedTemplates({int limit = 10, double minRating = 0.0}) async {
+    try {
+      List<FestivalPost> topRatedPosts = [];
+
+      // Get all festivals
+      final snapshot = await _firestore.collection('festivals').get();
+
+      // Process each festival
+      for (var doc in snapshot.docs) {
+        final festival = Festival.fromFirestore(doc);
+
+        // Process each template in the festival
+        for (var template in festival.templates) {
+          // Only include templates with rating above threshold
+          if (template.avgRating >= minRating && template.imageUrl.isNotEmpty) {
+            topRatedPosts.add(FestivalPost(
+              id: '${festival.id}_${template.id}',
+              name: festival.name,
+              imageUrl: template.imageUrl,
+              isPaid: template.isPaid,
+              createdAt: festival.createdAt,
+              category: festival.id == 'generic_posts' ? 'Generic' : 'Festival',
+              avgRating: template.avgRating,
+              ratingCount: template.ratingCount,
+              templateId: template.id,
+            ));
+          }
+        }
+      }
+
+      // Sort by rating (highest first)
+      topRatedPosts.sort((a, b) => b.avgRating.compareTo(a.avgRating));
+
+      // Apply limit
+      if (topRatedPosts.length > limit) {
+        topRatedPosts = topRatedPosts.sublist(0, limit);
+      }
+
+      return topRatedPosts;
+    } catch (e) {
+      print('Error getting top rated templates: $e');
+      return [];
+    }
+  }
+
+  // Add this method to your FestivalService class
+  Future<List<FestivalPost>> filterFestivalsByRating(double minRating) async {
+    try {
+      List<FestivalPost> filteredPosts = [];
+
+      // Get all festivals
+      final snapshot = await _firestore.collection('festivals').get();
+
+      // Process each festival
+      for (var doc in snapshot.docs) {
+        final festival = Festival.fromFirestore(doc);
+
+        // Process each template in the festival
+        for (var template in festival.templates) {
+          // Only include templates with rating above threshold
+          if (template.avgRating >= minRating && template.imageUrl.isNotEmpty) {
+            filteredPosts.add(FestivalPost(
+              id: '${festival.id}_${template.id}',
+              name: festival.name,
+              imageUrl: template.imageUrl,
+              isPaid: template.isPaid,
+              createdAt: festival.createdAt,
+              category: festival.id == 'generic_posts' ? 'Generic' : 'Festival',
+              avgRating: template.avgRating,
+              ratingCount: template.ratingCount,
+              templateId: template.id,
+            ));
+          }
+        }
+      }
+
+      // Sort by rating (highest first)
+      filteredPosts.sort((a, b) => b.avgRating.compareTo(a.avgRating));
+
+      return filteredPosts;
+    } catch (e) {
+      print('Error filtering festivals by rating: $e');
+      return [];
+    }
+  }
+
+  Future<List<FestivalPost>> filterTemplatesByRating(double minRating) async {
+    try {
+      List<FestivalPost> filteredPosts = [];
+
+      // Get all festivals
+      final snapshot = await _firestore.collection('festivals').get();
+
+      // Process each festival
+      for (var doc in snapshot.docs) {
+        final festival = Festival.fromFirestore(doc);
+
+        // Process each template in the festival
+        for (var template in festival.templates) {
+          // Only include templates with rating above threshold
+          if (template.avgRating >= minRating && template.imageUrl.isNotEmpty) {
+            filteredPosts.add(FestivalPost(
+              id: '${festival.id}_${template.id}',
+              name: festival.name,
+              imageUrl: template.imageUrl,
+              isPaid: template.isPaid,
+              createdAt: festival.createdAt,
+              category: festival.id == 'generic_posts' ? 'Generic' : 'Festival',
+              avgRating: template.avgRating,
+              ratingCount: template.ratingCount,
+              templateId: template.id,
+            ));
+          }
+        }
+      }
+
+      // Sort by rating (highest first)
+      filteredPosts.sort((a, b) => b.avgRating.compareTo(a.avgRating));
+
+      return filteredPosts;
+    } catch (e) {
+      print('Error filtering templates by rating: $e');
+      return [];
+    }
+  }
+
+  Future<void> submitTemplateRating(String festivalId, String templateId, double rating) async {
+    try {
+      print('Submitting rating: $rating for template $templateId in festival $festivalId');
+
+      // Get reference to the festival document
+      final festivalRef = _firestore.collection('festivals').doc(festivalId);
+
+      // Run this as a transaction to ensure data consistency
+      await _firestore.runTransaction((transaction) async {
+        // Get the current festival document
+        final festivalSnapshot = await transaction.get(festivalRef);
+
+        if (!festivalSnapshot.exists) {
+          print('Festival document not found: $festivalId');
+          return;
+        }
+
+        // Get the templates array
+        final data = festivalSnapshot.data() as Map<String, dynamic>;
+        final List<dynamic> templatesArray = data['templates'] ?? [];
+
+        // Find the index of the template to update
+        int templateIndex = -1;
+        for (int i = 0; i < templatesArray.length; i++) {
+          if (templatesArray[i]['id'] == templateId) {
+            templateIndex = i;
+            break;
+          }
+        }
+
+        if (templateIndex == -1) {
+          print('Template not found in festival: $templateId');
+          return;
+        }
+
+        // Get the current template data
+        final templateData = templatesArray[templateIndex] as Map<String, dynamic>;
+
+        // Calculate the new average rating
+        double currentAvgRating = (templateData['avgRating'] as num?)?.toDouble() ?? 0.0;
+        int ratingCount = templateData['ratingCount'] ?? 0;
+
+        int newRatingCount = ratingCount + 1;
+        double newAvgRating = ((currentAvgRating * ratingCount) + rating) / newRatingCount;
+
+        // Debug info
+        print('Template $templateId - Current rating: $currentAvgRating, Count: $ratingCount');
+        print('Template $templateId - New rating: $newAvgRating, Count: $newRatingCount');
+
+        // Update the template data in the array
+        templateData['avgRating'] = newAvgRating;
+        templateData['ratingCount'] = newRatingCount;
+        templateData['lastRated'] = FieldValue.serverTimestamp();
+
+        // Update the templates array in the festival document
+        transaction.update(festivalRef, {
+          'templates': templatesArray,
+        });
+
+        print('Successfully updated rating for template $templateId in festival $festivalId');
+      });
+    } catch (e) {
+      print('Error submitting template rating: $e');
+      print('Stack trace: ${StackTrace.current}');
+      throw e;
     }
   }
 

@@ -79,13 +79,10 @@ class FestivalHandler {
   static Future<void> _showRatingDialog(
       BuildContext context, FestivalPost festival) async {
     double rating = 0;
-    final ThemeData theme = Theme.of(context);
-    final bool isDarkMode = theme.brightness == Brightness.dark;
+    final bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final Color backgroundColor = isDarkMode ? AppColors.darkSurface : AppColors.lightSurface;
     final Color textColor = isDarkMode ? AppColors.darkText : AppColors.lightText;
     final Color secondaryTextColor = isDarkMode ? AppColors.darkSecondaryText : AppColors.lightSecondaryText;
-    final textSizeProvider = Provider.of<TextSizeProvider>(context, listen: false);
-    final fontSize = textSizeProvider.fontSize;
 
     return showDialog<double>(
       context: context,
@@ -140,20 +137,18 @@ class FestivalHandler {
                   context.loc.skip,
                   style: TextStyle(
                     color: AppColors.primaryBlue,
-
                   ),
                 ),
               ),
               TextButton(
                 onPressed: () {
-                  Navigator.of(dialogContext).pop(rating); // Close the dialog
+                  Navigator.of(dialogContext).pop(rating);
                   Navigator.of(context).pushReplacementNamed('/home');
                 },
                 child: Text(
                   context.loc.submit,
                   style: TextStyle(
                     color: AppColors.primaryBlue,
-
                   ),
                 ),
               ),
@@ -163,10 +158,10 @@ class FestivalHandler {
       },
     ).then((value) {
       if (value != null && value > 0) {
-        // Show loading indicator when submitting rating
+        // Show loading indicator
         showLoadingIndicator(context);
 
-        // Submit rating
+        // This is the critical call - make sure it gets called when rating is submitted
         _submitRating(value, festival).then((_) {
           // Hide loading indicator
           hideLoadingIndicator(context);
@@ -198,35 +193,78 @@ class FestivalHandler {
     });
   }
 
-  // Submit rating to Firestore
-  static Future<void> _submitRating(
-      double rating, FestivalPost festival) async {
+
+
+// Replace the _submitRating method in FestivalHandler with this implementation
+  static Future<void> _submitRating(double rating, FestivalPost festival) async {
     try {
-      final DateTime now = DateTime.now();
+      // 1. Get the festival ID and template ID
+      String festivalId = "festival_id_1";
+      String templateId = festival.templateId;
 
-      // Create a rating object
-      final Map<String, dynamic> ratingData = {
-        'festivalId': festival.id,
-        'rating': rating,
-        'category': festival.category,
-        'createdAt': now,
-        'imageUrl': festival.imageUrl,
-        'isPaid': festival.isPaid,
-        'name': festival.name,
-        'userId': FirebaseAuth.instance.currentUser?.uid ?? 'anonymous',
-      };
+      // 2. Log what we're doing
+      print('NEW RATING: Submitting rating $rating for festival $festivalId and template $templateId');
 
-      await FirebaseFirestore.instance
-          .collection('festival_ratings')
-          .add(ratingData);
+      // 3. Get reference to the festival document
+      final festivalRef = FirebaseFirestore.instance.collection('festivals').doc(festivalId);
 
-      print('Rating submitted: $rating for festival ${festival.name}');
+      // 4. Get the document data first to find the template
+      DocumentSnapshot docSnapshot = await festivalRef.get();
 
-      // Update the festival's average rating
-      await _updateFestivalAverageRating(festival.id, rating);
+      if (!docSnapshot.exists) {
+        print('NEW RATING: Document not found: $festivalId');
+        return;
+      }
+
+      final data = docSnapshot.data() as Map<String, dynamic>;
+      List<dynamic> templatesArray = List.from(data['templates'] ?? []);
+
+      // 5. Find the template index
+      int templateIndex = -1;
+      for (int i = 0; i < templatesArray.length; i++) {
+        if (templatesArray[i]['id'] == templateId) {
+          templateIndex = i;
+          break;
+        }
+      }
+
+      if (templateIndex == -1) {
+        print('NEW RATING: Template not found with ID: $templateId');
+        for (var template in templatesArray) {
+          print('NEW RATING: Available template ID: ${template['id']}');
+        }
+        return;
+      }
+
+      // 6. Update the template data
+      Map<String, dynamic> templateData = Map<String, dynamic>.from(templatesArray[templateIndex]);
+
+      // Calculate the new rating
+      double currentAvgRating = (templateData['avgRating'] as num?)?.toDouble() ?? 0.0;
+      int ratingCount = (templateData['ratingCount'] as int?) ?? 0;
+
+      int newRatingCount = ratingCount + 1;
+      double newAvgRating = ((currentAvgRating * ratingCount) + rating) / newRatingCount;
+
+      print('NEW RATING: Old rating: $currentAvgRating, count: $ratingCount');
+      print('NEW RATING: New rating: $newAvgRating, count: $newRatingCount');
+
+      // Update the template data
+      templateData['avgRating'] = newAvgRating;
+      templateData['ratingCount'] = newRatingCount;
+
+      // Update the array
+      templatesArray[templateIndex] = templateData;
+
+      // 7. Update the document - simplified approach without transaction
+      await festivalRef.update({
+        'templates': templatesArray,
+      });
+
+      print('NEW RATING: Successfully updated rating!');
     } catch (e) {
-      print('Error submitting festival rating: $e');
-      throw e; // Rethrow to handle in calling method
+      print('NEW RATING ERROR: $e');
+      print('NEW RATING STACK: ${StackTrace.current}');
     }
   }
 
@@ -641,9 +679,9 @@ class FestivalHandler {
                                           top: 16,  // Position from top with padding
                                           right: 16, // Position from right edge with padding
                                           child: Opacity(
-                                            opacity: 0.6, // Semi-transparent effect
-                                            child: Image.asset(
-                                              'assets/logo.png',
+                                            opacity: 0.9,
+                                            child: SvgPicture.asset(
+                                              'assets/Vaky_bnw.svg',
                                               width: 50,  // Fixed width size
                                               height: 50, // Fixed height size
                                               fit: BoxFit.contain,

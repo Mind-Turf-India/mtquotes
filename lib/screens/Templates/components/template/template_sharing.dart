@@ -821,7 +821,9 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                                             colorFilter:
                                 ColorFilter.mode(Colors.white, BlendMode.srcIn),)
                                         : SvgPicture.asset(
-                                            'assets/icons/premium_1659060.svg'),
+                                            'assets/icons/premium_1659060.svg',width: 25,
+                                      height: 25,
+                                    color: Colors.white,),
                                     label: Text(widget.isPaidUser
                                         ? 'Share Now'
                                         : 'Upgrade to Pro'),
@@ -1003,7 +1005,7 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
       canvas.drawImage(originalImage, Offset.zero, Paint());
 
       // Load the logo watermark
-      final ByteData logoData = await rootBundle.load('assets/logo.png');
+      final ByteData logoData = await rootBundle.load('assets/Vaky_bnw.png');
       final ui.Image logo =
           await decodeImageFromList(logoData.buffer.asUint8List());
 
@@ -1179,21 +1181,23 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
   }
 
   // Rating dialog implementation
+  // Replace the _showRatingDialog method in TemplateSharingPage with this fixed version:
+
   Future<void> _showRatingDialog(BuildContext context) async {
     double rating = 0;
     final ThemeData theme = Theme.of(context);
     final bool isDarkMode = theme.brightness == Brightness.dark;
     final Color backgroundColor =
-        isDarkMode ? AppColors.darkSurface : AppColors.lightSurface;
+    isDarkMode ? AppColors.darkSurface : AppColors.lightSurface;
     final Color textColor =
-        isDarkMode ? AppColors.darkText : AppColors.lightText;
+    isDarkMode ? AppColors.darkText : AppColors.lightText;
 
     // Get font size from TextSizeProvider
     final textSizeProvider =
-        Provider.of<TextSizeProvider>(context, listen: false);
+    Provider.of<TextSizeProvider>(context, listen: false);
     final fontSize = textSizeProvider.fontSize;
 
-    return showDialog<double>(
+    double? selectedRating = await showDialog<double>(
       context: context,
       builder: (BuildContext dialogContext) {
         return StatefulBuilder(builder: (context, setState) {
@@ -1247,8 +1251,7 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
               ),
               TextButton(
                 onPressed: () {
-                  Navigator.of(dialogContext).pop(rating); // Close the dialog
-                  Navigator.of(context).pushReplacementNamed('/nav_bar');
+                  Navigator.of(dialogContext).pop(rating);
                 },
                 child: Text(context.loc.submit),
               ),
@@ -1256,12 +1259,32 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
           );
         });
       },
-    ).then((value) {
-      if (value != null && value > 0) {
-        // Submit rating
-        _submitRating(value, widget.template);
+    );
 
-        // Show thank you message
+    if (selectedRating != null && selectedRating > 0) {
+      // Show loading indicator while submitting rating
+      if (context.mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return Center(
+              child: CircularProgressIndicator(),
+            );
+          },
+        );
+      }
+
+      try {
+        // Submit rating with the updated method
+        await _submitRating(selectedRating, widget.template);
+
+        // Close loading dialog
+        if (context.mounted && Navigator.of(context, rootNavigator: true).canPop()) {
+          Navigator.of(context, rootNavigator: true).pop();
+        }
+
+        // Show success message
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -1269,131 +1292,209 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
               backgroundColor: Colors.green,
             ),
           );
+
+          // Navigate to home screen
+          Navigator.of(context).pushReplacementNamed('/nav_bar');
+        }
+      } catch (e) {
+        print('Error submitting rating: $e');
+
+        // Close loading dialog
+        if (context.mounted && Navigator.of(context, rootNavigator: true).canPop()) {
+          Navigator.of(context, rootNavigator: true).pop();
+        }
+
+        // Show error message
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error submitting rating. Please try again.'),
+              backgroundColor: Colors.red,
+            ),
+          );
         }
       }
-    });
+    } else if (context.mounted) {
+      // User skipped rating, just navigate home
+      Navigator.of(context).pushReplacementNamed('/nav_bar');
+    }
   }
 
+
+  // Standardized _submitRating and related methods - using only avgRating
+
+// Submit rating with standardized field name
+  static Future<void> _submitRating(double rating, QuoteTemplate template) async {
+    try {
+      print('Submitting rating: $rating for template ${template.title} (ID: ${template.id})');
+
+      // Update the main templates collection
+      await _updateMainTemplateRating(template.id, rating);
+
+      // If the template has a category, also update the category templates collection
+      if (template.category.isNotEmpty) {
+        await _updateCategoryTemplateRating(template.id, template.category, rating);
+      }
+
+      print('Rating successfully submitted and template documents updated');
+    } catch (e) {
+      print('Error in _submitRating: $e');
+    }
+  }
+
+// Update template in the main templates collection with standardized field name
+  static Future<void> _updateMainTemplateRating(String templateId, double newRating) async {
+    try {
+      // Reference to the template document in the main collection
+      final DocumentReference templateRef =
+      FirebaseFirestore.instance.collection('templates').doc(templateId);
+
+      // Get the current template data first to verify it exists
+      final DocumentSnapshot templateDoc = await templateRef.get();
+
+      if (!templateDoc.exists) {
+        print('Warning: Template $templateId not found in main templates collection');
+        return;
+      }
+
+      // Extract current data
+      final data = templateDoc.data() as Map<String, dynamic>?;
+      if (data == null) {
+        print('Warning: Template data is null');
+        return;
+      }
+
+      // Calculate the new average rating and count
+      // Use avgRating as the standard field name, but check both for backward compatibility
+      double currentRating = 0.0;
+      if (data.containsKey('avgRating')) {
+        currentRating = (data['avgRating'] as num?)?.toDouble() ?? 0.0;
+      } else if (data.containsKey('averageRating')) {
+        currentRating = (data['averageRating'] as num?)?.toDouble() ?? 0.0;
+      }
+
+      int ratingCount = (data['ratingCount'] as int?) ?? 0;
+
+      // Calculate new values
+      int newRatingCount = ratingCount + 1;
+      double newAvgRating = ((currentRating * ratingCount) + newRating) / newRatingCount;
+
+      // Debug info
+      print('Template $templateId - Current avgRating: $currentRating, Count: $ratingCount');
+      print('Template $templateId - New avgRating: $newAvgRating, Count: $newRatingCount');
+
+      // Update the document with new rating values
+      // Only use avgRating as the standard field name
+      Map<String, dynamic> updateData = {
+        'avgRating': newAvgRating,
+        'ratingCount': newRatingCount,
+        'lastRated': FieldValue.serverTimestamp(),
+      };
+
+      await templateRef.update(updateData);
+      print('Successfully updated template $templateId in main collection');
+    } catch (e) {
+      print('Error updating template rating in main collection: $e');
+      print('Stack trace: ${StackTrace.current}');
+    }
+  }
+
+// Update template in the category templates subcollection
   static Future<void> _updateCategoryTemplateRating(
       String templateId, String category, double newRating) async {
     try {
-      // Path to the category template document
-      final templateRef = FirebaseFirestore.instance
+      // Reference to the template document in the category collection
+      final DocumentReference categoryTemplateRef = FirebaseFirestore.instance
           .collection('categories')
           .doc(category.toLowerCase())
           .collection('templates')
           .doc(templateId);
 
-      // Run this as a transaction to ensure data consistency
-      await FirebaseFirestore.instance.runTransaction((transaction) async {
-        // Get the current template data
-        final templateSnapshot = await transaction.get(templateRef);
+      // Get the current template data first to verify it exists
+      final DocumentSnapshot templateDoc = await categoryTemplateRef.get();
 
-        if (templateSnapshot.exists) {
-          final data = templateSnapshot.data() as Map<String, dynamic>;
+      if (!templateDoc.exists) {
+        print('Warning: Template $templateId not found in category $category');
+        return;
+      }
 
-          // Calculate the new average rating
-          double currentAvgRating = data['avgRatings']?.toDouble() ?? 0.0;
-          int ratingCount = data['ratingCount'] ?? 0;
+      // Extract current data
+      final data = templateDoc.data() as Map<String, dynamic>?;
+      if (data == null) {
+        print('Warning: Category template data is null');
+        return;
+      }
 
-          int newRatingCount = ratingCount + 1;
-          double newAvgRating =
-              ((currentAvgRating * ratingCount) + newRating) / newRatingCount;
+      // Calculate the new average rating and count
+      double currentRating = 0.0;
+      if (data.containsKey('avgRating')) {
+        currentRating = (data['avgRating'] as num?)?.toDouble() ?? 0.0;
+      } else if (data.containsKey('avgRatings')) {
+        currentRating = (data['avgRatings'] as num?)?.toDouble() ?? 0.0;
+      }
 
-          // Update the template with the new average rating
-          transaction.update(templateRef, {
-            'avgRatings': newAvgRating,
-            'ratingCount': newRatingCount,
-            'lastRated': FieldValue.serverTimestamp(),
-          });
+      int ratingCount = (data['ratingCount'] as int?) ?? 0;
 
-          print('Updated category template average rating successfully');
-        } else {
-          print('Template not found in category collection');
-        }
-      });
-    } catch (e) {
-      print('Error updating category template average rating: $e');
-    }
-  }
+      // Calculate new values
+      int newRatingCount = ratingCount + 1;
+      double newAvgRating = ((currentRating * ratingCount) + newRating) / newRatingCount;
 
-  // Submit rating - this calls the TemplateHandler version
-  static Future<void> _submitRating(
-      double rating, QuoteTemplate template) async {
-    try {
-      final DateTime now = DateTime.now();
-      final User? currentUser = FirebaseAuth.instance.currentUser;
+      // Debug info
+      print('Category template $templateId - Current avgRating: $currentRating, Count: $ratingCount');
+      print('Category template $templateId - New avgRating: $newAvgRating, Count: $newRatingCount');
 
-      // Create a rating object
-      final Map<String, dynamic> ratingData = {
-        'templateId': template.id,
-        'rating': rating,
-        'category': template.category,
-        'createdAt': now,
-        'imageUrl': template.imageUrl,
-        'isPaid': template.isPaid,
-        'title': template.title,
-        'userId': currentUser?.uid ?? 'anonymous',
-        'userEmail': currentUser?.email ?? 'anonymous',
+      // Update the document with new rating values - use only avgRating
+      Map<String, dynamic> updateData = {
+        'avgRating': newAvgRating,
+        'ratingCount': newRatingCount,
+        'lastRated': FieldValue.serverTimestamp(),
       };
 
-      // Add to ratings collection
-      DocumentReference ratingRef = await FirebaseFirestore.instance
-          .collection('ratings')
-          .add(ratingData);
-
-      print(
-          'Rating submitted: $rating for template ${template.title} (ID: ${template.id})');
-
-      // Determine if this is a category template based on non-empty category field
-      if (template.category.isNotEmpty) {
-        // Update the category template's rating
-        await _updateCategoryTemplateRating(
-            template.id, template.category, rating);
-      } else {
-        // Use the original method for regular templates
-        await _updateTemplateAverageRating(template.id, rating);
-      }
+      await categoryTemplateRef.update(updateData);
+      print('Successfully updated template $templateId in category $category');
     } catch (e) {
-      print('Error submitting rating: $e');
+      print('Error updating category template rating: $e');
+      print('Stack trace: ${StackTrace.current}');
     }
   }
 
-  static Future<void> _updateTemplateAverageRating(
-      String templateId, double newRating) async {
-    try {
-      // Get reference to the template document
-      final templateRef =
-          FirebaseFirestore.instance.collection('templates').doc(templateId);
+// Update template in the category templates subcollection
 
-      // Run this as a transaction to ensure data consistency
-      await FirebaseFirestore.instance.runTransaction((transaction) async {
-        // Get the current template data
-        final templateSnapshot = await transaction.get(templateRef);
-
-        if (templateSnapshot.exists) {
-          final data = templateSnapshot.data() as Map<String, dynamic>;
-
-          // Calculate the new average rating
-          double currentAvgRating = data['averageRating']?.toDouble() ?? 0.0;
-          int ratingCount = data['ratingCount'] ?? 0;
-
-          int newRatingCount = ratingCount + 1;
-          double newAvgRating =
-              ((currentAvgRating * ratingCount) + newRating) / newRatingCount;
-
-          // Update the template with the new average rating
-          transaction.update(templateRef, {
-            'averageRating': newAvgRating,
-            'ratingCount': newRatingCount,
-            'lastRated': FieldValue.serverTimestamp(),
-          });
-        }
-      });
-
-      print('Updated template average rating successfully');
-    } catch (e) {
-      print('Error updating template average rating: $e');
-    }
-  }
+  // static Future<void> _updateTemplateAverageRating(
+  //     String templateId, double newRating) async {
+  //   try {
+  //     // Get reference to the template document
+  //     final templateRef =
+  //         FirebaseFirestore.instance.collection('templates').doc(templateId);
+  //
+  //     // Run this as a transaction to ensure data consistency
+  //     await FirebaseFirestore.instance.runTransaction((transaction) async {
+  //       // Get the current template data
+  //       final templateSnapshot = await transaction.get(templateRef);
+  //
+  //       if (templateSnapshot.exists) {
+  //         final data = templateSnapshot.data() as Map<String, dynamic>;
+  //
+  //         // Calculate the new average rating
+  //         double currentAvgRating = data['averageRating']?.toDouble() ?? 0.0;
+  //         int ratingCount = data['ratingCount'] ?? 0;
+  //
+  //         int newRatingCount = ratingCount + 1;
+  //         double newAvgRating =
+  //             ((currentAvgRating * ratingCount) + newRating) / newRatingCount;
+  //
+  //         // Update the template with the new average rating
+  //         transaction.update(templateRef, {
+  //           'averageRating': newAvgRating,
+  //           'ratingCount': newRatingCount,
+  //           'lastRated': FieldValue.serverTimestamp(),
+  //         });
+  //       }
+  //     });
+  //
+  //     print('Updated template average rating successfully');
+  //   } catch (e) {
+  //     print('Error updating template average rating: $e');
+  //   }
+  // }
 }

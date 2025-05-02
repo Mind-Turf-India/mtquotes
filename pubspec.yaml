@@ -131,6 +131,7 @@ flutter:
     - assets/fonts/
     - assets/logo.png
     - assets/icons/survey_emoji_heart.svg
+    - assets/logo_original.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

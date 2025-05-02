@@ -332,6 +332,11 @@ exports.addLanguageField = functions.https.onCall(async (data, context) => {
   }
 });
 
+
+
+
+// ======================== WELCOME EMAIL ==================================
+
 // Function to send welcome email
 async function sendWelcomeEmail(userEmail, userName) {
   const mailOptions = {
@@ -340,9 +345,9 @@ async function sendWelcomeEmail(userEmail, userName) {
     subject: 'Welcome to Our Community!',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px;">
-        <img src="assets/logo.png" alt="Logo" style="display: block; margin: 0 auto; width: 100px;">
+        <img src="https://firebasestorage.googleapis.com/v0/b/mind-turf.firebasestorage.app/o/logo%2FVaky_withoutbg.png?alt=media&token=75898268-e9bc-41b4-a07e-dec7a970a6bb" alt="Logo" style="display: block; margin: 0 auto; width: 100px;">
         <h2 style="color: #4285f4; text-align: center;">Welcome to Our Community!</h2>
-        <p>Hello ${userName || 'New User'},</p>
+        <p>Hello,</p>
         <p>Thank you for joining our community! We're excited to have you on board.</p>
         <p>With your verified account, you now have access to all features of our app:</p>
         <ul>

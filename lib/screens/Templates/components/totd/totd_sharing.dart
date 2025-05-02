@@ -183,9 +183,9 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
             top: 8,
             right: 8,
             child: Opacity(
-              opacity: 0.6,
-              child: Image.asset(
-                'assets/logo.png',
+              opacity: 0.9,
+              child: SvgPicture.asset(
+                'assets/Vaky_bnw.svg',
                 width: 50,
                 height: 50,
                 fit: BoxFit.contain,
@@ -597,7 +597,9 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
                                             colorFilter:
                                 ColorFilter.mode(Colors.white, BlendMode.srcIn),)
                                         : SvgPicture.asset(
-                                            'assets/icons/premium_1659060.svg'),
+                                            'assets/icons/premium_1659060.svg',width: 25,
+                            height: 25,
+                            color: Colors.white,),
                           label: Text(widget.isPaidUser ? context.loc.shareNow
                               : context.loc.upgradeToPro,),
                           style: ElevatedButton.styleFrom(
@@ -1012,7 +1014,7 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
       canvas.drawImage(originalImage, Offset.zero, Paint());
 
       // Load the logo watermark
-      final ByteData logoData = await rootBundle.load('assets/logo.png');
+      final ByteData logoData = await rootBundle.load('assets/Vaky_bnw.png');
       final ui.Image logo = await decodeImageFromList(logoData.buffer.asUint8List());
 
       // Calculate size and position for the watermark in top right corner
@@ -1262,30 +1264,89 @@ class _TOTDSharingPageState extends State<TOTDSharingPage> {
   }
 
   // Submit rating
+  // Corrected _submitRating method for TOTDSharingPage
   static Future<void> _submitRating(double rating, TimeOfDayPost post) async {
     try {
-      final DateTime now = DateTime.now();
+      print('Submitting rating: $rating for TOTD post ${post.title}');
 
-      // Create a rating object
-      final Map<String, dynamic> ratingData = {
-        'postId': post.id,
-        'rating': rating,
-        'createdAt': now, // Firestore will convert this to Timestamp
-        'imageUrl': post.imageUrl,
-        'title': post.title,
-        'userId': FirebaseAuth.instance.currentUser?.uid ?? 'anonymous', // Get user ID if logged in
-      };
+      // Extract the parts from post ID
+      String timeOfDay; // morning, afternoon, evening
+      String postId;    // post1, post2, etc.
 
-      await FirebaseFirestore.instance
-          .collection('totd_ratings')
-          .add(ratingData);
+      // Handle different ID formats
+      if (post.id.contains('_')) {
+        // Format might be like "morning_post1"
+        final parts = post.id.split('_');
+        timeOfDay = parts[0];
+        postId = parts.sublist(1).join('_');
+      } else {
+        // If no underscore, assume it's directly a post ID and we need to extract time of day
+        // based on the first part (e.g., "post1" might be morning)
+        if (post.id.startsWith('post')) {
+          // Try to determine timeOfDay from other properties or context
+          // For now, let's use the current time of day if we can't determine it
+          final hour = DateTime.now().hour;
+          if (hour >= 5 && hour < 12) {
+            timeOfDay = 'morning';
+          } else if (hour >= 12 && hour < 17) {
+            timeOfDay = 'afternoon';
+          } else {
+            timeOfDay = 'evening';
+          }
+          postId = post.id;
+        } else {
+          throw Exception('Unable to determine time of day from post ID: ${post.id}');
+        }
+      }
 
-      print('Rating submitted: $rating for post ${post.title}');
+      // Get reference to the TOTD document
+      final totdRef = FirebaseFirestore.instance.collection('totd').doc(timeOfDay);
 
-      // Update the post's average rating
-      await _updatePostAverageRating(post.id, rating);
+      // Run this as a transaction to ensure data consistency
+      await FirebaseFirestore.instance.runTransaction((transaction) async {
+        // Get the current TOTD document
+        final totdSnapshot = await transaction.get(totdRef);
+
+        if (!totdSnapshot.exists) {
+          print('TOTD document not found for $timeOfDay');
+          return;
+        }
+
+        final data = totdSnapshot.data() as Map<String, dynamic>;
+
+        // Check if post exists in the document
+        if (data.containsKey(postId)) {
+          final postData = data[postId] as Map<String, dynamic>;
+
+          // Calculate the new average rating
+          double currentAvgRating = postData['avgRating']?.toDouble() ?? 0.0;
+          int ratingCount = postData['ratingCount'] ?? 0;
+
+          int newRatingCount = ratingCount + 1;
+          double newAvgRating = ((currentAvgRating * ratingCount) + rating) / newRatingCount;
+
+          // Debug info
+          print('TOTD $postId - Current avgRating: $currentAvgRating, Count: $ratingCount');
+          print('TOTD $postId - New avgRating: $newAvgRating, Count: $newRatingCount');
+
+          // Create update data using the correct field path
+          Map<String, dynamic> updateData = {
+            '$postId.avgRating': newAvgRating,
+            '$postId.ratingCount': newRatingCount,
+            '$postId.lastRated': FieldValue.serverTimestamp(),
+          };
+
+          // Apply the update
+          transaction.update(totdRef, updateData);
+
+          print('Successfully updated rating for $postId in $timeOfDay');
+        } else {
+          print('Post ID $postId not found in document $timeOfDay');
+        }
+      });
     } catch (e) {
       print('Error submitting rating: $e');
+      print('Stack trace: ${StackTrace.current}');
     }
   }
 

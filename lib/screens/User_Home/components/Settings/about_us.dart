@@ -84,7 +84,7 @@ class AboutUsScreen extends StatelessWidget {
               RichText(
                 text: TextSpan(
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 14,
                     color: AppColors.getTextColor(isDarkMode),
                   ),
                   children: const [
@@ -104,7 +104,7 @@ class AboutUsScreen extends StatelessWidget {
               RichText(
                 text: TextSpan(
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 14,
                     color: AppColors.getTextColor(isDarkMode),
                   ),
                   children: const [
@@ -127,7 +127,7 @@ class AboutUsScreen extends StatelessWidget {
               RichText(
                 text: TextSpan(
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 14,
                     color: AppColors.getTextColor(isDarkMode),
                   ),
                   children: const [
@@ -198,7 +198,7 @@ class AboutUsScreen extends StatelessWidget {
                     "Whether you're here to inspire or be inspired, speak or simply listen — Vaky is here for you.",
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: 14,
                       fontStyle: FontStyle.italic,
                       color: AppColors.getTextColor(isDarkMode),
                     ),
@@ -283,7 +283,7 @@ class AboutUsScreen extends StatelessWidget {
             child: RichText(
               text: TextSpan(
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: 14,
                   color: AppColors.getTextColor(isDarkMode),
                 ),
                 children: [

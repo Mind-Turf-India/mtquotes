@@ -1,12 +1,14 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+// Updated TimeOfDayPost class with standardized rating fields
+
 class TimeOfDayPost {
   final String id;
   final String title;
   final String imageUrl;
   final bool isPaid;
-  final double avgRating;
+  final double avgRating;  // Standardized field name
   final int ratingCount;
   final Timestamp createdAt;
 
@@ -21,15 +23,35 @@ class TimeOfDayPost {
   });
 
   factory TimeOfDayPost.fromMap(String id, Map<String, dynamic> map) {
+    // Handle different rating field names for backward compatibility
+    double rating = 0.0;
+    if (map.containsKey('avgRating')) {
+      rating = (map['avgRating'] as num?)?.toDouble() ?? 0.0;
+    } else if (map.containsKey('averageRating')) {
+      rating = (map['averageRating'] as num?)?.toDouble() ?? 0.0;
+    }
+
     return TimeOfDayPost(
       id: id,
       title: map['title'] ?? '',
       imageUrl: map['imageUrl'] ?? '',
       isPaid: map['isPaid'] ?? false,
-      avgRating: (map['avgRating'] ?? 0).toDouble(),
+      avgRating: rating,
       ratingCount: map['ratingCount'] ?? 0,
       createdAt: map['createdAt'] ?? Timestamp.now(),
     );
+  }
+
+  // Convert to Map for Firestore updates
+  Map<String, dynamic> toMap() {
+    return {
+      'title': title,
+      'imageUrl': imageUrl,
+      'isPaid': isPaid,
+      'avgRating': avgRating,
+      'ratingCount': ratingCount,
+      'createdAt': createdAt,
+    };
   }
 }
 
@@ -218,58 +240,267 @@ class TimeOfDayService {
   }
 
   // Submit rating for a post
+  // Corrected submitRating method for TimeOfDayService
   Future<void> submitRating(TimeOfDayPost post, double rating) async {
     try {
-      final DateTime now = DateTime.now();
-      User? currentUser = _auth.currentUser;
+      print('Submitting rating: $rating for TOTD post ${post.title}');
 
-      // Create rating record
-      Map<String, dynamic> ratingData = {
-        'postId': post.id,
-        'timeOfDay': getCurrentTimeOfDay(),
-        'rating': rating,
-        'createdAt': now,
-        'userId': currentUser?.uid ?? 'anonymous',
-        'userEmail': currentUser?.email ?? 'anonymous',
-      };
+      // Extract time of day and post ID
+      String timeOfDay;
+      String postId;
 
-      // Add to ratings collection
-      await _firestore.collection('totd_ratings').add(ratingData);
+      if (post.id.contains('_')) {
+        final parts = post.id.split('_');
+        timeOfDay = parts[0];
+        postId = parts.length > 1 ? parts[1] : post.id; // Use first part after underscore
+      } else {
+        // If post ID doesn't contain underscore, assume it's directly a post ID like "post1"
+        postId = post.id;
 
-      // Update average rating in the post document
-      String timeOfDay = post.id.split('_')[0]; // Extract time of day from ID
-      DocumentReference postRef = _firestore.collection('totd').doc(timeOfDay);
+        // Try to determine time of day from context or current time
+        timeOfDay = getCurrentTimeOfDay();
+      }
+
+      // Document reference for this time of day
+      final DocumentReference docRef = _firestore.collection('totd').doc(timeOfDay);
 
       // Run as transaction to ensure data consistency
       await _firestore.runTransaction((transaction) async {
-        DocumentSnapshot postDoc = await transaction.get(postRef);
+        // Get the current document
+        final DocumentSnapshot docSnapshot = await transaction.get(docRef);
 
-        if (postDoc.exists) {
-          Map<String, dynamic> data = postDoc.data() as Map<String, dynamic>;
+        if (!docSnapshot.exists) {
+          print('TOTD document not found for $timeOfDay');
+          return;
+        }
 
-          if (data.containsKey(post.id)) {
-            Map<String, dynamic> postData = data[post.id] as Map<String, dynamic>;
+        final data = docSnapshot.data() as Map<String, dynamic>;
 
-            double currentAvgRating = postData['avgRating']?.toDouble() ?? 0.0;
-            int ratingCount = postData['ratingCount'] ?? 0;
+        // Check if post exists in the document
+        if (data.containsKey(postId)) {
+          final postData = data[postId] as Map<String, dynamic>;
 
-            int newRatingCount = ratingCount + 1;
-            double newAvgRating = ((currentAvgRating * ratingCount) + rating) / newRatingCount;
+          // Calculate the new average rating
+          double currentAvgRating = postData['avgRating']?.toDouble() ?? 0.0;
+          int ratingCount = postData['ratingCount'] ?? 0;
 
-            // Update only the specific field values
-            transaction.update(postRef, {
-              '${post.id}.avgRating': newAvgRating,
-              '${post.id}.ratingCount': newRatingCount,
-              '${post.id}.lastRated': FieldValue.serverTimestamp(),
-            });
-          }
+          int newRatingCount = ratingCount + 1;
+          double newAvgRating = ((currentAvgRating * ratingCount) + rating) / newRatingCount;
+
+          // Create update data with the correct field path
+          Map<String, dynamic> updateData = {
+            '$postId.avgRating': newAvgRating,
+            '$postId.ratingCount': newRatingCount,
+            '$postId.lastRated': FieldValue.serverTimestamp(),
+          };
+
+          // Apply the update
+          transaction.update(docRef, updateData);
+
+          print('Successfully updated rating for $postId in $timeOfDay: New avgRating=$newAvgRating, Count=$newRatingCount');
+        } else {
+          print('Post ID $postId not found in document $timeOfDay');
         }
       });
-
-      print('Rating submitted successfully for post ${post.id}: $rating stars');
     } catch (e) {
       print('Error submitting rating: $e');
       throw e;
     }
   }
+
+// Corrected methods to filter TOTD posts by rating
+
+// Fetch posts with rating above a threshold
+  Future<List<TimeOfDayPost>> fetchPostsByRating(double minRating) async {
+    try {
+      List<TimeOfDayPost> filteredPosts = [];
+
+      // Check each time of day
+      for (String timeOfDay in ['morning', 'afternoon', 'evening']) {
+        // Get the document for this time of day
+        final DocumentSnapshot doc = await _firestore
+            .collection('totd')
+            .doc(timeOfDay)
+            .get();
+
+        if (!doc.exists) {
+          print('No document found for $timeOfDay');
+          continue;
+        }
+
+        final data = doc.data() as Map<String, dynamic>;
+
+        // Process each post in the document
+        data.forEach((key, value) {
+          // Check if this is a post entry (typically keys like "post1", "post2")
+          if (key.startsWith('post') && value is Map<String, dynamic>) {
+            // Check if the post meets the rating threshold
+            double postRating = (value['avgRating'] as num?)?.toDouble() ?? 0.0;
+
+            if (postRating >= minRating) {
+              // Create TimeOfDayPost with the combined ID (timeOfDay_postId)
+              final combinedId = '${timeOfDay}_$key';
+              filteredPosts.add(TimeOfDayPost.fromMap(combinedId, value));
+            }
+          }
+        });
+      }
+
+      // Sort by rating (highest first)
+      filteredPosts.sort((a, b) => b.avgRating.compareTo(a.avgRating));
+
+      print('Found ${filteredPosts.length} posts with rating >= $minRating');
+      return filteredPosts;
+    } catch (e) {
+      print('Error fetching posts by rating: $e');
+      return [];
+    }
+  }
+
+// Filter posts for a specific time period by rating
+  Future<List<TimeOfDayPost>> filterPostsByTimeAndRating(String timeOfDay, double minRating) async {
+    try {
+      // Get the document for this time of day
+      final DocumentSnapshot doc = await _firestore
+          .collection('totd')
+          .doc(timeOfDay)
+          .get();
+
+      if (!doc.exists) {
+        print('No document found for $timeOfDay');
+        return [];
+      }
+
+      final data = doc.data() as Map<String, dynamic>;
+      List<TimeOfDayPost> filteredPosts = [];
+
+      // Process each post in the document
+      data.forEach((key, value) {
+        // Check if this is a post entry
+        if (key.startsWith('post') && value is Map<String, dynamic>) {
+          // Check if the post meets the rating threshold
+          double postRating = (value['avgRating'] as num?)?.toDouble() ?? 0.0;
+
+          if (postRating >= minRating) {
+            // Create TimeOfDayPost with the combined ID
+            final combinedId = '${timeOfDay}_$key';
+            filteredPosts.add(TimeOfDayPost.fromMap(combinedId, value));
+          }
+        }
+      });
+
+      // Sort by rating (highest first)
+      filteredPosts.sort((a, b) => b.avgRating.compareTo(a.avgRating));
+
+      print('Found ${filteredPosts.length} $timeOfDay posts with rating >= $minRating');
+      return filteredPosts;
+    } catch (e) {
+      print('Error filtering posts by time and rating: $e');
+      return [];
+    }
+  }
+
+// Get top-rated posts across all time periods
+  Future<List<TimeOfDayPost>> getTopRatedPosts(int limit) async {
+    try {
+      // Get all posts with any rating
+      List<TimeOfDayPost> allPosts = await fetchPostsByRating(0.0);
+
+      // Sort by rating (highest first)
+      allPosts.sort((a, b) => b.avgRating.compareTo(a.avgRating));
+
+      // Apply limit
+      if (allPosts.length > limit && limit > 0) {
+        allPosts = allPosts.sublist(0, limit);
+      }
+
+      return allPosts;
+    } catch (e) {
+      print('Error getting top rated posts: $e');
+      return [];
+    }
+  }
+
+  // Corrected method to standardize rating fields for TOTD posts
+
+// One-time migration utility to ensure all TOTD posts have consistent rating fields
+  Future<void> standardizeRatingFields() async {
+    try {
+      print('Starting rating field standardization for TOTD posts');
+      int totalUpdates = 0;
+
+      // Process each time of day
+      for (String timeOfDay in ['morning', 'afternoon', 'evening']) {
+        print('Processing $timeOfDay posts');
+
+        // Get the document for this time of day
+        final DocumentSnapshot doc = await _firestore
+            .collection('totd')
+            .doc(timeOfDay)
+            .get();
+
+        if (!doc.exists) {
+          print('No document found for $timeOfDay, skipping');
+          continue;
+        }
+
+        final data = doc.data() as Map<String, dynamic>;
+        Map<String, dynamic> updateData = {};
+        bool needsUpdate = false;
+
+        // Check each post in the document
+        data.forEach((key, value) {
+          // Only process post entries (ignoring other fields in the document)
+          if (key.startsWith('post') && value is Map<String, dynamic>) {
+            bool postNeedsUpdate = false;
+
+            // Ensure avgRating field exists
+            if (!value.containsKey('avgRating')) {
+              // If averageRating exists, use that value
+              if (value.containsKey('averageRating')) {
+                updateData['$key.avgRating'] = value['averageRating'];
+              } else {
+                // Otherwise set default value
+                updateData['$key.avgRating'] = 0.0;
+              }
+              postNeedsUpdate = true;
+            }
+
+            // Ensure ratingCount field exists
+            if (!value.containsKey('ratingCount')) {
+              updateData['$key.ratingCount'] = 0;
+              postNeedsUpdate = true;
+            }
+
+            // If post needs update, increment counter
+            if (postNeedsUpdate) {
+              needsUpdate = true;
+              totalUpdates++;
+            }
+          }
+        });
+
+        // Apply updates if needed
+        if (needsUpdate) {
+          await _firestore
+              .collection('totd')
+              .doc(timeOfDay)
+              .update(updateData);
+
+          print('Updated fields for $timeOfDay document');
+        } else {
+          print('No updates needed for $timeOfDay document');
+        }
+      }
+
+      print('Standardization complete. Updated $totalUpdates posts');
+    } catch (e) {
+      print('Error standardizing rating fields: $e');
+      print('Stack trace: ${StackTrace.current}');
+    }
+  }
+
+
+
+
 }

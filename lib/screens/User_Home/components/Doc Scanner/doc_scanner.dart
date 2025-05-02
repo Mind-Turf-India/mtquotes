@@ -8,6 +8,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:open_file/open_file.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../../../utils/app_colors.dart';
 
 class DocScanner extends StatefulWidget {
@@ -421,6 +422,30 @@ class _DocScannerState extends State<DocScanner> {
           icon: Icon(Icons.arrow_back_ios),
           onPressed: () => Navigator.pop(context),
         ),
+        actions: [
+          if (_savedFilePath != null) // Only show share button when PDF is available
+            IconButton(
+              icon: Icon(Icons.share),
+              color: AppColors.primaryBlue,
+              tooltip: 'Share PDF',
+              onPressed: () async {
+                try {
+                  await Share.shareXFiles(
+                    [XFile(_savedFilePath!)],
+                    text: 'Sharing scanned document',
+                    subject: 'Scanned Document.pdf',
+                  );
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error sharing file: $e'),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
+              },
+            ),
+        ],
         iconTheme: IconThemeData(color: AppColors.getIconColor(isDarkMode)),
       ),
       body: _isLoading
@@ -572,7 +597,7 @@ class _DocScannerState extends State<DocScanner> {
                     ),
                   ),
                 ),
-                SizedBox(width: 16),
+                SizedBox(width: 8),
                 Expanded(
                   child: ElevatedButton.icon(
                     icon: Icon(Icons.edit),
@@ -592,6 +617,7 @@ class _DocScannerState extends State<DocScanner> {
                     ),
                   ),
                 ),
+                SizedBox(width: 8),
               ],
             ),
             SizedBox(height: 16),

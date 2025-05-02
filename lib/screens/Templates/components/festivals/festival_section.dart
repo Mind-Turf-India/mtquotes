@@ -24,6 +24,8 @@ class FestivalSection extends StatelessWidget {
     this.onSeeAllPressed,
   }) : super(key: key);
 
+
+
   @override
   Widget build(BuildContext context) {
     // Get theme information

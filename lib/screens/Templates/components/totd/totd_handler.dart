@@ -169,33 +169,73 @@ class TimeOfDayHandler {
   // Add this function to submit the rating to your backend
   static Future<void> _submitRating(double rating, TimeOfDayPost post) async {
     try {
-      final DateTime now = DateTime.now();
+      print('Submitting rating: $rating for TOTD post ${post.title} (ID: ${post.id})');
 
-      // Create a rating object
-      final Map<String, dynamic> ratingData = {
-        'postId': post.id,
-        'rating': rating,
-        'timeOfDay': post.id.split('_')[0],
-        // Extract time of day from ID
-        'createdAt': now,
-        // Firestore will convert this to Timestamp
-        'imageUrl': post.imageUrl,
-        'isPaid': post.isPaid,
-        'title': post.title,
-        'userId': FirebaseAuth.instance.currentUser?.uid ?? 'anonymous',
-        // Get user ID if logged in
-      };
+      // Extract time of day and post ID from the combined ID
+      final parts = post.id.split('_');
+      if (parts.length < 2) {
+        print('Invalid post ID format: ${post.id}');
+        return;
+      }
 
-      await FirebaseFirestore.instance
-          .collection('totd_ratings')
-          .add(ratingData);
+      final timeOfDay = parts[0]; // morning, afternoon, or evening
+      final postId = parts.sublist(1).join('_'); // The actual post ID (post1, post2, etc.)
 
-      print('Rating submitted: $rating for TOTD post ${post.title}');
+      // Get reference to the TOTD document for this time of day
+      final DocumentReference totdRef = FirebaseFirestore.instance
+          .collection('totd')
+          .doc(timeOfDay);
 
-      // Update the post's average rating
-      await _updateTOTDPostAverageRating(post.id, rating);
+      // Run this as a transaction to ensure data consistency
+      await FirebaseFirestore.instance.runTransaction((transaction) async {
+        // Get the current TOTD document
+        final DocumentSnapshot snapshot = await transaction.get(totdRef);
+
+        if (!snapshot.exists) {
+          print('TOTD document not found for time period: $timeOfDay');
+          return;
+        }
+
+        final data = snapshot.data() as Map<String, dynamic>;
+
+        // Check if the post exists in the document
+        if (data.containsKey(postId)) {
+          final postData = data[postId] as Map<String, dynamic>;
+
+          // Calculate the new average rating
+          double currentAvgRating = 0.0;
+          if (postData.containsKey('avgRating')) {
+            currentAvgRating = (postData['avgRating'] as num?)?.toDouble() ?? 0.0;
+          }
+
+          int ratingCount = postData['ratingCount'] ?? 0;
+          int newRatingCount = ratingCount + 1;
+          double newAvgRating = ((currentAvgRating * ratingCount) + rating) / newRatingCount;
+
+          // Debug info
+          print('TOTD post $postId - Current rating: $currentAvgRating, Count: $ratingCount');
+          print('TOTD post $postId - New rating: $newAvgRating, Count: $newRatingCount');
+
+          // Create update data - this is the key part that needs to be fixed
+          Map<String, dynamic> updateData = {
+            '$postId.avgRating': newAvgRating,
+            '$postId.ratingCount': newRatingCount,
+            '$postId.lastRated': FieldValue.serverTimestamp(),
+          };
+
+          // Apply the update
+          await totdRef.update(updateData);
+
+          print('Successfully updated rating for $postId in $timeOfDay');
+        } else {
+          print('Post ID $postId not found in document $timeOfDay');
+        }
+      });
+
+      print('Rating submission completed');
     } catch (e) {
-      print('Error submitting rating: $e');
+      print('Error in _submitRating: $e');
+      print('Stack trace: ${StackTrace.current}');
     }
   }
 
@@ -598,9 +638,9 @@ class TimeOfDayHandler {
                                     top: 16,  // Position from top with padding
                                     right: 16, // Position from right edge with padding
                                     child: Opacity(
-                                      opacity: 0.6, // Semi-transparent effect
-                                      child: Image.asset(
-                                        'assets/logo.png',
+                                      opacity: 0.9,
+                                      child: SvgPicture.asset(
+                                        'assets/Vaky_bnw.svg',
                                         width: 50,  // Fixed width size
                                         height: 50, // Fixed height size
                                         fit: BoxFit.contain,

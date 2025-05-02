@@ -102,32 +102,6 @@ class TemplateCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                
-              // Optional title overlay at bottom (similar to RecentTemplatesSection)
-              // Positioned(
-              //   bottom: 0,
-              //   left: 0,
-              //   right: 0,
-              //   child: Container(
-              //     padding: EdgeInsets.symmetric(vertical: 3, horizontal: 4),
-              //     color: Colors.black.withOpacity(0.5),
-              //     child: Text(
-              //       template.title.isNotEmpty
-              //           ? template.title
-              //           : template.category.isNotEmpty
-              //               ? template.category
-              //               : "Template",
-              //       style: GoogleFonts.poppins(
-              //         color: Colors.white,
-              //         fontSize: fontSize - 4,
-              //         fontWeight: FontWeight.w500,
-              //       ),
-              //       overflow: TextOverflow.ellipsis,
-              //       maxLines: 1,
-              //       textAlign: TextAlign.center,
-              //     ),
-              //   ),
-              // ),
             ],
           ),
         ),

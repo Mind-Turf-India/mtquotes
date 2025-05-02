@@ -130,14 +130,15 @@ class TemplateHandler {
     );
   }
 
-  
 // Fixed hideLoadingIndicator function
-static void hideLoadingIndicator(BuildContext context) {
-  // Check if the context is still mounted before trying to pop
-  if (context.mounted && Navigator.of(context, rootNavigator: true).canPop()) {
-    Navigator.of(context, rootNavigator: true).pop();
+  static void hideLoadingIndicator(BuildContext context) {
+    // Check if the context is still mounted before trying to pop
+    if (context.mounted &&
+        Navigator.of(context, rootNavigator: true).canPop()) {
+      Navigator.of(context, rootNavigator: true).pop();
+    }
   }
-}
+
   // Function to capture the template with user details as an image
   static Future<Uint8List?> captureTemplateImage() async {
     try {
@@ -157,242 +158,146 @@ static void hideLoadingIndicator(BuildContext context) {
     }
   }
 
-  // Add this function to your TemplateConfirmationDialog class
-  static Future<void> _showRatingDialog(
-      BuildContext context, QuoteTemplate template) async {
-    double rating = 0;
+  // Show rating dialog
+
+
+  // Update category template rating
+  static Future<void> _updateCategoryTemplateRating(
+      String templateId, String category, double newRating) async {
+    try {
+      // Reference to the template document in the category collection
+      final DocumentReference categoryTemplateRef = FirebaseFirestore.instance
+          .collection('categories')
+          .doc(category.toLowerCase())
+          .collection('templates')
+          .doc(templateId);
+
+      // Get the current template data first to verify it exists
+      final DocumentSnapshot templateDoc = await categoryTemplateRef.get();
+
+      if (!templateDoc.exists) {
+        print('Warning: Template $templateId not found in category $category');
+        return;
+      }
+
+      // Extract current data
+      final data = templateDoc.data() as Map<String, dynamic>?;
+      if (data == null) {
+        print('Warning: Category template data is null');
+        return;
+      }
+
+      // Calculate the new average rating and count
+      double currentRating = 0.0;
+      if (data.containsKey('avgRating')) {
+        currentRating = (data['avgRating'] as num?)?.toDouble() ?? 0.0;
+      } else if (data.containsKey('avgRatings')) {
+        currentRating = (data['avgRatings'] as num?)?.toDouble() ?? 0.0;
+      }
+
+      int ratingCount = (data['ratingCount'] as int?) ?? 0;
+
+      // Calculate new values
+      int newRatingCount = ratingCount + 1;
+      double newAvgRating =
+          ((currentRating * ratingCount) + newRating) / newRatingCount;
+
+      // Debug info
+      print(
+          'Category template $templateId - Current avgRating: $currentRating, Count: $ratingCount');
+      print(
+          'Category template $templateId - New avgRating: $newAvgRating, Count: $newRatingCount');
+
+      // Update the document with new rating values
+      Map<String, dynamic> updateData = {
+        'avgRating': newAvgRating,
+        'ratingCount': newRatingCount,
+        'lastRated': FieldValue.serverTimestamp(),
+      };
+
+      await categoryTemplateRef.update(updateData);
+      print('Successfully updated template $templateId in category $category');
+    } catch (e) {
+      print('Error updating category template rating: $e');
+      print('Stack trace: ${StackTrace.current}');
+    }
+  }
+
+
+  // Update template in the main templates collection
+  static Future<void> _updateMainTemplateRating(
+      String templateId, double newRating) async {
+    try {
+      // Reference to the template document in the main collection
+      final DocumentReference templateRef =
+          FirebaseFirestore.instance.collection('templates').doc(templateId);
+
+      // Get the current template data first to verify it exists
+      final DocumentSnapshot templateDoc = await templateRef.get();
+
+      if (!templateDoc.exists) {
+        print(
+            'Warning: Template $templateId not found in main templates collection');
+        return;
+      }
+
+      // Extract current data
+      final data = templateDoc.data() as Map<String, dynamic>?;
+      if (data == null) {
+        print('Warning: Template data is null');
+        return;
+      }
+
+      // Calculate the new average rating and count
+      double currentRating = 0.0;
+      if (data.containsKey('avgRating')) {
+        currentRating = (data['avgRating'] as num?)?.toDouble() ?? 0.0;
+      } else if (data.containsKey('averageRating')) {
+        currentRating = (data['averageRating'] as num?)?.toDouble() ?? 0.0;
+      }
+
+      int ratingCount = (data['ratingCount'] as int?) ?? 0;
+
+      // Calculate new values
+      int newRatingCount = ratingCount + 1;
+      double newAvgRating =
+          ((currentRating * ratingCount) + newRating) / newRatingCount;
+
+      // Debug info
+      print(
+          'Template $templateId - Current avgRating: $currentRating, Count: $ratingCount');
+      print(
+          'Template $templateId - New avgRating: $newAvgRating, Count: $newRatingCount');
+
+      // Update the document with new rating values
+      Map<String, dynamic> updateData = {
+        'avgRating': newAvgRating,
+        'ratingCount': newRatingCount,
+        'lastRated': FieldValue.serverTimestamp(),
+      };
+
+      await templateRef.update(updateData);
+      print('Successfully updated template $templateId in main collection');
+    } catch (e) {
+      print('Error updating template rating in main collection: $e');
+      print('Stack trace: ${StackTrace.current}');
+    }
+  }
+
+  // Method to show the template confirmation dialog
+  static void showTemplateConfirmationDialog(
+    BuildContext context,
+    QuoteTemplate template,
+    bool isPaidUser,
+  ) {
     final ThemeData theme = Theme.of(context);
     final bool isDarkMode = theme.brightness == Brightness.dark;
     final Color backgroundColor =
         isDarkMode ? AppColors.darkSurface : AppColors.lightSurface;
     final Color textColor =
         isDarkMode ? AppColors.darkText : AppColors.lightText;
-    final Color secondaryTextColor =
-        isDarkMode ? AppColors.darkSecondaryText : AppColors.lightSecondaryText;
-
-    return showDialog<double>(
-      context: context,
-      builder: (BuildContext dialogContext) {
-        return StatefulBuilder(builder: (context, setState) {
-          return AlertDialog(
-            backgroundColor: backgroundColor,
-            title: Text(
-              context.loc.rateThisContent,
-              style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  context.loc.howWouldYouRateExperience,
-                  style: TextStyle(color: secondaryTextColor),
-                ),
-                SizedBox(height: 20),
-                FittedBox(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: List.generate(5, (index) {
-                      return IconButton(
-                        icon: Icon(
-                          index < rating ? Icons.star : Icons.star_border,
-                          color: index < rating
-                              ? Colors.amber
-                              : isDarkMode
-                                  ? Colors.grey[600]
-                                  : Colors.grey[400],
-                          size: 36,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            rating = index + 1;
-                          });
-                        },
-                      );
-                    }),
-                  ),
-                )
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(dialogContext).pop(null);
-                },
-                child: Text(
-                  context.loc.skip,
-                  style: TextStyle(color: AppColors.primaryBlue),
-                ),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.of(dialogContext).pop(rating); // Close the dialog
-                  Navigator.of(context).pushReplacementNamed('/home');
-                },
-                child: Text(
-                  context.loc.submit,
-                  style: TextStyle(color: AppColors.primaryBlue),
-                ),
-              ),
-            ],
-          );
-        });
-      },
-    ).then((value) {
-      if (value != null && value > 0) {
-        // TODO: Send rating to your backend
-        _submitRating(value, template);
-
-        // Show thank you message
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(context.loc.thanksForYourRating),
-              backgroundColor: AppColors.primaryGreen,
-            ),
-          );
-        }
-      }
-    });
-  }
-
-  static Future<void> _updateCategoryTemplateRating(
-      String templateId, String category, double newRating) async {
-    try {
-      // Path to the category template document
-      final templateRef = FirebaseFirestore.instance
-          .collection('categories')
-          .doc(category.toLowerCase())
-          .collection('templates')
-          .doc(templateId);
-
-      // Run this as a transaction to ensure data consistency
-      await FirebaseFirestore.instance.runTransaction((transaction) async {
-        // Get the current template data
-        final templateSnapshot = await transaction.get(templateRef);
-
-        if (templateSnapshot.exists) {
-          final data = templateSnapshot.data() as Map<String, dynamic>;
-
-          // Calculate the new average rating
-          double currentAvgRating = data['avgRatings']?.toDouble() ?? 0.0;
-          int ratingCount = data['ratingCount'] ?? 0;
-
-          int newRatingCount = ratingCount + 1;
-          double newAvgRating =
-              ((currentAvgRating * ratingCount) + newRating) / newRatingCount;
-
-          // Update the template with the new average rating
-          transaction.update(templateRef, {
-            'avgRatings': newAvgRating,
-            'ratingCount': newRatingCount,
-            'lastRated': FieldValue.serverTimestamp(),
-          });
-
-          print('Updated category template average rating successfully');
-        } else {
-          print('Template not found in category collection');
-        }
-      });
-    } catch (e) {
-      print('Error updating category template average rating: $e');
-    }
-  }
-
-  // Add this function to submit the rating to your backend
-  static Future<void> _submitRating(
-      double rating, QuoteTemplate template) async {
-    try {
-      final DateTime now = DateTime.now();
-      final User? currentUser = FirebaseAuth.instance.currentUser;
-
-      // Create a rating object
-      final Map<String, dynamic> ratingData = {
-        'templateId': template.id,
-        'rating': rating,
-        'category': template.category,
-        'createdAt': now,
-        'imageUrl': template.imageUrl,
-        'isPaid': template.isPaid,
-        'title': template.title,
-        'userId': currentUser?.uid ?? 'anonymous',
-        'userEmail': currentUser?.email ?? 'anonymous',
-      };
-
-      // Add to ratings collection
-      DocumentReference ratingRef = await FirebaseFirestore.instance
-          .collection('ratings')
-          .add(ratingData);
-
-      print(
-          'Rating submitted: $rating for template ${template.title} (ID: ${template.id})');
-
-      // Determine if this is a category template based on non-empty category field
-      if (template.category.isNotEmpty) {
-        // Update the category template's rating
-        await _updateCategoryTemplateRating(
-            template.id, template.category, rating);
-      } else {
-        // Use the original method for regular templates
-        await _updateTemplateAverageRating(template.id, rating);
-      }
-    } catch (e) {
-      print('Error submitting rating: $e');
-    }
-  }
-
-  static Future<void> _updateTemplateAverageRating(
-      String templateId, double newRating) async {
-    try {
-      // Get reference to the template document
-      final templateRef =
-          FirebaseFirestore.instance.collection('templates').doc(templateId);
-
-      // Run this as a transaction to ensure data consistency
-      await FirebaseFirestore.instance.runTransaction((transaction) async {
-        // Get the current template data
-        final templateSnapshot = await transaction.get(templateRef);
-
-        if (templateSnapshot.exists) {
-          final data = templateSnapshot.data() as Map<String, dynamic>;
-
-          // Calculate the new average rating
-          double currentAvgRating = data['averageRating']?.toDouble() ?? 0.0;
-          int ratingCount = data['ratingCount'] ?? 0;
-
-          int newRatingCount = ratingCount + 1;
-          double newAvgRating =
-              ((currentAvgRating * ratingCount) + newRating) / newRatingCount;
-
-          // Update the template with the new average rating
-          transaction.update(templateRef, {
-            'averageRating': newAvgRating,
-            'ratingCount': newRatingCount,
-            'lastRated': FieldValue.serverTimestamp(),
-          });
-        }
-      });
-
-      print('Updated template average rating successfully');
-    } catch (e) {
-      print('Error updating template average rating: $e');
-    }
-  }
-
-  // Method to show the template confirmation dialog
-  // Advanced version using CachedNetworkImage for better performance
-  static void showTemplateConfirmationDialog(
-      BuildContext context,
-      QuoteTemplate template,
-      bool isPaidUser,
-      ) {
-    final ThemeData theme = Theme.of(context);
-    final bool isDarkMode = theme.brightness == Brightness.dark;
-    final Color backgroundColor =
-    isDarkMode ? AppColors.darkSurface : AppColors.lightSurface;
-    final Color textColor =
-    isDarkMode ? AppColors.darkText : AppColors.lightText;
     final Color dividerColor =
-    isDarkMode ? AppColors.darkDivider : AppColors.lightDivider;
+        isDarkMode ? AppColors.darkDivider : AppColors.lightDivider;
 
     // Get username and profile image from current user
     String userName = 'User';
@@ -437,7 +342,8 @@ static void hideLoadingIndicator(BuildContext context) {
                           Align(
                             alignment: Alignment.topRight,
                             child: Padding(
-                              padding: EdgeInsets.only(top: 0, right: 4, bottom: 8),
+                              padding:
+                                  EdgeInsets.only(top: 0, right: 4, bottom: 8),
                               child: InkWell(
                                 onTap: () => Navigator.of(context).pop(),
                                 child: Icon(
@@ -451,10 +357,12 @@ static void hideLoadingIndicator(BuildContext context) {
 
                           // Template Image with Shimmer Loading Effect
                           Container(
-                            height: 420, // Slightly taller to account for overlap
+                            height: 420,
+                            // Slightly taller to account for overlap
                             width: double.infinity,
                             child: Stack(
-                              clipBehavior: Clip.none, // Important: don't clip children
+                              clipBehavior: Clip.none,
+                              // Important: don't clip children
                               children: [
                                 // Image container with rounded corners
                                 Container(
@@ -475,41 +383,46 @@ static void hideLoadingIndicator(BuildContext context) {
                                         CachedNetworkImage(
                                           imageUrl: template.imageUrl,
                                           fit: BoxFit.cover,
-                                          placeholder: (context, url) => ShimmerLoader(
+                                          placeholder: (context, url) =>
+                                              ShimmerLoader(
                                             width: double.infinity,
                                             height: double.infinity,
                                             isDarkMode: isDarkMode,
                                             type: ShimmerType.template,
                                             margin: EdgeInsets.zero,
-                                            borderRadius: BorderRadius.circular(12),
+                                            borderRadius:
+                                                BorderRadius.circular(12),
                                           ),
                                           errorWidget: (context, url, error) =>
                                               Center(
-                                                child: Column(
-                                                  mainAxisAlignment:
+                                            child: Column(
+                                              mainAxisAlignment:
                                                   MainAxisAlignment.center,
-                                                  children: [
-                                                    Icon(
-                                                      Icons.error_outline,
-                                                      color: Colors.red,
-                                                      size: 48,
-                                                    ),
-                                                    SizedBox(height: 16),
-                                                    Text(
-                                                      context.loc.failedToLoadImage,
-                                                      style: TextStyle(
-                                                        color: textColor,
-                                                        fontSize: 14,
-                                                        fontWeight: FontWeight.w500,
-                                                      ),
-                                                    ),
-                                                  ],
+                                              children: [
+                                                Icon(
+                                                  Icons.error_outline,
+                                                  color: Colors.red,
+                                                  size: 48,
                                                 ),
-                                              ),
+                                                SizedBox(height: 16),
+                                                Text(
+                                                  context.loc.failedToLoadImage,
+                                                  style: TextStyle(
+                                                    color: textColor,
+                                                    fontSize: 14,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
                                           // Add these options for better caching behavior
-                                          cacheKey: '${template.id}_confirmation',
-                                          memCacheWidth: 600, // Optimize memory cache size
-                                          maxHeightDiskCache: 800, // Optimize disk cache size
+                                          cacheKey:
+                                              '${template.id}_confirmation',
+                                          memCacheWidth: 600,
+                                          // Optimize memory cache size
+                                          maxHeightDiskCache:
+                                              800, // Optimize disk cache size
                                         ),
 
                                         // PRO badge (only if template is paid)
@@ -518,10 +431,13 @@ static void hideLoadingIndicator(BuildContext context) {
                                             top: 5,
                                             right: 5,
                                             child: Container(
-                                              padding: EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+                                              padding: EdgeInsets.symmetric(
+                                                  horizontal: 2, vertical: 2),
                                               decoration: BoxDecoration(
-                                                color: Colors.black.withOpacity(0.7),
-                                                borderRadius: BorderRadius.circular(10),
+                                                color: Colors.black
+                                                    .withOpacity(0.7),
+                                                borderRadius:
+                                                    BorderRadius.circular(10),
                                               ),
                                               child: SvgPicture.asset(
                                                 'assets/icons/premium_1659060.svg',
@@ -535,13 +451,15 @@ static void hideLoadingIndicator(BuildContext context) {
                                         // Watermark in top right corner (show for non-paid users or non-paid templates)
                                         if (!isPaidUser || !template.isPaid)
                                           Positioned(
-                                            top: 16,  // Position from top with padding
-                                            right: 16, // Position from right edge with padding
+                                            top: 16,
+                                            // Position from top with padding
+                                            right: 16,
+                                            // Position from right edge with padding
                                             child: Opacity(
-                                              opacity: 0.6, // Semi-transparent effect
-                                              child: Image.asset(
-                                                'assets/logo.png',
-                                                width: 50,  // Fixed width size
+                                              opacity: 0.9,
+                                              child: SvgPicture.asset(
+                                                'assets/Vaky_bnw.svg',
+                                                width: 50, // Fixed width size
                                                 height: 50, // Fixed height size
                                                 fit: BoxFit.contain,
                                               ),
@@ -554,12 +472,14 @@ static void hideLoadingIndicator(BuildContext context) {
 
                                 // User profile container at the bottom, overlapping the image
                                 Positioned(
-                                  bottom: -15, // Negative value creates overlap effect
+                                  bottom: -15,
+                                  // Negative value creates overlap effect
                                   left: 0,
                                   right: 0,
                                   child: Container(
                                     width: double.infinity,
-                                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                    padding: EdgeInsets.symmetric(
+                                        horizontal: 16, vertical: 8),
                                     decoration: BoxDecoration(
                                       color: Colors.white,
                                       borderRadius: BorderRadius.circular(12),
@@ -576,10 +496,13 @@ static void hideLoadingIndicator(BuildContext context) {
                                         // User name in container similar to example
                                         Expanded(
                                           child: Container(
-                                            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                            padding: EdgeInsets.symmetric(
+                                                horizontal: 12, vertical: 8),
                                             decoration: BoxDecoration(
-                                              border: Border.all(color: Colors.grey.shade300),
-                                              borderRadius: BorderRadius.circular(8),
+                                              border: Border.all(
+                                                  color: Colors.grey.shade300),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
                                             ),
                                             child: Text(
                                               userName,
@@ -600,26 +523,35 @@ static void hideLoadingIndicator(BuildContext context) {
                                           height: 40,
                                           decoration: BoxDecoration(
                                             shape: BoxShape.circle,
-                                            border: Border.all(color: Colors.grey.shade300, width: 1),
+                                            border: Border.all(
+                                                color: Colors.grey.shade300,
+                                                width: 1),
                                           ),
                                           child: ClipRRect(
-                                            borderRadius: BorderRadius.circular(20),
-                                            child: userProfileImageUrl.isNotEmpty
+                                            borderRadius:
+                                                BorderRadius.circular(20),
+                                            child: userProfileImageUrl
+                                                    .isNotEmpty
                                                 ? CachedNetworkImage(
-                                              imageUrl: userProfileImageUrl,
-                                              fit: BoxFit.cover,
-                                              placeholder: (context, url) => CircularProgressIndicator(),
-                                              errorWidget: (context, url, error) => Icon(
-                                                Icons.person,
-                                                color: Colors.grey,
-                                                size: 24,
-                                              ),
-                                            )
+                                                    imageUrl:
+                                                        userProfileImageUrl,
+                                                    fit: BoxFit.cover,
+                                                    placeholder: (context,
+                                                            url) =>
+                                                        CircularProgressIndicator(),
+                                                    errorWidget:
+                                                        (context, url, error) =>
+                                                            Icon(
+                                                      Icons.person,
+                                                      color: Colors.grey,
+                                                      size: 24,
+                                                    ),
+                                                  )
                                                 : Icon(
-                                              Icons.person,
-                                              color: Colors.grey,
-                                              size: 24,
-                                            ),
+                                                    Icons.person,
+                                                    color: Colors.grey,
+                                                    size: 24,
+                                                  ),
                                           ),
                                         ),
                                       ],
@@ -648,7 +580,8 @@ static void hideLoadingIndicator(BuildContext context) {
                                 child: OutlinedButton(
                                   onPressed: () {
                                     Navigator.of(context).pop();
-                                    _navigateToProfileDetailsScreen(context, template, isPaidUser);
+                                    _navigateToProfileDetailsScreen(
+                                        context, template, isPaidUser);
                                   },
                                   style: OutlinedButton.styleFrom(
                                     side: BorderSide(color: dividerColor),
@@ -674,7 +607,8 @@ static void hideLoadingIndicator(BuildContext context) {
                                 child: ElevatedButton(
                                   onPressed: () {
                                     Navigator.of(context).pop();
-                                    _handleShareTemplate(context, template, isPaidUser);
+                                    _handleShareTemplate(
+                                        context, template, isPaidUser);
                                   },
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: AppColors.primaryBlue,
@@ -752,61 +686,6 @@ static void hideLoadingIndicator(BuildContext context) {
     print("success");
   }
 
-  static Future<void> _getUserInfoAndShare(
-      BuildContext context, QuoteTemplate template) async {
-    try {
-      // Capture these values early to ensure context doesn't change during async operations
-      final BuildContext capturedContext = context;
-
-      User? currentUser = FirebaseAuth.instance.currentUser;
-      String userName = currentUser?.displayName ?? 'User';
-      String userProfileImageUrl = currentUser?.photoURL ?? '';
-
-      // Try to get user details from Firestore if available
-      if (currentUser?.email != null) {
-        String docId = currentUser!.email!.replaceAll('.', '_');
-
-        DocumentSnapshot userDoc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(docId)
-            .get();
-        print("user deets");
-
-        if (userDoc.exists && userDoc.data() is Map<String, dynamic>) {
-          Map<String, dynamic> userData =
-              userDoc.data() as Map<String, dynamic>;
-
-          // Get name from Firestore with fallback
-          if (userData.containsKey('name') &&
-              userData['name'] != null &&
-              userData['name'].toString().isNotEmpty) {
-            userName = userData['name'];
-            print("name fetched");
-          }
-
-          // Get profile image from Firestore with fallback
-          if (userData.containsKey('profileImage') &&
-              userData['profileImage'] != null &&
-              userData['profileImage'].toString().isNotEmpty) {
-            userProfileImageUrl = userData['profileImage'];
-            print("pic fetched");
-          }
-        }
-      }
-
-      // Use the helper method to navigate safely
-      _navigateToSharing(
-          capturedContext, template, userName, userProfileImageUrl, true);
-      print("navigated");
-    } catch (e) {
-      print('Error getting user info for sharing: $e');
-      // Fall back to basic sharing if there's an error
-      if (context.mounted) {
-        _navigateToSharing(context, template, 'User', '', true);
-      }
-      print("not navigated");
-    }
-  }
 
   static Future<void> handleEditScreenSharing(
       BuildContext context, Uint8List imageData, bool isPaidUser) async {

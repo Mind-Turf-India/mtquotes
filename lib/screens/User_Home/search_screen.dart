@@ -342,41 +342,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   ],
                 ),
               ),
-
-              // Search box (disabled, just for UI consistency)
-              Padding(
-                padding: EdgeInsets.all(16),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: isDarkMode ? Colors.grey[800] : Colors.grey[100],
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: TextField(
-                    enabled: false,
-                    decoration: InputDecoration(
-                      hintText: context.loc.searchquotes,
-                      hintStyle: GoogleFonts.poppins(
-                        fontSize: fontSize,
-                        color: isDarkMode ? Colors.grey[400] : Colors.grey[500],
-                      ),
-                      prefixIcon: Padding(
-                        padding: const EdgeInsets.all(12.0),
-                        child: SvgPicture.asset(
-                          'assets/icons/search_button.svg',
-                          width: 20,
-                          height: 20,
-                          colorFilter: ColorFilter.mode(
-                            isDarkMode ? Colors.grey[400]! : Colors.grey[600]!,
-                            BlendMode.srcIn,
-                          ),
-                        ),
-                      ),
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                    ),
-                  ),
-                ),
-              ),
+              SizedBox(height: 20,),
 
               // Filter options
               Expanded(
@@ -967,7 +933,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       context.loc.categories,
                       style: GoogleFonts.poppins(
                         fontSize: fontSize,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w600,
                         color: AppColors.getTextColor(isDarkMode),
                       )
                   ),
@@ -1020,7 +986,7 @@ class _SearchScreenState extends State<SearchScreen> {
                         context.loc.trendingQuotes,
                         style: GoogleFonts.poppins(
                           fontSize: fontSize,
-                          fontWeight: FontWeight.w700,
+                          fontWeight: FontWeight.w600,
                           color: AppColors.getTextColor(isDarkMode),
                         ),
                       ),
@@ -1148,7 +1114,7 @@ class _SearchScreenState extends State<SearchScreen> {
                         context.loc.newtemplate,
                         style: GoogleFonts.poppins(
                           fontSize: fontSize,
-                          fontWeight: FontWeight.w700,
+                          fontWeight: FontWeight.w600,
                           color: AppColors.getTextColor(isDarkMode),
                         ),
                       ),
@@ -1251,25 +1217,16 @@ class _SearchScreenState extends State<SearchScreen> {
                                         top: 5,
                                         right: 5,
                                         child: Container(
-                                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          padding: EdgeInsets.symmetric(horizontal: 2, vertical: 2),
                                           decoration: BoxDecoration(
                                             color: Colors.black.withOpacity(0.7),
                                             borderRadius: BorderRadius.circular(10),
                                           ),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Icon(Icons.lock, color: Colors.amber, size: 12),
-                                              SizedBox(width: 2),
-                                              Text(
-                                                'PRO',
-                                                style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontSize: 10,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            ],
+                                          child: SvgPicture.asset(
+                                            'assets/icons/premium_1659060.svg',
+                                            width: 24,
+                                            height: 24,
+                                            color: Colors.amber,
                                           ),
                                         ),
                                       ),
@@ -1554,25 +1511,16 @@ class _SearchScreenState extends State<SearchScreen> {
                   top: 5,
                   right: 5,
                   child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: EdgeInsets.symmetric(horizontal: 2, vertical: 2),
                     decoration: BoxDecoration(
                       color: Colors.black.withOpacity(0.7),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.lock, color: Colors.amber, size: 12),
-                        SizedBox(width: 2),
-                        Text(
-                          'PRO',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
+                    child: SvgPicture.asset(
+                      'assets/icons/premium_1659060.svg',
+                      width: 24,
+                      height: 24,
+                      color: Colors.amber,
                     ),
                   ),
                 ),

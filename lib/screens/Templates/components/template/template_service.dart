@@ -52,22 +52,23 @@ class TemplateService {
   }
 
   // Fetch trending templates - modified to show all templates
-  Future<List<QuoteTemplate>> fetchTrendingTemplates() async {
+  Future<List<QuoteTemplate>> fetchTrendingTemplatesByRating(double minRating) async {
     try {
       QuerySnapshot snapshot = await _firestore
           .collection('templates')
-          .orderBy('usageCount', descending: true) // Assuming you have a field to track popularity
+          .where('avgRating', isGreaterThanOrEqualTo: minRating)
+          .orderBy('avgRating', descending: true)
           .limit(100)
           .get();
 
-      // Return all templates regardless of isPaid status
+      // Return templates with rating >= minRating
       List<QuoteTemplate> templates = snapshot.docs
           .map((doc) => QuoteTemplate.fromFirestore(doc))
           .toList();
 
       return templates;
     } catch (e) {
-      print('Error fetching trending templates: $e');
+      print('Error fetching trending templates by rating: $e');
       return [];
     }
   }
@@ -89,6 +90,147 @@ class TemplateService {
       return templates;
     } catch (e) {
       print('Error fetching templates by category: $e');
+      return [];
+    }
+  }
+
+  Future<List<QuoteTemplate>> fetchTemplatesByRating(double minRating, {String? category}) async {
+    try {
+      Query query;
+
+      if (category != null && category.isNotEmpty) {
+        // Query from the category collection
+        query = _firestore
+            .collection('categories')
+            .doc(category.toLowerCase())
+            .collection('templates')
+            .where('avgRating', isGreaterThanOrEqualTo: minRating)
+            .orderBy('avgRating', descending: true);
+      } else {
+        // Query from the main templates collection
+        query = _firestore
+            .collection('templates')
+            .where('avgRating', isGreaterThanOrEqualTo: minRating)
+            .orderBy('avgRating', descending: true);
+      }
+
+      QuerySnapshot snapshot = await query.limit(100).get();
+
+      List<QuoteTemplate> templates = snapshot.docs
+          .map((doc) => QuoteTemplate.fromFirestore(doc))
+          .toList();
+
+      return templates;
+    } catch (e) {
+      print('Error fetching templates by rating: $e');
+      return [];
+    }
+  }
+
+  Future<List<QuoteTemplate>> filterTemplatesByRating(double minRating, {List<QuoteTemplate>? templates}) async {
+    try {
+      List<QuoteTemplate> result = [];
+
+      // If templates are provided, filter them locally
+      if (templates != null && templates.isNotEmpty) {
+        result = templates.where((template) => template.avgRating >= minRating).toList();
+        // Sort by highest rating first
+        result.sort((a, b) => b.avgRating.compareTo(a.avgRating));
+        return result;
+      }
+
+      // Otherwise, fetch from Firestore
+      QuerySnapshot snapshot = await _firestore
+          .collection('templates')
+          .where('avgRating', isGreaterThanOrEqualTo: minRating)
+          .orderBy('avgRating', descending: true)
+          .limit(100)
+          .get();
+
+      result = snapshot.docs
+          .map((doc) => QuoteTemplate.fromFirestore(doc))
+          .toList();
+
+      return result;
+    } catch (e) {
+      print('Error filtering templates by rating: $e');
+      // If there's an error with Firestore query, fall back to local filtering
+      if (templates != null) {
+        return templates.where((template) => template.avgRating >= minRating).toList();
+      }
+      return [];
+    }
+  }
+
+
+  Future<List<QuoteTemplate>> filterCategoryTemplatesByRating(
+      String category, double minRating, {List<QuoteTemplate>? templates}) async {
+    try {
+      List<QuoteTemplate> result = [];
+
+      // If templates are provided, filter them locally
+      if (templates != null && templates.isNotEmpty) {
+        result = templates.where((template) =>
+        template.category.toLowerCase() == category.toLowerCase() &&
+            template.avgRating >= minRating
+        ).toList();
+
+        // Sort by highest rating first
+        result.sort((a, b) => b.avgRating.compareTo(a.avgRating));
+        return result;
+      }
+
+      // Otherwise, fetch from category collection in Firestore
+      final dbCategoryId = category.toLowerCase();
+
+      QuerySnapshot snapshot = await _firestore
+          .collection('categories')
+          .doc(dbCategoryId)
+          .collection('templates')
+          .where('avgRating', isGreaterThanOrEqualTo: minRating)
+          .orderBy('avgRating', descending: true)
+          .limit(100)
+          .get();
+
+      result = snapshot.docs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+
+        // Extract timestamp and convert to DateTime or null
+        DateTime? createdAt;
+        if (data['createdAt'] != null) {
+          createdAt = (data['createdAt'] as Timestamp).toDate();
+        }
+
+        // Handle different field names for rating
+        double rating = 0.0;
+        if (data.containsKey('avgRating')) {
+          rating = (data['avgRating'] ?? 0.0).toDouble();
+        } else if (data.containsKey('avgRatings')) {
+          rating = (data['avgRatings'] ?? 0.0).toDouble();
+        }
+
+        return QuoteTemplate(
+          id: doc.id,
+          imageUrl: data['imageURL'] ?? '',
+          isPaid: data['isPaid'] ?? false,
+          title: data['text'] ?? '',
+          category: category,
+          createdAt: createdAt,
+          avgRating: rating,
+          ratingCount: data['ratingCount'] ?? 0,
+        );
+      }).toList();
+
+      return result;
+    } catch (e) {
+      print('Error filtering category templates by rating: $e');
+      // If there's an error with Firestore query, fall back to local filtering
+      if (templates != null) {
+        return templates.where((template) =>
+        template.category.toLowerCase() == category.toLowerCase() &&
+            template.avgRating >= minRating
+        ).toList();
+      }
       return [];
     }
   }
