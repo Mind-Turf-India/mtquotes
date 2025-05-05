@@ -118,7 +118,7 @@ class InvoicePdfGenerator {
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
                     _buildDetailRow('Date Of Supply', invoice.date),
-                    _buildDetailRow('Vehicle Number', invoice.date),
+                    //_buildDetailRow('Vehicle Number', invoice.date),
                   ],
                 ),
               ),
@@ -630,14 +630,18 @@ class InvoicePdfGenerator {
     final product = item.product;
     final quantity = item.quantity;
 
-    print(
-        'Debug: Product ${product.name}, Quantity: $quantity'); // Add debug logging
+    // Calculate the unit price
+    final unitPrice = product.priceExcludingGst;
 
-    // Calculate based on actual quantity
-    final taxableValue = product.priceExcludingGst * quantity;
+    // Calculate taxable value (price × quantity)
+    final taxableValue = unitPrice * quantity;
+
+    // Calculate GST amounts
     final cgstAmount = product.calculateCgstAmount(quantity);
     final sgstAmount = product.calculateSgstAmount(quantity);
-    final totalAmount = product.calculateTotalAmount(quantity);
+
+    // Calculate total amount with GST
+    final totalAmount = taxableValue + cgstAmount + sgstAmount;
 
     final cgstRate = product.gstRate / 2;
     final sgstRate = product.gstRate / 2;
@@ -648,40 +652,34 @@ class InvoicePdfGenerator {
         _buildTableCell(product.name),
         _buildTableCell(quantity.toString()),
         _buildTableCell(product.unit.isEmpty ? 'NOS' : product.unit),
-        _buildTableCell('Rs. ${product.salePrice.toStringAsFixed(2)}'),
+        _buildTableCell('Rs. ${unitPrice.toStringAsFixed(2)}'),
         _buildTableCell('Rs. ${taxableValue.toStringAsFixed(2)}'),
-        _buildTableCell(
-            '${cgstRate.toStringAsFixed(1)}%\nRs. ${cgstAmount.toStringAsFixed(2)}'),
-        _buildTableCell(
-            '${sgstRate.toStringAsFixed(1)}%\nRs. ${sgstAmount.toStringAsFixed(2)}'),
+        _buildTableCell('${cgstRate.toStringAsFixed(1)}%\nRs. ${cgstAmount.toStringAsFixed(2)}'),
+        _buildTableCell('${sgstRate.toStringAsFixed(1)}%\nRs. ${sgstAmount.toStringAsFixed(2)}'),
         _buildTableCell('Rs. ${totalAmount.toStringAsFixed(2)}'),
       ],
     );
   }
 
-// Update total calculations to use actual quantities
+  // Update total calculations to use actual quantities
   static double _getTotalQuantity(InvoiceModel invoice) {
     return invoice.products.fold(0.0, (sum, item) => sum + item.quantity);
   }
 
   static double _getTotalTaxableValue(InvoiceModel invoice) {
-    return invoice.products.fold(0.0,
-        (sum, item) => sum + (item.product.priceExcludingGst * item.quantity));
+    return invoice.products.fold(0.0, (sum, item) => sum + (item.product.priceExcludingGst * item.quantity));
   }
 
   static double _getTotalCGST(InvoiceModel invoice) {
-    return invoice.products.fold(0.0,
-        (sum, item) => sum + item.product.calculateCgstAmount(item.quantity));
+    return invoice.products.fold(0.0, (sum, item) => sum + item.product.calculateCgstAmount(item.quantity));
   }
 
   static double _getTotalSGST(InvoiceModel invoice) {
-    return invoice.products.fold(0.0,
-        (sum, item) => sum + item.product.calculateSgstAmount(item.quantity));
+    return invoice.products.fold(0.0, (sum, item) => sum + item.product.calculateSgstAmount(item.quantity));
   }
 
   static double _getTotalAmount(InvoiceModel invoice) {
-    return invoice.products.fold(0.0,
-        (sum, item) => sum + item.product.calculateTotalAmount(item.quantity));
+    return invoice.products.fold(0.0, (sum, item) => sum + item.product.calculateTotalAmount(item.quantity));
   }
 
   static pw.TableRow _buildEmptyProductRow() {

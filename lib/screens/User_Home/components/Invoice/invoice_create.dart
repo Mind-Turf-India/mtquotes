@@ -8,8 +8,10 @@ import '../../../../utils/app_colors.dart';
 import '../../../../utils/theme_provider.dart';
 import 'components/bank_details_screen.dart';
 import 'components/buyer_details_screen.dart';
+import 'components/buyer_list_screen.dart';
 import 'components/my_details_screen.dart';
 import 'components/product_details_screen.dart';
+import 'components/product_list_screen.dart';
 import 'invoice_model.dart';
 import 'invoice_preview.dart';
 
@@ -38,6 +40,7 @@ class _InvoiceCreateScreenState extends State<InvoiceCreateScreen> {
     _loadUserDetails();
     _loadProducts(); // Load existing products
     _setDefaults();
+
   }
 
   void _setDefaults() {
@@ -150,11 +153,10 @@ class _InvoiceCreateScreenState extends State<InvoiceCreateScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => BuyerDetailsScreen(
-          initialDetails: buyerDetails,
-          onSave: (details) {
+        builder: (context) => BuyerListScreen(
+          onBuyerSelected: (buyer) {
             setState(() {
-              buyerDetails = details;
+              buyerDetails = buyer;
             });
           },
         ),
@@ -163,23 +165,57 @@ class _InvoiceCreateScreenState extends State<InvoiceCreateScreen> {
   }
 
   void _showProductDetailsScreen() {
+    // This is not correct anymore since we need to select a product first
+    // Keep this for directly adding a new product if needed
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => ProductDetailScreen(
-          product: null,
           onSave: (product) {
             // Add the new product to available products
             setState(() {
               availableProducts.add(product);
             });
 
-            // Optionally, also add it to the invoice
+            // Also add it to the invoice
             setState(() {
               invoiceProducts.add(InvoiceProductItem(
                 product: product,
                 quantity: 1,
               ));
+            });
+          },
+        ),
+      ),
+    );
+  }
+
+  // In the InvoiceCreateScreen class
+  void _showProductsListScreen() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ProductListScreen(
+          onProductSelected: (product) {
+            // Find existing item in invoice
+            final existingIndex = invoiceProducts.indexWhere(
+                  (item) => item.product.id == product.id,
+            );
+
+            setState(() {
+              if (existingIndex >= 0) {
+                // If product already in invoice, increase quantity
+                invoiceProducts[existingIndex] = InvoiceProductItem(
+                  product: product,
+                  quantity: invoiceProducts[existingIndex].quantity + 1,
+                );
+              } else {
+                // Add product to invoice with its default quantity
+                invoiceProducts.add(InvoiceProductItem(
+                  product: product,
+                  quantity: product.defaultQuantity, // Use the product's default quantity
+                ));
+              }
             });
           },
         ),
@@ -261,7 +297,7 @@ class _InvoiceCreateScreenState extends State<InvoiceCreateScreen> {
                                 } else {
                                   invoiceProducts.add(InvoiceProductItem(
                                     product: product,
-                                    quantity: 1,
+                                    quantity: product.defaultQuantity, // Use the product's default quantity
                                   ));
                                 }
 
@@ -277,7 +313,7 @@ class _InvoiceCreateScreenState extends State<InvoiceCreateScreen> {
                           onPressed: () {
                             invoiceProducts.add(InvoiceProductItem(
                               product: product,
-                              quantity: 1,
+                              quantity: product.defaultQuantity, // Use the product's default quantity
                             ));
 
                             // Update both dialog and parent state
@@ -440,7 +476,9 @@ class _InvoiceCreateScreenState extends State<InvoiceCreateScreen> {
           ),
         ],
       ),
-      body: _isLoading
+      body: Stack(
+          children: [
+      _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
         padding: const EdgeInsets.all(8.0),
@@ -455,7 +493,11 @@ class _InvoiceCreateScreenState extends State<InvoiceCreateScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Date',style: TextStyle(color: Colors.black),),
+                        Text('Date',style: TextStyle(
+                          color: isDarkMode
+                              ? AppColors.darkText
+                              : AppColors.lightText,
+                        ),),
                         TextField(
                           controller: _dateController,
                           style: TextStyle(
@@ -496,7 +538,11 @@ class _InvoiceCreateScreenState extends State<InvoiceCreateScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Invoice No.',style: TextStyle(color: Colors.black)),
+                        Text('Invoice No.',style: TextStyle(
+                    color: isDarkMode
+                    ? AppColors.darkText
+                        : AppColors.lightText,
+                    ),),
                         TextField(
                           controller: _invoiceNoController,
                           style: TextStyle(
@@ -521,63 +567,67 @@ class _InvoiceCreateScreenState extends State<InvoiceCreateScreen> {
                 ],
               ),
               const SizedBox(height: 16),
-              ListTile(
-                leading: const Icon(Icons.business),
-                title: const Text('My Details'),
-                subtitle: myDetails != null
-                    ? Text(myDetails!['companyName'] ?? 'Details added')
-                    : const Text('No details added'),
-                trailing: IconButton(
-                  icon: const Icon(Icons.add),
-                  onPressed: _showMyDetailsScreen,
+              // Replace the existing ListTile widgets with these enhanced versions
+              InkWell(
+                onTap: _showMyDetailsScreen,
+                child: ListTile(
+                  leading: const Icon(Icons.business),
+                  title: const Text('My Details'),
+                  subtitle: myDetails != null
+                      ? Text(myDetails!['companyName'] ?? 'Details added')
+                      : const Text('No details added'),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.add),
+                    onPressed: _showMyDetailsScreen,
+                  ),
                 ),
               ),
               const Divider(),
-              ListTile(
-                leading: const Icon(Icons.person),
-                title: const Text('Buyer Details'),
-                subtitle: buyerDetails != null
-                    ? Text(buyerDetails!['customerName'] ?? 'Details added')
-                    : const Text('No details added'),
-                trailing: IconButton(
-                  icon: const Icon(Icons.add),
-                  onPressed: _showBuyerDetailsScreen,
+
+              InkWell(
+                onTap: _showBuyerDetailsScreen,
+                child: ListTile(
+                  leading: const Icon(Icons.person),
+                  title: const Text('Buyer Details'),
+                  subtitle: buyerDetails != null
+                      ? Text(buyerDetails!['customerName'] ?? 'Details added')
+                      : const Text('No details added'),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.add),
+                    onPressed: _showBuyerDetailsScreen,
+                  ),
                 ),
               ),
               const Divider(),
-              ListTile(
-                leading: const Icon(Icons.shopping_cart),
-                title: const Text('Product Details'),
-                subtitle: _buildSelectedProductsList(),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Button to view/select existing products
-                    IconButton(
-                      icon: const Icon(Icons.list),
-                      onPressed: _showProductsList,
-                    ),
-                    // Button to add a new product
-                    IconButton(
-                      icon: const Icon(Icons.add),
-                      onPressed: _showProductDetailsScreen,
-                    ),
-                  ],
+
+              InkWell(
+                onTap: _showProductsListScreen,
+                child: ListTile(
+                  leading: const Icon(Icons.shopping_cart),
+                  title: const Text('Product Details'),
+                  subtitle: _buildSelectedProductsList(),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.add),
+                    onPressed: _showProductsListScreen,
+                  ),
                 ),
               ),
               const Divider(),
-              ListTile(
-                leading: const Icon(Icons.account_balance),
-                title: const Text('Bank Details (Optional)'),
-                subtitle: bankDetails != null
-                    ? Text(bankDetails!['bankName'] ?? 'Details added')
-                    : const Text('No details added'),
-                trailing: IconButton(
-                  icon: const Icon(Icons.add),
-                  onPressed: _showBankDetailsScreen,
+
+              InkWell(
+                onTap: _showBankDetailsScreen,
+                child: ListTile(
+                  leading: const Icon(Icons.account_balance),
+                  title: const Text('Bank Details (Optional)'),
+                  subtitle: bankDetails != null
+                      ? Text(bankDetails!['bankName'] ?? 'Details added')
+                      : const Text('No details added'),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.add),
+                    onPressed: _showBankDetailsScreen,
+                  ),
                 ),
               ),
-              const Divider(),
               const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -598,10 +648,8 @@ class _InvoiceCreateScreenState extends State<InvoiceCreateScreen> {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
 
-class InvoicePreviewScreen {
+      ),
+    ]));
+  }
 }

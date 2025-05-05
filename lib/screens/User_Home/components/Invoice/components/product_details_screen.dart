@@ -44,6 +44,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   final TextEditingController _lowStockAlertController =
       TextEditingController();
   final TextEditingController _barcodeController = TextEditingController();
+  final TextEditingController _quantityController = TextEditingController();
 
   String _itemType = 'Goods';
   bool _isTaxInclusive = false;
@@ -67,6 +68,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       _nameController.text = widget.product!.name;
       _descriptionController.text = widget.product!.description;
       _hsnController.text = widget.product!.hsn;
+      _quantityController.text = '1';
       _salePriceController.text = widget.product!.salePrice.toString();
       _unitController.text = widget.product!.unit;
       _itemType = widget.product!.itemType;
@@ -91,6 +93,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       _barcodeController.text = widget.product!.barcode;
     } else {
       // Default values for new product
+      _quantityController.text = '1';
       _openingStockDateController.text =
           DateFormat('dd/MM/yyyy').format(_openingStockDate);
       _cessRateController.text = '0';
@@ -146,6 +149,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         lowStockAlert: int.tryParse(_lowStockAlertController.text) ?? 0,
         barcode: _barcodeController.text.trim(),
         hsn: _hsnController.text.trim(),
+        defaultQuantity: int.tryParse(_quantityController.text) ?? 1,
       );
 
       // Save to Firebase
@@ -409,27 +413,58 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             maxLines: 3,
           ),
           const SizedBox(height: 16),
-
-          // HSN
-          TextField(
-            controller: _hsnController,
-            style: TextStyle(
-              color: isDarkMode ? AppColors.darkText : AppColors.lightText,
-            ),
-            decoration: InputDecoration(
-              labelText: 'HSN',
-              labelStyle: TextStyle(color: secondaryTextColor),
-              border: const OutlineInputBorder(),
-              suffixIcon: Icon(Icons.search, color: secondaryTextColor),
-              enabledBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: dividerColor),
-              ),
-              focusedBorder: const OutlineInputBorder(
-                borderSide: BorderSide(color: AppColors.primaryBlue),
-              ),
-            ),
-          ),
+          
+          // After the HSN TextField
           const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _hsnController,
+                  style: TextStyle(
+                    color: isDarkMode ? AppColors.darkText : AppColors.lightText,
+                  ),
+                  decoration: InputDecoration(
+                    labelText: 'HSN',
+                    labelStyle: TextStyle(color: secondaryTextColor),
+                    border: const OutlineInputBorder(),
+                    suffixIcon: Icon(Icons.search, color: secondaryTextColor),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: dividerColor),
+                    ),
+                    focusedBorder: const OutlineInputBorder(
+                      borderSide: BorderSide(color: AppColors.primaryBlue),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: TextField(
+                  controller: _quantityController, // Add this controller to class fields
+                  style: TextStyle(
+                    color: isDarkMode ? AppColors.darkText : AppColors.lightText,
+                  ),
+                  decoration: InputDecoration(
+                    labelText: 'Quantity',
+                    labelStyle: TextStyle(color: secondaryTextColor),
+                    border: const OutlineInputBorder(),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: dividerColor),
+                    ),
+                    focusedBorder: const OutlineInputBorder(
+                      borderSide: BorderSide(color: AppColors.primaryBlue),
+                    ),
+                  ),
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height:16),
 
           // Sale Price and Unit
           Row(

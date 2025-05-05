@@ -104,6 +104,7 @@ class ProductModel {
   final int lowStockAlert;
   final String barcode;
   final String hsn;
+  final int defaultQuantity;
 
   ProductModel({
     required this.id,
@@ -128,6 +129,7 @@ class ProductModel {
     this.lowStockAlert = 0,
     this.barcode = '',
     this.hsn = '',
+    this.defaultQuantity = 1,
   }) : openingStockDate = openingStockDate ?? DateTime.now();
 
   // Helper method to get GST rate from GST type
@@ -156,10 +158,9 @@ class ProductModel {
     return 'GST @ 0';
   }
 
-  // Calculate price excluding GST (if tax inclusive)
-  // In ProductModel class
 
-// Calculate price excluding GST (if tax inclusive)
+  // Calculate price excluding GST (if tax inclusive)
+  // Calculate price excluding GST (if tax inclusive)
   double get priceExcludingGst {
     if (isTaxInclusive && gstRate > 0) {
       return salePrice / (1 + (gstRate / 100));
@@ -214,6 +215,7 @@ class ProductModel {
       'lowStockAlert': lowStockAlert,
       'barcode': barcode,
       'hsn': hsn,
+      'defaultQuantity': defaultQuantity,
     };
 
     if (includeTimestamp) {
@@ -261,6 +263,7 @@ class ProductModel {
       lowStockAlert: map['lowStockAlert'] ?? 0,
       barcode: map['barcode'] ?? '',
       hsn: map['hsn'] ?? '',
+      defaultQuantity: map['defaultQuantity'] ?? 1,
     );
   }
 }

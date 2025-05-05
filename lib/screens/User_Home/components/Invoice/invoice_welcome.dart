@@ -1,11 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:provider/provider.dart';
+
+import '../../../../utils/app_colors.dart';
+import '../../../../utils/theme_provider.dart';
+import 'invoice_list.dart';
 
 class InvoiceHomeScreen extends StatelessWidget {
   const InvoiceHomeScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDarkMode = themeProvider.isDarkMode;
+    final secondaryTextColor = AppColors.getSecondaryTextColor(isDarkMode);
+    final dividerColor = AppColors.getDividerColor(isDarkMode);
+    final BackgroundColor = AppColors.getBackgroundColor(isDarkMode);
+
     return Scaffold(
       body: SafeArea(
         child: Padding(
@@ -15,18 +26,25 @@ class InvoiceHomeScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const SizedBox(height: 20),
-              const Text(
+              Text(
                 'Create Invoice',
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
+
+                  color: isDarkMode
+                      ? AppColors.darkText
+                      : AppColors.lightText,
                 ),
               ),
-              const Text(
+
+              Text(
                 'Easily...',
                 style: TextStyle(
                   fontSize: 20,
-                  color: Colors.black54,
+                  color: isDarkMode
+                      ? AppColors.darkText
+                      : AppColors.lightText,
                 ),
               ),
               const SizedBox(height: 40),
@@ -50,7 +68,11 @@ class InvoiceHomeScreen extends StatelessWidget {
               const Spacer(),
               ElevatedButton(
                 onPressed: () {
-                  Navigator.pushNamed(context, '/create_invoice');
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => InvoiceListScreen()),
+                  );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue,
@@ -60,7 +82,7 @@ class InvoiceHomeScreen extends StatelessWidget {
                   ),
                 ),
                 child: const Text(
-                  'Create Invoice',
+                  'Create Invoices',
                   style: TextStyle(fontSize: 18, color: Colors.white),
                 ),
               ),
