@@ -46,6 +46,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
       context.loc.motivational: 'motivation',
       context.loc.friendship: 'friendship',
       context.loc.funny: 'funny',
+      context.loc.patriotic: 'Patriotic',
       // Add all your categories here with their English database keys
     };
   }

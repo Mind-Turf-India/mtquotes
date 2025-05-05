@@ -1,56 +1,352 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import 'package:mtquotes/screens/User_Home/files_screen.dart';
+import 'package:provider/provider.dart';
 
+import '../../../../utils/app_colors.dart';
+import '../../../../utils/theme_provider.dart';
+import 'components/bank_details_screen.dart';
+import 'components/buyer_details_screen.dart';
+import 'components/my_details_screen.dart';
+import 'components/product_details_screen.dart';
 import 'invoice_model.dart';
+import 'invoice_preview.dart';
 
 class InvoiceCreateScreen extends StatefulWidget {
   const InvoiceCreateScreen({Key? key}) : super(key: key);
 
   @override
-  _InvoiceCreateScreenState createState() => _InvoiceCreateScreenState();
+  State<InvoiceCreateScreen> createState() => _InvoiceCreateScreenState();
 }
 
 class _InvoiceCreateScreenState extends State<InvoiceCreateScreen> {
-  late Invoice _invoice;
-  //final InvoiceService _invoiceService = InvoiceService();
+  final FirebaseService _firebaseService = FirebaseService();
+  final TextEditingController _dateController = TextEditingController();
+  final TextEditingController _invoiceNoController = TextEditingController();
+  Map<String, dynamic>? myDetails;
+  Map<String, dynamic>? buyerDetails;
+  List<ProductModel> availableProducts = []; // All products from database
+  List<InvoiceProductItem> invoiceProducts = []; // Products added to this invoice
+  Map<String, dynamic>? bankDetails;
+  String? signature;
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    _invoice = Invoice(
-      id: '',
-      invoiceNumber: '1',
-      date: DateTime.now(),
-      sellerDetails: UserDetails(),
-      buyerDetails: UserDetails(),
-      products: [],
-      bankDetails: BankDetails(),
-      signature: '',
-      createdAt: DateTime.now(),
-      total: 0,
+    _loadUserDetails();
+    _loadProducts(); // Load existing products
+    _setDefaults();
+  }
+
+  void _setDefaults() {
+    // Set default date to current date
+    final now = DateTime.now();
+    _dateController.text = "${now.day.toString().padLeft(2, '0')}/${now.month.toString().padLeft(2, '0')}/${now.year}";
+
+    // Set default invoice number to 1
+    _invoiceNoController.text = "1";
+  }
+
+  Future<void> _loadUserDetails() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final userDetails = await _firebaseService.getUserDetails();
+      if (userDetails != null && userDetails.containsKey('myDetails')) {
+        setState(() {
+          myDetails = userDetails['myDetails'];
+        });
+      }
+    } catch (e) {
+      // Handle error
+      print('Error loading user details: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading user details: $e')),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _loadProducts() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final allProducts = await _firebaseService.getAllProducts();
+      setState(() {
+        availableProducts = allProducts; // Store in availableProducts
+      });
+    } catch (e) {
+      print('Error loading products: $e');
+      // Don't show error to user, we'll just start with an empty list
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _showMyDetailsScreen() async {
+    try {
+      // Get the current user's document ID (using the email with dots replaced)
+      String userEmail = FirebaseAuth.instance.currentUser!.email!;
+      String userDocId = userEmail.replaceAll('.', '_');
+
+      // Fetch the user document from Firestore
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userDocId)
+          .get();
+
+      Map<String, dynamic>? initialDetails;
+      if (userDoc.exists) {
+        final userData = userDoc.data() as Map<String, dynamic>;
+        if (userData.containsKey('myDetails')) {
+          initialDetails = userData['myDetails'] as Map<String, dynamic>;
+        }
+      }
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => MyDetailsScreen(
+            initialDetails: initialDetails,
+            onSave: (details) {
+              setState(() {
+                myDetails = details;
+              });
+            },
+          ),
+        ),
+      );
+    } catch (e) {
+      print('Error loading user details: $e');
+
+      // If there's an error, still show the screen but without initial data
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => MyDetailsScreen(
+            onSave: (details) {
+              setState(() {
+                myDetails = details;
+              });
+            },
+          ),
+        ),
+      );
+    }
+  }
+
+  void _showBuyerDetailsScreen() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => BuyerDetailsScreen(
+          initialDetails: buyerDetails,
+          onSave: (details) {
+            setState(() {
+              buyerDetails = details;
+            });
+          },
+        ),
+      ),
+    );
+  }
+
+  void _showProductDetailsScreen() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ProductDetailScreen(
+          product: null,
+          onSave: (product) {
+            // Add the new product to available products
+            setState(() {
+              availableProducts.add(product);
+            });
+
+            // Optionally, also add it to the invoice
+            setState(() {
+              invoiceProducts.add(InvoiceProductItem(
+                product: product,
+                quantity: 1,
+              ));
+            });
+          },
+        ),
+      ),
+    );
+  }
+
+  void _showProductsList() {
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          title: const Text('Select Products'),
+          content: availableProducts.isEmpty
+              ? const Text('No products available. Please add products first.')
+              : SizedBox(
+            width: double.maxFinite,
+            height: 400,
+            child: Column(
+              children: [
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: availableProducts.length,
+                    itemBuilder: (context, index) {
+                      final product = availableProducts[index];
+
+                      // Find existing item in invoice
+                      final existingIndex = invoiceProducts.indexWhere(
+                            (item) => item.product.id == product.id,
+                      );
+
+                      final existingItem = existingIndex >= 0
+                          ? invoiceProducts[existingIndex]
+                          : null;
+
+                      final quantity = existingItem?.quantity ?? 0;
+
+                      return ListTile(
+                        title: Text(product.name),
+                        subtitle: Text('₹${product.salePrice} per ${product.unit}'),
+                        trailing: quantity > 0
+                            ? Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.remove),
+                              onPressed: () {
+                                if (quantity > 1) {
+                                  // Update quantity
+                                  invoiceProducts[existingIndex] = InvoiceProductItem(
+                                    product: product,
+                                    quantity: quantity - 1,
+                                  );
+                                } else {
+                                  // Remove from invoice
+                                  invoiceProducts.removeAt(existingIndex);
+                                }
+
+                                // Update both dialog and parent state
+                                setDialogState(() {});
+                                setState(() {});
+                              },
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              child: Text(
+                                quantity.toString(),
+                                style: const TextStyle(fontSize: 16),
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.add),
+                              onPressed: () {
+                                if (existingIndex >= 0) {
+                                  invoiceProducts[existingIndex] = InvoiceProductItem(
+                                    product: product,
+                                    quantity: quantity + 1,
+                                  );
+                                } else {
+                                  invoiceProducts.add(InvoiceProductItem(
+                                    product: product,
+                                    quantity: 1,
+                                  ));
+                                }
+
+                                // Update both dialog and parent state
+                                setDialogState(() {});
+                                setState(() {});
+                              },
+                            ),
+                          ],
+                        )
+                            : ElevatedButton(
+                          child: const Text('Add'),
+                          onPressed: () {
+                            invoiceProducts.add(InvoiceProductItem(
+                              product: product,
+                              quantity: 1,
+                            ));
+
+                            // Update both dialog and parent state
+                            setDialogState(() {});
+                            setState(() {});
+                          },
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Close'),
+            ),
+            TextButton(
+              onPressed: _showProductDetailsScreen,
+              child: const Text('Create New Product'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSelectedProductsList() {
+    if (invoiceProducts.isEmpty) {
+      return const Text('No products added');
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('${invoiceProducts.length} products added:'),
+        const SizedBox(height: 4),
+        ...invoiceProducts.map((item) => Text(
+          '• ${item.product.name} × ${item.quantity} ${item.product.unit}',
+          style: const TextStyle(fontSize: 12),
+        )).toList(),
+      ],
+    );
+  }
+
+
+
+  void _showBankDetailsScreen() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => BankDetailsScreen(
+          initialDetails: bankDetails,
+          onSave: (details) {
+            setState(() {
+              bankDetails = details;
+            });
+          },
+        ),
+      ),
     );
   }
 
   Future<void> _saveInvoice() async {
-    if (_invoice.sellerDetails.name.isEmpty) {
+    if (myDetails == null || buyerDetails == null || invoiceProducts.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please add your details')),
-      );
-      return;
-    }
-
-    if (_invoice.buyerDetails.name.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please add buyer details')),
-      );
-      return;
-    }
-
-    if (_invoice.products.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please add product details')),
+        const SnackBar(content: Text('Please fill all required details')),
       );
       return;
     }
@@ -60,208 +356,137 @@ class _InvoiceCreateScreenState extends State<InvoiceCreateScreen> {
     });
 
     try {
-      //await _invoiceService.saveInvoice(_invoice);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Invoice saved successfully!')),
-        );
-        Navigator.pop(context);
-      }
+      final invoice = InvoiceModel(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        date: _dateController.text,
+        invoiceNo: _invoiceNoController.text,
+        myDetails: myDetails!,
+        buyerDetails: buyerDetails!,
+        products: invoiceProducts,
+        bankDetails: bankDetails,
+        signature: signature,
+      );
+
+      await _firebaseService.saveInvoice(invoice);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Invoice saved successfully')),
+      );
+
+      // Navigate to PDF Preview screen instead
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => PdfPreviewScreen(invoice: invoice),
+        ),
+      );
+
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error saving invoice: $e')),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error saving invoice: $e')),
+      );
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      setState(() {
+        _isLoading = false;
+      });
     }
-  }
-
-  void _showOptionsMenu() {
-    showMenu(
-      context: context,
-      position: const RelativeRect.fromLTRB(100, 100, 0, 0),
-      items: [
-        const PopupMenuItem(
-          value: 'duplicate',
-          child: Text('Duplicate'),
-        ),
-        const PopupMenuItem(
-          value: 'open_pdf',
-          child: Text('Open PDF'),
-        ),
-        const PopupMenuItem(
-          value: 'print_pdf',
-          child: Text('Print PDF'),
-        ),
-        const PopupMenuItem(
-          value: 'save_pdf',
-          child: Text('Save PDF to Phone'),
-        ),
-        const PopupMenuItem(
-          value: 'share_pdf',
-          child: Text('Share PDF'),
-        ),
-        const PopupMenuItem(
-          value: 'cancel_invoice',
-          child: Text('Cancel Invoice'),
-        ),
-      ],
-    ).then((value) {
-      // Handle menu selection
-      if (value != null) {
-        switch (value) {
-          case 'duplicate':
-          // Duplicate functionality
-            break;
-          case 'open_pdf':
-          // Open PDF functionality
-            break;
-          case 'print_pdf':
-          // Print PDF functionality
-            break;
-          case 'save_pdf':
-          // Save PDF functionality
-            break;
-          case 'share_pdf':
-          // Share PDF functionality
-            break;
-          case 'cancel_invoice':
-            Navigator.pop(context);
-            break;
-        }
-      }
-    });
-  }
-
-  void _showMyDetailsForm() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => FilesPage()
-    );
-  }
-
-  void _showBuyerDetailsForm() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => FilesPage(),
-    );
-  }
-
-  void _showProductDetailsForm() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => FilesPage(),
-    );
-  }
-
-  void _showBankDetailsForm() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => FilesPage()
-    );
-  }
-
-  void _calculateTotal() {
-    double total = 0;
-    for (var product in _invoice.products) {
-      total += product.price * product.quantity;
-    }
-    setState(() {
-      _invoice.total = total;
-    });
   }
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDarkMode = themeProvider.isDarkMode;
+    final secondaryTextColor = AppColors.getSecondaryTextColor(isDarkMode);
+    final dividerColor = AppColors.getDividerColor(isDarkMode);
+
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.black,
-        elevation: 0,
+        title: const Text('Create Invoice'),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: const Text(
-          'Create Invoice',
-          style: TextStyle(color: Colors.white),
+          icon: const Icon(Icons.arrow_back_ios),
+          onPressed: () => Navigator.pop(context),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.more_vert, color: Colors.white),
-            onPressed: _showOptionsMenu,
+          PopupMenuButton(
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'duplicate',
+                child: Text('Duplicate'),
+              ),
+              const PopupMenuItem(
+                value: 'open_pdf',
+                child: Text('Open PDF'),
+              ),
+              const PopupMenuItem(
+                value: 'print_pdf',
+                child: Text('Print PDF'),
+              ),
+              const PopupMenuItem(
+                value: 'save_pdf',
+                child: Text('Save PDF to Phone'),
+              ),
+              const PopupMenuItem(
+                value: 'share_pdf',
+                child: Text('Share PDF'),
+              ),
+              const PopupMenuItem(
+                value: 'cancel_invoice',
+                child: Text('Cancel Invoice'),
+              ),
+            ],
+            onSelected: (value) {
+              // Handle menu item selection
+            },
           ),
         ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
+        padding: const EdgeInsets.all(8.0),
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(8.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Date and Invoice Number Row
               Row(
                 children: [
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Date'),
-                        const SizedBox(height: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 13),
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey.shade300),
-                            borderRadius: BorderRadius.circular(8),
+                        const Text('Date',style: TextStyle(color: Colors.black),),
+                        TextField(
+                          controller: _dateController,
+                          style: TextStyle(
+                            color: isDarkMode
+                                ? AppColors.darkText
+                                : AppColors.lightText,
                           ),
-                          child: Row(
-                            mainAxisAlignment:
-                            MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                DateFormat('dd/MM/yyyy')
-                                    .format(_invoice.date),
-                                style: TextStyle(
-                                    fontSize: 16,
-                                    color: Colors.grey.shade700),
-                              ),
-                              GestureDetector(
-                                onTap: () async {
-                                  final DateTime? picked =
-                                  await showDatePicker(
-                                    context: context,
-                                    initialDate: _invoice.date,
-                                    firstDate: DateTime(2000),
-                                    lastDate: DateTime(2101),
-                                  );
-                                  if (picked != null &&
-                                      picked != _invoice.date) {
-                                    setState(() {
-                                      _invoice.date = picked;
-                                    });
-                                  }
-                                },
-                                child: const Icon(Icons.calendar_today,
-                                    size: 20),
-                              ),
-                            ],
+                          decoration: InputDecoration(
+                            labelStyle: TextStyle(color: secondaryTextColor),
+                            border: const OutlineInputBorder(),
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: dividerColor),
+                            ),
+                            focusedBorder: const OutlineInputBorder(
+                              borderSide: BorderSide(color: AppColors.primaryBlue),
+                            ),
                           ),
+                          readOnly: true,
+                          onTap: () async {
+                            final date = await showDatePicker(
+                              context: context,
+                              initialDate: DateTime.now(),
+                              firstDate: DateTime(2000),
+                              lastDate: DateTime(2100),
+                            );
+                            if (date != null) {
+                              setState(() {
+                                _dateController.text = "${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}";
+                              });
+                            }
+                          },
                         ),
                       ],
                     ),
@@ -271,24 +496,23 @@ class _InvoiceCreateScreenState extends State<InvoiceCreateScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Invoice No.'),
-                        const SizedBox(height: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12),
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey.shade300),
-                            borderRadius: BorderRadius.circular(8),
+                        const Text('Invoice No.',style: TextStyle(color: Colors.black)),
+                        TextField(
+                          controller: _invoiceNoController,
+                          style: TextStyle(
+                            color: isDarkMode
+                                ? AppColors.darkText
+                                : AppColors.lightText,
                           ),
-                          child: TextFormField(
-                            initialValue: _invoice.invoiceNumber,
-                            decoration: const InputDecoration(
-                              border: InputBorder.none,
-                              contentPadding: EdgeInsets.zero,
+                          decoration: InputDecoration(
+                            labelStyle: TextStyle(color: secondaryTextColor),
+                            border: const OutlineInputBorder(),
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: dividerColor),
                             ),
-                            onChanged: (value) {
-                              _invoice.invoiceNumber = value;
-                            },
+                            focusedBorder: const OutlineInputBorder(
+                              borderSide: BorderSide(color: AppColors.primaryBlue),
+                            ),
                           ),
                         ),
                       ],
@@ -296,312 +520,78 @@ class _InvoiceCreateScreenState extends State<InvoiceCreateScreen> {
                   ),
                 ],
               ),
-
-              const SizedBox(height: 24),
-
-              // My Details Section
-              Row(
-                children: [
-                  const Icon(Icons.business, size: 24),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'My Details',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const Spacer(),
-                  InkWell(
-                    onTap: _showMyDetailsForm,
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.grey.shade400),
-                      ),
-                      child: const Icon(Icons.add, size: 16),
-                    ),
-                  ),
-                ],
-              ),
-              if (_invoice.sellerDetails.name.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(left: 32, top: 8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(_invoice.sellerDetails.name,
-                          style: const TextStyle(fontWeight: FontWeight.bold)),
-                      if (_invoice.sellerDetails.address.isNotEmpty)
-                        Text(_invoice.sellerDetails.address),
-                      if (_invoice.sellerDetails.phone.isNotEmpty)
-                        Text(_invoice.sellerDetails.phone),
-                      if (_invoice.sellerDetails.email.isNotEmpty)
-                        Text(_invoice.sellerDetails.email),
-                    ],
-                  ),
-                ),
-
-              const Divider(height: 32),
-
-              // Buyer Details Section
-              Row(
-                children: [
-                  const Icon(Icons.person, size: 24),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'Buyer Details',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const Spacer(),
-                  InkWell(
-                    onTap: _showBuyerDetailsForm,
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.grey.shade400),
-                      ),
-                      child: const Icon(Icons.add, size: 16),
-                    ),
-                  ),
-                ],
-              ),
-              if (_invoice.buyerDetails.name.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(left: 32, top: 8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(_invoice.buyerDetails.name,
-                          style: const TextStyle(fontWeight: FontWeight.bold)),
-                      if (_invoice.buyerDetails.address.isNotEmpty)
-                        Text(_invoice.buyerDetails.address),
-                      if (_invoice.buyerDetails.phone.isNotEmpty)
-                        Text(_invoice.buyerDetails.phone),
-                      if (_invoice.buyerDetails.email.isNotEmpty)
-                        Text(_invoice.buyerDetails.email),
-                    ],
-                  ),
-                ),
-
-              const Divider(height: 32),
-
-              // Product Details Section
-              Row(
-                children: [
-                  const Icon(Icons.shopping_bag, size: 24),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'Product Details',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const Spacer(),
-                  InkWell(
-                    onTap: _showProductDetailsForm,
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.grey.shade400),
-                      ),
-                      child: const Icon(Icons.add, size: 16),
-                    ),
-                  ),
-                ],
-              ),
-              if (_invoice.products.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(left: 32, top: 8),
-                  child: Column(
-                    children: _invoice.products
-                        .map(
-                          (product) => Padding(
-                        padding: const EdgeInsets.only(bottom: 8.0),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              flex: 2,
-                              child: Text(product.name),
-                            ),
-                            Expanded(
-                              flex: 1,
-                              child:
-                              Text('${product.quantity.toString()} x'),
-                            ),
-                            Expanded(
-                              flex: 1,
-                              child: Text(
-                                  '\$${product.price.toStringAsFixed(2)}'),
-                            ),
-                            Expanded(
-                              flex: 1,
-                              child: Text(
-                                '\$${(product.price * product.quantity).toStringAsFixed(2)}',
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    )
-                        .toList(),
-                  ),
-                ),
-              if (_invoice.products.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(left: 32, top: 8),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      const Text(
-                        'Total: ',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                      Text(
-                        '\$${_invoice.total.toStringAsFixed(2)}',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-              const Divider(height: 32),
-
-              // Bank Details Section (Optional)
-              Row(
-                children: [
-                  const Icon(Icons.account_balance, size: 24),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'Bank Details (Optional)',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const Spacer(),
-                  InkWell(
-                    onTap: _showBankDetailsForm,
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.grey.shade400),
-                      ),
-                      child: const Icon(Icons.add, size: 16),
-                    ),
-                  ),
-                ],
-              ),
-              if (_invoice.bankDetails.accountName.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(left: 32, top: 8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(_invoice.bankDetails.bankName,
-                          style: const TextStyle(fontWeight: FontWeight.bold)),
-                      Text('A/C: ${_invoice.bankDetails.accountNumber}'),
-                      Text('IFSC: ${_invoice.bankDetails.ifscCode}'),
-                      Text('A/C Name: ${_invoice.bankDetails.accountName}'),
-                    ],
-                  ),
-                ),
-
-              const SizedBox(height: 32),
-
-              // Signature Section
-              Container(
-                height: 120,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade300),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Center(
-                  child: _invoice.signature.isEmpty
-                      ? const Text('Tap to add Signature',
-                      style: TextStyle(color: Colors.grey))
-                      : Image.memory(
-                    // Convert base64 to Uint8List for signature display
-                    Uri.parse(_invoice.signature).data!.contentAsBytes(),
-                  ),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: const Icon(Icons.business),
+                title: const Text('My Details'),
+                subtitle: myDetails != null
+                    ? Text(myDetails!['companyName'] ?? 'Details added')
+                    : const Text('No details added'),
+                trailing: IconButton(
+                  icon: const Icon(Icons.add),
+                  onPressed: _showMyDetailsScreen,
                 ),
               ),
-
-              const SizedBox(height: 40),
-
-              // Bottom Buttons
+              const Divider(),
+              ListTile(
+                leading: const Icon(Icons.person),
+                title: const Text('Buyer Details'),
+                subtitle: buyerDetails != null
+                    ? Text(buyerDetails!['customerName'] ?? 'Details added')
+                    : const Text('No details added'),
+                trailing: IconButton(
+                  icon: const Icon(Icons.add),
+                  onPressed: _showBuyerDetailsScreen,
+                ),
+              ),
+              const Divider(),
+              ListTile(
+                leading: const Icon(Icons.shopping_cart),
+                title: const Text('Product Details'),
+                subtitle: _buildSelectedProductsList(),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Button to view/select existing products
+                    IconButton(
+                      icon: const Icon(Icons.list),
+                      onPressed: _showProductsList,
+                    ),
+                    // Button to add a new product
+                    IconButton(
+                      icon: const Icon(Icons.add),
+                      onPressed: _showProductDetailsScreen,
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(),
+              ListTile(
+                leading: const Icon(Icons.account_balance),
+                title: const Text('Bank Details (Optional)'),
+                subtitle: bankDetails != null
+                    ? Text(bankDetails!['bankName'] ?? 'Details added')
+                    : const Text('No details added'),
+                trailing: IconButton(
+                  icon: const Icon(Icons.add),
+                  onPressed: _showBankDetailsScreen,
+                ),
+              ),
+              const Divider(),
+              const SizedBox(height: 16),
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        showDialog(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            title: const Text('Delete Invoice?'),
-                            content: const Text(
-                                'Are you sure you want to delete this invoice?'),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context),
-                                child: const Text('Cancel'),
-                              ),
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.pop(context); // Close dialog
-                                  Navigator.pop(context); // Go back to home
-                                },
-                                child: const Text('Delete',
-                                    style: TextStyle(color: Colors.red)),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: Colors.black,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          side: BorderSide(color: Colors.grey.shade300),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                      child: const Text('Delete'),
-                    ),
+                  OutlinedButton(
+                    onPressed: () {
+                      // Handle delete
+                      Navigator.pop(context);
+                    },
+                    child: const Text('Delete'),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: _saveInvoice,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                      child: const Text('Save',
-                          style: TextStyle(color: Colors.white)),
-                    ),
+                  ElevatedButton(
+                    onPressed: _saveInvoice,
+                    child: const Text('Save'),
                   ),
                 ],
               ),
@@ -611,4 +601,7 @@ class _InvoiceCreateScreenState extends State<InvoiceCreateScreen> {
       ),
     );
   }
+}
+
+class InvoicePreviewScreen {
 }

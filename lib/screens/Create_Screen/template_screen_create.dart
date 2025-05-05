@@ -748,6 +748,12 @@ class _TemplatePageState extends State<TemplatePage> {
                       isDarkMode),
                   categoryCard('assets/icons/sad.svg', context.loc.sad,
                       const Color(0xFFAADA0D), isDarkMode),
+                  categoryCard(
+                      'assets/icons/patriotic.svg',
+                      context.loc.patriotic,
+                      const Color(0xFF000088),
+                      isDarkMode
+                  ),
                 ],
               ),
             ),

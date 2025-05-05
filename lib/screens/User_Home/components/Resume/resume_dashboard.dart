@@ -660,7 +660,6 @@ class _PersonalDetailsScreenState
   }
 
   // Build a single education block
-  // Build a single education block with proper dark theme support
   Widget _buildEducationBlock(int index) {
     return Container(
       margin: const EdgeInsets.only(bottom: 20),

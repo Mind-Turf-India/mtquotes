@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:mtquotes/screens/User_Home/components/Resume/resume_data.dart';
 
-// Template interface with improved signature for handling content size
 abstract class ResumeTemplate {
   Widget buildTemplate(
     ResumeData data, {
@@ -28,7 +27,6 @@ Widget buildProfileImage(String? imagePath,
     );
   }
 
-  // Check if it's a Firebase URL (starts with http or https)
   if (imagePath.startsWith('http')) {
     return Container(
       width: size,
@@ -43,7 +41,6 @@ Widget buildProfileImage(String? imagePath,
       ),
     );
   } else {
-    // Local file path
     return Container(
       width: size,
       height: size,
@@ -68,10 +65,9 @@ class ModernTemplate implements ResumeTemplate {
   @override
   Widget buildTemplate(ResumeData data,
       {bool isPreview = false, double? maxWidth}) {
-    final containerWidth = isPreview ? 400 : 595; // A4 width in points
-    final containerHeight = isPreview ? 560 : 842; // A4 height in points
+    final containerWidth = isPreview ? 400 : 595;
+    final containerHeight = isPreview ? 560 : 842;
 
-    // Check if skills and languages are empty
     final bool hasSkills = data.skills.isNotEmpty;
     final bool hasLanguages = data.languages.isNotEmpty;
     final bool hasEmploymentHistory = data.employmentHistory.isNotEmpty &&
@@ -88,18 +84,15 @@ class ModernTemplate implements ResumeTemplate {
       color: Colors.white,
       child: Column(
         children: [
-          // Header with name, role, and contact info
           Container(
             padding: const EdgeInsets.all(20),
             color: Colors.blueGrey[800],
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Name and role with profile image
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Profile image if available
                     if (data.personalInfo.profileImagePath != null)
                       Container(
                         width: 70,
@@ -138,12 +131,10 @@ class ModernTemplate implements ResumeTemplate {
                   ],
                 ),
 
-                // Contact details below name and role
                 const SizedBox(height: 15),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Contact info - Email and Phone
                     Expanded(
                       child: Row(
                         children: [
@@ -183,12 +174,10 @@ class ModernTemplate implements ResumeTemplate {
             ),
           ),
 
-          // Two column layout
           Expanded(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Left sidebar with skills and languages - only show if there are skills or languages
                 if (hasSkills || hasLanguages)
                   Container(
                     width: isPreview ? 110 : 150,
@@ -197,7 +186,6 @@ class ModernTemplate implements ResumeTemplate {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Skills section - only show if there are skills
                         if (hasSkills) ...[
                           const Text(
                             'SKILLS',
@@ -221,7 +209,6 @@ class ModernTemplate implements ResumeTemplate {
                           if (hasLanguages) const SizedBox(height: 24),
                         ],
 
-                        // Languages section - only show if there are languages
                         if (hasLanguages) ...[
                           const Text(
                             'LANGUAGE',
@@ -247,14 +234,12 @@ class ModernTemplate implements ResumeTemplate {
                     ),
                   ),
 
-                // Main content with summary, experience, and education
                 Expanded(
                   child: Container(
                     padding: const EdgeInsets.all(20),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Professional Summary - only show if there is a summary
                         if (hasSummary) ...[
                           const Text(
                             'SUMMARY',
@@ -275,12 +260,10 @@ class ModernTemplate implements ResumeTemplate {
                           const SizedBox(height: 20),
                         ],
 
-                        // Work Experience - only show if there is employment history
                         if (hasEmploymentHistory) ...[
                           _buildSectionHeader('EXPERIENCE'),
                           const SizedBox(height: 12),
 
-                          // Employment history items
                           ...data.employmentHistory
                               .where((job) =>
                                   job.jobTitle.trim().isNotEmpty ||
@@ -323,7 +306,6 @@ class ModernTemplate implements ResumeTemplate {
                           if (hasEducation) const SizedBox(height: 24),
                         ],
 
-                        // Education - only show if there is education data
                         if (hasEducation) ...[
                           const Text(
                             'EDUCATION',
@@ -386,34 +368,27 @@ class ClassicTemplate implements ResumeTemplate {
     double? maxWidth,
   }) {
     final double containerWidth = maxWidth ?? (isPreview ? 400 : 595);
-    final double containerHeight = isPreview ? 600 : 842; // Fixed height for A4
+    final double containerHeight = isPreview ? 600 : 842;
 
-    // Improved check for sections with real data, not just empty entries
 
-    // 1. Check if skills exist and contain non-empty values
     final bool hasSkills = data.skills.isNotEmpty &&
         data.skills.any((skill) => skill.trim().isNotEmpty);
 
-    // 2. Check if languages exist and contain non-empty values
     final bool hasLanguages = data.languages.isNotEmpty &&
         data.languages.any((lang) => lang.trim().isNotEmpty);
 
-    // 3. Check if employment history exists and contains meaningful data
     final bool hasEmploymentHistory = data.employmentHistory.isNotEmpty &&
         data.employmentHistory.any((job) =>
             job.jobTitle.trim().isNotEmpty ||
             job.employer.trim().isNotEmpty ||
             job.description.trim().isNotEmpty);
 
-    // 4. Check if education data exists and contains meaningful content
     final bool hasEducation = data.education.isNotEmpty &&
         data.education.any((edu) =>
             edu.title.trim().isNotEmpty || edu.school.trim().isNotEmpty);
 
-    // 5. Check if professional summary has actual content
     final bool hasSummary = data.professionalSummary.trim().isNotEmpty;
 
-    // Filter out empty job entries
     final List<Employment> validJobs = data.employmentHistory
         .where((job) =>
             job.jobTitle.trim().isNotEmpty ||
@@ -421,7 +396,6 @@ class ClassicTemplate implements ResumeTemplate {
             job.description.trim().isNotEmpty)
         .toList();
 
-    // Filter out empty education entries
     final List<Education> validEducation = data.education
         .where((edu) =>
             edu.title.trim().isNotEmpty || edu.school.trim().isNotEmpty)
@@ -429,22 +403,17 @@ class ClassicTemplate implements ResumeTemplate {
 
     return Container(
         width: containerWidth,
-        // Don't set fixed height if this isn't a preview, let it scroll
         height: isPreview ? containerHeight : null,
         color: Colors.white,
         padding: const EdgeInsets.all(40),
         child: SingleChildScrollView(
-            // Wrap the column in SingleChildScrollView
             child: Column(
           mainAxisSize: MainAxisSize.min,
-          // Use min to prevent expansion beyond content
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header with name and contact info
             Center(
               child: Column(
                 children: [
-                  // Profile image if available
                   if (data.personalInfo.profileImagePath != null)
                     Container(
                       width: 100,
@@ -479,11 +448,10 @@ class ClassicTemplate implements ResumeTemplate {
                   ),
                   const SizedBox(height: 12),
 
-                  // Contact info using Wrap to handle overflow
                   Wrap(
                     alignment: WrapAlignment.center,
-                    spacing: 8, // space between items
-                    runSpacing: 8, // space between rows
+                    spacing: 8,
+                    runSpacing: 8,
                     children: [
                       Text(
                         data.personalInfo.email,
@@ -516,10 +484,8 @@ class ClassicTemplate implements ResumeTemplate {
               ),
             ),
 
-            // Only add spacing if there's a summary
             if (hasSummary) const SizedBox(height: 16),
 
-            // Professional Summary - only show if there is content
             if (hasSummary) ...[
               const Text(
                 'SUMMARY',
@@ -545,7 +511,6 @@ class ClassicTemplate implements ResumeTemplate {
               const SizedBox(height: 24),
             ],
 
-            // Experience - only show if there are valid job entries
             if (hasEmploymentHistory && validJobs.isNotEmpty) ...[
               const Text(
                 'EXPERIENCE',
@@ -558,13 +523,11 @@ class ClassicTemplate implements ResumeTemplate {
               const Divider(thickness: 1),
               const SizedBox(height: 8),
 
-              // Employment items - only show valid ones
               ...validJobs.map((job) => Padding(
                     padding: const EdgeInsets.only(bottom: 16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Job title and dates row
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -589,7 +552,6 @@ class ClassicTemplate implements ResumeTemplate {
                           ],
                         ),
                         const SizedBox(height: 4),
-                        // Employer and location row
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -614,7 +576,6 @@ class ClassicTemplate implements ResumeTemplate {
                           ],
                         ),
                         const SizedBox(height: 8),
-                        // Description with wrap for text overflow
                         Wrap(
                           children: [
                             Text(
@@ -634,7 +595,6 @@ class ClassicTemplate implements ResumeTemplate {
                 const SizedBox(height: 10),
             ],
 
-            // Education - only show if there are valid education entries
             if (hasEducation && validEducation.isNotEmpty) ...[
               const Text(
                 'EDUCATION',
@@ -647,24 +607,21 @@ class ClassicTemplate implements ResumeTemplate {
               const Divider(thickness: 1),
               const SizedBox(height: 8),
 
-              // Use a ConstrainedBox with a SingleChildScrollView instead of fixed height Container
               ConstrainedBox(
                 constraints: BoxConstraints(
                   maxHeight:
-                      isPreview ? 120 : 200, // Adjust this height as needed
+                      isPreview ? 120 : 200,
                 ),
                 child: SingleChildScrollView(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Education items - only show valid ones
                       ...validEducation.map((edu) => Padding(
                             padding: const EdgeInsets.only(bottom: 16),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                // Education title and dates row
                                 Row(
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceBetween,
@@ -692,7 +649,6 @@ class ClassicTemplate implements ResumeTemplate {
 
                                 const SizedBox(height: 4),
 
-                                // School and location row
                                 Row(
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceBetween,
@@ -720,7 +676,6 @@ class ClassicTemplate implements ResumeTemplate {
 
                                 const SizedBox(height: 4),
 
-                                // Level text
                                 Text(
                                   edu.level,
                                   style: const TextStyle(
@@ -739,12 +694,10 @@ class ClassicTemplate implements ResumeTemplate {
               if (hasSkills || hasLanguages) const SizedBox(height: 16),
             ],
 
-            // Skills and Languages in a row - only show if there are skills or languages
             if (hasSkills || hasLanguages)
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Skills section - only show if there are skills
                   if (hasSkills)
                     Expanded(
                       child: Column(
@@ -760,7 +713,6 @@ class ClassicTemplate implements ResumeTemplate {
                           ),
                           const Divider(thickness: 1),
                           const SizedBox(height: 8),
-                          // Use Wrap for skills to handle overflow - filter out empty skills
                           Wrap(
                             spacing: 8,
                             runSpacing: 8,
@@ -780,7 +732,6 @@ class ClassicTemplate implements ResumeTemplate {
                     ),
                   if (hasSkills && hasLanguages) const SizedBox(width: 20),
 
-                  // Languages section - only show if there are languages
                   if (hasLanguages)
                     Expanded(
                       child: Column(
@@ -796,7 +747,6 @@ class ClassicTemplate implements ResumeTemplate {
                           ),
                           const Divider(thickness: 1),
                           const SizedBox(height: 8),
-                          // Use Wrap for languages to handle overflow - filter out empty languages
                           Wrap(
                             spacing: 8,
                             runSpacing: 8,
@@ -822,8 +772,6 @@ class ClassicTemplate implements ResumeTemplate {
 }
 
 // Business Template with corporate styling
-// Complete restructure of the BusinessTemplate to fix overflow issues
-
 class BusinessTemplate implements ResumeTemplate {
   @override
   String get templateName => 'Business';
@@ -836,7 +784,6 @@ class BusinessTemplate implements ResumeTemplate {
       }) {
     final double containerWidth = maxWidth ?? (isPreview ? 400 : 595);
 
-    // Checking for valid data sections
     final bool hasSkills = data.skills.isNotEmpty &&
         data.skills.any((skill) => skill.trim().isNotEmpty);
     final bool hasLanguages = data.languages.isNotEmpty &&
@@ -852,7 +799,6 @@ class BusinessTemplate implements ResumeTemplate {
             edu.school.trim().isNotEmpty);
     final bool hasSummary = data.professionalSummary.trim().isNotEmpty;
 
-    // Filter out empty entries
     final List<Employment> validJobs = data.employmentHistory
         .where((job) =>
     job.jobTitle.trim().isNotEmpty ||
@@ -874,7 +820,6 @@ class BusinessTemplate implements ResumeTemplate {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header with name, role and contact info
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(24),
@@ -882,11 +827,9 @@ class BusinessTemplate implements ResumeTemplate {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Profile image and name in row
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      // Profile image if available
                       if (data.personalInfo.profileImagePath != null)
                         Container(
                           margin: const EdgeInsets.only(right: 20),
@@ -927,7 +870,6 @@ class BusinessTemplate implements ResumeTemplate {
                   const Divider(color: Colors.white24),
                   const SizedBox(height: 16),
 
-                  // Contact info in row
                   Wrap(
                     spacing: 16,
                     runSpacing: 8,
@@ -980,13 +922,11 @@ class BusinessTemplate implements ResumeTemplate {
               ),
             ),
 
-            // Main content
             Padding(
               padding: const EdgeInsets.all(24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Professional Summary - only show if there is content
                   if (hasSummary) ...[
                     _buildSectionHeader('SUMMARY'),
                     const SizedBox(height: 12),
@@ -1001,12 +941,10 @@ class BusinessTemplate implements ResumeTemplate {
                     const SizedBox(height: 16),
                   ],
 
-                  // Experience - only show if there are valid job entries
                   if (hasEmploymentHistory && validJobs.isNotEmpty) ...[
                     _buildSectionHeader('EXPERIENCE'),
                     const SizedBox(height: 12),
 
-                    // Use ListView.builder for jobs
                     ListView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
@@ -1059,12 +997,10 @@ class BusinessTemplate implements ResumeTemplate {
                     if (hasEducation && validEducation.isNotEmpty) const SizedBox(height: 10),
                   ],
 
-                  // Education - only show if there are valid education entries
                   if (hasEducation && validEducation.isNotEmpty) ...[
                     _buildSectionHeader('Education'),
                     const SizedBox(height: 12),
 
-                    // Use ListView.builder instead of GridView for better control
                     ListView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
@@ -1108,12 +1044,10 @@ class BusinessTemplate implements ResumeTemplate {
                     if (hasSkills || hasLanguages) const SizedBox(height: 16),
                   ],
 
-                  // Skills and Languages - using ListView instead of Row for better flexibility
                   if (hasSkills || hasLanguages) ...[
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Skills section
                         if (hasSkills) ...[
                           _buildSectionHeader('Skills'),
                           const SizedBox(height: 12),
@@ -1144,7 +1078,6 @@ class BusinessTemplate implements ResumeTemplate {
                           if (hasLanguages) const SizedBox(height: 16),
                         ],
 
-                        // Languages section
                         if (hasLanguages) ...[
                           _buildSectionHeader('Languages'),
                           const SizedBox(height: 12),

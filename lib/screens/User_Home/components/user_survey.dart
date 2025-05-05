@@ -727,7 +727,7 @@ class _SurveyDialogState extends State<SurveyDialog> {
             case 'Hinduism':
               return 'assets/Konark_Sun_Tower.svg';
             case 'Sikhism':
-              return 'assets/sikhism.svg';
+              return 'assets/sikhism1.svg';
             case 'Christianity':
               return 'assets/church-bell_9988486.svg';
             case 'Buddhism':
