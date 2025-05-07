@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../../../../utils/app_colors.dart';
 import '../../../../../utils/theme_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'invoice_create.dart';
 import 'invoice_model.dart';
 import 'invoice_pdf.dart';
 import 'invoice_preview.dart';
@@ -118,10 +119,14 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
             margin: const EdgeInsets.only(bottom: 16),
             child: InkWell(
               onTap: () {
+                // Change this navigation to InvoiceCreateScreen with the invoice data
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => PdfPreviewScreen(invoice: invoice),
+                    builder: (context) => InvoiceCreateScreen(
+                      // Pass the existing invoice for editing
+                      existingInvoice: invoice,
+                    ),
                   ),
                 );
               },
@@ -148,7 +153,6 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
                             style: TextStyle(
                               color: Colors.grey[600],
                               fontSize: 14,
-
                             ),
                           ),
                         ],

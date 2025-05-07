@@ -6,8 +6,10 @@ import 'package:mtquotes/screens/Create_Screen/components/details_screen.dart';
 import 'package:mtquotes/screens/Templates/components/template/quote_template.dart';
 import 'package:mtquotes/screens/Payment_Screen/subscription_screen.dart';
 import 'package:mtquotes/screens/Templates/components/template/template_handler.dart';
+import 'package:mtquotes/screens/User_Home/components/Doc%20Scanner/doc_scanner.dart';
 import 'package:mtquotes/screens/User_Home/components/Invoice/invoice_create.dart';
 import 'package:mtquotes/screens/User_Home/components/Notifications/notification_service.dart';
+import 'package:mtquotes/screens/User_Home/components/Resume/resume_dashboard.dart';
 import 'package:mtquotes/screens/User_Home/components/app_open_tracker.dart';
 import 'package:mtquotes/screens/User_Home/home_screen.dart';
 import 'package:mtquotes/utils/app_theme.dart';
@@ -123,6 +125,9 @@ class MyAppState extends State<MyApp> {
             '/home': (context) => HomeScreen(),
             '/nav_bar': (context) => MainScreen(),
             '/create_invoice':(context)=> InvoiceCreateScreen(),
+            '/document_scanner': (context) => DocScanner(),
+            '/resume': (context) => PersonalDetailsScreen(),
+            '/invoice': (context) => InvoiceCreateScreen(),
             '/profile_details': (context) {
               final args = ModalRoute
                   .of(context)!

@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 
+
 // Model to represent search results
 class SearchResult {
   final String id;
@@ -9,6 +10,7 @@ class SearchResult {
   final String type;
   final String imageUrl;
   final bool isPaid;
+
 
   SearchResult({
     required this.id,
@@ -19,34 +21,43 @@ class SearchResult {
   });
 }
 
+
 class SearchService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
 
   // Search across multiple collections
   Future<List<SearchResult>> searchAcrossCollections(String query) async {
     if (query.isEmpty) return [];
 
+
     // Normalize query for case-insensitive matching
     final normalizedQuery = query.toLowerCase().trim();
 
+
     List<SearchResult> results = [];
+
 
     try {
       // Search in Templates Collection
       final templatesResults = await _searchTemplates(normalizedQuery);
       results.addAll(templatesResults);
 
+
       // Search in Categories Collection
       final categoriesResults = await _searchCategories(normalizedQuery);
       results.addAll(categoriesResults);
+
 
       // Search in TOTD Collection
       final totdResults = await _searchTOTD(normalizedQuery);
       results.addAll(totdResults);
 
+
       // Search in Festivals Collection
       final festivalsResults = await _searchFestivals(normalizedQuery);
       results.addAll(festivalsResults);
+
 
       print('Total search results found: ${results.length}');
       return results;
@@ -56,18 +67,22 @@ class SearchService {
     }
   }
 
+
   // Search Templates Collection
   Future<List<SearchResult>> _searchTemplates(String query) async {
     try {
       print('Searching in templates collection...');
       final snapshot = await _firestore.collection('templates').get();
 
+
       List<SearchResult> results = [];
+
 
       for (var doc in snapshot.docs) {
         final data = doc.data();
         final title = (data['title'] as String? ?? '').toLowerCase();
         final category = (data['category'] as String? ?? '').toLowerCase();
+
 
         if (title.contains(query) || category.contains(query)) {
           results.add(SearchResult(
@@ -80,6 +95,7 @@ class SearchService {
         }
       }
 
+
       print('Found ${results.length} matching templates');
       return results;
     } catch (e) {
@@ -88,13 +104,16 @@ class SearchService {
     }
   }
 
+
   // Search Categories Collection
   Future<List<SearchResult>> _searchCategories(String query) async {
     try {
       print('Searching in categories collection...');
       final snapshot = await _firestore.collection('categories').get();
 
+
       List<SearchResult> results = [];
+
 
       for (var categoryDoc in snapshot.docs) {
         // First, add the category itself if its ID matches
@@ -109,15 +128,18 @@ class SearchService {
           ));
         }
 
+
         // Then search inside the templates subcollection
         try {
           final templatesSnapshot = await categoryDoc.reference
               .collection('templates')
               .get();
 
+
           for (var templateDoc in templatesSnapshot.docs) {
             final data = templateDoc.data();
             final title = data['title']?.toString().toLowerCase() ?? '';
+
 
             if (title.contains(query)) {
               results.add(SearchResult(
@@ -134,6 +156,7 @@ class SearchService {
         }
       }
 
+
       print('Found ${results.length} matching category templates');
       return results;
     } catch (e) {
@@ -142,6 +165,7 @@ class SearchService {
     }
   }
 
+
   // Search TOTD Collection
   Future<List<SearchResult>> _searchTOTD(String query) async {
     try {
@@ -149,24 +173,31 @@ class SearchService {
       final totdCollections = ['morning', 'afternoon', 'evening'];
       List<SearchResult> results = [];
 
+
       for (var timeOfDay in totdCollections) {
         try {
           final totdDoc = await _firestore.collection('totd').doc(timeOfDay).get();
 
+
           if (!totdDoc.exists) continue;
+
 
           final data = totdDoc.data();
           if (data == null) continue;
+
 
           // Check post1 and post2
           final posts = ['post1', 'post2'];
           for (var postKey in posts) {
             if (!data.containsKey(postKey)) continue;
 
+
             final postData = data[postKey];
             if (postData == null) continue;
 
+
             final title = (postData['title'] as String? ?? '').toLowerCase();
+
 
             if (title.contains(query)) {
               results.add(SearchResult(
@@ -183,6 +214,7 @@ class SearchService {
         }
       }
 
+
       print('Found ${results.length} matching TOTD items');
       return results;
     } catch (e) {
@@ -191,6 +223,7 @@ class SearchService {
     }
   }
 
+
   // Search Festivals Collection
   // Search Festivals Collection
   Future<List<SearchResult>> _searchFestivals(String query) async {
@@ -198,11 +231,14 @@ class SearchService {
       print('Searching in festivals collection...');
       final snapshot = await _firestore.collection('festivals').get();
 
+
       List<SearchResult> results = [];
+
 
       for (var doc in snapshot.docs) {
         final data = doc.data();
         final name = (data['name'] as String? ?? '').toLowerCase();
+
 
         if (name.contains(query)) {
           // Search within festival's templates
@@ -211,6 +247,7 @@ class SearchService {
             if (template is Map<String, dynamic>) {
               final imageURL = template['imageURL'] as String? ?? '';
               final isPaid = template['isPaid'] as bool? ?? false;
+
 
               // Only add the template if it has an image URL
               if (imageURL.isNotEmpty) {
@@ -227,6 +264,7 @@ class SearchService {
         }
       }
 
+
       print('Found ${results.length} matching festival items');
       return results;
     } catch (e) {
@@ -234,6 +272,7 @@ class SearchService {
       return [];
     }
   }
+
 
   // TypeAhead Suggestions Widget
   Widget buildSearchTypeAhead(
@@ -247,6 +286,7 @@ class SearchService {
         if (pattern.isEmpty) return [];
         return await searchAcrossCollections(pattern);
       },
+
 
       // Use builder method for text field configuration
       builder: (context, controller, focusNode) {
@@ -265,6 +305,7 @@ class SearchService {
         );
       },
 
+
       itemBuilder: (context, SearchResult suggestion) {
         return ListTile(
           leading: suggestion.imageUrl.isNotEmpty
@@ -279,6 +320,7 @@ class SearchService {
           trailing: suggestion.isPaid ? Icon(Icons.lock, color: Colors.amber) : null,
         );
       },
+
 
       onSelected: onSuggestionSelected,
     );

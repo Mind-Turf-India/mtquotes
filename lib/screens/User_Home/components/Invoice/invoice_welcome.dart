@@ -13,10 +13,6 @@ class InvoiceHomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDarkMode = themeProvider.isDarkMode;
-    final secondaryTextColor = AppColors.getSecondaryTextColor(isDarkMode);
-    final dividerColor = AppColors.getDividerColor(isDarkMode);
-    final BackgroundColor = AppColors.getBackgroundColor(isDarkMode);
-
     return Scaffold(
       body: SafeArea(
         child: Padding(

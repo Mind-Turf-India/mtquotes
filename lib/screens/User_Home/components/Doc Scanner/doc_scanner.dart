@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_doc_scanner/flutter_doc_scanner.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:mtquotes/screens/User_Home/components/Doc%20Scanner/pdf_signature.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -491,12 +492,15 @@ class _DocScannerState extends State<DocScanner> {
                     isDarkMode ? Colors.white.withOpacity(0.8) : Colors.transparent,
                     isDarkMode ? BlendMode.srcATop : BlendMode.dst,
                   ),
-                  child: Image.asset(
-                    'assets/icons/scandoc.png',
+                  child: SvgPicture.asset(
+                    isDarkMode
+                        ? 'assets/icons/doc scanner light.svg'
+                        : 'assets/icons/doc scanner dark.svg',
                     width: 260,
                     height: 260,
                     fit: BoxFit.contain,
                   ),
+
                 ),
               ],
             ),

@@ -17,6 +17,7 @@ import 'package:mtquotes/screens/User_Home/components/daily_check_in.dart';
 import 'package:mtquotes/screens/User_Home/components/Notifications/notifications.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mtquotes/screens/User_Home/profile_screen.dart';
+import 'package:mtquotes/screens/User_Home/vaky_plus.dart';
 import 'package:mtquotes/utils/shimmer.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
@@ -1050,22 +1051,22 @@ class HomeScreenState extends State<HomeScreen> {
                   //image enhancer icon.
                   Material(
                     color: Colors.transparent, // Keep background transparent
-                    borderRadius:
-                        BorderRadius.circular(10), // Adjust the roundness here
-                    child: InkWell(
+                    // borderRadius:
+                    //     BorderRadius.circular(10), // Adjust the roundness here
+                    child: GestureDetector(
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => DocScanner()),
+                          MaterialPageRoute(builder: (context) => VakyPlus()),
                         );
                       },
                       child: Padding(
-                        padding: const EdgeInsets.only(right: 15),
+                        padding: const EdgeInsets.only(right: 10),
                         child: SvgPicture.asset(
-                          'assets/icons/doc_scanner.svg',
-                          width: 24,
-                          height: 24,
-                          color: AppColors.getTextColor(isDarkMode),
+                          "assets/icons/vaky_plus_wobg.svg",
+                          width: 25,
+                          height: 45,
+                          //color: AppColors.getTextColor(isDarkMode),
                         ),
                       ),
                     ),

@@ -16,7 +16,9 @@ import 'invoice_model.dart';
 import 'invoice_preview.dart';
 
 class InvoiceCreateScreen extends StatefulWidget {
-  const InvoiceCreateScreen({Key? key}) : super(key: key);
+  final InvoiceModel? existingInvoice;
+  const InvoiceCreateScreen({Key? key,this.existingInvoice}) : super(key: key);
+
 
   @override
   State<InvoiceCreateScreen> createState() => _InvoiceCreateScreenState();
@@ -36,11 +38,21 @@ class _InvoiceCreateScreenState extends State<InvoiceCreateScreen> {
 
   @override
   void initState() {
+    if (widget.existingInvoice != null) {
+      // Populate form with existing invoice data
+      _dateController.text = widget.existingInvoice!.date;
+      _invoiceNoController.text = widget.existingInvoice!.invoiceNo;
+      myDetails = widget.existingInvoice!.myDetails;
+      buyerDetails = widget.existingInvoice!.buyerDetails;
+      invoiceProducts = widget.existingInvoice!.products;
+      bankDetails = widget.existingInvoice!.bankDetails;
+      signature = widget.existingInvoice!.signature;
+    } else {
     super.initState();
     _loadUserDetails();
     _loadProducts(); // Load existing products
     _setDefaults();
-
+    }
   }
 
   void _setDefaults() {
@@ -393,7 +405,8 @@ class _InvoiceCreateScreenState extends State<InvoiceCreateScreen> {
 
     try {
       final invoice = InvoiceModel(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        // Use existing ID if editing, otherwise create a new one
+        id: widget.existingInvoice?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
         date: _dateController.text,
         invoiceNo: _invoiceNoController.text,
         myDetails: myDetails!,
@@ -409,7 +422,7 @@ class _InvoiceCreateScreenState extends State<InvoiceCreateScreen> {
         const SnackBar(content: Text('Invoice saved successfully')),
       );
 
-      // Navigate to PDF Preview screen instead
+      // Navigate to PDF Preview screen
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -427,7 +440,6 @@ class _InvoiceCreateScreenState extends State<InvoiceCreateScreen> {
       });
     }
   }
-
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);

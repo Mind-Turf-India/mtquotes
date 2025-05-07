@@ -6,7 +6,6 @@ import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mtquotes/l10n/app_localization.dart';
 import 'package:mtquotes/screens/User_Home/components/Resume/resume_dashboard.dart';
-import 'package:mtquotes/screens/User_Home/components/Resume/resume_service.dart';
 import 'package:mtquotes/screens/User_Home/home_screen.dart';
 import 'package:mtquotes/screens/User_Home/files_screen.dart';
 import 'package:mtquotes/screens/User_Home/profile_screen.dart';
@@ -16,8 +15,6 @@ import '../utils/app_colors.dart';
 import '../utils/theme_provider.dart';
 import 'Create_Screen/edit_screen_create.dart';
 import 'Create_Screen/template_screen_create.dart';
-import 'User_Home/components/Invoice/invoice_welcome.dart';
-import 'User_Home/components/Resume/resume_selection.dart';
 import 'User_Home/search_screen.dart';
 
 class MainScreen extends StatefulWidget {
@@ -149,8 +146,20 @@ void navigateBack(BuildContext context) {
   void _navigateToTab(int index) async {
     // If tapping on the same tab that's already selected
     if (index == _currentIndex) {
-      // No need to do anything special when tapping same tab
+      // Close create menu if it's open
+      if (isCreateExpanded) {
+        setState(() {
+          isCreateExpanded = false;
+        });
+      }
       return;
+    }
+
+    // Close create menu if it's open
+    if (isCreateExpanded) {
+      setState(() {
+        isCreateExpanded = false;
+      });
     }
 
     // Store the current tab in navigation history
@@ -255,7 +264,7 @@ void navigateBack(BuildContext context) {
             context,
             MaterialPageRoute(
                 builder: (context) =>
-                InvoiceHomeScreen()),
+                EditScreen(title: 'title')),
           );
         }
       },
