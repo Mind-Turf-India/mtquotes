@@ -11,6 +11,7 @@ import 'package:mtquotes/screens/User_Home/components/Invoice/invoice_create.dar
 import 'package:mtquotes/screens/User_Home/components/Notifications/notification_service.dart';
 import 'package:mtquotes/screens/User_Home/components/Resume/resume_dashboard.dart';
 import 'package:mtquotes/screens/User_Home/components/app_open_tracker.dart';
+import 'package:mtquotes/screens/User_Home/components/templates_list.dart';
 import 'package:mtquotes/screens/User_Home/home_screen.dart';
 import 'package:mtquotes/utils/app_theme.dart';
 import 'package:mtquotes/screens/User_Home/components/splash_screen.dart';
@@ -24,6 +25,18 @@ import 'package:mtquotes/screens/Onboarding_Screen/onboarding_screen.dart';
 import 'package:mtquotes/l10n/app_localization.dart';
 import 'firebase_options.dart';
 import 'package:mtquotes/utils/app_colors.dart';
+
+// Define the FontSizeProvider class here if not defined in another file
+class FontSizeProvider extends ChangeNotifier {
+  double _fontSize = 14.0;
+
+  double get fontSize => _fontSize;
+
+  void setFontSize(double size) {
+    _fontSize = size;
+    notifyListeners();
+  }
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -94,6 +107,9 @@ class MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return Consumer2<FontSizeProvider, ThemeProvider>(
       builder: (context, fontSizeProvider, themeProvider, child) {
+        // Make sure fontSizeProvider.fontSize is never null by using null-aware access
+        final fontSize = fontSizeProvider.fontSize;
+
         return MaterialApp(
           title: 'Vaky',
           debugShowCheckedModeBanner: false,
@@ -104,17 +120,16 @@ class MyAppState extends State<MyApp> {
           localizationsDelegates: localizationDelegates,
           theme: AppTheme.getLightTheme().copyWith(
             textTheme: TextTheme(
-              
-              bodyLarge: TextStyle(fontSize: fontSizeProvider.fontSize, ),
-              bodyMedium: TextStyle(fontSize: fontSizeProvider.fontSize * 0.9),
-              bodySmall: TextStyle(fontSize: fontSizeProvider.fontSize * 0.8),
+              bodyLarge: TextStyle(fontSize: fontSize),
+              bodyMedium: TextStyle(fontSize: fontSize * 0.9),
+              bodySmall: TextStyle(fontSize: fontSize * 0.8),
             ),
           ),
           darkTheme: AppTheme.getDarkTheme().copyWith(
             textTheme: TextTheme(
-              bodyLarge: TextStyle(fontSize: fontSizeProvider.fontSize),
-              bodyMedium: TextStyle(fontSize: fontSizeProvider.fontSize * 0.9),
-              bodySmall: TextStyle(fontSize: fontSizeProvider.fontSize * 0.8),
+              bodyLarge: TextStyle(fontSize: fontSize),
+              bodyMedium: TextStyle(fontSize: fontSize * 0.9),
+              bodySmall: TextStyle(fontSize: fontSize * 0.8),
             ),
           ),
           themeMode: themeProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,

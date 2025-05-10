@@ -87,6 +87,7 @@ dependencies:
   syncfusion_flutter_signaturepad: ^29.1.38
   syncfusion_flutter_pdf: ^29.1.38
   syncfusion_flutter_pdfviewer: ^29.1.38
+  appinio_social_share: ^0.3.2
 
 
   

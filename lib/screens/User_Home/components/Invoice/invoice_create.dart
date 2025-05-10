@@ -645,6 +645,10 @@ class _InvoiceCreateScreenState extends State<InvoiceCreateScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.red,
+                      side: const BorderSide(color: Colors.red),
+                    ),
                     onPressed: () {
                       // Handle delete
                       Navigator.pop(context);

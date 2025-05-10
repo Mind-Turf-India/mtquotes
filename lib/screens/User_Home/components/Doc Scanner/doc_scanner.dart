@@ -426,7 +426,12 @@ class _DocScannerState extends State<DocScanner> {
         actions: [
           if (_savedFilePath != null) // Only show share button when PDF is available
             IconButton(
-              icon: Icon(Icons.share),
+              icon: SvgPicture.asset(
+                'assets/icons/share.svg', // path to your SVG file
+                color: AppColors.primaryBlue, // optional: applies if your SVG is single-colored
+                height: 24, // adjust size as needed
+                width: 24,
+              ),
               color: AppColors.primaryBlue,
               tooltip: 'Share PDF',
               onPressed: () async {
@@ -495,7 +500,7 @@ class _DocScannerState extends State<DocScanner> {
                   child: SvgPicture.asset(
                     isDarkMode
                         ? 'assets/icons/doc scanner light.svg'
-                        : 'assets/icons/doc scanner dark.svg',
+                        : 'assets/icons/doc_illust.svg',
                     width: 260,
                     height: 260,
                     fit: BoxFit.contain,
@@ -617,7 +622,7 @@ class _DocScannerState extends State<DocScanner> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryGreen,
                       foregroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(vertical: 15),
+                      padding: EdgeInsets.symmetric(vertical: 12),
                     ),
                   ),
                 ),
@@ -626,20 +631,43 @@ class _DocScannerState extends State<DocScanner> {
             ),
             SizedBox(height: 16),
             Center(
-              child: ElevatedButton.icon(
-                icon: Icon(Icons.refresh),
-                label: Text('Scan New Document'),
-                onPressed: () {
+              child: GestureDetector(
+                onTap: () {
                   setState(() {
                     _savedFilePath = null;
                     _savedImagePaths = null;
                     _scannedDocuments = null;
                   });
                 },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: isDarkMode ? AppColors.darkSurface : Colors.grey[300],
-                  foregroundColor: AppColors.getTextColor(isDarkMode),
-                  padding: EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+                child: Container(
+                  height: 50,
+                  width: double.infinity, // Make it full width
+                  margin: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: isDarkMode ? AppColors.darkSurface : Colors.grey[300],
+                    border: Border.all(
+                      color: isDarkMode ? AppColors.darkDivider : AppColors.lightDivider,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.refresh,
+                        color: AppColors.getIconColor(isDarkMode),
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        'Scan New Document',
+                        style: TextStyle(
+                          color: AppColors.getTextColor(isDarkMode),
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

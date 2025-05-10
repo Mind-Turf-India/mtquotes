@@ -23,7 +23,7 @@ class VakyPlus extends StatelessWidget {
         child: Column(
           children: [
             const SizedBox(height: 20),
-            SvgPicture.asset('assets/icons/Vaky plus.svg', height: 60),
+            SvgPicture.asset('assets/icons/Vaky plus.svg', height: 90),
             // const SizedBox(height: 10),
             // const Text(
             //   '"vaky"',
@@ -35,8 +35,12 @@ class VakyPlus extends StatelessWidget {
               title: "Document Scanner",
               description: "Scan, Save, and Share Documents in Seconds.",
               buttonText: "Scan Now",
-              imagePath: "assets/icons/document_scanner.svg",
+              imagePath: "assets/icons/doc scanner light.svg",
               destination: const DocScanner(),
+              backgroundColor: const Color(0x802897FF),
+              imageHeight: 130,
+                imageWidth: 130,
+              
             ),
             featureCard(
               context,
@@ -45,6 +49,9 @@ class VakyPlus extends StatelessWidget {
               buttonText: "Create Resume",
               imagePath: "assets/icons/resume.svg",
               destination: const PersonalDetailsScreen(),
+              backgroundColor: const Color(0xB32897FF),
+              imageHeight: 130,
+              imageWidth: 130,
             ),
             featureCard(
               context,
@@ -53,11 +60,15 @@ class VakyPlus extends StatelessWidget {
               buttonText: "Create Invoice",
               imagePath: "assets/icons/create_invoice.svg",
               destination: InvoiceHomeScreen(),
+              backgroundColor: const Color(0xFF2897FF),
+              imageHeight: 130,
+              imageWidth: 130,
             ),
             const Spacer(),
             ElevatedButton(
               onPressed: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => SubscriptionScreen()));
+                Navigator.push(context, MaterialPageRoute(
+                    builder: (context) => SubscriptionScreen()));
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.amber,
@@ -79,14 +90,19 @@ class VakyPlus extends StatelessWidget {
     );
   }
 
-  Widget featureCard(
-      BuildContext context, {
-        required String title,
-        required String description,
-        required String buttonText,
-        required String imagePath,
-        required Widget destination,
-      }) {
+  Widget featureCard(BuildContext context, {
+    required String title,
+    required String description,
+    required String buttonText,
+    required String imagePath,
+    required Widget destination,
+    Color? backgroundColor, required double imageHeight, // Add this parameter
+    required double imageWidth, // Add this parameter
+  }) {
+    // Use the provided backgroundColor or default to blue.shade100
+    final bgColor = backgroundColor ??
+        const Color(0x802897FF); // 50% opacity of #2897FF
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Container(
@@ -101,7 +117,7 @@ class VakyPlus extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.blue.shade100,
+                  color: bgColor, // Use the variable here
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(20),
                     bottomLeft: Radius.circular(20),
@@ -115,7 +131,8 @@ class VakyPlus extends StatelessWidget {
                             fontSize: 16, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),
                     Text(description,
-                        style: const TextStyle(fontSize: 12, color: Colors.black54)),
+                        style: const TextStyle(
+                            fontSize: 12, color: Colors.black54)),
                     const SizedBox(height: 10),
                     ElevatedButton(
                       onPressed: () => navigateTo(context, destination),
@@ -136,7 +153,7 @@ class VakyPlus extends StatelessWidget {
               flex: 4,
               child: Padding(
                 padding: const EdgeInsets.all(12),
-                child: SvgPicture.asset(imagePath, height: 90),
+                child: SvgPicture.asset(imagePath, height: imageHeight,width: imageWidth,fit: BoxFit.contain,),
               ),
             ),
           ],

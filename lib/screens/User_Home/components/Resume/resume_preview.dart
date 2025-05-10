@@ -380,11 +380,14 @@ class _ResumePreviewScreenState extends State<ResumePreviewScreen> {
           ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
-          'Resume Preview',
-          style: TextStyle(
-            color: isBusinessTemplate ? Colors.white : textColor,
-            fontSize: 16,
+        title: Align(
+          alignment: Alignment.centerLeft,
+          child: Text(
+            'Resume Preview',
+            style: TextStyle(
+              color: isBusinessTemplate ? Colors.white : textColor,
+              fontSize: 16,
+            ),
           ),
         ),
         iconTheme: IconThemeData(

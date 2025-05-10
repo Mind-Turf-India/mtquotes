@@ -89,6 +89,12 @@ class _EditScreenState extends State<EditScreen> {
     _checkSubscriptionStatus();
   }
 
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
+
   Future<void> _checkSubscriptionStatus() async {
     try {
       final templateService = TemplateService();

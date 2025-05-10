@@ -44,20 +44,19 @@ class InvoiceHomeScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 40),
-              Container(
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.blue, width: 2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Column(
-                    children: [
-                      SvgPicture.asset(
-                        'assets/create_invoice.svg',
-                        height: 300,
-                      ),
-                    ],
+              Align(
+                alignment: Alignment.center,
+                child: Container(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Column(
+                      children: [
+                        SvgPicture.asset(
+                          'assets/icons/create_invoice.svg',
+                          height: 300,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
