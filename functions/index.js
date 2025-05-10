@@ -2,12 +2,74 @@ require('dotenv').config();
 const { storage } = require("firebase-functions");
 const functions = require("firebase-functions");
 const functionsV2 = require("firebase-functions/v2");
+const fetch = require('node-fetch');
 const admin = require("firebase-admin");
 const { onDocumentCreated, onDocumentUpdated } = require('firebase-functions/v2/firestore');
 const nodemailer = require('nodemailer');
 
 // Initialize the app only once
 admin.initializeApp();
+// Configure the Holiday API endpoint and your API key
+const HOLIDAY_API_BASE_URL = 'https://holidayapi.com/v1/holidays';
+const HOLIDAY_API_KEY = '71785d43-a438-412a-bf35-dbc5df65125d'; // Replace with the api key we got
+
+/**
+ * Fetches holidays for a given year and country from the Holiday API
+ * and stores them in Firestore.
+ */
+exports.fetchAndStoreHolidays = functions.https.onRequest(async (req, res) => {
+  const year = req.query.year;
+  const country = req.query.country;
+
+  if (!year || !country) {
+    return res.status(400).send('Please provide both "year" and "country" as query parameters.');
+  }
+
+  const apiKeyParam = `key=${HOLIDAY_API_KEY}`;
+  const countryParam = `country=${country}`;
+  const yearParam = `year=${year}`;
+
+  const apiUrl = `${HOLIDAY_API_BASE_URL}?${apiKeyParam}&${countryParam}&${yearParam}`;
+  try {
+    const response = await fetch(apiUrl);
+    if (!response.ok) {
+      console.error(`Holiday API error: ${response.status} - ${response.statusText}`);
+      return res.status(response.status).send(`Failed to fetch holidays from API: ${response.statusText}`);
+    }
+    const data = await response.json();
+
+    if (data && data.holidays) {
+      const holidays = Object.values(data.holidays);
+      const firestore = admin.firestore();
+      const collectionRef = firestore.collection('holidays'); // You can choose a different collection name
+
+      // Process and store each holiday
+      for (const holiday of holidays) {
+        try {
+          await collectionRef.doc(`${holiday.date}-${holiday.name}`).set({ // Using date and name as a unique ID
+            name: holiday.name,
+            date: holiday.date,
+            weekday: holiday.weekday.date,
+            public: holiday.public,
+            country: country,
+            year: year,
+            // Add any other relevant fields from the Holiday API response
+          }, { merge: true }); // Use merge to avoid overwriting if a document with the same ID exists
+        } catch (error) {
+          console.error('Error storing holiday in Firestore:', error);
+        }
+      }
+
+      return res.status(200).send(`Successfully fetched and stored ${holidays.length} holidays for ${country} in ${year}.`);
+    } else {
+      return res.status(200).send(`No holidays found for ${country} in ${year}.`);
+    }
+  } catch (error) {
+    console.error('Error fetching from Holiday API:', error);
+    return res.status(500).send(`Failed to fetch holidays: ${error.message}`);
+  }
+});
+
 
 // Check if running in Firebase environment or local
 const emailHost = process.env.EMAIL_HOST || functions.config().email?.host;

@@ -18,6 +18,7 @@ import '../Templates/components/festivals/festival_service.dart';
 import '../Templates/components/totd/totd_handler.dart';
 import '../Templates/unified_model.dart';
 import 'components/Categories/category_screen.dart';
+import 'components/Home components/calendar_screen.dart';
 import 'components/Home components/post_card_ui.dart';
 import 'package:mtquotes/utils/app_colors.dart';
 import 'package:mtquotes/utils/theme_provider.dart';
@@ -1548,20 +1549,12 @@ class HomeScreenState extends State<HomeScreen> {
                   // Calendar button
                   Container(
                     margin: EdgeInsets.only(left: 10),
-                    // decoration: BoxDecoration(
-                    //   color: isDarkMode ? Colors.grey[800] : Colors.white,
-                    //   borderRadius: BorderRadius.circular(8),
-                    //   border: Border.all(
-                    //     color: isDarkMode ? Colors.grey[700]! : Colors.grey[300]!,
-                    //     width: 1,
-                    //   ),
-                    // ),
                     child: IconButton(
                       icon: Icon(Icons.calendar_today,
                         color: AppColors.getIconColor(isDarkMode),
                       ),
                       onPressed: () {
-                        // Calendar functionality here
+                        Navigator.push(context, MaterialPageRoute(builder: (context)=> HolidayFetchScreen()));
                       },
                     ),
                   ),
