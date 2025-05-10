@@ -6,67 +6,61 @@ const fetch = require('node-fetch');
 const admin = require("firebase-admin");
 const { onDocumentCreated, onDocumentUpdated } = require('firebase-functions/v2/firestore');
 const nodemailer = require('nodemailer');
+const axios = require('axios');
+const express = require('express');
+const app = express();
+
+// Google Cloud Run requires listening on the environment's PORT (default is 8080)
+const PORT = process.env.PORT || 8080;
+
+app.get('/', (req, res) => {
+  res.send('Cloud Run is working!');
+});
+
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
 
 // Initialize the app only once
 admin.initializeApp();
-// Configure the Holiday API endpoint and your API key
-const HOLIDAY_API_BASE_URL = 'https://holidayapi.com/v1/holidays';
-const HOLIDAY_API_KEY = '71785d43-a438-412a-bf35-dbc5df65125d'; // Replace with the api key we got
 
-/**
- * Fetches holidays for a given year and country from the Holiday API
- * and stores them in Firestore.
- */
 exports.fetchAndStoreHolidays = functions.https.onRequest(async (req, res) => {
-  const year = req.query.year;
-  const country = req.query.country;
+  const { country, year } = req.query;
 
-  if (!year || !country) {
-    return res.status(400).send('Please provide both "year" and "country" as query parameters.');
-  }
+  const apiKey = "sus8gIvZCBFdPdah2O24JGSXSpU2fUWc"; // store this securely
 
-  const apiKeyParam = `key=${HOLIDAY_API_KEY}`;
-  const countryParam = `country=${country}`;
-  const yearParam = `year=${year}`;
-
-  const apiUrl = `${HOLIDAY_API_BASE_URL}?${apiKeyParam}&${countryParam}&${yearParam}`;
   try {
-    const response = await fetch(apiUrl);
-    if (!response.ok) {
-      console.error(`Holiday API error: ${response.status} - ${response.statusText}`);
-      return res.status(response.status).send(`Failed to fetch holidays from API: ${response.statusText}`);
-    }
-    const data = await response.json();
-
-    if (data && data.holidays) {
-      const holidays = Object.values(data.holidays);
-      const firestore = admin.firestore();
-      const collectionRef = firestore.collection('holidays'); // You can choose a different collection name
-
-      // Process and store each holiday
-      for (const holiday of holidays) {
-        try {
-          await collectionRef.doc(`${holiday.date}-${holiday.name}`).set({ // Using date and name as a unique ID
-            name: holiday.name,
-            date: holiday.date,
-            weekday: holiday.weekday.date,
-            public: holiday.public,
-            country: country,
-            year: year,
-            // Add any other relevant fields from the Holiday API response
-          }, { merge: true }); // Use merge to avoid overwriting if a document with the same ID exists
-        } catch (error) {
-          console.error('Error storing holiday in Firestore:', error);
-        }
+    const response = await axios.get(`https://calendarific.com/api/v2/holidays`, {
+      params: {
+        api_key: apiKey,
+        country: country || 'US',
+        year: year || new Date().getFullYear()
       }
+    });
 
-      return res.status(200).send(`Successfully fetched and stored ${holidays.length} holidays for ${country} in ${year}.`);
-    } else {
-      return res.status(200).send(`No holidays found for ${country} in ${year}.`);
-    }
-  } catch (error) {
-    console.error('Error fetching from Holiday API:', error);
-    return res.status(500).send(`Failed to fetch holidays: ${error.message}`);
+    const holidays = response.data.response.holidays;
+
+    // Store holidays to Firestore (optional)
+    const admin = require('firebase-admin');
+    if (!admin.apps.length) admin.initializeApp();
+
+    const db = admin.firestore();
+    const batch = db.batch();
+    holidays.forEach(holiday => {
+      const docRef = db.collection('holidays').doc(holiday.name);
+      batch.set(docRef, {
+        name: holiday.name,
+        description: holiday.description,
+        date: holiday.date.iso,
+        type: holiday.type
+      });
+    });
+
+    await batch.commit();
+    res.status(200).send({ message: "Holidays stored successfully!" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Failed to fetch holidays.");
   }
 });
 
