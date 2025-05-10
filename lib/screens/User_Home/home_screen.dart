@@ -11,6 +11,7 @@ import 'package:mtquotes/screens/User_Home/components/Notifications/notification
 import 'package:mtquotes/screens/User_Home/vaky_plus.dart';
 import 'package:provider/provider.dart';
 import '../../providers/text_size_provider.dart';
+import '../Create_Screen/components/details_screen.dart';
 import '../Templates/components/festivals/festival_handler.dart';
 import '../Templates/components/festivals/festival_post.dart';
 import '../Templates/components/festivals/festival_service.dart';
@@ -405,7 +406,7 @@ class HomeScreenState extends State<HomeScreen> {
     await _loadInitialFeed();
   }
 
-  Future<void> _handleEditPost(UnifiedPost post) async {
+  Future _handleEditPost(UnifiedPost post) async {
     try {
       // Show loading indicator
       showDialog(
@@ -434,13 +435,13 @@ class HomeScreenState extends State<HomeScreen> {
       // Add to recent templates
       await RecentTemplateService.addRecentTemplate(template);
 
-      // Navigate to template editor
+      // CHANGED: Navigate to DetailsScreen instead of EditScreen
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => EditScreen(
-            title: template.title,
-            templateImageUrl: template.imageUrl,
+          builder: (context) => DetailsScreen(
+            template: template,
+            isPaidUser: isSubscribed,
           ),
         ),
       );
@@ -525,20 +526,37 @@ class HomeScreenState extends State<HomeScreen> {
     }
   }
 
-// Add this method to handle festival post selection
-  // Add this method to handle festival post selection
+
+  // Fixed handlers with correct QuoteTemplate properties
+
+  // Correct handlers using the actual properties from FestivalPost and TimeOfDayPost classes
+
   void _handleFestivalPostSelection(FestivalPost festival) {
     FestivalHandler.handleFestivalSelection(
       context,
       festival,
           (selectedFestival) {
-        // This is what happens when the user gets access
+        // Create a QuoteTemplate with properties from FestivalPost
+        final template = QuoteTemplate(
+          id: selectedFestival.id,
+          imageUrl: selectedFestival.imageUrl,
+          title: selectedFestival.name, // FestivalPost has 'name' instead of 'title'
+          category: selectedFestival.category,
+          isPaid: selectedFestival.isPaid,
+          createdAt: selectedFestival.createdAt,
+          festivalId: null, // Optional in QuoteTemplate
+          festivalName: selectedFestival.name, // Use name as festivalName
+          avgRating: selectedFestival.avgRating,
+          ratingCount: selectedFestival.ratingCount,
+          language: null, // Optional in QuoteTemplate
+        );
+
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => EditScreen(
-              title: 'Edit Festival Post',
-              templateImageUrl: selectedFestival.imageUrl,
+            builder: (context) => DetailsScreen(
+              template: template,
+              isPaidUser: true, // They already passed the festival selection check
             ),
           ),
         );
@@ -546,20 +564,33 @@ class HomeScreenState extends State<HomeScreen> {
     );
   }
 
-// Add or update the method to handle TOTD post selection
+// Correct implementation for TimeOfDayPost
   void _handleTimeOfDayPostSelection(TimeOfDayPost post) {
-    // Handle TOTD post selection using the handler
     TimeOfDayHandler.handleTimeOfDayPostSelection(
       context,
       post,
           (selectedPost) {
-        // Navigate to edit screen when access is granted
+        // Create a QuoteTemplate with properties from TimeOfDayPost
+        final template = QuoteTemplate(
+          id: selectedPost.id,
+          imageUrl: selectedPost.imageUrl,
+          title: selectedPost.title, // TimeOfDayPost has 'title'
+          category: "", // TimeOfDayPost doesn't have category field, use empty string
+          isPaid: selectedPost.isPaid,
+          createdAt: selectedPost.createdAt.toDate(), // Convert Timestamp to DateTime
+          festivalId: null, // Optional in QuoteTemplate
+          festivalName: null, // Optional in QuoteTemplate
+          avgRating: selectedPost.avgRating,
+          ratingCount: selectedPost.ratingCount,
+          language: null, // Optional in QuoteTemplate
+        );
+
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => EditScreen(
-              title: selectedPost.title,
-              templateImageUrl: selectedPost.imageUrl,
+            builder: (context) => DetailsScreen(
+              template: template,
+              isPaidUser: true, // They already passed the time of day selection check
             ),
           ),
         );
@@ -1051,12 +1082,14 @@ class HomeScreenState extends State<HomeScreen> {
         bool isSubscribed = await _templateService.isUserSubscribed();
         if (!template.isPaid || isSubscribed) {
           await RecentTemplateService.addRecentTemplate(template);
+
+          // UPDATED: Navigate to DetailsScreen instead of EditScreen
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => EditScreen(
-                title: template.title,
-                templateImageUrl: template.imageUrl,
+              builder: (context) => DetailsScreen(
+                template: template,
+                isPaidUser: isSubscribed,
               ),
             ),
           );

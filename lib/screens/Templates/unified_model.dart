@@ -22,8 +22,15 @@ class UnifiedPost {
   final String? userEmail;
   final String? userId;
   final String? templateId;
-  final String userName;        // Add this
+  final String userName;
   final String userProfileUrl;
+  // Add optional fields to match QuoteTemplate
+  final String? festivalId;
+  final String? festivalName;
+  final String? language;
+
+  // Calculated fields to align with QuoteTemplate
+  double get avgRating => rating;
 
   UnifiedPost({
     required this.id,
@@ -38,12 +45,14 @@ class UnifiedPost {
     this.userEmail,
     this.userId,
     this.templateId,
-    required this.userName,     // Add this
+    required this.userName,
     required this.userProfileUrl,
+    this.festivalId,
+    this.festivalName,
+    this.language,
   });
 
   // Create from QOTD document
-// Create from QOTD document
   factory UnifiedPost.fromQOTD(String docId, Map<String, dynamic> data, {String userName = "User", String userProfileUrl = ""}) {
     return UnifiedPost(
       id: docId,
@@ -54,10 +63,11 @@ class UnifiedPost {
       createdAt: data['createdAt'] ?? Timestamp.now(),
       userName: userName,
       userProfileUrl: userProfileUrl,
+      language: data['language'],
     );
   }
 
-// Create from Trending templates
+  // Create from Trending templates
   factory UnifiedPost.fromTrending(DocumentSnapshot doc, {String userName = "User", String userProfileUrl = ""}) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
 
@@ -84,10 +94,13 @@ class UnifiedPost {
       templateId: data['templateId'] ?? doc.id,
       userName: userName,
       userProfileUrl: userProfileUrl,
+      festivalId: data['festivalId'],
+      festivalName: data['festivalName'],
+      language: data['language'],
     );
   }
 
-// Create from TOTD post
+  // Create from TOTD post
   factory UnifiedPost.fromTOTD(String timeOfDay, String postId, Map<String, dynamic> data, {String userName = "User", String userProfileUrl = ""}) {
     return UnifiedPost(
       id: '${timeOfDay}_$postId',
@@ -100,6 +113,7 @@ class UnifiedPost {
       source: PostSource.totd,
       userName: userName,
       userProfileUrl: userProfileUrl,
+      language: data['language'],
     );
   }
 
@@ -112,9 +126,11 @@ class UnifiedPost {
       category: category ?? '',
       isPaid: isPaid,
       createdAt: createdAt != null ? (createdAt as Timestamp).toDate() : null,
+      festivalId: festivalId,
+      festivalName: festivalName,
       avgRating: rating,
       ratingCount: ratingCount,
+      language: language,
     );
   }
 }
-

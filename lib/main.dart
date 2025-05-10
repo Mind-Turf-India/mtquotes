@@ -66,9 +66,9 @@ void main() async {
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
       ],
       child: MyApp(
-        nextScreen: currentUser != null
-            ? MainScreen()
-            : (hasCompletedOnboarding ? LoginScreen() : OnboardingScreen()),
+        initialRoute: currentUser != null
+            ? '/nav_bar'
+            : (hasCompletedOnboarding ? 'login' : 'onboarding'),
         locale: Locale(savedLocale),
       ),
     ),
@@ -76,10 +76,11 @@ void main() async {
 }
 
 class MyApp extends StatefulWidget {
-  final Widget nextScreen;
   final Locale locale;
+  final String initialRoute;
 
-  const MyApp({super.key, required this.nextScreen, required this.locale});
+
+  const MyApp({super.key, required this.initialRoute, required this.locale});
 
   @override
   MyAppState createState() => MyAppState();
@@ -114,7 +115,7 @@ class MyAppState extends State<MyApp> {
           title: 'Vaky',
           debugShowCheckedModeBanner: false,
           // Start with the splash screen and pass the actual start screen
-          home: GifSplashScreen(nextScreen: widget.nextScreen), // Choose the splash screen type you prefer
+          initialRoute: widget.initialRoute,
           locale: _locale,
           supportedLocales: supportedLocales,
           localizationsDelegates: localizationDelegates,

@@ -28,8 +28,8 @@ class PostCard extends StatefulWidget {
   final VoidCallback? onEditPressed;
   final Function(UnifiedPost)? onRatingChanged;
   final bool showFullActions;
-  final String userName; // Add this
-  final String userProfileUrl; // Add this
+  final String userName;
+  final String userProfileUrl;
 
   const PostCard({
     Key? key,
@@ -37,8 +37,8 @@ class PostCard extends StatefulWidget {
     this.onEditPressed,
     this.onRatingChanged,
     this.showFullActions = true,
-    required this.userName, // Add this
-    required this.userProfileUrl, // Add this
+    required this.userName,
+    required this.userProfileUrl,
   }) : super(key: key);
 
   @override
@@ -48,11 +48,10 @@ class PostCard extends StatefulWidget {
 class _PostCardState extends State<PostCard>
     with SingleTickerProviderStateMixin {
   bool _isLoading = false;
-  double _aspectRatio = 1.0; // Default aspect ratio
+  double _aspectRatio = 1.0;
   bool _imageLoaded = false;
   final GlobalKey _cardKey = GlobalKey();
   late AnimationController _animationController;
-  bool _showActionMenu = false;
   bool _isFavorite = false;
   static Map<String, Map<String, String>> _userProfileCache = {};
 
@@ -70,84 +69,6 @@ class _PostCardState extends State<PostCard>
   void dispose() {
     _animationController.dispose();
     super.dispose();
-  }
-
-  // Cache for user profile data to avoid multiple Firestore calls
-
-// Get user profile image
-  Future<String> _getUserProfileImage(String userEmail) async {
-    if (userEmail.isEmpty) return '';
-
-    // Check cache first
-    if (_userProfileCache.containsKey(userEmail) &&
-        _userProfileCache[userEmail]!.containsKey('profileImage')) {
-      return _userProfileCache[userEmail]!['profileImage'] ?? '';
-    }
-
-    try {
-      // Convert email format for Firestore (replace . with _)
-      String docId = userEmail.replaceAll('.', '_');
-
-      // Fetch user data from Firestore
-      DocumentSnapshot userDoc =
-          await FirebaseFirestore.instance.collection('users').doc(docId).get();
-
-      if (userDoc.exists && userDoc.data() is Map<String, dynamic>) {
-        final userData = userDoc.data() as Map<String, dynamic>;
-        final profileImage = userData['profileImage'] ?? '';
-
-        // Cache the result
-        if (!_userProfileCache.containsKey(userEmail)) {
-          _userProfileCache[userEmail] = {};
-        }
-        _userProfileCache[userEmail]!['profileImage'] = profileImage;
-
-        return profileImage;
-      }
-
-      return '';
-    } catch (e) {
-      print('Error fetching user profile image: $e');
-      return '';
-    }
-  }
-
-// Get user name
-  Future<String> _getUserName(String userEmail) async {
-    if (userEmail.isEmpty) return 'User';
-
-    // Check cache first
-    if (_userProfileCache.containsKey(userEmail) &&
-        _userProfileCache[userEmail]!.containsKey('name')) {
-      return _userProfileCache[userEmail]!['name'] ?? 'User';
-    }
-
-    try {
-      // Convert email format for Firestore (replace . with _)
-      String docId = userEmail.replaceAll('.', '_');
-
-      // Fetch user data from Firestore
-      DocumentSnapshot userDoc =
-          await FirebaseFirestore.instance.collection('users').doc(docId).get();
-
-      if (userDoc.exists && userDoc.data() is Map<String, dynamic>) {
-        final userData = userDoc.data() as Map<String, dynamic>;
-        final name = userData['name'] ?? 'User';
-
-        // Cache the result
-        if (!_userProfileCache.containsKey(userEmail)) {
-          _userProfileCache[userEmail] = {};
-        }
-        _userProfileCache[userEmail]!['name'] = name;
-
-        return name;
-      }
-
-      return 'User';
-    } catch (e) {
-      print('Error fetching user name: $e');
-      return 'User';
-    }
   }
 
   // Load image dimensions to calculate aspect ratio
@@ -168,7 +89,7 @@ class _PostCardState extends State<PostCard>
           if (mounted) {
             setState(() {
               _imageLoaded =
-                  true; // Still mark as loaded to avoid infinite loading
+                  true;
             });
           }
         },
@@ -179,43 +100,13 @@ class _PostCardState extends State<PostCard>
       print('Error determining image aspect ratio: $e');
       if (mounted) {
         setState(() {
-          _imageLoaded = true; // Mark as loaded even on error
+          _imageLoaded = true;
         });
       }
     }
   }
-
   // Toggle favorite status
-  void _toggleFavorite() {
-    setState(() {
-      _isFavorite = !_isFavorite;
-    });
 
-    // Show confirmation
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content:
-            Text(_isFavorite ? 'Added to favorites' : 'Removed from favorites'),
-        duration: Duration(seconds: 1),
-      ),
-    );
-  }
-
-  // Toggle action menu
-  void _toggleActionMenu() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => CustomShareBottomSheet(
-        imageUrl: widget.post.imageUrl,
-        title: widget.post.title,
-        onClose: () {
-          Navigator.of(context).pop();
-        },
-      ),
-    );
-  }
 
 // Function to get Android version
   Future<int> _getAndroidVersion() async {
@@ -224,7 +115,7 @@ class _PostCardState extends State<PostCard>
     return androidInfo.version.sdkInt;
   }
 
-// Function to request Android 13+ permissions
+  // Function to request Android 13+ permissions
   Future<bool> _requestAndroid13Permission() async {
     // For Android 13, we need to request photos-specific permissions
     bool photos = await Permission.photos.isGranted;
@@ -234,7 +125,7 @@ class _PostCardState extends State<PostCard>
     return photos;
   }
 
-// Function to sanitize email for file path
+  // Function to sanitize email for file path
   String _sanitizeEmail(String email) {
     return email.replaceAll('.', '_').replaceAll('@', '_at_');
   }
@@ -431,197 +322,55 @@ class _PostCardState extends State<PostCard>
     }
   }
 
-  // For WhatsApp sharing
-  Future<void> _shareToWhatsApp(BuildContext context, UnifiedPost post) async {
-    _showLoadingIndicator(context);
-
+  Future<void> _sharePost(BuildContext context) async {
     try {
+      // Check if still mounted before setting state
+      if (mounted) {
+        setState(() {
+          _isLoading = true;
+        });
+      } else {
+        return; // Exit if not mounted anymore
+      }
+
       // Download the image
-      final response = await http.get(Uri.parse(post.imageUrl));
+      final response = await http.get(Uri.parse(widget.post.imageUrl));
       if (response.statusCode != 200) {
         throw Exception('Failed to download image');
       }
 
       // Save to temp directory
       final tempDir = await getTemporaryDirectory();
-      final file = File('${tempDir.path}/whatsapp_share.jpg');
+      final file = File('${tempDir.path}/shared_post.jpg');
       await file.writeAsBytes(response.bodyBytes);
 
-      _hideLoadingIndicator(context);
+      // Check if still mounted before setting state
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      } else {
+        return; // Exit if not mounted anymore
+      }
 
-      // For Android - Direct sharing to WhatsApp
-      if (Platform.isAndroid) {
-        try {
-          // Instead of using whatsapp:// URI, use the Share method with a package selector
-          await Share.shareXFiles(
-            [XFile(file.path)],
-            text: post.title,
-            subject: 'Check out this quote!',
-            sharePositionOrigin: const Rect.fromLTWH(0, 0, 10, 10),
-          );
-        } catch (e) {
-          print("Error sharing to WhatsApp: $e");
-          // If that fails, try a more generic share approach
-          await Share.shareXFiles(
-            [XFile(file.path)],
-            text: post.title,
-          );
-        }
-      }
-      // For iOS
-      else if (Platform.isIOS) {
-        try {
-          // Use the standard iOS sharing mechanism
-          await Share.shareXFiles(
-            [XFile(file.path)],
-            text: post.title,
-            subject: 'Check out this quote!',
-          );
-        } catch (e) {
-          print("Error sharing on iOS: $e");
-          // Fallback
-          await Share.shareXFiles(
-            [XFile(file.path)],
-            text: post.title,
-          );
-        }
-      }
-      // For other platforms
-      else {
-        await Share.shareXFiles(
-          [XFile(file.path)],
-          text: post.title,
+      // Universal share - this opens the native share dialog
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        text: widget.post.title,
+        subject: 'Check out this quote!',
+      );
+    } catch (e) {
+      // Check if still mounted before setting state and showing snackbar
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+
+        // Use the BuildContext only if still mounted
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error sharing: $e')),
         );
       }
-    } catch (e) {
-      _hideLoadingIndicator(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error sharing to WhatsApp: $e')),
-      );
-    }
-  }
-
-// For Facebook sharing
-  Future<void> _shareToFacebook(BuildContext context, UnifiedPost post) async {
-    _showLoadingIndicator(context);
-
-    try {
-      // Download the image
-      final response = await http.get(Uri.parse(post.imageUrl));
-      if (response.statusCode != 200) {
-        throw Exception('Failed to download image');
-      }
-
-      // Save to temp directory
-      final tempDir = await getTemporaryDirectory();
-      final file = File('${tempDir.path}/facebook_share.jpg');
-      await file.writeAsBytes(response.bodyBytes);
-
-      _hideLoadingIndicator(context);
-
-      // For Android
-      if (Platform.isAndroid) {
-        try {
-          // Launch Facebook app directly
-          final fbUri = Uri.parse("fb://feed");
-          bool launched = await launchUrl(
-            fbUri,
-            mode: LaunchMode.externalApplication,
-          );
-
-          if (launched) {
-            // Allow Facebook to open
-            await Future.delayed(Duration(milliseconds: 500));
-
-            // Now share to it
-            await Share.shareXFiles(
-              [XFile(file.path)],
-              text: post.title,
-            );
-          } else {
-            // Facebook not installed, try web fallback or standard share
-            final facebookWebUrl =
-                'https://www.facebook.com/sharer/sharer.php?u=${Uri.encodeComponent('https://vakyapp.com')}&quote=${Uri.encodeComponent(post.title)}';
-
-            bool webLaunched = await launchUrl(
-              Uri.parse(facebookWebUrl),
-              mode: LaunchMode.externalApplication,
-            );
-
-            if (!webLaunched) {
-              // If web share fails too, fall back to standard sharing
-              await Share.shareXFiles(
-                [XFile(file.path)],
-                text: post.title,
-              );
-            }
-          }
-        } catch (e) {
-          print("Error with Facebook sharing: $e");
-          // Fallback to standard sharing
-          await Share.shareXFiles(
-            [XFile(file.path)],
-            text: post.title,
-          );
-        }
-      }
-      // For iOS
-      else if (Platform.isIOS) {
-        try {
-          // Launch Facebook app directly
-          final fbUri = Uri.parse("fb://feed");
-          bool launched = await launchUrl(
-            fbUri,
-            mode: LaunchMode.externalApplication,
-          );
-
-          if (launched) {
-            // Allow Facebook to open
-            await Future.delayed(Duration(milliseconds: 500));
-
-            // Now share to it
-            await Share.shareXFiles(
-              [XFile(file.path)],
-              text: post.title,
-            );
-          } else {
-            // Facebook not installed, try web fallback or standard share
-            final facebookWebUrl =
-                'https://www.facebook.com/sharer/sharer.php?u=${Uri.encodeComponent('https://vakyapp.com')}&quote=${Uri.encodeComponent(post.title)}';
-
-            bool webLaunched = await launchUrl(
-              Uri.parse(facebookWebUrl),
-              mode: LaunchMode.externalApplication,
-            );
-
-            if (!webLaunched) {
-              // If web share fails too, fall back to standard sharing
-              await Share.shareXFiles(
-                [XFile(file.path)],
-                text: post.title,
-              );
-            }
-          }
-        } catch (e) {
-          // Fallback to standard sharing
-          await Share.shareXFiles(
-            [XFile(file.path)],
-            text: post.title,
-          );
-        }
-      }
-      // For other platforms
-      else {
-        await Share.shareXFiles(
-          [XFile(file.path)],
-          text: post.title,
-        );
-      }
-    } catch (e) {
-      _hideLoadingIndicator(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error sharing to Facebook: $e')),
-      );
     }
   }
 
@@ -660,7 +409,7 @@ class _PostCardState extends State<PostCard>
                     if (widget.post.isPaid)
                       Container(
                         padding:
-                            EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                        EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                         margin: EdgeInsets.only(right: 8),
                         decoration: BoxDecoration(
                           color: Colors.amber,
@@ -687,7 +436,6 @@ class _PostCardState extends State<PostCard>
             children: [
               Card(
                 margin: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                // Reduced vertical margin
                 elevation: 2,
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
@@ -698,7 +446,6 @@ class _PostCardState extends State<PostCard>
                     // After the main image in the post card:
                     GestureDetector(
                       onTap: widget.onEditPressed,
-                      onDoubleTap: _toggleFavorite,
                       child: AspectRatio(
                         aspectRatio: _imageLoaded ? _aspectRatio : 1.5,
                         child: Container(
@@ -721,7 +468,7 @@ class _PostCardState extends State<PostCard>
                                     child: Center(
                                       child: CircularProgressIndicator(
                                         valueColor:
-                                            AlwaysStoppedAnimation<Color>(
+                                        AlwaysStoppedAnimation<Color>(
                                           isDarkMode
                                               ? Colors.white
                                               : Colors.black54,
@@ -731,14 +478,14 @@ class _PostCardState extends State<PostCard>
                                   ),
                                   errorWidget: (context, url, error) =>
                                       Container(
-                                    color: isDarkMode
-                                        ? Colors.grey[800]
-                                        : Colors.grey[200],
-                                    child: Center(
-                                      child:
+                                        color: isDarkMode
+                                            ? Colors.grey[800]
+                                            : Colors.grey[200],
+                                        child: Center(
+                                          child:
                                           Icon(Icons.error, color: iconColor),
-                                    ),
-                                  ),
+                                        ),
+                                      ),
                                 ),
 
                                 // User info container at bottom
@@ -761,153 +508,14 @@ class _PostCardState extends State<PostCard>
                       padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
                     ),
 
-                    // Action buttons
+                    // Action buttons - Simplified now
                     widget.showFullActions
                         ? _buildFullActionsRow(context, iconColor, textColor)
                         : _buildCompactActionsRow(
-                            context, iconColor, textColor),
+                        context, iconColor, textColor),
                   ],
                 ),
               ),
-
-              // Overlay action menu (when expanded)
-              if (_showActionMenu)
-                Positioned.fill(
-                  child: GestureDetector(
-                    onTap: _toggleActionMenu, // Close menu on tap outside
-                    child: Container(
-                      color: Colors.black54,
-                      child: FadeTransition(
-                        opacity: _animationController,
-                        child: Center(
-                          child: Card(
-                            color: cardColor,
-                            elevation: 8,
-                            margin: EdgeInsets.all(32),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    context.loc.share,
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      color: textColor,
-                                    ),
-                                  ),
-                                  SizedBox(height: 24),
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceEvenly,
-                                    children: [
-                                      _buildShareOption(
-                                        context: context,
-                                        icon: Icons.share,
-                                        label: context.loc.share,
-                                        onTap: () {
-                                          _toggleActionMenu();
-                                          _sharePost(context);
-                                        },
-                                        color: Colors.blue,
-                                      ),
-                                      _buildShareOption(
-                                        context: context,
-                                        svgAsset: 'assets/icons/whatsapp.svg',
-                                        label: 'WhatsApp',
-                                        onTap: () {
-                                          _toggleActionMenu();
-                                          _shareToWhatsApp(
-                                              context, widget.post);
-                                        },
-                                        color:
-                                            Color(0xFF25D366), // WhatsApp green
-                                      ),
-                                      _buildShareOption(
-                                        context: context,
-                                        svgAsset:
-                                            'assets/icons/facebook_2111393.svg',
-                                        label: 'Facebook',
-                                        onTap: () {
-                                          _toggleActionMenu();
-                                          _shareToFacebook(
-                                              context, widget.post);
-                                        },
-                                        color:
-                                            Color(0xFF1877F2), // Facebook blue
-                                      ),
-                                    ],
-                                  ),
-                                  SizedBox(height: 16),
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceEvenly,
-                                    children: [
-                                      _buildShareOption(
-                                        context: context,
-                                        icon: Icons.download,
-                                        label: context.loc.save,
-                                        onTap: () {
-                                          _toggleActionMenu();
-                                          _downloadImage(context, widget.post);
-                                        },
-                                        color: Colors.green,
-                                      ),
-                                      _buildShareOption(
-                                        context: context,
-                                        svgAsset: 'assets/icons/instagram.svg',
-                                        label: 'Instagram',
-                                        onTap: () {
-                                          _toggleActionMenu();
-                                          _sharePost(
-                                              context); // Use regular share for Instagram
-                                        },
-                                        color: Color(
-                                            0xFFE1306C), // Instagram gradient approximation
-                                      ),
-                                      _buildShareOption(
-                                        context: context,
-                                        icon: Icons.copy,
-                                        label: 'context.loc.copy',
-                                        onTap: () {
-                                          Clipboard.setData(ClipboardData(
-                                              text: widget.post.title));
-                                          ScaffoldMessenger.of(context)
-                                              .showSnackBar(
-                                            SnackBar(
-                                                content: Text(
-                                                    'Text copied to clipboard')),
-                                          );
-                                          _toggleActionMenu();
-                                        },
-                                        color: Colors.orange,
-                                      ),
-                                    ],
-                                  ),
-                                  SizedBox(height: 24),
-                                  TextButton(
-                                    onPressed: _toggleActionMenu,
-                                    child: Text(
-                                      context.loc.cancel,
-                                      style: GoogleFonts.poppins(
-                                        color: Colors.blue,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
 
               // Loading overlay
               if (_isLoading)
@@ -926,44 +534,7 @@ class _PostCardState extends State<PostCard>
         ]));
   }
 
-  // Regular sharing function (used for universal share and fallbacks)
-  Future<void> _sharePost(BuildContext context) async {
-    try {
-      setState(() {
-        _isLoading = true;
-      });
 
-      // Download the image
-      final response = await http.get(Uri.parse(widget.post.imageUrl));
-      if (response.statusCode != 200) {
-        throw Exception('Failed to download image');
-      }
-
-      // Save to temp directory
-      final tempDir = await getTemporaryDirectory();
-      final file = File('${tempDir.path}/shared_post.jpg');
-      await file.writeAsBytes(response.bodyBytes);
-
-      setState(() {
-        _isLoading = false;
-      });
-
-      // Universal share
-      await Share.shareXFiles(
-        [XFile(file.path)],
-        text: widget.post.title,
-        subject: 'Check out this quote!',
-      );
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error sharing: $e')),
-      );
-    }
-  }
 
   // Build full action buttons row (for larger screens)
   Widget _buildFullActionsRow(
@@ -976,29 +547,25 @@ class _PostCardState extends State<PostCard>
           _buildActionButton(
             svgPath: 'assets/icons/pen_1659682.svg',
             label: context.loc.editimage,
-            onPressed: widget.onEditPressed,
-            //iconColor: iconColor,
+            onPressed: widget.onEditPressed, // This uses the callback from parent which should be updated to go to DetailsScreen
             textColor: textColor,
           ),
           _buildActionButton(
             svgPath: 'assets/icons/share.svg',
             label: context.loc.share,
-            onPressed: _toggleActionMenu,
-            //iconColor: iconColor,
+            onPressed: () => _sharePost(context), // Direct native share
             textColor: textColor,
           ),
           _buildActionButton(
             svgPath: 'assets/icons/facebook_2111393.svg',
             label: 'Facebook',
-            onPressed: () => _shareToFacebook(context, widget.post),
-            //iconColor: iconColor,
+            onPressed: () => _sharePost(context),
             textColor: textColor,
           ),
           _buildActionButton(
             svgPath: 'assets/icons/whatsapp.svg',
-            label: 'WhatsApp',
-            onPressed: () => _shareToWhatsApp(context, widget.post),
-            //iconColor: iconColor,
+            label: 'Whatsapp',
+            onPressed: () => _sharePost(context),
             textColor: textColor,
           ),
         ],
@@ -1006,7 +573,7 @@ class _PostCardState extends State<PostCard>
     );
   }
 
-  // Build compact action buttons row (for smaller screens)
+  // Build compact action buttons row (for smaller screens) - SIMPLIFIED
   Widget _buildCompactActionsRow(
       BuildContext context, Color iconColor, Color textColor) {
     return Padding(
@@ -1017,22 +584,19 @@ class _PostCardState extends State<PostCard>
           _buildActionButton(
             icon: Icons.share,
             label: context.loc.share,
-            onPressed: _toggleActionMenu,
-            //iconColor: iconColor,
+            onPressed: () => _sharePost(context),
             textColor: textColor,
           ),
           _buildActionButton(
             icon: Icons.edit,
             label: context.loc.editimage,
-            onPressed: widget.onEditPressed,
-            //iconColor: iconColor,
+            onPressed: widget.onEditPressed, // This uses the callback from parent which should be updated to go to DetailsScreen
             textColor: textColor,
           ),
           _buildActionButton(
             icon: Icons.download,
             label: context.loc.save,
             onPressed: () => _downloadImage(context, widget.post),
-            //iconColor: iconColor,
             textColor: textColor,
           ),
         ],
@@ -1046,7 +610,6 @@ class _PostCardState extends State<PostCard>
     String? svgPath,
     required String label,
     required VoidCallback? onPressed,
-    // required Color iconColor,
     required Color textColor,
   }) {
     return GestureDetector(
@@ -1056,20 +619,13 @@ class _PostCardState extends State<PostCard>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // if (icon != null)
-            //   Icon(icon, color: iconColor, size: 20)
-            if (svgPath != null)
+            if (icon != null)
+              Icon(icon, size: 20)
+            else if (svgPath != null)
               SvgPicture.asset(
                 svgPath,
                 width: 20,
                 height: 20,
-                // For Flutter 3.0+
-                // colorFilter: ColorFilter.mode(
-                //    // iconColor,
-                //     BlendMode.srcIn
-                // ),
-                // For older Flutter versions, remove the colorFilter and uncomment this:
-                // color: iconColor,
               ),
             SizedBox(height: 4),
             Text(
@@ -1086,77 +642,6 @@ class _PostCardState extends State<PostCard>
   }
 
   // Helper method to build share options in the expanded menu
-  Widget _buildShareOption({
-    required BuildContext context,
-    IconData? icon,
-    String? svgAsset,
-    required String label,
-    required VoidCallback onTap,
-    required Color color,
-  }) {
-    final ThemeData theme = Theme.of(context);
-    final bool isDarkMode = theme.brightness == Brightness.dark;
-    final Color textColor = isDarkMode ? Colors.white : Colors.black;
-
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        width: 80,
-        padding: EdgeInsets.symmetric(vertical: 8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                // Light background that contrasts with both dark and light themes
-                color: color.withOpacity(0.1),
-                // Very light tint of the icon color
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Center(
-                child: icon != null
-                    ? Icon(
-                        icon,
-                        color: color,
-                        // This makes the icon appear in its proper color
-                        size: 30,
-                      )
-                    : svgAsset != null
-                        ? SvgPicture.asset(
-                            svgAsset,
-                            width: 30,
-                            height: 30,
-                            // For Flutter 3.0 and above:
-                            colorFilter: ColorFilter.mode(
-                              color,
-                              BlendMode.srcIn,
-                            ),
-                            // For older Flutter versions:
-                            // color: color,
-                          )
-                        : SizedBox(),
-              ),
-            ),
-            SizedBox(height: 8),
-            Text(
-              label,
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: textColor,
-              ),
-              textAlign: TextAlign.center,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildUserProfileContainer(String userName, String profileImageUrl) {
     return Container(
       margin: EdgeInsets.symmetric(vertical: 8),
@@ -1191,19 +676,19 @@ class _PostCardState extends State<PostCard>
               borderRadius: BorderRadius.circular(20),
               child: profileImageUrl.isNotEmpty
                   ? Image.network(
-                      profileImageUrl,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Icon(
-                        Icons.person,
-                        color: Colors.grey,
-                        size: 24,
-                      ),
-                    )
+                profileImageUrl,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => Icon(
+                  Icons.person,
+                  color: Colors.grey,
+                  size: 24,
+                ),
+              )
                   : Icon(
-                      Icons.person,
-                      color: Colors.grey,
-                      size: 24,
-                    ),
+                Icons.person,
+                color: Colors.grey,
+                size: 24,
+              ),
             ),
           ),
         ],

@@ -74,7 +74,6 @@ dependencies:
   transparent_image: ^2.0.1
   image_gallery_saver_plus: ^4.0.1
   shimmer: ^3.0.0
-  animated_splash_screen: ^1.3.0
   flutter_svg: ^2.0.17
   flutter_resume_template: ^1.2.1
   flutter_super_resolution: ^1.0.5
@@ -87,10 +86,23 @@ dependencies:
   syncfusion_flutter_signaturepad: ^29.1.38
   syncfusion_flutter_pdf: ^29.1.38
   syncfusion_flutter_pdfviewer: ^29.1.38
-  appinio_social_share: ^0.3.2
+  flutter_native_splash: ^2.4.6
 
 
-  
+flutter_native_splash:
+  color: "#ffffff"
+  image: assets/logo_ori.png
+
+
+  android_12:
+    image: assets/logo_ori.png
+    icon_background_color: "#ffffff"
+    image_dark: assets/logo_ori.png
+    icon_background_color_dark: "#000000"
+
+  ios: true
+  web: false
+  android: true
 
 flutter_icons:
   android: true
@@ -132,7 +144,7 @@ flutter:
     - assets/fonts/
     - assets/logo.png
     - assets/icons/survey_emoji_heart.svg
-    - assets/logo_original.png
+    - assets/logo_ori.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
