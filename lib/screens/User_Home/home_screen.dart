@@ -1554,7 +1554,7 @@ class HomeScreenState extends State<HomeScreen> {
                         color: AppColors.getIconColor(isDarkMode),
                       ),
                       onPressed: () {
-                        Navigator.push(context, MaterialPageRoute(builder: (context)=> HolidayFetchScreen()));
+                        Navigator.push(context, MaterialPageRoute(builder: (context)=> CalendarScreen()));
                       },
                     ),
                   ),

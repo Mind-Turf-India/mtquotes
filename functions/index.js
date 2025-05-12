@@ -25,42 +25,72 @@ app.listen(PORT, () => {
 admin.initializeApp();
 
 exports.fetchAndStoreHolidays = functions.https.onRequest(async (req, res) => {
+  // Enable CORS
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'GET');
+  res.set('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    res.status(204).send('');
+    return;
+  }
+
   const { country, year } = req.query;
 
-  const apiKey = "sus8gIvZCBFdPdah2O24JGSXSpU2fUWc"; // store this securely
+  // Use environment variable for API key
+  const apiKey = process.env.CALENDARIFIC_API_KEY || "sus8gIvZCBFdPdah2O24JGSXSpU2fUWc"; //very important api key
 
   try {
     const response = await axios.get(`https://calendarific.com/api/v2/holidays`, {
       params: {
         api_key: apiKey,
-        country: country || 'US',
-        year: year || new Date().getFullYear()
+        country: country || 'IN',
+        year: 2025 || new Date().getFullYear()
       }
     });
+    console.log('API Response structure:', JSON.stringify(response.data, null, 2).slice(0, 500) + '...');
+    if (!response.data.response || !Array.isArray(response.data.response.holidays)) {
+        console.error('Unexpected API response structure:', response.data);
+        res.status(500).json({
+          error: 'Unexpected API response structure',
+          data: response.data
+        });
+        return;
+      }
 
     const holidays = response.data.response.holidays;
 
-    // Store holidays to Firestore (optional)
-    const admin = require('firebase-admin');
-    if (!admin.apps.length) admin.initializeApp();
-
+    // Store holidays to Firestore
     const db = admin.firestore();
     const batch = db.batch();
+
+    // Create a collection reference with year and country
+    const collectionRef = db.collection(`holidays_${country || 'IN'}_${2025 || new Date().getFullYear()}`);
+
     holidays.forEach(holiday => {
-      const docRef = db.collection('holidays').doc(holiday.name);
+      const docRef = collectionRef.doc();
       batch.set(docRef, {
         name: holiday.name,
         description: holiday.description,
         date: holiday.date.iso,
-        type: holiday.type
+        type: Array.isArray(holiday.type) ? holiday.type[0] : holiday.type
       });
     });
 
     await batch.commit();
-    res.status(200).send({ message: "Holidays stored successfully!" });
+
+    // Return the holidays data directly
+    res.status(200).json(response.data);
   } catch (err) {
-    console.error(err);
-    res.status(500).send("Failed to fetch holidays.");
+    console.error('Error fetching holidays:', err.message);
+
+    // Return a more detailed error message
+    res.status(500).json({
+      error: 'Failed to fetch holidays',
+      message: err.message,
+      status: err.response?.status,
+      data: err.response?.data
+    });
   }
 });
 
