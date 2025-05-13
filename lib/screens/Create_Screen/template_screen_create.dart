@@ -24,6 +24,7 @@ import '../Templates/components/template/quote_template.dart';
 import '../Templates/components/template/template_service.dart';
 import '../User_Home/components/tapp_effect.dart';
 import '../User_Home/components/templates_list.dart';
+import 'components/image_picker_edit_screen.dart';
 import 'edit_screen_create.dart';
 import '../User_Home/components/Search/search_service.dart';
 
@@ -33,6 +34,16 @@ class TemplatePage extends StatefulWidget {
 }
 
 class _TemplatePageState extends State<TemplatePage> {
+
+  final QuoteTemplate defaultTemplate = QuoteTemplate(
+    id: 'default_template_id',
+    imageUrl: '', // Empty string for the image URL
+    title: 'Default Template',
+    category: 'General',
+    isPaid: false,
+    createdAt: DateTime.now(),
+    // Optional fields can remain null
+  );
   int selectedTab = 0;
   List<String> tabs = [];
   final TextEditingController _searchController = TextEditingController();
@@ -221,15 +232,7 @@ class _TemplatePageState extends State<TemplatePage> {
 
           await RecentTemplateService.addRecentTemplate(template);
 
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => EditScreen(
-                title: 'Edit Festival Post',
-                templateImageUrl: selectedFestival.imageUrl,
-              ),
-            ),
-          );
+          _showImagePicker(context,template);
         } catch (e) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Error adding to recent templates: $e')),
@@ -605,6 +608,39 @@ class _TemplatePageState extends State<TemplatePage> {
     );
   }
 
+  void _showImagePicker(BuildContext context, QuoteTemplate template) {
+    // Verify the template has a valid URL before proceeding
+    if (template.imageUrl.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Template image URL is empty or invalid'))
+      );
+      return;
+    }
+
+    print("Navigating to ImagePickerScreen with URL: ${template.imageUrl}");
+
+    // Navigate to ImagePickerScreen with the selected template
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ImagePickerScreen(
+          templateImageUrl: template.imageUrl,
+        ),
+      ),
+    ).then((value) {
+      // Handle any value returned from the ImagePickerScreen if needed
+      if (value != null) {
+        print("Returned from ImagePickerScreen with value: $value");
+      }
+    }).catchError((error) {
+      // Log any errors that might occur during navigation
+      print("Error navigating to ImagePickerScreen: $error");
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error opening image editor: $error'))
+      );
+    });
+  }
+
   Widget _buildSearchResultsSection(
       double fontSize, Color textColor, Color surfaceColor, bool isDarkMode) {
     return SingleChildScrollView(
@@ -853,12 +889,7 @@ class _TemplatePageState extends State<TemplatePage> {
               child: Center(
                 child: GestureDetector(
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => EditScreen(title: ''),
-                      ),
-                    );
+                    _showImagePicker(context, defaultTemplate);
                   },
                   child: Container(
                     padding: EdgeInsets.all(12),

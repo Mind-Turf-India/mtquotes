@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:mtquotes/l10n/app_localization.dart';
 import 'package:mtquotes/screens/User_Home/components/Resume/resume_dashboard.dart';
 import 'package:mtquotes/screens/User_Home/home_screen.dart';
@@ -13,6 +14,7 @@ import 'package:mtquotes/screens/User_Home/components/user_survey.dart';
 import 'package:provider/provider.dart';
 import '../utils/app_colors.dart';
 import '../utils/theme_provider.dart';
+import 'Create_Screen/components/image_picker_edit_screen.dart';
 import 'Create_Screen/edit_screen_create.dart';
 import 'Create_Screen/template_screen_create.dart';
 import 'User_Home/search_screen.dart';
@@ -58,6 +60,7 @@ class _MainScreenState extends State<MainScreen> {
 void navigateBack(BuildContext context) {
   _onWillPop();
 }
+
 
 
   // Handle back button press
@@ -263,8 +266,7 @@ void navigateBack(BuildContext context) {
           Navigator.push(
             context,
             MaterialPageRoute(
-                builder: (context) =>
-                EditScreen(title: 'title')),
+                builder: (context) => ImagePickerScreen()),
           );
         }
       },

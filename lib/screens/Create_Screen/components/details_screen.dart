@@ -5,6 +5,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:mtquotes/screens/Create_Screen/components/image_picker_edit_screen.dart';
 import 'package:mtquotes/screens/Create_Screen/edit_screen_create.dart';
 import 'package:mtquotes/screens/Payment_Screen/subscription_screen.dart';
 import 'package:mtquotes/screens/Templates/components/template/quote_template.dart';
@@ -218,16 +219,46 @@ class _DetailsScreenState extends State<DetailsScreen>
     }
   }
 
-  Future<void> _navigateToEditScreen() async {
+  // Detailed fix for DetailsScreen's _showImagePicker method in case it's not working properly
+
+  void _showImagePicker(BuildContext context) {
+    // Verify the template has a valid URL before proceeding
+    if (widget.template.imageUrl.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Template image URL is empty or invalid'))
+      );
+      return;
+    }
+
+    print("DetailsScreen: Navigating to ImagePickerScreen with URL: ${widget.template.imageUrl}");
+
+    // Navigate to ImagePickerScreen with the selected template
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => EditScreen(
-          title: context.loc.editTemplate,
+        builder: (context) => ImagePickerScreen(
           templateImageUrl: widget.template.imageUrl,
         ),
       ),
-    );
+    ).then((value) {
+      // Handle any value returned from the ImagePickerScreen if needed
+      if (value != null) {
+        print("Returned from ImagePickerScreen with value: $value");
+      }
+    }).catchError((error) {
+      // Log any errors that might occur during navigation
+      print("Error navigating to ImagePickerScreen: $error");
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error opening image editor: $error'))
+      );
+    });
+  }
+
+// Ensure this method simply calls _showImagePicker
+  Future<void> _navigateToEditScreen() async {
+    print("_navigateToEditScreen called, calling _showImagePicker");
+
+    _showImagePicker(context);
   }
 
   @override

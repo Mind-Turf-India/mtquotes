@@ -1,1180 +1,1420 @@
+import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
-import 'package:cloud_firestore/cloud_firestore.dart';
+
+import 'package:css_filter/css_filter.dart'; // Import the CSS Filter package
 import 'package:device_info_plus/device_info_plus.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter_painter_v2/flutter_painter.dart';
+import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:flutter_svg/svg.dart';
 import 'package:image_editor_plus/image_editor_plus.dart';
 import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:mtquotes/l10n/app_localization.dart';
-import 'package:mtquotes/screens/navbar_mainscreen.dart';
-import 'package:mtquotes/utils/theme_provider.dart';
-import 'package:provider/provider.dart';
 import 'package:path_provider/path_provider.dart';
-import 'dart:io';
-import 'package:http/http.dart' as http;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:uuid/uuid.dart';
-import '../../utils/app_colors.dart';
-import '../Templates/components/template/quote_template.dart';
-import '../Templates/components/template/template_service.dart';
-import '../Templates/components/template/template_sharing.dart';
-import '../User_Home/files_screen.dart';
+import 'package:image/image.dart' as img; // Add this package to your pubspec.yaml
 
 class EditScreen extends StatefulWidget {
-  EditScreen({
+  final File imageFile;
+  final String? templateImageUrl; // Add this to track where the image came from
+
+  const EditScreen({
     Key? key,
-    required this.title,
+    required this.imageFile,
     this.templateImageUrl,
-    this.initialImageData,
-    // this.draftId, // Add draftId parameter
   }) : super(key: key);
-
-  final String title;
-  final String? templateImageUrl;
-  final Uint8List? initialImageData;
-
-  // final String? draftId; // To track if we're editing an existing draft
 
   @override
   State<EditScreen> createState() => _EditScreenState();
 }
 
-class _EditScreenState extends State<EditScreen> {
-  Uint8List? imageData;
-  final ImagePicker _picker = ImagePicker();
-  bool defaultImageLoaded = true;
-  bool isLoading = false;
-  final uuid = Uuid();
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+class _EditScreenState extends State<EditScreen>
+    with SingleTickerProviderStateMixin {
+  // Controllers
+  late PainterController _painterController;
+  late quill.QuillController _quillController;
 
-  // final DraftService _draftService = DraftService();
-  // String? currentDraftId; // Track the current draft ID
-  String? originalImagePath; // Track the original image path
-  bool showInfoBox = true;
-  String infoBoxBackground = 'white';
-  String userName = '';
-  String userLocation = '';
-  String userMobile = '';
-  String userDescription = '';
-  String? userProfileImageUrl;
-  bool isBusinessProfile = false;
-  String companyName = '';
-  bool isPaidUser = false;
-  bool isPersonal = true;
-  String userSocialMedia = '';
+  // Image data
+  ui.Image? _image;
+  Uint8List? _imageBytes;
+  Uint8List? _originalImageBytes; // Store original for reset functionality
+  Size? _imageSize;
+  bool _imageLoaded = false;
 
-  final GlobalKey imageContainerKey = GlobalKey();
+  // Transformation tracking
+  bool _isImageFlippedHorizontally = false;
+  bool _isImageFlippedVertically = false;
+  int _rotationDegrees = 0;
+
+  // Tab controller for different editing modes
+  late TabController _tabController;
+
+  // Current editing mode
+  EditingMode _currentMode = EditingMode.filter;
+
+  // Selected text editing properties
+  Color _textColor = Colors.black;
+  double _fontSize = 16.0;
+  String _fontFamily = 'Roboto';
+  Color _textBackgroundColor = Colors.transparent;
+  TextAlign _textAlign = TextAlign.left;
+
+  // Filter values using CSS Filter parameters
+  double _brightnessValue = 1.0; // 1.0 is normal
+  double _contrastValue = 1.0; // 1.0 is normal
+  double _saturationValue = 1.0; // 1.0 is normal
+  double _vibranceValue = 0.0; // Simulated with other filters
+  double _sepiaValue = 0.0; // 0.0 to 1.0
+  double _hueRotateValue = 0.0; // 0.0 to 360.0
+  double _invertValue = 0.0; // 0.0 to 1.0
+  double _opacityValue = 1.0; // 1.0 is fully opaque
+  double _blurValue = 0.0; // 0.0 is no blur
+
+  // Selected filter preset
+  String _selectedPreset = 'None';
+
+  // GlobalKey for capturing filtered image
+  final GlobalKey _filterPreviewKey = GlobalKey();
+
+  // Create a custom key for quill editor
+  final _quillEditorKey = GlobalKey();
 
   @override
   void initState() {
     super.initState();
-    // currentDraftId = widget.draftId;
 
-    if (widget.templateImageUrl != null) {
-      loadTemplateImage(widget.templateImageUrl!);
-    } else if (widget.initialImageData != null) {
-      setState(() {
-        imageData = widget.initialImageData;
-        defaultImageLoaded = false;
-      });
-    }
-    _loadUserPreferences();
-    _checkSubscriptionStatus();
-  }
+    // Initialize tab controller
+    _tabController = TabController(length: 4, vsync: this);
+    _tabController.addListener(_handleTabChange);
 
-  @override
-  void dispose() {
-    super.dispose();
-  }
+    // Initialize painter controller
+    _painterController = PainterController();
 
-
-  Future<void> _checkSubscriptionStatus() async {
-    try {
-      final templateService = TemplateService();
-      bool isSubscribed = await templateService.isUserSubscribed();
-
-      setState(() {
-        isPaidUser = isSubscribed;
-      });
-    } catch (e) {
-      print('Error checking subscription status: $e');
-    }
-  }
-
-  // Add this method to load user preferences
-  Future<void> _loadUserPreferences() async {
-    try {
-      User? currentUser = FirebaseAuth.instance.currentUser;
-      if (currentUser?.email != null) {
-        String docId = currentUser!.email!.replaceAll('.', '_');
-
-        DocumentSnapshot userDoc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(docId)
-            .get();
-
-        if (userDoc.exists && userDoc.data() is Map<String, dynamic>) {
-          Map<String, dynamic> userData =
-              userDoc.data() as Map<String, dynamic>;
-
-          setState(() {
-            showInfoBox = userData['showInfoBox'] ?? true;
-            infoBoxBackground = userData['infoBoxBackground'] ?? 'white';
-            userName = userData['name'] ?? '';
-            userLocation = userData['location'] ?? '';
-            userMobile = userData['mobile'] ?? '';
-            userDescription = userData['description'] ?? '';
-            userSocialMedia =
-                userData['socialMedia'] ?? ''; // Load social media handle
-            userProfileImageUrl = userData['profileImage'];
-            companyName = userData['companyName'] ?? '';
-
-            // Determine if using business profile based on which tab was last active
-            isBusinessProfile = userData['lastActiveProfileTab'] == 'business';
-            isPersonal = userData['lastActiveProfileTab'] == 'personal';
-          });
-        }
-      }
-    } catch (e) {
-      print('Error loading user preferences: $e');
-    }
-  }
-
-  // Get user-specific directory path for downloads
-  Future<String> _getUserSpecificDirectoryPath() async {
-    // Check if user is logged in
-    User? user = _auth.currentUser;
-    String userDir = user != null ? _sanitizeEmail(user.email!) : 'guest';
-
-    Directory baseDir;
-    if (Platform.isAndroid) {
-      baseDir = Directory('/storage/emulated/0/Pictures/Vaky/$userDir');
-    } else {
-      baseDir = Directory(
-          '${(await getApplicationDocumentsDirectory()).path}/Vaky/$userDir');
-    }
-
-    // Create directory if it doesn't exist
-    if (!await baseDir.exists()) {
-      await baseDir.create(recursive: true);
-    }
-
-    return baseDir.path;
-  }
-
-  // Sanitize email for directory name (replace dots with underscores)
-  String _sanitizeEmail(String email) {
-    return email.replaceAll('.', '_').replaceAll('@', '_at_');
-  }
-
-  Widget _buildInfoBox() {
-    if (!showInfoBox) return SizedBox();
-
-    // Get theme-aware colors for info box
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-
-    Color bgColor;
-    switch (infoBoxBackground) {
-      case 'lightGray':
-        bgColor = isDarkMode ? Colors.grey[800]! : Colors.grey[200]!;
-        break;
-      case 'lightBlue':
-        bgColor = isDarkMode ? Colors.blue[900]! : Colors.blue[100]!;
-        break;
-      case 'lightGreen':
-        bgColor = isDarkMode ? Colors.green[900]! : Colors.green[100]!;
-        break;
-      case 'white':
-      default:
-        bgColor =
-            isDarkMode ? Theme.of(context).colorScheme.surface : Colors.white;
-    }
-
-    // Get text color based on theme
-    final textColor = Theme.of(context).textTheme.bodyMedium?.color ??
-        (isDarkMode ? AppColors.darkText : AppColors.lightText);
-
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: bgColor,
-        border: Border.all(
-            color: isDarkMode ? AppColors.darkDivider : AppColors.lightDivider),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        children: [
-          // Profile image
-          Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              image:
-                  userProfileImageUrl != null && userProfileImageUrl!.isNotEmpty
-                      ? DecorationImage(
-                          image: NetworkImage(userProfileImageUrl!),
-                          fit: BoxFit.cover,
-                        )
-                      : null,
-              color: isDarkMode ? Colors.grey[700] : Colors.grey[300],
-            ),
-            child: userProfileImageUrl == null || userProfileImageUrl!.isEmpty
-                ? Icon(
-                    Icons.person,
-                    color: isDarkMode ? Colors.grey[500] : Colors.grey[400],
-                    size: 30,
-                  )
-                : null,
-          ),
-          SizedBox(width: 12),
-
-          // User details
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (isPersonal)
-                  Text(
-                    userName.isNotEmpty ? userName : 'Your Name',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: textColor,
-                    ),
-                  ),
-                if (isBusinessProfile) // Business profile - show both name and company
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Company name first for business cards
-                      Text(
-                        companyName.isNotEmpty ? companyName : 'Company Name',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: textColor,
-                        ),
-                      ),
-                      SizedBox(height: 2),
-                      // Then person's name
-                      Text(
-                        userName.isNotEmpty ? userName : 'Your Name',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: textColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                if (userLocation.isNotEmpty)
-                  Text(
-                    userLocation,
-                    style: TextStyle(fontSize: 14, color: textColor),
-                  ),
-                if (userMobile.isNotEmpty)
-                  Text(
-                    userMobile,
-                    style: TextStyle(fontSize: 14, color: textColor),
-                  ),
-                // Only show social media and description for business profile
-                if (isBusinessProfile) ...[
-                  if (userSocialMedia.isNotEmpty)
-                    Text(
-                      userSocialMedia,
-                      style: TextStyle(
-                          fontSize: 14,
-                          color: Theme.of(context).colorScheme.primary),
-                    ),
-                  if (userDescription.isNotEmpty)
-                    Text(
-                      userDescription,
-                      style: TextStyle(fontSize: 14, color: textColor),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ),
+    // Set up painter settings
+    _painterController.freeStyleSettings = const FreeStyleSettings(
+      color: Colors.red,
+      strokeWidth: 5,
+      mode: FreeStyleMode.draw,
     );
+
+    // Use concrete shape factories instead of the abstract ShapeFactory
+    _painterController.shapeSettings = ShapeSettings(
+      paint: Paint()
+        ..color = Colors.blue
+        ..strokeWidth = 5
+        ..style = PaintingStyle.stroke,
+      factory: LineFactory(), // Use LineFactory as the default
+    );
+
+    // Initialize quill controller
+    _quillController = quill.QuillController.basic();
+
+    // Load the selected image
+    _loadImageFromFile(widget.imageFile);
   }
 
-  Future<Uint8List?> _captureImageWithInfoBox() async {
+  Future<void> _loadImageFromFile(File file) async {
     try {
-      final RenderRepaintBoundary boundary = imageContainerKey.currentContext!
+      // Read file as bytes
+      final bytes = await file.readAsBytes();
+
+      // Keep original for reset
+      _originalImageBytes = Uint8List.fromList(bytes);
+
+      // Decode image
+      final codec = await ui.instantiateImageCodec(bytes);
+      final frameInfo = await codec.getNextFrame();
+      final image = frameInfo.image;
+
+      setState(() {
+        _image = image;
+        _imageBytes = bytes;
+        _imageSize = Size(image.width.toDouble(), image.height.toDouble());
+        _imageLoaded = true;
+      });
+
+      // Set the image as background for painter
+      _painterController.background = image.backgroundDrawable;
+    } catch (e) {
+      print('Error loading image: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error loading image: $e')),
+        );
+      }
+    }
+  }
+
+  void _handleTabChange() {
+    setState(() {
+      switch (_tabController.index) {
+        case 0:
+          _currentMode = EditingMode.filter;
+          break;
+        case 1:
+          _currentMode = EditingMode.draw;
+          break;
+        case 2:
+          _currentMode = EditingMode.text;
+          break;
+        case 3:
+          _currentMode = EditingMode.crop;
+          break;
+      }
+    });
+  }
+
+  // Capture the current filtered image
+  Future<Uint8List?> _captureFilteredImage() async {
+    try {
+      final RenderRepaintBoundary boundary = _filterPreviewKey.currentContext!
           .findRenderObject() as RenderRepaintBoundary;
       final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
       final ByteData? byteData =
-          await image.toByteData(format: ui.ImageByteFormat.png);
+      await image.toByteData(format: ui.ImageByteFormat.png);
 
       if (byteData != null) {
         return byteData.buffer.asUint8List();
       }
       return null;
     } catch (e) {
-      print('Error capturing image with info box: $e');
+      print('Error capturing filtered image: $e');
       return null;
     }
   }
 
-  // In EditScreen class
-  Future<void> _captureFullImage() async {
-    // First ensure the widget has been rendered
-    await Future.delayed(Duration(milliseconds: 500));
+  CSSFilterMatrix _getCurrentFilterMatrix() {
+    return CSSFilterMatrix()
+        .brightness(_brightnessValue)
+        .contrast(_contrastValue)
+        .saturate(_saturationValue)
+        .sepia(_sepiaValue)
+        .hueRotate(_hueRotateValue)
+        .invert(_invertValue)
+        .opacity(_opacityValue)
+        .blur(_blurValue);
+  }
 
-    try {
-      RenderRepaintBoundary boundary = imageContainerKey.currentContext!
-          .findRenderObject() as RenderRepaintBoundary;
-
-      // Get the image with higher quality
-      ui.Image image = await boundary.toImage(pixelRatio: 3.0);
-      ByteData? byteData =
-          await image.toByteData(format: ui.ImageByteFormat.png);
-
-      if (byteData != null) {
-        setState(() {
-          imageData = byteData.buffer.asUint8List();
-        });
-      }
-    } catch (e) {
-      print('Error capturing image: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error capturing image with details')),
-      );
+  // Apply preset filter
+  Widget _applyPresetFilter(Widget child) {
+    switch (_selectedPreset) {
+      case 'None':
+        return child;
+      case '1977':
+        return CSSFilterPresets.ins1977(child: child);
+      case 'Aden':
+        return CSSFilterPresets.insAden(child: child);
+      case 'Amaro':
+        return CSSFilterPresets.insAmaro(child: child);
+      case 'Brannan':
+        return CSSFilterPresets.insBrannan(child: child);
+      case 'Clarendon':
+        return CSSFilterPresets.insClarendon(child: child);
+      case 'Gingham':
+        return CSSFilterPresets.insGingham(child: child);
+      case 'Hudson':
+        return CSSFilterPresets.insHudson(child: child);
+      case 'Inkwell':
+        return CSSFilterPresets.insInkwell(child: child);
+      case 'Lark':
+        return CSSFilterPresets.insLark(child: child);
+      case 'Lofi':
+        return CSSFilterPresets.insLofi(child: child);
+      case 'Nashville':
+        return CSSFilterPresets.insNashville(child: child);
+      case 'Rise':
+        return CSSFilterPresets.insRise(child: child);
+      case 'Toaster':
+        return CSSFilterPresets.insToaster(child: child);
+      case 'Willow':
+        return CSSFilterPresets.insWillow(child: child);
+      case 'Xpro2':
+        return CSSFilterPresets.insXpro2(child: child);
+      default:
+      // Custom filter using sliders
+        return CSSFilter.apply(
+          child: child,
+          value: _getCurrentFilterMatrix(),
+        );
     }
   }
 
-  void showNoImageSelectedDialog() {
-    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
-    final isDarkMode = themeProvider.isDarkMode;
+  Future<void> _exportImage() async {
+    if (!_imageLoaded || _image == null) return;
 
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: AppColors.getSurfaceColor(isDarkMode),
-          title: Text(
-            context.loc.noimageselected,
-            style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
-          ),
-          content: Text(
-            context.loc.selectimagefromgallery,
-            style:
-                TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode)),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text(
-                context.loc.ok,
-                style: TextStyle(color: AppColors.primaryBlue),
-              ),
-            ),
-          ],
+    try {
+      // Show loading indicator
+      _showLoadingDialog();
+
+      Uint8List? finalImageBytes;
+
+      if (_currentMode == EditingMode.filter) {
+        // For filter mode, capture the filtered image from the UI
+        finalImageBytes = await _captureFilteredImage();
+
+        if (finalImageBytes == null) {
+          throw Exception('Failed to capture filtered image');
+        }
+      } else {
+        // For other modes, render using painter controller
+        final size = _imageSize!;
+        final painterImage = await _painterController.renderImage(size);
+        finalImageBytes = await painterImage.pngBytes;
+      }
+
+      if (finalImageBytes != null) {
+        final tempDir = await getTemporaryDirectory();
+        final file = File('${tempDir.path}/edited_image.png');
+        await file.writeAsBytes(finalImageBytes);
+
+        // Hide loading dialog
+        if (mounted && Navigator.canPop(context)) {
+          Navigator.pop(context);
+        }
+
+        // Share the image
+        await Share.shareXFiles([XFile(file.path)], text: 'Edited image');
+      } else {
+        throw Exception('Failed to get image data');
+      }
+    } catch (e) {
+      print('Error exporting image: $e');
+
+      // Hide loading dialog
+      if (mounted && Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error exporting image: $e')),
         );
-      },
-    );
+      }
+    }
   }
 
-  // Helper method to show login required dialog
-  void _showLoginRequiredDialog() {
-    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
-    final isDarkMode = themeProvider.isDarkMode;
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: AppColors.getSurfaceColor(isDarkMode),
-          title: Text(
-            'Login Required',
-            style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
-          ),
-          content: Text(
-            'Please sign in to download images. This helps keep your downloads organized.',
-            style:
-                TextStyle(color: AppColors.getSecondaryTextColor(isDarkMode)),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text(
-                'OK',
-                style: TextStyle(color: AppColors.primaryBlue),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  // Helper method to show loading indicator
-  void _showLoadingIndicator() {
-    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
-    final isDarkMode = themeProvider.isDarkMode;
-
+  // Show loading dialog
+  void _showLoadingDialog() {
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
-        return Center(
-          child: CircularProgressIndicator(
-            color: AppColors.primaryBlue,
-            backgroundColor: AppColors.getSurfaceColor(isDarkMode),
-          ),
+        return const Center(
+          child: CircularProgressIndicator(),
         );
       },
     );
   }
 
-  // Helper method to hide loading indicator
-  void _hideLoadingIndicator() {
-    Navigator.of(context).pop();
-  }
-
-  Future<void> loadTemplateImage(String imageUrl) async {
-    setState(() {
-      isLoading = true;
-    });
+  Future<void> _saveImage() async {
+    if (!_imageLoaded || _image == null) return;
 
     try {
-      final http.Response response = await http.get(Uri.parse(imageUrl));
-      if (response.statusCode == 200) {
-        setState(() {
-          imageData = response.bodyBytes;
-          defaultImageLoaded = false;
-          isLoading = false;
-        });
+      // Show loading indicator
+      _showLoadingDialog();
+
+      Uint8List? finalImageBytes;
+
+      if (_currentMode == EditingMode.filter) {
+        // For filter mode, capture the filtered image from the UI
+        finalImageBytes = await _captureFilteredImage();
+
+        if (finalImageBytes == null) {
+          throw Exception('Failed to capture filtered image');
+        }
       } else {
-        throw Exception('Failed to load image');
+        // For other modes, render using painter controller
+        final size = _imageSize!;
+        final painterImage = await _painterController.renderImage(size);
+        finalImageBytes = await painterImage.pngBytes;
+      }
+
+      if (finalImageBytes != null) {
+        // Create a temporary file for both gallery saving and returning
+        final tempDir = await getTemporaryDirectory();
+        final file = File('${tempDir.path}/edited_image.png');
+        await file.writeAsBytes(finalImageBytes);
+
+        // Request permissions before saving to gallery
+        bool hasPermission = false;
+
+        if (Platform.isAndroid) {
+          // Request different permissions based on Android SDK version
+          final androidInfo = await DeviceInfoPlugin().androidInfo;
+          final sdkVersion = androidInfo.version.sdkInt;
+
+          if (sdkVersion >= 33) {
+            // Android 13+
+            hasPermission = await Permission.photos.isGranted;
+            if (!hasPermission) {
+              final status = await Permission.photos.request();
+              hasPermission = status.isGranted;
+            }
+          } else {
+            // Android 10-12 and below
+            hasPermission = await Permission.storage.isGranted;
+            if (!hasPermission) {
+              hasPermission = (await Permission.storage.request()).isGranted;
+            }
+          }
+        } else if (Platform.isIOS) {
+          // iOS typically doesn't need explicit permission for saving to gallery
+          hasPermission = true;
+        }
+
+        if (!hasPermission) {
+          if (mounted && Navigator.canPop(context)) {
+            Navigator.pop(context); // Close loading dialog
+          }
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                  content:
+                  Text("Storage permission is required to save images")),
+            );
+          }
+          return;
+        }
+
+        // Generate a unique filename based on timestamp
+        final timestamp = DateTime.now().millisecondsSinceEpoch;
+        final fileName = "Edited_${timestamp}.png";
+
+        // Save to gallery using ImageGallerySaverPlus
+        final result = await ImageGallerySaverPlus.saveImage(
+          finalImageBytes,
+          quality: 100,
+          name: fileName,
+        );
+
+        // Check if save was successful
+        bool isGallerySaveSuccess = false;
+        if (result is Map) {
+          isGallerySaveSuccess = result['isSuccess'] ?? false;
+        } else {
+          isGallerySaveSuccess = result != null;
+        }
+
+        // Hide loading dialog
+        if (mounted && Navigator.canPop(context)) {
+          Navigator.pop(context);
+        }
+
+        if (isGallerySaveSuccess) {
+          // Show success message
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                  content: Text('Image saved to gallery successfully')),
+            );
+          }
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Failed to save image to gallery')),
+            );
+          }
+        }
+
+        // Return to previous screen with the edited image
+        if (mounted) {
+          Navigator.pop(context, file); // Return the file to previous screen
+        }
       }
     } catch (e) {
-      print('Error loading template image: $e');
+      print('Error saving image: $e');
 
-      if (this.mounted) {
-        setState(() {
-          isLoading = false;
-        });
+      // Hide loading dialog
+      if (mounted && Navigator.canPop(context)) {
+        Navigator.pop(context);
       }
 
-      // Show error dialog
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Error loading template image"),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('Error saving image: $e')),
         );
       }
-    }
-  }
-
-  Future<void> shareImage() async {
-    // Check if there's an image to share
-    if (imageData == null) {
-      showNoImageSelectedDialog();
-      return;
-    }
-
-    _showLoadingIndicator();
-
-    try {
-      // Get user's subscription status
-      final templateService = TemplateService();
-      bool isPaidUser = await templateService.isUserSubscribed();
-
-      Uint8List finalImageData;
-
-      // For paid users with info box, capture the image with the info box
-      if (isPaidUser && showInfoBox) {
-        // This would capture the entire widget including info box
-        finalImageData = await _captureImageWithInfoBox() ?? imageData!;
-      } else {
-        // For free users or paid users without info box, use the raw image
-        finalImageData = imageData!;
-      }
-
-      _hideLoadingIndicator();
-
-      // Navigate to template sharing page with the appropriate image data
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => TemplateSharingPage(
-            // Use a timestamp to ensure uniqueness in the key
-            key: ValueKey(
-                "template_sharing_custom_${DateTime.now().millisecondsSinceEpoch}"),
-            template: QuoteTemplate(
-              id: 'custom',
-              imageUrl: widget.templateImageUrl ?? 'custom_image',
-              title: 'Custom Template',
-              category: '',
-              isPaid: false,
-              createdAt: DateTime.now(),
-            ),
-            userName: userName.isNotEmpty ? userName : 'User',
-            userProfileImageUrl: userProfileImageUrl ?? '',
-            isPaidUser: isPaidUser,
-            // Pass the custom image data to the sharing page
-            customImageData: finalImageData,
-          ),
-        ),
-      );
-    } catch (e) {
-      _hideLoadingIndicator();
-
-      // Show error dialog
-      if (context.mounted) {
-        final themeProvider =
-            Provider.of<ThemeProvider>(context, listen: false);
-        final isDarkMode = themeProvider.isDarkMode;
-
-        showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              backgroundColor: AppColors.getSurfaceColor(isDarkMode),
-              title: Text(
-                'Error',
-                style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
-              ),
-              content: Text(
-                'Failed to share image: ${e.toString()}',
-                style: TextStyle(
-                    color: AppColors.getSecondaryTextColor(isDarkMode)),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  child: Text(
-                    context.loc.ok,
-                    style: TextStyle(color: AppColors.primaryBlue),
-                  ),
-                ),
-              ],
-            );
-          },
-        );
-      }
-    }
-  }
-
-  Future<void> _showRatingDialog(BuildContext context) async {
-    double rating = 0;
-    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
-    final isDarkMode = themeProvider.isDarkMode;
-
-    return showDialog<double>(
-      context: context,
-      builder: (BuildContext dialogContext) {
-        return StatefulBuilder(builder: (context, setState) {
-          return AlertDialog(
-            backgroundColor: AppColors.getSurfaceColor(isDarkMode),
-            title: Text(
-              context.loc.rateThisContent,
-              style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  context.loc.howWouldYouRateExperience,
-                  style: TextStyle(
-                      color: AppColors.getSecondaryTextColor(isDarkMode)),
-                ),
-                SizedBox(height: 20),
-                FittedBox(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: List.generate(5, (index) {
-                      return IconButton(
-                        icon: Icon(
-                          index < rating ? Icons.star : Icons.star_border,
-                          color: index < rating
-                              ? Colors.amber
-                              : isDarkMode
-                                  ? Colors.grey[600]
-                                  : Colors.grey[400],
-                          size: 36,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            rating = index + 1;
-                          });
-                        },
-                      );
-                    }),
-                  ),
-                )
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(dialogContext).pop(null);
-                },
-                child: Text(
-                  context.loc.skip,
-                  style: TextStyle(color: AppColors.primaryBlue),
-                ),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.of(dialogContext).pop(rating); // Close the dialog
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(builder: (context) => MainScreen()),
-                    (route) => false,
-                  );
-                },
-                child: Text(
-                  context.loc.submit,
-                  style: TextStyle(color: AppColors.primaryBlue),
-                ),
-              ),
-            ],
-          );
-        });
-      },
-    ).then((value) {
-      if (value != null && value > 0) {
-        // Submit rating
-        _submitRating(value);
-
-        // Show thank you message
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Thanks for your rating!'),
-              backgroundColor: AppColors.primaryGreen,
-            ),
-          );
-        }
-      }
-    });
-  }
-
-// Add rating submission to Firebase
-  Future<void> _submitRating(double rating) async {
-    try {
-      final DateTime now = DateTime.now();
-      final User? currentUser = FirebaseAuth.instance.currentUser;
-
-      // Create a rating object
-      final Map<String, dynamic> ratingData = {
-        'templateId': widget.templateImageUrl != null
-            ? 'template_${DateTime.now().millisecondsSinceEpoch}'
-            : 'custom_${DateTime.now().millisecondsSinceEpoch}',
-        'rating': rating,
-        'createdAt': now, // Firestore will convert this to Timestamp
-        'imageUrl': widget.templateImageUrl ?? 'custom_image',
-        'title': widget.title,
-        'userId': currentUser?.uid ?? 'anonymous', // Get user ID if logged in
-        'userEmail': currentUser?.email ?? 'anonymous',
-        'isCustomTemplate': widget.templateImageUrl == null,
-      };
-
-      await FirebaseFirestore.instance
-          .collection('template_ratings')
-          .add(ratingData);
-
-      print('Rating submitted: $rating for template ${widget.title}');
-
-      // If this is a template from the library, update its average rating
-      if (widget.templateImageUrl != null) {
-        await _updateTemplateAverageRating(widget.templateImageUrl!, rating);
-      }
-    } catch (e) {
-      print('Error submitting rating: $e');
-    }
-  }
-
-  Future<void> _updateTemplateAverageRating(
-      String templateUrl, double newRating) async {
-    try {
-      // Extract template ID from URL if possible
-      String templateId = 'unknown';
-
-      // Try to parse template ID from URL or use something unique
-      if (templateUrl.contains('/')) {
-        templateId = templateUrl.split('/').last.split('.').first;
-      }
-
-      // Get reference to the template document
-      final templateRef =
-          FirebaseFirestore.instance.collection('templates').doc(templateId);
-
-      // Run this as a transaction to ensure data consistency
-      await FirebaseFirestore.instance.runTransaction((transaction) async {
-        // Get the current template data
-        final templateSnapshot = await transaction.get(templateRef);
-
-        if (templateSnapshot.exists) {
-          final data = templateSnapshot.data() as Map<String, dynamic>;
-
-          // Calculate the new average rating
-          double currentAvgRating = data['averageRating']?.toDouble() ?? 0.0;
-          int ratingCount = data['ratingCount'] ?? 0;
-
-          int newRatingCount = ratingCount + 1;
-          double newAvgRating =
-              ((currentAvgRating * ratingCount) + newRating) / newRatingCount;
-
-          // Update the template with the new average rating
-          transaction.update(templateRef, {
-            'averageRating': newAvgRating,
-            'ratingCount': newRatingCount,
-            'lastRated': FieldValue.serverTimestamp(),
-          });
-        } else {
-          // If the document doesn't exist, create it with initial rating data
-          transaction.set(templateRef, {
-            'averageRating': newRating,
-            'ratingCount': 1,
-            'lastRated': FieldValue.serverTimestamp(),
-            'templateUrl': templateUrl,
-          });
-        }
-      });
-
-      print('Updated template average rating successfully');
-    } catch (e) {
-      print('Error updating template average rating: $e');
-    }
-  }
-
-  Future<void> downloadImage() async {
-    if (imageData == null) {
-      showNoImageSelectedDialog();
-      return;
-    }
-
-    // Check if user is logged in
-    User? user = _auth.currentUser;
-    if (user == null) {
-      _showLoginRequiredDialog();
-      return;
-    }
-
-    _showLoadingIndicator();
-
-    try {
-      // Request proper permissions based on platform and Android version
-      bool hasPermission = false;
-
-      if (Platform.isAndroid) {
-        // Request different permissions based on Android SDK version
-        if (await _getAndroidVersion() >= 33) {
-          // Android 13+
-          hasPermission = await _requestAndroid13Permission();
-        } else if (await _getAndroidVersion() >= 29) {
-          // Android 10-12
-          hasPermission = await Permission.storage.isGranted;
-          if (!hasPermission) {
-            hasPermission = (await Permission.storage.request()).isGranted;
-          }
-        } else {
-          // Android 9 and below
-          hasPermission = await Permission.storage.isGranted;
-          if (!hasPermission) {
-            hasPermission = (await Permission.storage.request()).isGranted;
-          }
-        }
-      } else if (Platform.isIOS) {
-        // iOS typically doesn't need explicit permission for saving to gallery
-        hasPermission = true;
-      }
-
-      if (!hasPermission) {
-        _hideLoadingIndicator();
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text("Storage permission is required to save images")));
-        return;
-      }
-
-      // Generate a unique filename based on timestamp
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final fileName = "Vaky_${timestamp}.jpg";
-
-      // Save to gallery
-      final result = await ImageGallerySaverPlus.saveImage(
-        imageData!,
-        quality: 100,
-        name: fileName,
-      );
-
-      // Check if save was successful
-      bool isGallerySaveSuccess = false;
-      if (result is Map) {
-        isGallerySaveSuccess = result['isSuccess'] ?? false;
-      } else {
-        isGallerySaveSuccess = result != null;
-      }
-
-      if (!isGallerySaveSuccess) {
-        throw Exception("Failed to save image to gallery");
-      }
-
-      // 2. Also save to user-specific directory for Files screen
-      String userDirPath = await _getUserSpecificDirectoryPath();
-      String filePath = '$userDirPath/$fileName';
-
-      File file = File(filePath);
-      await file.writeAsBytes(imageData!);
-
-      // Keep track of saved images in Firestore
-      await _trackSavedImage(fileName);
-
-      _hideLoadingIndicator();
-
-      // Show success message
-      final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
-      final isDarkMode = themeProvider.isDarkMode;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Image saved to your gallery and downloads"),
-          duration: Duration(seconds: 3),
-          backgroundColor: isDarkMode
-              ? AppColors.primaryGreen.withOpacity(0.7)
-              : AppColors.primaryGreen,
-          action: SnackBarAction(
-            label: 'VIEW ALL',
-            textColor: Colors.white,
-            onPressed: () {
-              // Navigate to FilesPage
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => FilesPage(),
-                ),
-              );
-            },
-          ),
-        ),
-      );
-
-      print("Image saved to gallery and user directory: $fileName");
-    } catch (e) {
-      _hideLoadingIndicator();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error saving image: $e")),
-      );
-      print("Error saving image: $e");
-    }
-  }
-
-// Get Android version as an integer (e.g., 29 for Android 10)
-  Future<int> _getAndroidVersion() async {
-    if (Platform.isAndroid) {
-      try {
-        final androidInfo = await DeviceInfoPlugin().androidInfo;
-        return androidInfo.version.sdkInt;
-      } catch (e) {
-        print('Error getting Android version: $e');
-        return 0;
-      }
-    }
-    return 0;
-  }
-
-// Request permissions for Android 13+ (API level 33+)
-  Future<bool> _requestAndroid13Permission() async {
-    // Check if photos permission is already granted
-    bool photosGranted = await Permission.photos.isGranted;
-
-    if (!photosGranted) {
-      // Request photos permission
-      final status = await Permission.photos.request();
-      photosGranted = status.isGranted;
-    }
-
-    return photosGranted;
-  }
-
-// New helper method to track saved images in Firestore
-  Future<void> _trackSavedImage(String fileName) async {
-    try {
-      User? user = _auth.currentUser;
-      if (user?.email == null) return;
-
-      String userEmail = user!.email!.replaceAll('.', '_');
-
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(userEmail)
-          .collection('saved_images')
-          .add({
-        'fileName': fileName,
-        'savedAt': FieldValue.serverTimestamp(),
-        'imageType': widget.templateImageUrl != null ? 'template' : 'custom',
-        'templateId': widget.templateImageUrl ?? 'none',
-        'templateTitle': widget.title,
-      });
-    } catch (e) {
-      print('Error tracking saved image: $e');
-      // Continue even if tracking fails - the image is still saved to gallery
-    }
-  }
-
-  Future<void> pickImageFromGallery() async {
-    _showLoadingIndicator();
-
-    try {
-      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-
-      _hideLoadingIndicator();
-
-      if (image != null) {
-        // Show loading indicator for file reading
-        _showLoadingIndicator();
-        try {
-          final File file = File(image.path);
-          final Uint8List bytes = await file.readAsBytes();
-
-          // Store the original image path
-          originalImagePath = image.path;
-
-          _hideLoadingIndicator();
-
-          setState(() {
-            imageData = bytes;
-            defaultImageLoaded = false;
-          });
-        } catch (e) {
-          _hideLoadingIndicator();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Error reading image: $e")),
-          );
-        }
-      }
-    } catch (e) {
-      _hideLoadingIndicator();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error picking image: $e")),
-      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
-    final isDarkMode = themeProvider.isDarkMode;
-    final textColor = AppColors.getTextColor(isDarkMode);
-    final backgroundColor = AppColors.getBackgroundColor(isDarkMode);
-    final surfaceColor = AppColors.getSurfaceColor(isDarkMode);
-    final borderColor = AppColors.getDividerColor(isDarkMode);
-    final primaryColor = AppColors.primaryBlue;
-
-    return Scaffold(
-      backgroundColor: backgroundColor,
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        backgroundColor: backgroundColor,
-        elevation: 0,
-        title: Row(
-          children: [
-            OutlinedButton(
-              style: OutlinedButton.styleFrom(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                side: BorderSide(color: borderColor),
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              ),
-              onPressed: () {
-                //   Navigator.push(
-                //       context,
-                //       MaterialPageRoute(
-                //         builder: (context) => MainScreen(),
-                //       ));
-                Navigator.pop(context);
-              },
-              child: Text(
-                context.loc.cancel,
-                style: TextStyle(color: textColor, fontSize: 16),
-              ),
+    return WillPopScope(
+      // Handle back button press
+      onWillPop: () async {
+        // Clean up before navigating back
+        _cleanupQuillResources();
+        return true;
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Edit Image'),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios),
+            onPressed: () {
+              // Clean up before navigating back
+              _cleanupQuillResources();
+              Navigator.of(context).pop();
+            },
+          ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.download),
+              onPressed: _saveImage,
+              tooltip: 'Download',
             ),
-            Spacer(),
             IconButton(
               icon: SvgPicture.asset(
                 'assets/icons/share.svg',
-                colorFilter: ColorFilter.mode(primaryColor, BlendMode.srcIn),
-                width: 24, // Adjust size as needed
-                height: 24, // Adjust size as needed
+                height: 24,
+                width: 24,
               ),
-              onPressed: shareImage,
+              onPressed: _exportImage,
+              tooltip: 'Share',
             ),
-            TextButton(
-              onPressed: downloadImage,
-              child: Text(context.loc.downloads,
-                  style: TextStyle(color: textColor)),
+          ],
+          bottom: TabBar(
+            controller: _tabController,
+            tabs: const [
+              Tab(icon: Icon(Icons.filter), text: 'Filters'),
+              Tab(icon: Icon(Icons.brush), text: 'Draw'),
+              Tab(icon: Icon(Icons.text_fields), text: 'Text'),
+              Tab(icon: Icon(Icons.crop), text: 'Adjust'),
+            ],
+          ),
+        ),
+        body: Column(
+          children: [
+            // Image preview area
+            Expanded(
+              flex: 3,
+              child: _buildImagePreview(),
+            ),
+
+            // Editing controls
+            Expanded(
+              flex: 1,
+              child: _buildControlsForCurrentMode(),
             ),
           ],
         ),
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
+    );
+  }
+
+  // Helper method to clean up Quill resources
+  void _cleanupQuillResources() {
+    try {
+      // Dispose of any Quill resources if needed
+      _quillController.dispose();
+
+      // Create a fresh controller for next time
+      _quillController = quill.QuillController.basic();
+    } catch (e) {
+      print('Error cleaning up Quill resources: $e');
+    }
+  }
+
+  Widget _buildImagePreview() {
+    if (!_imageLoaded || _image == null || _imageBytes == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    switch (_currentMode) {
+      case EditingMode.filter:
+      // For filter mode, use CSS Filter with RepaintBoundary for capturing
+        return Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: RepaintBoundary(
+            key: _filterPreviewKey,
+            child: _selectedPreset == 'None' && _areDefaultFilterValues()
+                ? Image.memory(
+              _imageBytes!,
+              fit: BoxFit.contain,
+            )
+                : _applyPresetFilter(
+              Image.memory(
+                _imageBytes!,
+                fit: BoxFit.contain,
+              ),
+            ),
+          ),
+        );
+      case EditingMode.draw:
+      case EditingMode.text:
+      case EditingMode.crop:
+      // For drawing, text, and crop modes, use FlutterPainter
+        return ClipRect(
+          child: FlutterPainter(
+            controller: _painterController,
+            onDrawableCreated: (drawable) {
+              // Drawable created callback
+            },
+            onSelectedObjectDrawableChanged: (selectedDrawable) {
+              // Selected drawable changed callback
+            },
+          ),
+        );
+    }
+  }
+
+  // Check if all filter values are at their defaults
+  bool _areDefaultFilterValues() {
+    return _brightnessValue == 1.0 &&
+        _contrastValue == 1.0 &&
+        _saturationValue == 1.0 &&
+        _sepiaValue == 0.0 &&
+        _hueRotateValue == 0.0 &&
+        _invertValue == 0.0 &&
+        _opacityValue == 1.0 &&
+        _blurValue == 0.0;
+  }
+
+  Widget _buildControlsForCurrentMode() {
+    switch (_currentMode) {
+      case EditingMode.filter:
+        return _buildFilterControls();
+      case EditingMode.draw:
+        return _buildDrawControls();
+      case EditingMode.text:
+        return _buildTextControls();
+      case EditingMode.crop:
+        return _buildCropControls();
+    }
+  }
+
+  Widget _buildFilterControls() {
+    // First, show preset filters in a horizontal scrollable list
+    return Column(
+      children: [
+        // Preset filters
+        Container(
+          height: 50,
+          margin: const EdgeInsets.symmetric(vertical: 8.0),
+          child: ListView(
+            scrollDirection: Axis.horizontal,
             children: [
-              if (isLoading)
-                Container(
-                  height: 400,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: borderColor),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Center(
-                    child: CircularProgressIndicator(
-                      color: primaryColor,
-                      backgroundColor: surfaceColor,
-                    ),
-                  ),
-                )
-              else
-                imageData == null
-                    ? GestureDetector(
-                        onTap: pickImageFromGallery,
-                        child: Container(
-                          height: 400,
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                                color: borderColor, style: BorderStyle.solid),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Container(
-                                width: 80,
-                                height: 80,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: isDarkMode
-                                      ? Colors.grey[700]
-                                      : Colors.grey[300],
-                                ),
-                                child: Icon(
-                                  Icons.add,
-                                  size: 40,
-                                  color: isDarkMode
-                                      ? Colors.grey[500]
-                                      : Colors.grey[400],
-                                ),
-                              ),
-                              SizedBox(height: 16),
-                              Text(
-                                context.loc.taptoupload,
-                                style: TextStyle(
-                                  color: isDarkMode
-                                      ? Colors.grey[400]
-                                      : Colors.grey[600],
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      )
-                    : RepaintBoundary(
-                        key: imageContainerKey,
-                        child: Column(
-                          children: [
-                            Image.memory(imageData!),
-                            if (showInfoBox && isPaidUser) _buildInfoBox(),
-                          ],
-                        ),
+              _buildPresetFilterOption('None'),
+              _buildPresetFilterOption('1977'),
+              _buildPresetFilterOption('Aden'),
+              _buildPresetFilterOption('Amaro'),
+              _buildPresetFilterOption('Brannan'),
+              _buildPresetFilterOption('Clarendon'),
+              _buildPresetFilterOption('Gingham'),
+              _buildPresetFilterOption('Hudson'),
+              _buildPresetFilterOption('Inkwell'),
+              _buildPresetFilterOption('Lark'),
+              _buildPresetFilterOption('Lofi'),
+              _buildPresetFilterOption('Nashville'),
+              _buildPresetFilterOption('Rise'),
+              _buildPresetFilterOption('Toaster'),
+              _buildPresetFilterOption('Willow'),
+              _buildPresetFilterOption('Xpro2'),
+            ],
+          ),
+        ),
+
+        // Manual filter controls
+        Expanded(
+          child: _selectedPreset == 'None'
+              ? SingleChildScrollView(
+            child: Column(
+              children: [
+                _buildFilterSlider(
+                  'Brightness',
+                  _brightnessValue,
+                  0.0,
+                  2.0,
+                      (value) {
+                    setState(() {
+                      _brightnessValue = value;
+                    });
+                  },
+                ),
+                _buildFilterSlider(
+                  'Contrast',
+                  _contrastValue,
+                  0.0,
+                  2.0,
+                      (value) {
+                    setState(() {
+                      _contrastValue = value;
+                    });
+                  },
+                ),
+                _buildFilterSlider(
+                  'Saturation',
+                  _saturationValue,
+                  0.0,
+                  2.0,
+                      (value) {
+                    setState(() {
+                      _saturationValue = value;
+                    });
+                  },
+                ),
+              ],
+            ),
+          )
+              : const Center(
+            child: Text(
+                'Preset filter applied. Select "None" to use manual controls.'),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFilterSlider(String label, double value, double min, double max,
+      ValueChanged<double> onChanged) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+      child: Row(
+        children: [
+          SizedBox(width: 100, child: Text(label)),
+          Expanded(
+            child: Slider(
+              value: value,
+              min: min,
+              max: max,
+              onChanged: onChanged,
+            ),
+          ),
+          SizedBox(
+            width: 40,
+            child: Text(value.toStringAsFixed(1)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPresetFilterOption(String presetName) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      child: ChoiceChip(
+        label: Text(presetName),
+        selected: _selectedPreset == presetName,
+        onSelected: (selected) {
+          if (selected) {
+            setState(() {
+              _selectedPreset = presetName;
+
+              // Reset manual filter values when selecting a preset
+              if (presetName != 'None') {
+                _brightnessValue = 1.0;
+                _contrastValue = 1.0;
+                _saturationValue = 1.0;
+                _sepiaValue = 0.0;
+                _hueRotateValue = 0.0;
+                _invertValue = 0.0;
+                _opacityValue = 1.0;
+                _blurValue = 0.0;
+              }
+            });
+          }
+        },
+      ),
+    );
+  }
+
+  Widget _buildDrawControls() {
+    final freeStyleSettings = _painterController.freeStyleSettings;
+    final shapeSettings = _painterController.shapeSettings;
+
+    return ListView(
+      scrollDirection: Axis.horizontal,
+      children: [
+        // Color picker
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: CircleAvatar(
+            backgroundColor: freeStyleSettings.color ?? Colors.red,
+            child: IconButton(
+              icon: const Icon(Icons.color_lens, color: Colors.white),
+              onPressed: () {
+                // Show color picker
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Pick a color'),
+                    content: SingleChildScrollView(
+                      child: ColorPicker(
+                        pickerColor: freeStyleSettings.color ?? Colors.red,
+                        onColorChanged: (color) {
+                          setState(() {
+                            _painterController.freeStyleSettings =
+                                freeStyleSettings.copyWith(
+                                  color: color,
+                                );
+
+                            // Also update shape color
+                            final paint = shapeSettings.paint!.copyWith()
+                              ..color = color;
+                            _painterController.shapeSettings =
+                                shapeSettings.copyWith(
+                                  paint: paint,
+                                );
+                          });
+                        },
                       ),
-              SizedBox(height: 100),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  ElevatedButton.icon(
-                    onPressed: pickImageFromGallery,
-                    icon: Icon(
-                      Icons.photo_library,
-                      color: Colors.white,
                     ),
-                    label: Text(context.loc.changeimage),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: primaryColor,
-                      foregroundColor: Colors.white,
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: const Text('Done'),
+                      ),
+                    ],
                   ),
-                  ElevatedButton.icon(
-                    onPressed: () async {
-                      if (imageData == null) {
-                        showNoImageSelectedDialog();
-                      } else {
-                        _showLoadingIndicator();
+                );
+              },
+            ),
+          ),
+        ),
 
-                        try {
-                          var editedImage = await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ImageEditor(
-                                image: imageData,
-                          
-                              ),
-                            ),
+        // Controls column with width and mode
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Width label and slider
+              const Text('Width'),
+              SizedBox(
+                width: 200, // Adjust width as needed
+                child: Slider(
+                  value: freeStyleSettings.strokeWidth,
+                  min: 1,
+                  max: 20,
+                  onChanged: (value) {
+                    setState(() {
+                      _painterController.freeStyleSettings =
+                          freeStyleSettings.copyWith(
+                            strokeWidth: value,
                           );
 
-                          _hideLoadingIndicator();
+                      // Also update shape stroke width
+                      final paint = shapeSettings.paint!.copyWith()
+                        ..strokeWidth = value;
+                      _painterController.shapeSettings = shapeSettings.copyWith(
+                        paint: paint,
+                      );
+                    });
+                  },
+                ),
+              ),
 
-                          if (editedImage != null) {
-                            setState(() {
-                              imageData = editedImage;
-                            });
-                          }
-                        } catch (e) {
-                          _hideLoadingIndicator();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text("Error editing image: $e")),
-                          );
-                        }
-                      }
+              // Small space between slider and modes
+              const SizedBox(height: 8),
+
+              // Modes label
+              const Text('Mode'),
+
+              // Drawing mode row
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.rectangle_outlined),
+                    color: _painterController.shapeSettings.factory
+                    is RectangleFactory
+                        ? Colors.blue
+                        : Colors.grey,
+                    onPressed: () {
+                      setState(() {
+                        _painterController.freeStyleSettings =
+                            freeStyleSettings.copyWith(
+                              mode: FreeStyleMode.none,
+                            );
+                        _painterController.shapeSettings =
+                            shapeSettings.copyWith(
+                              factory: RectangleFactory(),
+                            );
+                      });
                     },
-                    icon: Icon(
-                      Icons.edit,
-                      color: Colors.white,
-                    ),
-                    label: Text(context.loc.editimage),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: primaryColor,
-                      foregroundColor: Colors.white,
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 21, vertical: 12),
-                    ),
+                    tooltip: 'Rectangle',
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.circle_outlined),
+                    color:
+                    _painterController.shapeSettings.factory is OvalFactory
+                        ? Colors.blue
+                        : Colors.grey,
+                    onPressed: () {
+                      setState(() {
+                        _painterController.freeStyleSettings =
+                            freeStyleSettings.copyWith(
+                              mode: FreeStyleMode.none,
+                            );
+                        _painterController.shapeSettings =
+                            shapeSettings.copyWith(
+                              factory: OvalFactory(),
+                            );
+                      });
+                    },
+                    tooltip: 'Oval',
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.brush),
+                    color: freeStyleSettings.mode == FreeStyleMode.draw
+                        ? Colors.blue
+                        : Colors.grey,
+                    onPressed: () {
+                      setState(() {
+                        _painterController.freeStyleSettings =
+                            freeStyleSettings.copyWith(
+                              mode: FreeStyleMode.draw,
+                            );
+                      });
+                    },
+                    tooltip: 'Free Draw',
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.arrow_forward),
+                    color:
+                    _painterController.shapeSettings.factory is ArrowFactory
+                        ? Colors.blue
+                        : Colors.grey,
+                    onPressed: () {
+                      setState(() {
+                        _painterController.freeStyleSettings =
+                            freeStyleSettings.copyWith(
+                              mode: FreeStyleMode.none,
+                            );
+                        _painterController.shapeSettings =
+                            shapeSettings.copyWith(
+                              factory: ArrowFactory(),
+                            );
+                      });
+                    },
+                    tooltip: 'Arrow',
                   ),
                 ],
               ),
             ],
           ),
         ),
+
+        // Eraser
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const SizedBox(height: 24), // Align with other controls
+              IconButton(
+                icon: const Icon(Icons.auto_fix_normal),
+                iconSize: 28,
+                color: freeStyleSettings.mode == FreeStyleMode.erase
+                    ? Colors.red
+                    : Colors.grey,
+                onPressed: () {
+                  setState(() {
+                    _painterController.freeStyleSettings =
+                        freeStyleSettings.copyWith(
+                          mode: FreeStyleMode.erase,
+                        );
+                  });
+                },
+                tooltip: 'Eraser',
+              ),
+              const Text('Eraser', style: TextStyle(fontSize: 12)),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTextControls() {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Column(
+        children: [
+      Expanded(
+      child: Center(
+      child: Text(
+        'Advanced text editing available',
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+        ),
       ),
+    ),
+    ),
+
+    // Button to launch the text editor
+    ElevatedButton.icon(
+    onPressed: () async {
+    // If we don't have an image, we can't add text
+    if (_image == null || _imageBytes == null) return;
+
+    try {
+    // Show loading indicator
+    _showLoadingDialog();
+
+    Uint8List? imageToEdit;
+
+    if (_currentMode == EditingMode.filter &&
+        (_selectedPreset != 'None' || !_areDefaultFilterValues())) {
+      // For filter mode with active filters, capture the filtered image
+      imageToEdit = await _captureFilteredImage();
+      if (imageToEdit == null) {
+        throw Exception(
+            'Failed to capture filtered image for text editing');
+      }
+    } else {
+      // For other modes or no filter applied, use the current image
+      final size = _imageSize!;
+      final renderedImage =
+      await _painterController.renderImage(size);
+      imageToEdit = await renderedImage.pngBytes;
+
+      if (imageToEdit == null) {
+        throw Exception('Failed to get image data for text editor');
+      }
+    }
+
+    // Close the loading dialog
+    if (mounted && Navigator.canPop(context)) {
+      Navigator.pop(context);
+    }
+
+    // Launch the image editor with only text editing enabled
+    final editedImageBytes = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ImageEditor(
+          image: imageToEdit,
+          // Disable other features by setting their options to null
+          blurOption: null,
+          flipOption: null,
+          brushOption: null,
+          rotateOption: null,
+          filtersOption: null,
+        ),
+      ),
+    );
+
+    // If the user edited the image, update it
+    if (editedImageBytes != null) {
+      // Show loading indicator again
+      _showLoadingDialog();
+
+      // Decode the edited image
+      final codec =
+      await ui.instantiateImageCodec(editedImageBytes);
+      final frameInfo = await codec.getNextFrame();
+      final editedImage = frameInfo.image;
+
+      // Update the state
+      setState(() {
+        _image = editedImage;
+        _imageBytes = editedImageBytes;
+        _imageSize = Size(editedImage.width.toDouble(),
+            editedImage.height.toDouble());
+        _painterController.background =
+            editedImage.backgroundDrawable;
+
+        // Reset filters since they're now baked into the image
+        if (_currentMode == EditingMode.filter) {
+          _selectedPreset = 'None';
+          _brightnessValue = 1.0;
+          _contrastValue = 1.0;
+          _saturationValue = 1.0;
+          _sepiaValue = 0.0;
+          _hueRotateValue = 0.0;
+          _invertValue = 0.0;
+          _opacityValue = 1.0;
+          _blurValue = 0.0;
+        }
+      });
+
+      // Close loading dialog
+      if (mounted && Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Text added successfully')),
+        );
+      }
+    }
+    } catch (e) {
+      print('Error using text editor: $e');
+
+      // Make sure the loading dialog is closed
+      if (mounted && Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error adding text: $e')),
+        );
+      }
+    }
+    },
+      icon: const Icon(Icons.text_fields),
+      label: const Text('Add Text with Advanced Editor'),
+    ),
+        ],
+      ),
+    );
+  }
+
+  // Crop controls with actual working rotate and flip functions
+  Widget _buildCropControls() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        // Rotate left
+        IconButton(
+          icon: const Icon(Icons.rotate_left),
+          onPressed: () => _rotateImage(-90),
+          tooltip: 'Rotate Left',
+        ),
+
+        // Rotate right
+        IconButton(
+          icon: const Icon(Icons.rotate_right),
+          onPressed: () => _rotateImage(90),
+          tooltip: 'Rotate Right',
+        ),
+
+        // Flip horizontally
+        IconButton(
+          icon: const Icon(Icons.flip),
+          onPressed: () => _flipImage(FlipDirection.horizontal),
+          tooltip: 'Flip Horizontally',
+        ),
+
+        // Flip vertically
+        IconButton(
+          icon: Transform.rotate(
+            angle: 1.5708, // 90 degrees in radians
+            child: const Icon(Icons.flip),
+          ),
+          onPressed: () => _flipImage(FlipDirection.vertical),
+          tooltip: 'Flip Vertically',
+        ),
+
+        // Reset transformations
+        TextButton.icon(
+          icon: const Icon(Icons.refresh),
+          label: const Text('Reset'),
+          onPressed: _resetTransformations,
+        ),
+      ],
+    );
+  }
+
+  // Actual image rotation function
+  void _rotateImage(double degrees) async {
+    if (_image == null || _imageBytes == null) return;
+
+    try {
+      // Show loading indicator
+      _showLoadingDialog();
+
+      // Update rotation state
+      setState(() {
+        _rotationDegrees = (_rotationDegrees + degrees.toInt()) % 360;
+        if (_rotationDegrees < 0) _rotationDegrees += 360;
+      });
+
+      // Decode the image
+      final img.Image? decodedImage = img.decodeImage(_imageBytes!);
+      if (decodedImage == null) {
+        if (mounted && Navigator.canPop(context)) {
+          Navigator.pop(context); // Close loading dialog
+        }
+        throw Exception('Failed to decode image for rotation');
+      }
+
+      // Apply rotation
+      img.Image rotatedImage;
+      if (degrees == 90) {
+        rotatedImage = img.copyRotate(decodedImage, angle: 90);
+      } else if (degrees == -90) {
+        rotatedImage = img.copyRotate(decodedImage, angle: 270);
+      } else {
+        rotatedImage = decodedImage;
+      }
+
+      // Apply existing flip transformations if any
+      if (_isImageFlippedHorizontally) {
+        rotatedImage = img.flipHorizontal(rotatedImage);
+      }
+      if (_isImageFlippedVertically) {
+        rotatedImage = img.flipVertical(rotatedImage);
+      }
+
+      // Convert back to bytes
+      final Uint8List rotatedBytes =
+      Uint8List.fromList(img.encodePng(rotatedImage));
+
+      // Update the image
+      final codec = await ui.instantiateImageCodec(rotatedBytes);
+      final frameInfo = await codec.getNextFrame();
+      final rotatedUiImage = frameInfo.image;
+
+      // Update state
+      setState(() {
+        _image = rotatedUiImage;
+        _imageBytes = rotatedBytes;
+        _imageSize = Size(
+            rotatedUiImage.width.toDouble(), rotatedUiImage.height.toDouble());
+      });
+
+      // Update painter background
+      _painterController.background = rotatedUiImage.backgroundDrawable;
+
+      // Close loading dialog
+      if (mounted && Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('Image rotated by ${degrees.toInt()} degrees')),
+        );
+      }
+    } catch (e) {
+      print('Error rotating image: $e');
+      if (mounted && Navigator.canPop(context)) {
+        Navigator.pop(context); // Close loading dialog
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error rotating image: $e')),
+        );
+      }
+    }
+  }
+
+  // Actual image flipping function
+  void _flipImage(FlipDirection direction) async {
+    if (_image == null || _imageBytes == null) return;
+
+    try {
+      // Show loading indicator
+      _showLoadingDialog();
+
+      // Update flip state
+      setState(() {
+        if (direction == FlipDirection.horizontal) {
+          _isImageFlippedHorizontally = !_isImageFlippedHorizontally;
+        } else {
+          _isImageFlippedVertically = !_isImageFlippedVertically;
+        }
+      });
+
+      // Decode the image
+      final img.Image? decodedImage = img.decodeImage(_imageBytes!);
+      if (decodedImage == null) {
+        if (mounted && Navigator.canPop(context)) {
+          Navigator.pop(context); // Close loading dialog
+        }
+        throw Exception('Failed to decode image for flipping');
+      }
+
+      // Apply flip
+      img.Image flippedImage;
+      if (direction == FlipDirection.horizontal) {
+        flippedImage = img.flipHorizontal(decodedImage);
+      } else {
+        flippedImage = img.flipVertical(decodedImage);
+      }
+
+      // Convert back to bytes
+      final Uint8List flippedBytes =
+      Uint8List.fromList(img.encodePng(flippedImage));
+
+      // Update the image
+      final codec = await ui.instantiateImageCodec(flippedBytes);
+      final frameInfo = await codec.getNextFrame();
+      final flippedUiImage = frameInfo.image;
+
+      // Update state
+      setState(() {
+        _image = flippedUiImage;
+        _imageBytes = flippedBytes;
+      });
+
+      // Update painter background
+      _painterController.background = flippedUiImage.backgroundDrawable;
+
+      // Close loading dialog
+      if (mounted && Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                'Image flipped ${direction == FlipDirection.horizontal ? 'horizontally' : 'vertically'}'),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error flipping image: $e');
+      if (mounted && Navigator.canPop(context)) {
+        Navigator.pop(context); // Close loading dialog
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error flipping image: $e')),
+        );
+      }
+    }
+  }
+
+  // Actual image reset function
+  void _resetTransformations() async {
+    if (_originalImageBytes == null) return;
+
+    try {
+      // Show loading indicator
+      _showLoadingDialog();
+
+      // Reset transformation state
+      setState(() {
+        _rotationDegrees = 0;
+        _isImageFlippedHorizontally = false;
+        _isImageFlippedVertically = false;
+      });
+
+      // Reset image to original
+      final codec = await ui.instantiateImageCodec(_originalImageBytes!);
+      final frameInfo = await codec.getNextFrame();
+      final originalImage = frameInfo.image;
+
+      // Update state
+      setState(() {
+        _image = originalImage;
+        _imageBytes = _originalImageBytes;
+        _imageSize = Size(
+            originalImage.width.toDouble(), originalImage.height.toDouble());
+      });
+
+      // Update painter background
+      _painterController.background = originalImage.backgroundDrawable;
+
+      // Close loading dialog
+      if (mounted && Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Image transformations reset')),
+        );
+      }
+    } catch (e) {
+      print('Error resetting image: $e');
+      if (mounted && Navigator.canPop(context)) {
+        Navigator.pop(context); // Close loading dialog
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error resetting image: $e')),
+        );
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    // Clean up resources
+    _cleanupQuillResources();
+    _tabController.dispose();
+    _painterController.dispose();
+    _image?.dispose();
+    super.dispose();
+  }
+}
+
+enum EditingMode {
+  filter,
+  draw,
+  text,
+  crop,
+}
+
+enum FlipDirection {
+  horizontal,
+  vertical,
+}
+
+// Custom color picker widget - simplified version
+class ColorPicker extends StatelessWidget {
+  final Color pickerColor;
+  final ValueChanged<Color> onColorChanged;
+
+  const ColorPicker({
+    super.key,
+    required this.pickerColor,
+    required this.onColorChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Color preview
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: pickerColor,
+            border: Border.all(color: Colors.grey),
+            borderRadius: BorderRadius.circular(20),
+          ),
+        ),
+        const SizedBox(height: 10),
+
+        // Color options grid
+        GridView.builder(
+          shrinkWrap: true,
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 5,
+            mainAxisSpacing: 8,
+            crossAxisSpacing: 8,
+            childAspectRatio: 1,
+          ),
+          itemCount: Colors.primaries.length,
+          itemBuilder: (context, index) {
+            return InkWell(
+              onTap: () => onColorChanged(Colors.primaries[index]),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.primaries[index],
+                  border: Border.all(
+                    color: Colors.grey.shade300,
+                    width: 1,
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            );
+          },
+        ),
+      ],
     );
   }
 }

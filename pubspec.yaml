@@ -88,6 +88,10 @@ dependencies:
   syncfusion_flutter_pdfviewer: ^29.1.38
   flutter_native_splash: ^2.4.6
   dio: ^5.8.0+1
+  flutter_quill: ^11.4.0
+  flutter_painter_v2: ^2.1.0+1
+  flutter_image_filters: ^0.0.26
+  css_filter: ^1.0.3
 
 
 flutter_native_splash:

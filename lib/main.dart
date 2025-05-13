@@ -1,8 +1,12 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_quill/flutter_quill.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mtquotes/providers/text_size_provider.dart';
 import 'package:mtquotes/screens/Auth_Screen/Login_Screen/login_screen.dart';
 import 'package:mtquotes/screens/Create_Screen/components/details_screen.dart';
+import 'package:mtquotes/screens/Create_Screen/edit_screen_create.dart';
 import 'package:mtquotes/screens/Templates/components/template/quote_template.dart';
 import 'package:mtquotes/screens/Payment_Screen/subscription_screen.dart';
 import 'package:mtquotes/screens/Templates/components/template/template_handler.dart';
@@ -118,7 +122,10 @@ class MyAppState extends State<MyApp> {
           initialRoute: widget.initialRoute,
           locale: _locale,
           supportedLocales: supportedLocales,
-          localizationsDelegates: localizationDelegates,
+          localizationsDelegates: [
+            ...localizationDelegates,
+            FlutterQuillLocalizations.delegate,
+          ],
           theme: AppTheme.getLightTheme().copyWith(
             textTheme: TextTheme(
               bodyLarge: TextStyle(fontSize: fontSize),
@@ -144,6 +151,7 @@ class MyAppState extends State<MyApp> {
             '/document_scanner': (context) => DocScanner(),
             '/resume': (context) => PersonalDetailsScreen(),
             '/invoice': (context) => InvoiceCreateScreen(),
+            '/edit': (context) => EditScreen(imageFile: ModalRoute.of(context)!.settings.arguments as File),
             '/profile_details': (context) {
               final args = ModalRoute
                   .of(context)!

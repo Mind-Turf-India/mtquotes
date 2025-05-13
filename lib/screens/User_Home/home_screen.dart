@@ -1083,6 +1083,7 @@ class HomeScreenState extends State<HomeScreen> {
         bool isSubscribed = await _templateService.isUserSubscribed();
         if (!template.isPaid || isSubscribed) {
           await RecentTemplateService.addRecentTemplate(template);
+          print("HomeScreen: Navigating to DetailsScreen with template: ${template.title}, URL: ${template.imageUrl}");
 
           // UPDATED: Navigate to DetailsScreen instead of EditScreen
           Navigator.push(

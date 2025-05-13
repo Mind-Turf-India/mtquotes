@@ -1,14 +1,18 @@
+import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:mtquotes/l10n/app_localization.dart';
 import 'package:mtquotes/screens/Create_Screen/edit_screen_create.dart';
 import 'package:mtquotes/screens/User_Home/components/Resume/resume_service.dart';
 import 'package:mtquotes/screens/User_Home/files_screen.dart';
 import 'package:provider/provider.dart';
 import '../../providers/text_size_provider.dart';
+import '../Create_Screen/components/image_picker_edit_screen.dart';
 import '../Create_screen/template_screen_create.dart';
+import '../Templates/components/template/quote_template.dart';
 
 class CreateBottomSheet extends StatefulWidget {
   @override
@@ -17,6 +21,16 @@ class CreateBottomSheet extends StatefulWidget {
 
 class _CreateBottomSheetState extends State<CreateBottomSheet> {
   bool isExpanded = false;
+  // Create a default template or make it nullable
+  final QuoteTemplate defaultTemplate = QuoteTemplate(
+    id: 'default_template_id',
+    imageUrl: '', // Empty string for the image URL
+    title: 'Default Template',
+    category: 'General',
+    isPaid: false,
+    createdAt: DateTime.now(),
+    // Optional fields can remain null
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -90,18 +104,51 @@ class _CreateBottomSheetState extends State<CreateBottomSheet> {
     );
   }
 
- void _navigateToScreen(BuildContext context, Widget screen) {
-  setState(() {
-    isExpanded = false; // Close the menu when an option is selected
-  });
-  
-  // Replace the current route and remove all previous routes
-  Navigator.pushAndRemoveUntil(
-  context,
-  MaterialPageRoute(builder: (context) => screen),
-  (route) => route.isFirst, // This keeps only the first route
-);
-}
+  void _navigateToScreen(BuildContext context, Widget screen) {
+    setState(() {
+      isExpanded = false; // Close the menu when an option is selected
+    });
+
+    // Replace the current route and remove all previous routes
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => screen),
+          (route) => route.isFirst, // This keeps only the first route
+    );
+  }
+
+  void _showImagePicker(BuildContext context, QuoteTemplate template) {
+    // Verify the template has a valid URL before proceeding
+    if (template.imageUrl.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Template image URL is empty or invalid'))
+      );
+      return;
+    }
+
+    print("Navigating to ImagePickerScreen with URL: ${template.imageUrl}");
+
+    // Navigate to ImagePickerScreen with the selected template
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ImagePickerScreen(
+          templateImageUrl: template.imageUrl,
+        ),
+      ),
+    ).then((value) {
+      // Handle any value returned from the ImagePickerScreen if needed
+      if (value != null) {
+        print("Returned from ImagePickerScreen with value: $value");
+      }
+    }).catchError((error) {
+      // Log any errors that might occur during navigation
+      print("Error navigating to ImagePickerScreen: $error");
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error opening image editor: $error'))
+      );
+    });
+  }
 
   Widget _buildOptionItem(BuildContext context, String label, IconData icon, double fontSize) {
     return GestureDetector(
@@ -109,7 +156,7 @@ class _CreateBottomSheetState extends State<CreateBottomSheet> {
         if (label == context.loc.template) {
           _navigateToScreen(context, TemplatePage());
         } else if (label == context.loc.gallery) {
-          _navigateToScreen(context, EditScreen(title: context.loc.imageeditor));
+          _showImagePicker(context, defaultTemplate); // Pass the defaultTemplate here
         } else if (label == context.loc.downloads) {
           // _navigateToScreen(context, ImageUpscalingScreen());
         }

@@ -1,7 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:mtquotes/screens/Create_Screen/edit_screen_create.dart';
 import 'package:mtquotes/screens/Templates/components/template/quote_template.dart';
 import 'package:mtquotes/screens/Templates/components/template/template_handler.dart';
@@ -14,6 +17,7 @@ import 'package:mtquotes/utils/shimmer.dart'; // Import the shimmer utility
 import '../../../../providers/text_size_provider.dart';
 import '../../../utils/app_colors.dart';
 import '../../../utils/theme_provider.dart';
+import '../../Create_Screen/components/image_picker_edit_screen.dart';
 import '../../Templates/components/festivals/festival_post.dart';
 
 enum TemplateListType {
@@ -183,23 +187,46 @@ class _TemplatesListScreenState extends State<TemplatesListScreen> {
     }
   }
 
+  void _showImagePicker(BuildContext context, QuoteTemplate template) {
+    // Verify the template has a valid URL before proceeding
+    if (template.imageUrl.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Template image URL is empty or invalid'))
+      );
+      return;
+    }
+
+    print("Navigating to ImagePickerScreen with URL: ${template.imageUrl}");
+
+    // Navigate to ImagePickerScreen with the selected template
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ImagePickerScreen(
+          templateImageUrl: template.imageUrl,
+        ),
+      ),
+    ).then((value) {
+      // Handle any value returned from the ImagePickerScreen if needed
+      if (value != null) {
+        print("Returned from ImagePickerScreen with value: $value");
+      }
+    }).catchError((error) {
+      // Log any errors that might occur during navigation
+      print("Error navigating to ImagePickerScreen: $error");
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error opening image editor: $error'))
+      );
+    });
+  }
+
   void _handleTemplateSelection(QuoteTemplate template) {
     // Use the TemplateHandler to handle template selection
     TemplateHandler.handleTemplateSelection(
       context,
       template,
       (selectedTemplate) {
-        // This callback is executed when access is granted
-        // Navigate to the edit screen with the selected template
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => EditScreen(
-              title: 'Edit Template',
-              templateImageUrl: selectedTemplate.imageUrl,
-            ),
-          ),
-        );
+        _showImagePicker(context,template);
       },
     );
   }

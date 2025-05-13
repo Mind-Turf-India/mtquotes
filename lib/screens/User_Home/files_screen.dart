@@ -3,6 +3,8 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mtquotes/l10n/app_localization.dart';
+import 'package:mtquotes/screens/Create_Screen/components/image_picker_edit_screen.dart';
+import 'package:mtquotes/screens/User_Home/components/Doc%20Scanner/doc_scanner.dart';
 import 'package:mtquotes/screens/navbar_mainscreen.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:provider/provider.dart';
@@ -236,11 +238,7 @@ class _FilesPageState extends State<FilesPage> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => EditScreen(
-            title: 'Edit Template',
-            templateImageUrl: null,
-            initialImageData: fileBytes,
-          ),
+          builder: (context) => ImagePickerScreen()
         ),
       ).then((_) => loadDownloadedImages());
     } catch (e) {

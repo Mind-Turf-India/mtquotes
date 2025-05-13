@@ -1,10 +1,14 @@
+import 'dart:io';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:mtquotes/screens/Create_Screen/components/details_screen.dart';
+import 'package:mtquotes/screens/Create_Screen/components/image_picker_edit_screen.dart';
 import 'package:mtquotes/screens/Payment_Screen/subscription_popup.dart';
 import 'package:mtquotes/screens/Templates/components/recent/recent_service.dart';
 import 'package:mtquotes/screens/User_Home/components/Categories/category_screen.dart';
@@ -62,6 +66,15 @@ class SearchScreen extends StatefulWidget {
 }
 
 class _SearchScreenState extends State<SearchScreen> {
+  final QuoteTemplate defaultTemplate = QuoteTemplate(
+    id: 'default_template_id',
+    imageUrl: '', // Empty string for the image URL
+    title: 'Default Template',
+    category: 'General',
+    isPaid: false,
+    createdAt: DateTime.now(),
+    // Optional fields can remain null
+  );
   final TextEditingController _searchController = TextEditingController();
   final SpeechToText _speechToText = SpeechToText();
   final TemplateService _templateService = TemplateService();
@@ -183,20 +196,46 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
+
+  void _showImagePicker(BuildContext context, QuoteTemplate template) {
+    // Verify the template has a valid URL before proceeding
+    if (template.imageUrl.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Template image URL is empty or invalid'))
+      );
+      return;
+    }
+
+    print("Navigating to ImagePickerScreen with URL: ${template.imageUrl}");
+
+    // Navigate to ImagePickerScreen with the selected template
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ImagePickerScreen(
+          templateImageUrl: template.imageUrl,
+        ),
+      ),
+    ).then((value) {
+      // Handle any value returned from the ImagePickerScreen if needed
+      if (value != null) {
+        print("Returned from ImagePickerScreen with value: $value");
+      }
+    }).catchError((error) {
+      // Log any errors that might occur during navigation
+      print("Error navigating to ImagePickerScreen: $error");
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error opening image editor: $error'))
+      );
+    });
+  }
+
   void _handleFestivalPostSelection(FestivalPost festival) {
     FestivalHandler.handleFestivalSelection(
       context,
       festival,
           (selectedFestival) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => EditScreen(
-              title: 'Edit Festival Post',
-              templateImageUrl: selectedFestival.imageUrl,
-            ),
-          ),
-        );
+            _showImagePicker(context,defaultTemplate);
       },
     );
   }
