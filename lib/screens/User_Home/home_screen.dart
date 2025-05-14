@@ -60,6 +60,7 @@ class HomeScreenState extends State<HomeScreen> {
   String userName = "User";
   String profileImageUrl = "";
   TextEditingController _searchController = TextEditingController();
+  bool _isListening = false;
 
   @override
   void initState() {
@@ -94,6 +95,14 @@ class HomeScreenState extends State<HomeScreen> {
     if (!userDoc.exists || userDoc['name'] == null || userDoc['bio'] == null) {
       Future.delayed(Duration.zero, () => _showUserProfileDialog());
     }
+  }
+
+  void _toggleListening() {
+    // This function would implement voice recognition functionality
+    // For now, just toggle the state for UI changes
+    setState(() {
+      _isListening = !_isListening;
+    });
   }
 
   // Show user profile dialog to collect user details
@@ -604,7 +613,7 @@ class HomeScreenState extends State<HomeScreen> {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDarkMode = themeProvider.isDarkMode;
 
-    return GestureDetector(
+    return InkWell(
       onTap: () => _handleFestivalPostSelection(festival),
       child: Container(
         width: 100,
@@ -629,6 +638,8 @@ class HomeScreenState extends State<HomeScreen> {
               CachedNetworkImage(
                 imageUrl: festival.imageUrl,
                 fit: BoxFit.cover,
+                memCacheHeight: 300, // Constrain memory cache size
+                memCacheWidth: 300,
                 height: double.infinity,
                 width: double.infinity,
                 placeholder: (context, url) => Container(
@@ -1078,7 +1089,7 @@ class HomeScreenState extends State<HomeScreen> {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDarkMode = themeProvider.isDarkMode;
 
-    return GestureDetector(
+    return InkWell(
       onTap: () async {
         bool isSubscribed = await _templateService.isUserSubscribed();
         if (!template.isPaid || isSubscribed) {
@@ -1122,6 +1133,8 @@ class HomeScreenState extends State<HomeScreen> {
               CachedNetworkImage(
                 imageUrl: template.imageUrl,
                 fit: BoxFit.cover,
+                memCacheHeight: 300, // Constrain memory cache size
+                memCacheWidth: 300,
                 height: double.infinity,
                 width: double.infinity,
                 placeholder: (context, url) => Container(
@@ -1224,7 +1237,7 @@ class HomeScreenState extends State<HomeScreen> {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDarkMode = themeProvider.isDarkMode;
 
-    return GestureDetector(
+    return InkWell(
       onTap: () {
         // Handle TOTD post selection
         _handleTimeOfDayPostSelection(post);
@@ -1252,6 +1265,8 @@ class HomeScreenState extends State<HomeScreen> {
               CachedNetworkImage(
                 imageUrl: post.imageUrl,
                 fit: BoxFit.cover,
+                memCacheHeight: 300, // Constrain memory cache size
+                memCacheWidth: 300,
                 height: double.infinity,
                 width: double.infinity,
                 placeholder: (context, url) => Container(
@@ -1374,7 +1389,7 @@ class HomeScreenState extends State<HomeScreen> {
                       // User profile with name
                       Row(
                         children: [
-                          GestureDetector(
+                          InkWell(
                             onTap: () {
                               Navigator.push(
                                 context,
@@ -1416,7 +1431,7 @@ class HomeScreenState extends State<HomeScreen> {
                       // Right side with Vaky logo and notifications
                       Row(
                         children: [
-                          GestureDetector(
+                          InkWell(
                             onTap: () {
                               Navigator.push(
                                 context,
@@ -1448,27 +1463,6 @@ class HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                 ),
-
-                // Blue tabs - Feel It, Share It, Vaky It
-                // Container(
-                //   height: 30,
-                //   decoration: BoxDecoration(
-                //     color: Colors.blue,
-                //   ),
-                //   child: Row(
-                //     children: [
-                //       Expanded(
-                //         child: _buildTabButton("Feel It."),
-                //       ),
-                //       Expanded(
-                //         child: _buildTabButton("Share It."),
-                //       ),
-                //       Expanded(
-                //         child: _buildTabButton("Vaky It."),
-                //       ),
-                //     ],
-                //   ),
-                // ),
               ],
             ),
           ),
@@ -1506,43 +1500,64 @@ class HomeScreenState extends State<HomeScreen> {
                   // Search bar
                   Expanded(
                     child: Container(
-                      height: 44,
                       decoration: BoxDecoration(
                         color: isDarkMode ? Colors.grey[800] : Colors.grey[100],
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: TextField(
                         controller: _searchController,
-                        decoration: InputDecoration(
-                          hintText: "Search",
-                          hintStyle: TextStyle(
-                            color: AppColors.getTextColor(isDarkMode).withOpacity(0.6),
-                            fontSize: 16,
-                          ),
-                          prefixIcon: Icon(
-                            Icons.search,
-                            color: AppColors.getIconColor(isDarkMode),
-                            size: 20,
-                          ),
-                          suffixIcon: Icon(
-                            Icons.mic,
-                            color: AppColors.getIconColor(isDarkMode),
-                            size: 20,
-                          ),
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-                          isCollapsed: false,
-                        ),
                         style: TextStyle(
                           color: AppColors.getTextColor(isDarkMode),
-                          fontSize: 16,
                         ),
-                        textAlignVertical: TextAlignVertical.center,
-                        onSubmitted: (value) {
-                          if (value.isNotEmpty) {
-                            Navigator.pushNamed(context, '/search', arguments: value);
-                          }
-                        },
+                        decoration: InputDecoration(
+                          hintText: context.loc.searchquotes,
+                          hintStyle: GoogleFonts.poppins(
+                            fontSize: fontSize,
+                            color: isDarkMode ? Colors.grey[400] : Colors.grey[500],
+                          ),
+                          prefixIcon: Padding(
+                            padding: const EdgeInsets.all(12.0),
+                            child: SvgPicture.asset(
+                              'assets/icons/search_button.svg',
+                              width: 20,
+                              height: 20,
+                              colorFilter: ColorFilter.mode(
+                                isDarkMode ? Colors.grey[400]! : Colors.grey[600]!,
+                                BlendMode.srcIn,
+                              ),
+                            ),
+                          ),
+                          suffixIcon: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // New filter icon
+                              IconButton(
+                                icon: _isListening
+                                    ? SvgPicture.asset(
+                                  'assets/icons/microphone open.svg',
+                                  width: 20,
+                                  height: 34,
+                                  colorFilter: ColorFilter.mode(
+                                    AppColors.primaryBlue,
+                                    BlendMode.srcIn,
+                                  ),
+                                )
+                                    : SvgPicture.asset(
+                                  'assets/icons/microphone close.svg',
+                                  width: 20,
+                                  height: 20,
+                                  colorFilter: ColorFilter.mode(
+                                    isDarkMode ? Colors.grey[400]! : Colors.grey[600]!,
+                                    BlendMode.srcIn,
+                                  ),
+                                ),
+                                onPressed: _toggleListening,
+                              ),
+                            ],
+                          ),
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                        ),
                       ),
                     ),
                   ),
@@ -1551,8 +1566,14 @@ class HomeScreenState extends State<HomeScreen> {
                   Container(
                     margin: EdgeInsets.only(left: 10),
                     child: IconButton(
-                      icon: Icon(Icons.calendar_today,
-                        color: AppColors.getIconColor(isDarkMode),
+                      icon: SvgPicture.asset(
+                        'assets/icons/calendar.svg',
+                        height: 24,
+                        width: 24,
+                        colorFilter: ColorFilter.mode(
+                          AppColors.getIconColor(isDarkMode),
+                          BlendMode.srcIn,
+                        ),
                       ),
                       onPressed: () {
                         Navigator.push(context, MaterialPageRoute(builder: (context)=> CalendarScreen()));
@@ -1619,7 +1640,7 @@ class HomeScreenState extends State<HomeScreen> {
                             isDarkMode
                         ),
                         categoryCard(
-                            'assets/icons/patriotic.svg',
+                            'assets/icons/Patriotic_1.svg',
                             context.loc.patriotic,
                             const Color(0xFF000088),
                             isDarkMode

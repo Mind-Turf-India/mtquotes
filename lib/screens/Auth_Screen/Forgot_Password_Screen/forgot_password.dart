@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:mtquotes/utils/theme_provider.dart';
 import 'package:provider/provider.dart';
 import '../../../utils/app_colors.dart'; // Added import for your colors
@@ -220,10 +221,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const SizedBox(height: 30),
-                Image.asset(
-                  'assets/logo.png',
-                  height: 100,
-                  width: 100,
+                SvgPicture.asset(
+                  'assets/logo_final.svg',
+                  height: 140,
+                  width: 120,
                 ),
                 const SizedBox(height: 30),
                 Text(
@@ -240,7 +241,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     color: isDarkMode ? AppColors.darkSecondaryText : AppColors.lightSecondaryText,
                   ),
                 ),
-                const SizedBox(height: 100),
+                const SizedBox(height: 70),
                 TextField(
                   controller: _emailController,
                   style: TextStyle(

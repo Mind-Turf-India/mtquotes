@@ -255,7 +255,14 @@ class _BuyerDetailsScreenState extends State<BuyerDetailsScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 OutlinedButton(
-                  onPressed: () => Navigator.pop(context),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.red,
+                    side: const BorderSide(color: Colors.red),
+                  ),
+                  onPressed: () {
+                    // Handle delete
+                    Navigator.pop(context);
+                  },
                   child: const Text('Delete'),
                 ),
                 ElevatedButton(

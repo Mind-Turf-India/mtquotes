@@ -455,37 +455,37 @@ class _InvoiceCreateScreenState extends State<InvoiceCreateScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
-          PopupMenuButton(
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'duplicate',
-                child: Text('Duplicate'),
-              ),
-              const PopupMenuItem(
-                value: 'open_pdf',
-                child: Text('Open PDF'),
-              ),
-              const PopupMenuItem(
-                value: 'print_pdf',
-                child: Text('Print PDF'),
-              ),
-              const PopupMenuItem(
-                value: 'save_pdf',
-                child: Text('Save PDF to Phone'),
-              ),
-              const PopupMenuItem(
-                value: 'share_pdf',
-                child: Text('Share PDF'),
-              ),
-              const PopupMenuItem(
-                value: 'cancel_invoice',
-                child: Text('Cancel Invoice'),
-              ),
-            ],
-            onSelected: (value) {
-              // Handle menu item selection
-            },
-          ),
+          // PopupMenuButton(
+          //   itemBuilder: (context) => [
+          //     const PopupMenuItem(
+          //       value: 'duplicate',
+          //       child: Text('Duplicate'),
+          //     ),
+          //     const PopupMenuItem(
+          //       value: 'open_pdf',
+          //       child: Text('Open PDF'),
+          //     ),
+          //     const PopupMenuItem(
+          //       value: 'print_pdf',
+          //       child: Text('Print PDF'),
+          //     ),
+          //     const PopupMenuItem(
+          //       value: 'save_pdf',
+          //       child: Text('Save PDF to Phone'),
+          //     ),
+          //     const PopupMenuItem(
+          //       value: 'share_pdf',
+          //       child: Text('Share PDF'),
+          //     ),
+          //     const PopupMenuItem(
+          //       value: 'cancel_invoice',
+          //       child: Text('Cancel Invoice'),
+          //     ),
+          //   ],
+          //   onSelected: (value) {
+          //     // Handle menu item selection
+          //   },
+          // ),
         ],
       ),
       body: Stack(

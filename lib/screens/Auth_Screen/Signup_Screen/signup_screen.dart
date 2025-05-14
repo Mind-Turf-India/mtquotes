@@ -529,7 +529,11 @@ Future<String?> _getPendingReferralCode() async {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const SizedBox(height: 50),
-                    Image.asset('assets/logo.png', height: 100, width: 100),
+                    SvgPicture.asset(
+                      'assets/logo_final.svg',
+                      height: 140,
+                      width: 120,
+                    ),
                     const SizedBox(height: 10),
                     Text('Welcome',
                         style: TextStyle(
@@ -542,7 +546,7 @@ Future<String?> _getPendingReferralCode() async {
                           color: secondaryTextColor,
                           fontSize: 14,
                         )),
-                    const SizedBox(height: 50),
+                    const SizedBox(height: 30),
                     TextField(
                       controller: _emailController,
                       style: TextStyle(

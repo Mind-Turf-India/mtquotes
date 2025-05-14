@@ -469,7 +469,7 @@ class _TemplatePageState extends State<TemplatePage> {
             // Search bar
             Container(
               decoration: BoxDecoration(
-                color: isDarkMode ? AppColors.darkSurface : Colors.grey[100],
+                color: isDarkMode ? Colors.grey[800] : Colors.grey[100],
                 borderRadius: BorderRadius.circular(12),
               ),
               child: TextField(
@@ -785,7 +785,7 @@ class _TemplatePageState extends State<TemplatePage> {
                   categoryCard('assets/icons/sad.svg', context.loc.sad,
                       const Color(0xFFAADA0D), isDarkMode),
                   categoryCard(
-                      'assets/icons/patriotic.svg',
+                      'assets/icons/Patriotic_1.svg',
                       context.loc.patriotic,
                       const Color(0xFF000088),
                       isDarkMode

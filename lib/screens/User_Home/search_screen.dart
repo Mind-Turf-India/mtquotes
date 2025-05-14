@@ -313,6 +313,91 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
+  Widget _buildSearchTags(bool isDarkMode, double fontSize) {
+    // Define the list of tags to display
+    final List<String> tags = [
+      "Birthday",
+      "test",
+      "8",
+      "Anniversary",
+      "Diwali",
+      "Holi",
+      "Morning",
+      "Mahadev",
+      "Sunday",
+      "Holiday"
+    ];
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: tags.map((tag) {
+          bool isSelected = tag == "None"; // You can track selected tag if needed
+
+          return Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: TapEffectWidget(
+              onTap: () => _handleTagSelection(tag),
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppColors.primaryBlue
+                      : (isDarkMode ? Colors.grey[800] : Colors.white),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: isSelected
+                        ? Colors.transparent
+                        : (isDarkMode ? Colors.grey[700]! : Colors.grey[300]!),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: isDarkMode
+                          ? Colors.black.withOpacity(0.2)
+                          : Colors.grey.withOpacity(0.2),
+                      blurRadius: 3,
+                      offset: Offset(0, 1),
+                    ),
+                  ],
+                ),
+                child: Text(
+                  tag,
+                  style: GoogleFonts.poppins(
+                    fontSize: fontSize - 2,
+                    fontWeight: FontWeight.w500,
+                    color: isSelected
+                        ? Colors.white
+                        : AppColors.getTextColor(isDarkMode),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+// Add this method to handle tag selection
+  void _handleTagSelection(String tag) {
+    // Clear any existing search
+    _searchController.clear();
+    setState(() {
+      _searchResults = [];
+      _isSearching = true;
+      _filtersActive = false;
+      _filters = TemplateFilters();
+    });
+
+    // Set the search controller text to the tag
+    // This will trigger the search due to your existing listeners
+    _searchController.text = tag;
+
+    // For improved UX, you might want to directly search instead of relying on the listener
+    _performSearch(tag);
+  }
+
+
   // Build filter bottom sheet widget
   Widget _buildFilterBottomSheet() {
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
@@ -886,6 +971,9 @@ class _SearchScreenState extends State<SearchScreen> {
                 ),
               ),
 
+              SizedBox(height: 16),
+              _buildSearchTags(isDarkMode, fontSize),
+
               // Filter indicator (only when filters are active)
               if (_filtersActive && !_isSearching && _searchResults.isNotEmpty)
                 Padding(
@@ -1013,7 +1101,7 @@ class _SearchScreenState extends State<SearchScreen> {
                             isDarkMode
                         ),
                         categoryCard(
-                            'assets/icons/patriotic.svg',
+                            'assets/icons/Patriotic_1.svg',
                             context.loc.patriotic,
                             const Color(0xFF000088),
                             isDarkMode

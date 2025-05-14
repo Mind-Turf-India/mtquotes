@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:mtquotes/l10n/app_localization.dart';
 import 'package:provider/provider.dart';
 
@@ -42,13 +43,19 @@ class AboutUsScreen extends StatelessWidget {
                 width: 100,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
-                  image: const DecorationImage(
-                    image: AssetImage('assets/logo.png'),
-                    fit: BoxFit.cover,
+                  color: Colors.transparent, // Optional: Background color
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: SvgPicture.asset(
+                    'assets/logo_final.svg',
+                    height: 200,
+                    width: 220,
                   ),
                 ),
               ),
             ),
+
 
             // App name and headline
             Center(
@@ -84,7 +91,7 @@ class AboutUsScreen extends StatelessWidget {
               RichText(
                 text: TextSpan(
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 15,
                     color: AppColors.getTextColor(isDarkMode),
                   ),
                   children: const [
@@ -104,7 +111,7 @@ class AboutUsScreen extends StatelessWidget {
               RichText(
                 text: TextSpan(
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 15,
                     color: AppColors.getTextColor(isDarkMode),
                   ),
                   children: const [
@@ -127,7 +134,7 @@ class AboutUsScreen extends StatelessWidget {
               RichText(
                 text: TextSpan(
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 15,
                     color: AppColors.getTextColor(isDarkMode),
                   ),
                   children: const [
@@ -198,7 +205,7 @@ class AboutUsScreen extends StatelessWidget {
                     "Whether you're here to inspire or be inspired, speak or simply listen — Vaky is here for you.",
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 15,
                       fontStyle: FontStyle.italic,
                       color: AppColors.getTextColor(isDarkMode),
                     ),
@@ -283,7 +290,7 @@ class AboutUsScreen extends StatelessWidget {
             child: RichText(
               text: TextSpan(
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 15,
                   color: AppColors.getTextColor(isDarkMode),
                 ),
                 children: [

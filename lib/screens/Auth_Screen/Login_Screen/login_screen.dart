@@ -415,13 +415,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const SizedBox(height: 70),
-                        Image.asset(
-                          'assets/logo.png',
-                          height: 100,
-                          width: 100,
+                        const SizedBox(height: 40),
+                        SvgPicture.asset(
+                          'assets/logo_final.svg',
+                          height: 140,
+                          width: 120,
                         ),
-                        const SizedBox(height: 30),
+                        const SizedBox(height: 20),
                         Text(
                           'Welcome back!',
                           style: TextStyle(

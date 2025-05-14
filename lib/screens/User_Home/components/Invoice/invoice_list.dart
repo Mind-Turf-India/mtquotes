@@ -229,21 +229,18 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
         padding: const EdgeInsets.all(16.0),
         child: ElevatedButton(
           onPressed: () {
-            Navigator.pushNamed(context, '/create_invoice');
+            Navigator.pushNamed(context,'/invoice');
           },
           style: ElevatedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(vertical: 16),
             backgroundColor: Colors.blue,
+            minimumSize: const Size(double.infinity, 50),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(10),
             ),
           ),
           child: const Text(
             'New Invoice',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.white,
-            ),
+            style: TextStyle(fontSize: 18, color: Colors.white),
           ),
         ),
       ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:mtquotes/screens/Payment_Screen/subscription_screen.dart';
+import '../../utils/app_colors.dart';
 import 'components/Doc Scanner/doc_scanner.dart';
 import 'components/Invoice/invoice_welcome.dart';
 import 'components/Resume/resume_dashboard.dart';
@@ -17,18 +18,16 @@ class VakyPlus extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor = AppColors.getBackgroundColor(isDarkMode);
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: backgroundColor,
       body: SafeArea(
         child: Column(
           children: [
             const SizedBox(height: 20),
-            SvgPicture.asset('assets/icons/Vaky plus.svg', height: 90),
-            // const SizedBox(height: 10),
-            // const Text(
-            //   '"vaky"',
-            //   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            // ),
+            SvgPicture.asset('assets/icons/vaky_plus_wobg.svg', height: 90),
             const SizedBox(height: 30),
             featureCard(
               context,
@@ -39,8 +38,7 @@ class VakyPlus extends StatelessWidget {
               destination: const DocScanner(),
               backgroundColor: const Color(0x802897FF),
               imageHeight: 130,
-                imageWidth: 130,
-              
+              imageWidth: 130,
             ),
             featureCard(
               context,
@@ -60,27 +58,34 @@ class VakyPlus extends StatelessWidget {
               buttonText: "Create Invoice",
               imagePath: "assets/icons/create_invoice.svg",
               destination: InvoiceHomeScreen(),
-              backgroundColor: const Color(0xFF2897FF),
+              backgroundColor: AppColors.primaryBlue,
               imageHeight: 130,
               imageWidth: 130,
             ),
             const Spacer(),
             ElevatedButton(
               onPressed: () {
-                Navigator.push(context, MaterialPageRoute(
-                    builder: (context) => SubscriptionScreen()));
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => SubscriptionScreen(),
+                  ),
+                );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.amber,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(30),
                 ),
-                padding:
-                const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
               ),
-              child: const Text(
+              child: Text(
                 "Upgrade",
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.getTextColor(isDarkMode),
+                ),
               ),
             ),
             const SizedBox(height: 20),
@@ -90,34 +95,41 @@ class VakyPlus extends StatelessWidget {
     );
   }
 
-  Widget featureCard(BuildContext context, {
-    required String title,
-    required String description,
-    required String buttonText,
-    required String imagePath,
-    required Widget destination,
-    Color? backgroundColor, required double imageHeight, // Add this parameter
-    required double imageWidth, // Add this parameter
-  }) {
-    // Use the provided backgroundColor or default to blue.shade100
-    final bgColor = backgroundColor ??
-        const Color(0x802897FF); // 50% opacity of #2897FF
+  Widget featureCard(
+      BuildContext context, {
+        required String title,
+        required String description,
+        required String buttonText,
+        required String imagePath,
+        required Widget destination,
+        required Color backgroundColor,
+        required double imageHeight,
+        required double imageWidth,
+      }) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
       child: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFFF9F9F9),
+          color: AppColors.getSurfaceColor(isDarkMode),
           borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: isDarkMode ? Colors.black45 : Colors.black.withOpacity(0.2),
+              blurRadius: 5,
+              offset: Offset(0, 4),
+            ),
+          ],
         ),
         child: Row(
           children: [
             Expanded(
               flex: 5,
               child: Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
-                  color: bgColor, // Use the variable here
+                  color: backgroundColor,
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(20),
                     bottomLeft: Radius.circular(20),
@@ -126,25 +138,29 @@ class VakyPlus extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title,
-                        style: const TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold)),
+                    Text(
+                      title,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     const SizedBox(height: 8),
-                    Text(description,
-                        style: const TextStyle(
-                            fontSize: 12, color: Colors.black54)),
+                    Text(
+                      description,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
                     const SizedBox(height: 10),
                     ElevatedButton(
                       onPressed: () => navigateTo(context, destination),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: Colors.black,
+                        backgroundColor: AppColors.getSurfaceColor(isDarkMode),
+                        foregroundColor: AppColors.getTextColor(isDarkMode),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(20),
                         ),
                       ),
                       child: Text(buttonText),
-                    )
+                    ),
                   ],
                 ),
               ),
@@ -152,8 +168,13 @@ class VakyPlus extends StatelessWidget {
             Expanded(
               flex: 4,
               child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: SvgPicture.asset(imagePath, height: imageHeight,width: imageWidth,fit: BoxFit.contain,),
+                padding: const EdgeInsets.all(10),
+                child: SvgPicture.asset(
+                  imagePath,
+                  height: imageHeight,
+                  width: imageWidth,
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
           ],

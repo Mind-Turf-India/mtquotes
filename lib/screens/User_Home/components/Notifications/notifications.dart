@@ -178,6 +178,7 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
                   itemBuilder: (context) => [
                     PopupMenuItem(
                       value: 'clear',
+                      height: 35,
                       child: Text(
                         context.loc.clearAll,
                         style: TextStyle(

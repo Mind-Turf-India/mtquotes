@@ -199,6 +199,8 @@
   "premium": "Premium",
   "ratings": "Ratings",
 
+  "facebook": "Facebook",
+  "whatsapp": "Whatsapp",
   
 
   "@languageChanged":{

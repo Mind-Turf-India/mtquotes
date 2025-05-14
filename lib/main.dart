@@ -124,7 +124,7 @@ class MyAppState extends State<MyApp> {
           supportedLocales: supportedLocales,
           localizationsDelegates: [
             ...localizationDelegates,
-            FlutterQuillLocalizations.delegate,
+            //FlutterQuillLocalizations.delegate,
           ],
           theme: AppTheme.getLightTheme().copyWith(
             textTheme: TextTheme(

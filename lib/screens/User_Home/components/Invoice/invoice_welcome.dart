@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../utils/app_colors.dart';
@@ -13,7 +13,24 @@ class InvoiceHomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDarkMode = themeProvider.isDarkMode;
+
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: AppColors.getBackgroundColor(isDarkMode),
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios,),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Align(
+          alignment: Alignment.topLeft,
+          child: Text(
+            'Invoice',
+            style: TextStyle(color: AppColors.getTextColor(isDarkMode)),
+          ),
+        ),
+        centerTitle: true,
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(20.0),
@@ -27,36 +44,24 @@ class InvoiceHomeScreen extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-
-                  color: isDarkMode
-                      ? AppColors.darkText
-                      : AppColors.lightText,
+                  color: isDarkMode ? AppColors.darkText : AppColors.lightText,
                 ),
               ),
-
               Text(
                 'Easily...',
                 style: TextStyle(
                   fontSize: 20,
-                  color: isDarkMode
-                      ? AppColors.darkText
-                      : AppColors.lightText,
+                  color: isDarkMode ? AppColors.darkText : AppColors.lightText,
                 ),
               ),
               const SizedBox(height: 40),
               Align(
                 alignment: Alignment.center,
-                child: Container(
-                  child: Padding(
-                    padding: const EdgeInsets.all(20.0),
-                    child: Column(
-                      children: [
-                        SvgPicture.asset(
-                          'assets/icons/create_invoice.svg',
-                          height: 300,
-                        ),
-                      ],
-                    ),
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: SvgPicture.asset(
+                    'assets/icons/create_invoice.svg',
+                    height: 300,
                   ),
                 ),
               ),
@@ -65,8 +70,7 @@ class InvoiceHomeScreen extends StatelessWidget {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                        builder: (context) => InvoiceListScreen()),
+                    MaterialPageRoute(builder: (context) => InvoiceListScreen()),
                   );
                 },
                 style: ElevatedButton.styleFrom(

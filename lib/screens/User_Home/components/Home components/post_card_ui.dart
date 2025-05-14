@@ -76,7 +76,7 @@ class _PostCardState extends State<PostCard>
     try {
       final image = NetworkImage(widget.post.imageUrl);
       final ImageStreamListener listener = ImageStreamListener(
-        (ImageInfo info, bool synchronousCall) {
+            (ImageInfo info, bool synchronousCall) {
           if (mounted) {
             setState(() {
               _aspectRatio = info.image.width / info.image.height;
@@ -89,7 +89,7 @@ class _PostCardState extends State<PostCard>
           if (mounted) {
             setState(() {
               _imageLoaded =
-                  true;
+              true;
             });
           }
         },
@@ -105,6 +105,7 @@ class _PostCardState extends State<PostCard>
       }
     }
   }
+
   // Toggle favorite status
 
 
@@ -189,7 +190,9 @@ class _PostCardState extends State<PostCard>
       }
 
       // Generate a unique filename based on timestamp
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final timestamp = DateTime
+          .now()
+          .millisecondsSinceEpoch;
       final fileName = "Vaky_${timestamp}.jpg";
 
       // Save to gallery
@@ -278,8 +281,8 @@ class _PostCardState extends State<PostCard>
   }
 
 // Track saved image in Firestore
-  Future<void> _trackSavedImage(
-      User user, String fileName, String title) async {
+  Future<void> _trackSavedImage(User user, String fileName,
+      String title) async {
     try {
       String userEmail = user.email!.replaceAll('.', '_');
 
@@ -292,8 +295,10 @@ class _PostCardState extends State<PostCard>
         'title': title,
         'timestamp': FieldValue.serverTimestamp(),
         'path': Platform.isAndroid
-            ? '/storage/emulated/0/Pictures/Vaky/${_sanitizeEmail(user.email!)}/$fileName'
-            : '${(await getApplicationDocumentsDirectory()).path}/Vaky/${_sanitizeEmail(user.email!)}/$fileName',
+            ? '/storage/emulated/0/Pictures/Vaky/${_sanitizeEmail(
+            user.email!)}/$fileName'
+            : '${(await getApplicationDocumentsDirectory())
+            .path}/Vaky/${_sanitizeEmail(user.email!)}/$fileName',
       });
     } catch (e) {
       print('Error tracking saved image: $e');
@@ -386,6 +391,10 @@ class _PostCardState extends State<PostCard>
         key: _cardKey,
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           SizedBox(height: 20,),
+
+          Divider(height: 2, thickness: 2,),
+          SizedBox(height: 15,),
+
           // Post header with title and badge ABOVE the card
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
@@ -405,26 +414,33 @@ class _PostCardState extends State<PostCard>
                   ),
                 ),
                 Row(
-                  children: [
-                    if (widget.post.isPaid)
-                      Container(
-                        padding:
-                        EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                        margin: EdgeInsets.only(right: 8),
-                        decoration: BoxDecoration(
-                          color: Colors.amber,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          'Premium',
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
+                    children: [
+                      if (widget.post.isPaid)
+                        Container(
+                          padding:
+                          EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                          margin: EdgeInsets.only(right: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.amber,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            context.loc.premium,
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
                           ),
                         ),
+                      SizedBox(width: 4),
+                      SvgPicture.asset(
+                        'assets/icons/download_home.svg',
+                        height: 20,
+                        width: 20,
+                        color: iconColor // optional: remove if you want original SVG colors
                       ),
-                  ],
+                    ]
                 ),
               ],
             ),
@@ -461,21 +477,22 @@ class _PostCardState extends State<PostCard>
                                 CachedNetworkImage(
                                   imageUrl: widget.post.imageUrl,
                                   fit: BoxFit.cover,
-                                  placeholder: (context, url) => Container(
-                                    color: isDarkMode
-                                        ? Colors.grey[700]
-                                        : Colors.grey[300],
-                                    child: Center(
-                                      child: CircularProgressIndicator(
-                                        valueColor:
-                                        AlwaysStoppedAnimation<Color>(
-                                          isDarkMode
-                                              ? Colors.white
-                                              : Colors.black54,
+                                  placeholder: (context, url) =>
+                                      Container(
+                                        color: isDarkMode
+                                            ? Colors.grey[700]
+                                            : Colors.grey[300],
+                                        child: Center(
+                                          child: CircularProgressIndicator(
+                                            valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              isDarkMode
+                                                  ? Colors.white
+                                                  : Colors.black54,
+                                            ),
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                  ),
                                   errorWidget: (context, url, error) =>
                                       Container(
                                         color: isDarkMode
@@ -511,7 +528,7 @@ class _PostCardState extends State<PostCard>
                     // Action buttons - Simplified now
                     widget.showFullActions
                         ? _buildFullActionsRow(context, iconColor, textColor)
-                        : _buildCompactActionsRow(
+                        : _buildFullActionsRow(
                         context, iconColor, textColor),
                   ],
                 ),
@@ -535,10 +552,9 @@ class _PostCardState extends State<PostCard>
   }
 
 
-
   // Build full action buttons row (for larger screens)
-  Widget _buildFullActionsRow(
-      BuildContext context, Color iconColor, Color textColor) {
+  Widget _buildFullActionsRow(BuildContext context, Color iconColor,
+      Color textColor) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
       child: Row(
@@ -547,24 +563,28 @@ class _PostCardState extends State<PostCard>
           _buildActionButton(
             svgPath: 'assets/icons/pen_1659682.svg',
             label: context.loc.editimage,
-            onPressed: widget.onEditPressed, // This uses the callback from parent which should be updated to go to DetailsScreen
+            onPressed: widget.onEditPressed,
+            // This uses the callback from parent which should be updated to go to DetailsScreen
             textColor: textColor,
+            iconColor: iconColor,
           ),
           _buildActionButton(
             svgPath: 'assets/icons/share.svg',
             label: context.loc.share,
-            onPressed: () => _sharePost(context), // Direct native share
+            onPressed: () => _sharePost(context),
+            // Direct native share
             textColor: textColor,
+            iconColor: iconColor,
           ),
           _buildActionButton(
             svgPath: 'assets/icons/facebook_2111393.svg',
-            label: 'Facebook',
+            label: context.loc.facebook,
             onPressed: () => _sharePost(context),
             textColor: textColor,
           ),
           _buildActionButton(
             svgPath: 'assets/icons/whatsapp.svg',
-            label: 'Whatsapp',
+            label: context.loc.whatsapp,
             onPressed: () => _sharePost(context),
             textColor: textColor,
           ),
@@ -573,36 +593,6 @@ class _PostCardState extends State<PostCard>
     );
   }
 
-  // Build compact action buttons row (for smaller screens) - SIMPLIFIED
-  Widget _buildCompactActionsRow(
-      BuildContext context, Color iconColor, Color textColor) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _buildActionButton(
-            icon: Icons.share,
-            label: context.loc.share,
-            onPressed: () => _sharePost(context),
-            textColor: textColor,
-          ),
-          _buildActionButton(
-            icon: Icons.edit,
-            label: context.loc.editimage,
-            onPressed: widget.onEditPressed, // This uses the callback from parent which should be updated to go to DetailsScreen
-            textColor: textColor,
-          ),
-          _buildActionButton(
-            icon: Icons.download,
-            label: context.loc.save,
-            onPressed: () => _downloadImage(context, widget.post),
-            textColor: textColor,
-          ),
-        ],
-      ),
-    );
-  }
 
   // Helper method to build action buttons
   Widget _buildActionButton({
@@ -611,6 +601,8 @@ class _PostCardState extends State<PostCard>
     required String label,
     required VoidCallback? onPressed,
     required Color textColor,
+    Color? iconColor,
+
   }) {
     return GestureDetector(
       onTap: onPressed,
@@ -621,12 +613,14 @@ class _PostCardState extends State<PostCard>
           children: [
             if (icon != null)
               Icon(icon, size: 20)
-            else if (svgPath != null)
-              SvgPicture.asset(
-                svgPath,
-                width: 20,
-                height: 20,
-              ),
+            else
+              if (svgPath != null)
+                SvgPicture.asset(
+                  svgPath,
+                  width: 20,
+                  height: 20,
+                  color: iconColor,
+                ),
             SizedBox(height: 4),
             Text(
               label,
@@ -678,11 +672,12 @@ class _PostCardState extends State<PostCard>
                   ? Image.network(
                 profileImageUrl,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Icon(
-                  Icons.person,
-                  color: Colors.grey,
-                  size: 24,
-                ),
+                errorBuilder: (context, error, stackTrace) =>
+                    Icon(
+                      Icons.person,
+                      color: Colors.grey,
+                      size: 24,
+                    ),
               )
                   : Icon(
                 Icons.person,

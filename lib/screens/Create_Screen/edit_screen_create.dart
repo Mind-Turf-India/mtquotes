@@ -55,18 +55,10 @@ class _EditScreenState extends State<EditScreen>
   // Current editing mode
   EditingMode _currentMode = EditingMode.filter;
 
-  // Selected text editing properties
-  Color _textColor = Colors.black;
-  double _fontSize = 16.0;
-  String _fontFamily = 'Roboto';
-  Color _textBackgroundColor = Colors.transparent;
-  TextAlign _textAlign = TextAlign.left;
-
   // Filter values using CSS Filter parameters
   double _brightnessValue = 1.0; // 1.0 is normal
   double _contrastValue = 1.0; // 1.0 is normal
   double _saturationValue = 1.0; // 1.0 is normal
-  double _vibranceValue = 0.0; // Simulated with other filters
   double _sepiaValue = 0.0; // 0.0 to 1.0
   double _hueRotateValue = 0.0; // 0.0 to 360.0
   double _invertValue = 0.0; // 0.0 to 1.0
@@ -444,9 +436,7 @@ class _EditScreenState extends State<EditScreen>
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
-      // Handle back button press
       onWillPop: () async {
-        // Clean up before navigating back
         _cleanupQuillResources();
         return true;
       },
@@ -621,46 +611,10 @@ class _EditScreenState extends State<EditScreen>
         // Manual filter controls
         Expanded(
           child: _selectedPreset == 'None'
-              ? SingleChildScrollView(
-            child: Column(
-              children: [
-                _buildFilterSlider(
-                  'Brightness',
-                  _brightnessValue,
-                  0.0,
-                  2.0,
-                      (value) {
-                    setState(() {
-                      _brightnessValue = value;
-                    });
-                  },
-                ),
-                _buildFilterSlider(
-                  'Contrast',
-                  _contrastValue,
-                  0.0,
-                  2.0,
-                      (value) {
-                    setState(() {
-                      _contrastValue = value;
-                    });
-                  },
-                ),
-                _buildFilterSlider(
-                  'Saturation',
-                  _saturationValue,
-                  0.0,
-                  2.0,
-                      (value) {
-                    setState(() {
-                      _saturationValue = value;
-                    });
-                  },
-                ),
-              ],
-            ),
-          )
-              : const Center(
+              ? Center(
+    child: Text(
+    'No Presets applied.'),)
+              : Center(
             child: Text(
                 'Preset filter applied. Select "None" to use manual controls.'),
           ),
@@ -669,29 +623,6 @@ class _EditScreenState extends State<EditScreen>
     );
   }
 
-  Widget _buildFilterSlider(String label, double value, double min, double max,
-      ValueChanged<double> onChanged) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
-      child: Row(
-        children: [
-          SizedBox(width: 100, child: Text(label)),
-          Expanded(
-            child: Slider(
-              value: value,
-              min: min,
-              max: max,
-              onChanged: onChanged,
-            ),
-          ),
-          SizedBox(
-            width: 40,
-            child: Text(value.toStringAsFixed(1)),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildPresetFilterOption(String presetName) {
     return Padding(
@@ -706,14 +637,14 @@ class _EditScreenState extends State<EditScreen>
 
               // Reset manual filter values when selecting a preset
               if (presetName != 'None') {
-                _brightnessValue = 1.0;
-                _contrastValue = 1.0;
-                _saturationValue = 1.0;
-                _sepiaValue = 0.0;
-                _hueRotateValue = 0.0;
-                _invertValue = 0.0;
-                _opacityValue = 1.0;
-                _blurValue = 0.0;
+                // _brightnessValue = 1.0;
+                // _contrastValue = 1.0;
+                // _saturationValue = 1.0;
+                // _sepiaValue = 0.0;
+                // _hueRotateValue = 0.0;
+                // _invertValue = 0.0;
+                // _opacityValue = 1.0;
+                // _blurValue = 0.0;
               }
             });
           }
