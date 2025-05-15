@@ -232,12 +232,26 @@ class _DetailsScreenState extends State<DetailsScreen>
 
     print("DetailsScreen: Navigating to ImagePickerScreen with URL: ${widget.template.imageUrl}");
 
-    // Navigate to ImagePickerScreen with the selected template
+    // Get the current tab index to determine if we're in personal or business mode
+    bool isPersonal = _tabController.index == 0;
+
+    // Navigate to ImagePickerScreen with the selected template AND info box data
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => ImagePickerScreen(
           templateImageUrl: widget.template.imageUrl,
+          // Pass all the InfoBox data
+          name: _nameController.text,
+          mobile: _mobileController.text,
+          location: _locationController.text,
+          description: _descriptionController.text,
+          companyName: _companyNameController.text,
+          socialMedia: _socialMediaController.text,
+          profileImageUrl: _profileImageUrl,
+          showInfoBox: _showInfoBox,
+          infoBoxBackground: _selectedBackground,
+          isPersonal: isPersonal,
         ),
       ),
     ).then((value) {

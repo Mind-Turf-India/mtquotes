@@ -20,11 +20,35 @@ import 'package:image/image.dart' as img; // Add this package to your pubspec.ya
 class EditScreen extends StatefulWidget {
   final File imageFile;
   final String? templateImageUrl; // Add this to track where the image came from
+  final String? name;
+  final String? mobile;
+  final String? location;
+  final String? description;
+  final String? companyName;
+  final String? socialMedia;
+  final File? profileImageFile;
+  final String? profileImageUrl;
+  final bool showInfoBox;
+  final String infoBoxBackground;
+  final bool isPersonal;
+  final bool isPaidUser;
 
   const EditScreen({
     Key? key,
     required this.imageFile,
     this.templateImageUrl,
+    this.name,
+    this.mobile,
+    this.location,
+    this.description,
+    this.companyName,
+    this.socialMedia,
+    this.profileImageFile,
+    this.profileImageUrl,
+    this.showInfoBox = true,
+    this.infoBoxBackground = 'white',
+    this.isPersonal = true,
+    this.isPaidUser = true,
   }) : super(key: key);
 
   @override
@@ -157,6 +181,152 @@ class _EditScreenState extends State<EditScreen>
           break;
       }
     });
+  }
+
+
+
+  Widget _buildInfoBox({
+    required bool isDarkMode,
+    required double fontSize
+  }) {
+    final textColor = Colors.black; // Info box text is always black
+
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: _getBackgroundColor(),
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(8)),
+      ),
+      child: Row(
+        children: [
+          // Profile image or logo
+          _buildProfileImage(50),
+          SizedBox(width: 12),
+
+          // User details
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (widget.isPersonal)
+                  Text(
+                    widget.name?.isNotEmpty == true
+                        ? widget.name!
+                        : 'Your Name',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: fontSize,
+                      color: textColor,
+                    ),
+                  )
+                else
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Company name first for business cards
+                      Text(
+                        widget.companyName?.isNotEmpty == true
+                            ? widget.companyName!
+                            : 'Company Name',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: fontSize,
+                          color: textColor,
+                        ),
+                      ),
+                      SizedBox(height: 2),
+                      // Then person's name
+                      Text(
+                        widget.name?.isNotEmpty == true
+                            ? widget.name!
+                            : 'Your Name',
+                        style: TextStyle(
+                          fontSize: fontSize - 2,
+                          color: textColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                if (widget.location?.isNotEmpty == true)
+                  Text(
+                    widget.location!,
+                    style: TextStyle(fontSize: fontSize - 2, color: textColor),
+                  ),
+                if (widget.mobile?.isNotEmpty == true)
+                  Text(
+                    widget.mobile!,
+                    style: TextStyle(fontSize: fontSize - 2, color: textColor),
+                  ),
+                // Only show social media and description in business profile
+                if (!widget.isPersonal) ...[
+                  if (widget.socialMedia?.isNotEmpty == true)
+                    Text(
+                      widget.socialMedia!,
+                      style: TextStyle(
+                          fontSize: fontSize - 2,
+                          color: Colors.blue),
+                    ),
+                  if (widget.description?.isNotEmpty == true)
+                    Text(
+                      widget.description!,
+                      style: TextStyle(fontSize: fontSize - 2, color: textColor),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Helper method to get background color
+  Color _getBackgroundColor() {
+    switch (widget.infoBoxBackground) {
+      case 'lightGray':
+        return Colors.grey[200]!;
+      case 'lightBlue':
+        return Colors.blue[100]!;
+      case 'lightGreen':
+        return Colors.green[100]!;
+      case 'white':
+      default:
+        return Colors.white;
+    }
+  }
+
+  Widget _buildProfileImage(double size) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.grey),
+        image: widget.profileImageFile != null
+            ? DecorationImage(
+          image: FileImage(widget.profileImageFile!),
+          fit: BoxFit.cover,
+        )
+            : widget.profileImageUrl != null && widget.profileImageUrl!.isNotEmpty
+            ? DecorationImage(
+          image: NetworkImage(widget.profileImageUrl!),
+          fit: BoxFit.cover,
+        )
+            : null,
+        color: Colors.grey[200],
+      ),
+      child: (widget.profileImageFile == null &&
+          (widget.profileImageUrl == null || widget.profileImageUrl!.isEmpty))
+          ? Icon(
+        Icons.person,
+        color: Colors.grey[400],
+        size: size / 2,
+      )
+          : null,
+    );
   }
 
   // Capture the current filtered image
@@ -435,6 +605,9 @@ class _EditScreenState extends State<EditScreen>
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final fontSize = 14.0; // or get from your text size provider
+
     return WillPopScope(
       onWillPop: () async {
         _cleanupQuillResources();
@@ -484,12 +657,15 @@ class _EditScreenState extends State<EditScreen>
               flex: 3,
               child: _buildImagePreview(),
             ),
+            if (widget.showInfoBox)
+              _buildInfoBox(isDarkMode: isDarkMode, fontSize: fontSize),
 
             // Editing controls
             Expanded(
               flex: 1,
               child: _buildControlsForCurrentMode(),
             ),
+
           ],
         ),
       ),

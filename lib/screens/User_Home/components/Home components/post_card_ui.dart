@@ -19,26 +19,39 @@ import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../utils/app_colors.dart';
 import '../../../../utils/theme_provider.dart';
+import '../../../Templates/components/template/quote_template.dart';
+import '../../../Templates/components/template/template_service.dart';
+import '../../../Templates/components/template/template_sharing.dart';
 import '../../../Templates/unified_model.dart';
 import '../../files_screen.dart';
 import '../custom_share.dart';
 
+// Update the PostCard class in post_card_ui.dart
+
 class PostCard extends StatefulWidget {
   final UnifiedPost post;
   final VoidCallback? onEditPressed;
+  final VoidCallback? onSharePressed;
   final Function(UnifiedPost)? onRatingChanged;
   final bool showFullActions;
+
+  // Keep both parameter names for compatibility
   final String userName;
   final String userProfileUrl;
+
+  // Add optional userProfileImageUrl parameter to match TemplateSharingPage
+  final String? userProfileImageUrl;
 
   const PostCard({
     Key? key,
     required this.post,
     this.onEditPressed,
+    this.onSharePressed,
     this.onRatingChanged,
     this.showFullActions = true,
     required this.userName,
     required this.userProfileUrl,
+    this.userProfileImageUrl, // Optional parameter that matches TemplateSharingPage
   }) : super(key: key);
 
   @override
@@ -327,6 +340,8 @@ class _PostCardState extends State<PostCard>
     }
   }
 
+// Update the _sharePost method in the PostCard class for better debugging
+
   Future<void> _sharePost(BuildContext context) async {
     try {
       // Check if still mounted before setting state
@@ -338,18 +353,31 @@ class _PostCardState extends State<PostCard>
         return; // Exit if not mounted anymore
       }
 
-      // Download the image
-      final response = await http.get(Uri.parse(widget.post.imageUrl));
-      if (response.statusCode != 200) {
-        throw Exception('Failed to download image');
-      }
+      // Check subscription status
+      final templateService = TemplateService();
+      bool isSubscribed = await templateService.isUserSubscribed();
 
-      // Save to temp directory
-      final tempDir = await getTemporaryDirectory();
-      final file = File('${tempDir.path}/shared_post.jpg');
-      await file.writeAsBytes(response.bodyBytes);
+      // Convert post to QuoteTemplate for compatibility with TemplateSharingPage
+      QuoteTemplate template = widget.post.toQuoteTemplate();
 
-      // Check if still mounted before setting state
+      // Debug prints for all profile image URLs
+      print("=== PROFILE IMAGE DEBUGGING ===");
+      print("Widget userProfileUrl: ${widget.userProfileUrl}");
+      print("Widget userProfileImageUrl: ${widget.userProfileImageUrl}");
+      print("Post userProfileUrl: ${widget.post.userProfileUrl}");
+
+      // Get the most appropriate URL
+      String effectiveUrl = widget.userProfileUrl.isNotEmpty
+          ? widget.userProfileUrl
+          : (widget.userProfileImageUrl != null && widget.userProfileImageUrl!.isNotEmpty
+          ? widget.userProfileImageUrl!
+          : (widget.post.userProfileUrl.isNotEmpty
+          ? widget.post.userProfileUrl
+          : ''));
+
+      print("Effective URL to be used: $effectiveUrl");
+
+      // Update the state if mounted
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -358,22 +386,25 @@ class _PostCardState extends State<PostCard>
         return; // Exit if not mounted anymore
       }
 
-      // Universal share - this opens the native share dialog
-      await Share.shareXFiles(
-        [XFile(file.path)],
-        text: widget.post.title,
-        subject: 'Check out this quote!',
+      // Navigate to TemplateSharingPage instead of sharing directly
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => TemplateSharingPage(
+            template: template,
+            userName: widget.userName,
+            userProfileImageUrl: effectiveUrl, // Use the effective URL
+            isPaidUser: isSubscribed,
+          ),
+        ),
       );
     } catch (e) {
-      // Check if still mounted before setting state and showing snackbar
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
-
-        // Use the BuildContext only if still mounted
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error sharing: $e')),
+          SnackBar(content: Text('Error navigating to sharing page: $e')),
         );
       }
     }
@@ -417,8 +448,7 @@ class _PostCardState extends State<PostCard>
                     children: [
                       if (widget.post.isPaid)
                         Container(
-                          padding:
-                          EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                          padding: EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                           margin: EdgeInsets.only(right: 8),
                           decoration: BoxDecoration(
                             color: Colors.amber,
@@ -434,11 +464,15 @@ class _PostCardState extends State<PostCard>
                           ),
                         ),
                       SizedBox(width: 4),
-                      SvgPicture.asset(
-                        'assets/icons/download_home.svg',
-                        height: 20,
-                        width: 20,
-                        color: iconColor // optional: remove if you want original SVG colors
+                      // Make the download icon tappable
+                      GestureDetector(
+                        onTap: () => _downloadImage(context, widget.post),
+                        child: SvgPicture.asset(
+                            'assets/icons/download_home.svg',
+                            height: 20,
+                            width: 20,
+                            color: iconColor
+                        ),
                       ),
                     ]
                 ),
@@ -511,8 +545,14 @@ class _PostCardState extends State<PostCard>
                                   left: 0,
                                   right: 0,
                                   child: _buildUserProfileContainer(
-                                      widget.post.userName,
-                                      widget.post.userProfileUrl),
+                                      widget.userName.isNotEmpty ? widget.userName : widget.post.userName,
+                                      widget.userProfileUrl.isNotEmpty
+                                          ? widget.userProfileUrl
+                                          : (widget.userProfileImageUrl != null && widget.userProfileImageUrl!.isNotEmpty
+                                          ? widget.userProfileImageUrl!
+                                          : ''
+                                      )
+                                  )
                                 ),
                               ],
                             ),
@@ -635,8 +675,22 @@ class _PostCardState extends State<PostCard>
     );
   }
 
-  // Helper method to build share options in the expanded menu
+
   Widget _buildUserProfileContainer(String userName, String profileImageUrl) {
+    // Add debug print to see what URL is being used
+    print("Building user profile container with URL: $profileImageUrl");
+    print("Widget userProfileUrl: ${widget.userProfileUrl}");
+    print("Widget userProfileImageUrl: ${widget.userProfileImageUrl}");
+
+    // Use the widget's URL if the passed one is empty
+    String effectiveUrl = profileImageUrl.isNotEmpty
+        ? profileImageUrl
+        : (widget.userProfileUrl.isNotEmpty
+        ? widget.userProfileUrl
+        : (widget.userProfileImageUrl ?? ''));
+
+    print("Effective URL being used: $effectiveUrl");
+
     return Container(
       margin: EdgeInsets.symmetric(vertical: 8),
       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -668,21 +722,25 @@ class _PostCardState extends State<PostCard>
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(20),
-              child: profileImageUrl.isNotEmpty
+              child: effectiveUrl.isNotEmpty
                   ? Image.network(
-                profileImageUrl,
+                effectiveUrl,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) =>
-                    Icon(
-                      Icons.person,
-                      color: Colors.grey,
-                      size: 24,
-                    ),
+                errorBuilder: (context, error, stackTrace) {
+                  print("Error loading profile image: $error");
+                  return SvgPicture.asset(
+                    'assets/icons/user_profile_new.svg',
+                    width: 25,
+                    height: 25,
+                    color: Colors.grey,
+                  );
+                },
               )
-                  : Icon(
-                Icons.person,
+                  : SvgPicture.asset(
+                'assets/icons/user_profile_new.svg',
+                width: 25,
+                height: 25,
                 color: Colors.grey,
-                size: 24,
               ),
             ),
           ),

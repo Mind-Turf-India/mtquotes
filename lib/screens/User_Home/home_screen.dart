@@ -1,20 +1,26 @@
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:http/http.dart' as http;
+import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
 import 'package:mtquotes/screens/Create_Screen/edit_screen_create.dart';
 import 'package:mtquotes/screens/Templates/components/template/quote_template.dart';
 import 'package:mtquotes/screens/User_Home/profile_screen.dart';
 import 'package:mtquotes/screens/User_Home/components/Notifications/notifications.dart';
 import 'package:mtquotes/screens/User_Home/vaky_plus.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import '../../providers/text_size_provider.dart';
 import '../Create_Screen/components/details_screen.dart';
 import '../Templates/components/festivals/festival_handler.dart';
 import '../Templates/components/festivals/festival_post.dart';
 import '../Templates/components/festivals/festival_service.dart';
+import '../Templates/components/template/template_sharing.dart';
 import '../Templates/components/totd/totd_handler.dart';
 import '../Templates/unified_model.dart';
 import 'components/Categories/category_screen.dart';
@@ -28,6 +34,7 @@ import 'package:mtquotes/screens/Templates/components/recent/recent_service.dart
 import 'package:mtquotes/screens/Payment_Screen/subscription_popup.dart';
 import 'package:mtquotes/l10n/app_localization.dart';
 
+import 'components/daily_check_in.dart';
 import 'components/tapp_effect.dart';
 import 'components/templates_list.dart';
 import 'components/user_survey.dart';
@@ -35,6 +42,8 @@ import 'components/Home components/vertical_feed.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
+
+import 'files_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -61,6 +70,11 @@ class HomeScreenState extends State<HomeScreen> {
   String profileImageUrl = "";
   TextEditingController _searchController = TextEditingController();
   bool _isListening = false;
+  bool isCheckingReward = false;
+  bool isLoadingPoints = false;
+  bool isLoadingStreak = false;
+  int userRewardPoints = 0;
+  int checkInStreak = 0;
 
   @override
   void initState() {
@@ -70,7 +84,24 @@ class HomeScreenState extends State<HomeScreen> {
     _fetchFestivalPosts();
     _scrollController.addListener(_scrollListener);
     _checkUserProfile(); // Check if user profile is complete
-    checkAndShowSurvey(); // Check for survey
+    checkAndShowSurvey();
+
+
+    isCheckingReward = false;
+    isLoadingPoints = false;
+    isLoadingStreak = false;
+    userRewardPoints = 0;
+    checkInStreak = 0;
+
+    // Delay the check slightly to ensure UI is fully rendered
+    Future.delayed(const Duration(milliseconds: 1000), () {
+      checkDailyReward();
+      checkAndShowSurvey();
+    });
+
+    // Load initial points
+    fetchUserRewardPoints();
+    fetchCheckInStreak();
   }
 
   @override
@@ -251,6 +282,346 @@ class HomeScreenState extends State<HomeScreen> {
     );
   }
 
+
+  Future<void> _downloadImage(BuildContext context, String imageUrl, String title) async {
+    final _auth = FirebaseAuth.instance;
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    final isDarkMode = themeProvider.isDarkMode;
+
+    // Show loading indicator
+    _showLoadingIndicator(context);
+
+    try {
+      // Download the image data
+      final response = await http.get(Uri.parse(imageUrl));
+      if (response.statusCode != 200) {
+        throw Exception('Failed to download image');
+      }
+
+      final imageData = response.bodyBytes;
+
+      // Check if user is logged in
+      User? user = _auth.currentUser;
+      if (user == null) {
+        _hideLoadingIndicator(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Please log in to save images"))
+        );
+        return;
+      }
+
+      // Request proper permissions based on platform and Android version
+      bool hasPermission = false;
+
+      if (Platform.isAndroid) {
+        // Request different permissions based on Android SDK version
+        if (await _getAndroidVersion() >= 33) {
+          // Android 13+
+          hasPermission = await _requestAndroid13Permission();
+        } else if (await _getAndroidVersion() >= 29) {
+          // Android 10-12
+          hasPermission = await Permission.storage.isGranted;
+          if (!hasPermission) {
+            hasPermission = (await Permission.storage.request()).isGranted;
+          }
+        } else {
+          // Android 9 and below
+          hasPermission = await Permission.storage.isGranted;
+          if (!hasPermission) {
+            hasPermission = (await Permission.storage.request()).isGranted;
+          }
+        }
+      } else if (Platform.isIOS) {
+        // iOS typically doesn't need explicit permission for saving to gallery
+        hasPermission = true;
+      }
+
+      if (!hasPermission) {
+        _hideLoadingIndicator(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Storage permission is required to save images"))
+        );
+        return;
+      }
+
+      // Generate a unique filename based on timestamp
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final fileName = "Vaky_${timestamp}.jpg";
+
+      // Save to gallery
+      final result = await ImageGallerySaverPlus.saveImage(
+        imageData,
+        quality: 100,
+        name: fileName,
+      );
+
+      // Check if save was successful
+      bool isGallerySaveSuccess = false;
+      if (result is Map) {
+        isGallerySaveSuccess = result['isSuccess'] ?? false;
+      } else {
+        isGallerySaveSuccess = result != null;
+      }
+
+      if (!isGallerySaveSuccess) {
+        throw Exception("Failed to save image to gallery");
+      }
+
+      // Also save to user-specific directory for Files screen
+      String userDirPath = await _getUserSpecificDirectoryPath(user);
+      String filePath = '$userDirPath/$fileName';
+
+      File file = File(filePath);
+      await file.writeAsBytes(imageData);
+
+      // Keep track of saved images in Firestore
+      await _trackSavedImage(user, fileName, title);
+
+      _hideLoadingIndicator(context);
+
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Image saved to your gallery and downloads"),
+          duration: Duration(seconds: 3),
+          backgroundColor: isDarkMode
+              ? AppColors.primaryGreen.withOpacity(0.7)
+              : AppColors.primaryGreen,
+          action: SnackBarAction(
+            label: 'VIEW ALL',
+            textColor: Colors.white,
+            onPressed: () {
+              // Navigate to FilesPage
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => FilesPage(),
+                ),
+              );
+            },
+          ),
+        ),
+      );
+
+      print("Image saved to gallery and user directory: $fileName");
+    } catch (e) {
+      _hideLoadingIndicator(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error saving image: $e")),
+      );
+      print("Error saving image: $e");
+    }
+  }
+
+// Function to get Android version
+  Future<int> _getAndroidVersion() async {
+    DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+    AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
+    return androidInfo.version.sdkInt;
+  }
+
+// Function to request Android 13+ permissions
+  Future<bool> _requestAndroid13Permission() async {
+    // For Android 13, we need to request photos-specific permissions
+    bool photos = await Permission.photos.isGranted;
+    if (!photos) {
+      photos = (await Permission.photos.request()).isGranted;
+    }
+    return photos;
+  }
+
+// Function to sanitize email for file path
+  String _sanitizeEmail(String email) {
+    return email.replaceAll('.', '_').replaceAll('@', '_at_');
+  }
+
+// Get user-specific directory path
+  Future<String> _getUserSpecificDirectoryPath(User user) async {
+    String userDir = _sanitizeEmail(user.email!);
+
+    Directory baseDir;
+    if (Platform.isAndroid) {
+      baseDir = Directory('/storage/emulated/0/Pictures/Vaky/$userDir');
+    } else {
+      baseDir = Directory(
+          '${(await getApplicationDocumentsDirectory()).path}/Vaky/$userDir');
+    }
+
+    // Create directory if it doesn't exist
+    if (!await baseDir.exists()) {
+      await baseDir.create(recursive: true);
+    }
+
+    return baseDir.path;
+  }
+
+  Future<void> _trackSavedImage(User user, String fileName, String title) async {
+    try {
+      String userEmail = user.email!.replaceAll('.', '_');
+
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userEmail)
+          .collection('saved_images')
+          .add({
+        'fileName': fileName,
+        'title': title,
+        'timestamp': FieldValue.serverTimestamp(),
+        'path': Platform.isAndroid
+            ? '/storage/emulated/0/Pictures/Vaky/${_sanitizeEmail(user.email!)}/$fileName'
+            : '${(await getApplicationDocumentsDirectory()).path}/Vaky/${_sanitizeEmail(user.email!)}/$fileName',
+      });
+    } catch (e) {
+      print('Error tracking saved image: $e');
+    }
+  }
+
+// Show loading indicator
+  void _showLoadingIndicator(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Center(
+          child: CircularProgressIndicator(
+            color: AppColors.primaryBlue,
+          ),
+        );
+      },
+    );
+  }
+
+// Hide loading indicator
+  void _hideLoadingIndicator(BuildContext context) {
+    if (Navigator.of(context, rootNavigator: true).canPop()) {
+      Navigator.of(context, rootNavigator: true).pop();
+    }
+  }
+
+// 2. Daily Check-in Functionality
+  Future<void> checkDailyReward() async {
+    try {
+      // Ensure the widget is still mounted
+      if (!mounted) {
+        print("HomeScreen not mounted, can't process daily check-in");
+        return;
+      }
+
+      print("Checking daily reward eligibility...");
+
+      // Show loading indicator
+      setState(() {
+        isCheckingReward = true;
+      });
+
+      // Check eligibility
+      bool isEligible = await DailyCheckInService.isEligibleForDailyReward();
+
+      print("User is eligible for daily reward: $isEligible");
+
+      if (isEligible && mounted) {
+        // Process the check-in with the current context
+        bool processed = await DailyCheckInService.processDailyCheckIn(context);
+
+        print("Daily check-in processed: $processed");
+
+        if (processed && mounted) {
+          // Wait a short moment to ensure Firebase has updated
+          await Future.delayed(const Duration(milliseconds: 500));
+
+          // Refresh user data to show updated points
+          await fetchUserRewardPoints();
+
+          // Optionally fetch streak
+          await fetchCheckInStreak();
+        }
+      } else {
+        print("User not eligible for daily reward");
+      }
+
+      // Hide loading indicator if still mounted
+      if (mounted) {
+        setState(() {
+          isCheckingReward = false;
+        });
+      }
+    } catch (e) {
+      print("Error in checkDailyReward: $e");
+
+      // Hide loading indicator in case of error
+      if (mounted) {
+        setState(() {
+          isCheckingReward = false;
+        });
+      }
+    }
+  }
+
+// Function to fetch and update user reward points
+  Future<void> fetchUserRewardPoints() async {
+    try {
+      print("Fetching user reward points...");
+
+      // Show loading indicator
+      if (mounted) {
+        setState(() {
+          isLoadingPoints = true;
+        });
+      }
+
+      // Get points from service
+      int points = await DailyCheckInService.getUserRewardPoints();
+
+      print("Fetched user reward points: $points");
+
+      // Update UI if widget is still mounted
+      if (mounted) {
+        setState(() {
+          userRewardPoints = points;
+          isLoadingPoints = false;
+        });
+      }
+    } catch (e) {
+      print("Error fetching reward points: $e");
+
+      // Hide loading indicator in case of error
+      if (mounted) {
+        setState(() {
+          isLoadingPoints = false;
+        });
+      }
+    }
+  }
+
+// Function to fetch check-in streak
+  Future<void> fetchCheckInStreak() async {
+    try {
+      if (!mounted) return;
+
+      setState(() {
+        isLoadingStreak = true;
+      });
+
+      int streak = await DailyCheckInService.getCheckInStreak();
+
+      if (mounted) {
+        setState(() {
+          checkInStreak = streak;
+          isLoadingStreak = false;
+        });
+      }
+    } catch (e) {
+      print("Error fetching check-in streak: $e");
+
+      if (mounted) {
+        setState(() {
+          isLoadingStreak = false;
+        });
+      }
+    }
+  }
+
+
   // Method to pick an image from gallery
   Future<File?> _pickImage() async {
     final picker = ImagePicker();
@@ -320,6 +691,8 @@ class HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  // Update _fetchUserData method to ensure profile image URL is set correctly
+
   Future<void> _fetchUserData() async {
     try {
       User? user = FirebaseAuth.instance.currentUser;
@@ -335,17 +708,34 @@ class HomeScreenState extends State<HomeScreen> {
       if (userDoc.exists && mounted) {
         final data = userDoc.data() as Map<String, dynamic>;
 
+        // Add debug print to see profile image value
+        print("Fetched profile image from Firestore: ${data.containsKey('profileImage') ? data['profileImage'] : 'not found'}");
+
         setState(() {
           userName = data['name'] ?? 'User';
-          profileImageUrl =
-          data.containsKey('profileImage') ? data['profileImage'] : "";
+          // Make sure we handle null or missing profileImage properly
+          if (data.containsKey('profileImage') && data['profileImage'] != null && data['profileImage'].toString().isNotEmpty) {
+            profileImageUrl = data['profileImage'].toString();
+          } else {
+            // Set to placeholder if not available
+            profileImageUrl = '';
+          }
         });
+
+        // Debug print after setting
+        print("After setting, profileImageUrl = $profileImageUrl");
 
         // Update the user info in FeedManagerService
         _feedManager.setCurrentUserInfo(userName, profileImageUrl);
       }
     } catch (e) {
       print('Error fetching user data: $e');
+      // Make sure profileImageUrl has a valid value even if there's an error
+      if (profileImageUrl.isEmpty && mounted) {
+        setState(() {
+          profileImageUrl = '';
+        });
+      }
     }
   }
 
@@ -464,6 +854,74 @@ class HomeScreenState extends State<HomeScreen> {
       }
 
       // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    }
+  }
+
+  String getValidProfileImageUrl() {
+    // Add debug prints
+    print("Current profileImageUrl in HomeScreen: $profileImageUrl");
+
+    // Check if profileImageUrl is empty or null
+    if (profileImageUrl.isEmpty) {
+      // Return empty string instead of placeholder URL
+      return '';
+    }
+
+    return profileImageUrl;
+  }
+
+
+  Future<void> _handleSharePost(BuildContext context, UnifiedPost post) async {
+    try {
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+
+      // Check if user is subscribed
+      bool isSubscribed = await _templateService.isUserSubscribed();
+
+      // Debug print profile image URLs
+      print("User Profile Image URL from HomeScreen: $profileImageUrl");
+      print("User Profile Image URL from Post: ${post.userProfileUrl}");
+
+      // Close loading dialog
+      Navigator.of(context, rootNavigator: true).pop();
+
+      // Convert post to QuoteTemplate for compatibility with existing sharing functionality
+      QuoteTemplate template = post.toQuoteTemplate();
+
+      // Let's use a profile image URL that we know exists - prefer the HomeScreen's URL
+      String effectiveProfileUrl = profileImageUrl.isNotEmpty
+          ? profileImageUrl
+          : (post.userProfileUrl.isNotEmpty ? post.userProfileUrl : '');
+
+      // Navigate to TemplateSharingPage which handles different sharing options
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => TemplateSharingPage(
+            template: template,
+            userName: userName.isNotEmpty ? userName : post.userName,
+            userProfileImageUrl: effectiveProfileUrl, // Use effective profile URL
+            isPaidUser: isSubscribed,
+          ),
+        ),
+      );
+    } catch (e) {
+      // Close loading dialog if still open
+      if (Navigator.of(context, rootNavigator: true).canPop()) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+
+      print('Error handling share post: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: $e')),
       );
@@ -842,6 +1300,219 @@ class HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _buildTemplateCardWithDownload(QuoteTemplate template) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDarkMode = themeProvider.isDarkMode;
+
+    return InkWell(
+      onTap: () async {
+        bool isSubscribed = await _templateService.isUserSubscribed();
+        if (!template.isPaid || isSubscribed) {
+          await RecentTemplateService.addRecentTemplate(template);
+
+          // Navigate to DetailsScreen
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => DetailsScreen(
+                template: template,
+                isPaidUser: isSubscribed,
+              ),
+            ),
+          );
+        } else {
+          SubscriptionPopup.show(context);
+        }
+      },
+      // Add a long press action to open sharing options
+      onLongPress: () async {
+        // Check if user is subscribed
+        bool isSubscribed = await _templateService.isUserSubscribed();
+
+        // Navigate to TemplateSharingPage directly
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => TemplateSharingPage(
+              template: template,
+              userName: userName,
+              userProfileImageUrl: profileImageUrl,
+              isPaidUser: isSubscribed,
+            ),
+          ),
+        );
+      },
+      child: Container(
+        width: 100,
+        margin: EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+        decoration: BoxDecoration(
+          color: isDarkMode ? Colors.grey[850] : Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: [
+            BoxShadow(
+              color: isDarkMode
+                  ? Colors.black.withOpacity(0.3)
+                  : Colors.grey.shade300,
+              blurRadius: 5,
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Stack(
+            children: [
+              // Template image
+              CachedNetworkImage(
+                imageUrl: template.imageUrl,
+                fit: BoxFit.cover,
+                memCacheHeight: 300, // Constrain memory cache size
+                memCacheWidth: 300,
+                height: double.infinity,
+                width: double.infinity,
+                placeholder: (context, url) => Container(
+                  color: isDarkMode ? Colors.grey[700] : Colors.grey[300],
+                ),
+                errorWidget: (context, url, error) => Container(
+                  color: isDarkMode ? Colors.grey[800] : Colors.grey[200],
+                  child: Icon(Icons.error),
+                ),
+              ),
+
+              // Premium badge if needed
+              if (template.isPaid)
+                Positioned(
+                  top: 4,
+                  right: 4,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.7),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: SvgPicture.asset(
+                      'assets/icons/premium_1659060.svg',
+                      width: 16,
+                      height: 16,
+                      color: Colors.amber,
+                    ),
+                  ),
+                ),
+
+              // Download button overlay
+              Positioned(
+                top: 4,
+                left: 4,
+                child: GestureDetector(
+                  onTap: () => _downloadImage(context, template.imageUrl, template.title),
+                  child: Container(
+                    padding: EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.7),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: SvgPicture.asset(
+                      'assets/icons/download_home.svg',
+                      width: 16,
+                      height: 16,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+
+              // User info container at bottom
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.6),
+                  ),
+                  child: Row(
+                    children: [
+                      // User profile image
+                      Container(
+                        width: 18,
+                        height: 18,
+                        margin: EdgeInsets.only(right: 4),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 1),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(9),
+                          child: profileImageUrl.isNotEmpty
+                              ? Image.network(
+                            profileImageUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => Icon(
+                              Icons.person,
+                              color: Colors.white,
+                              size: 12,
+                            ),
+                          )
+                              : Icon(
+                            Icons.person,
+                            color: Colors.white,
+                            size: 12,
+                          ),
+                        ),
+                      ),
+
+                      // User name (current user's name)
+                      Expanded(
+                        child: Text(
+                          userName,
+                          style: GoogleFonts.poppins(
+                            fontSize: 9,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+
+                      // Add a small share button
+                      GestureDetector(
+                        onTap: () async {
+                          // Check if user is subscribed
+                          bool isSubscribed = await _templateService.isUserSubscribed();
+
+                          // Navigate to TemplateSharingPage
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => TemplateSharingPage(
+                                template: template,
+                                userName: userName,
+                                userProfileImageUrl: profileImageUrl,
+                                isPaidUser: isSubscribed,
+                              ),
+                            ),
+                          );
+                        },
+                        child: Container(
+                          padding: EdgeInsets.all(2),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withOpacity(0.3),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
 
   Widget _buildHorizontalSection(String sectionType) {
     final themeProvider = Provider.of<ThemeProvider>(context);
@@ -920,7 +1591,7 @@ class HomeScreenState extends State<HomeScreen> {
                     itemCount: snapshot.data!.length,
                     itemBuilder: (context, index) {
                       final template = snapshot.data![index];
-                      return _buildTemplateCard(template);
+                      return _buildTemplateCardWithDownload(template); // Use the new card with download button
                     },
                   );
                 },
@@ -1084,7 +1755,6 @@ class HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // Helper method to build template cards for horizontal sections
   Widget _buildTemplateCard(QuoteTemplate template) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDarkMode = themeProvider.isDarkMode;
@@ -1094,9 +1764,8 @@ class HomeScreenState extends State<HomeScreen> {
         bool isSubscribed = await _templateService.isUserSubscribed();
         if (!template.isPaid || isSubscribed) {
           await RecentTemplateService.addRecentTemplate(template);
-          print("HomeScreen: Navigating to DetailsScreen with template: ${template.title}, URL: ${template.imageUrl}");
 
-          // UPDATED: Navigate to DetailsScreen instead of EditScreen
+          // Navigate to DetailsScreen
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -1109,6 +1778,24 @@ class HomeScreenState extends State<HomeScreen> {
         } else {
           SubscriptionPopup.show(context);
         }
+      },
+      // Add a long press action to open sharing options
+      onLongPress: () async {
+        // Check if user is subscribed
+        bool isSubscribed = await _templateService.isUserSubscribed();
+
+        // Navigate to TemplateSharingPage directly
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => TemplateSharingPage(
+              template: template,
+              userName: userName,
+              userProfileImageUrl: profileImageUrl,
+              isPaidUser: isSubscribed,
+            ),
+          ),
+        );
       },
       child: Container(
         width: 100,
@@ -1218,6 +1905,39 @@ class HomeScreenState extends State<HomeScreen> {
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+
+                      // Add a small share button
+                      GestureDetector(
+                        onTap: () async {
+                          // Check if user is subscribed
+                          bool isSubscribed = await _templateService.isUserSubscribed();
+
+                          // Navigate to TemplateSharingPage
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => TemplateSharingPage(
+                                template: template,
+                                userName: userName,
+                                userProfileImageUrl: profileImageUrl,
+                                isPaidUser: isSubscribed,
+                              ),
+                            ),
+                          );
+                        },
+                        child: Container(
+                          padding: EdgeInsets.all(2),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withOpacity(0.3),
+                          ),
+                          // child: Icon(
+                          //   Icons.share,
+                          //   color: Colors.white,
+                          //   size: 12,
+                          // ),
                         ),
                       ),
                     ],
@@ -1406,12 +2126,18 @@ class HomeScreenState extends State<HomeScreen> {
                                   fit: BoxFit.cover,
                                   width: double.infinity,
                                   height: double.infinity,
+                                  errorBuilder: (context, error, stackTrace) => SvgPicture.asset(
+                                    'assets/icons/user_profile_new.svg',
+                                    width: 25,
+                                    height: 25,
+                                    color: isDarkMode ? Colors.white : Colors.black,
+                                  ),
                                 ),
                               )
                                   : SvgPicture.asset(
                                 'assets/icons/user_profile_new.svg',
-                                width: 30,
-                                height: 30,
+                                width: 25,
+                                height: 25,
                                 color: isDarkMode ? Colors.white : Colors.black,
                               ),
                             ),
@@ -1662,28 +2388,30 @@ class HomeScreenState extends State<HomeScreen> {
               if (item is UnifiedPost) {
                 // Render post card for UnifiedPost with user info from the UnifiedPost object
                 return PostCard(
-                  post: item,
-                  onEditPressed: () => _handleEditPost(item),
-                  onRatingChanged: (post) {
-                    // Handle rating change - update UI
-                    setState(() {
-                      // Update the post in _feedItems
-                      final int itemIndex = _feedItems.indexWhere(
-                            (p) => p is UnifiedPost && p.id == post.id,
-                      );
-                      if (itemIndex != -1) {
-                        _feedItems[itemIndex] = post;
-                      }
-                    });
-                  },
-                  userName: item.userName,         // Use the userName from the UnifiedPost
-                  userProfileUrl: item.userProfileUrl, // Use the userProfileUrl from the UnifiedPost
-                );
+                    post: item,
+                    onEditPressed: () => _handleEditPost(item),
+                    onSharePressed: () => _handleSharePost(context, item),
+                    onRatingChanged: (post) {
+                      // Handle rating change - update UI
+                      setState(() {
+                        // Update the post in _feedItems
+                        final int itemIndex = _feedItems.indexWhere(
+                              (p) => p is UnifiedPost && p.id == post.id,
+                        );
+                        if (itemIndex != -1) {
+                          _feedItems[itemIndex] = post;
+                        }
+                      });
+                    },
+                    userName: item.userName.isNotEmpty ? item.userName : userName,
+                    userProfileUrl: item.userProfileUrl.isNotEmpty ? item.userProfileUrl : getValidProfileImageUrl(),
+                    // Add userProfileImageUrl to match TemplateSharingPage parameter
+                    userProfileImageUrl: item.userProfileUrl.isNotEmpty ? item.userProfileUrl : getValidProfileImageUrl(),
+                  );
               } else if (item is String) {
                 // Render horizontal section for section markers
                 return _buildHorizontalSection(item);
               }
-
               // Default case - shouldn't happen
               return SizedBox.shrink();
             }),

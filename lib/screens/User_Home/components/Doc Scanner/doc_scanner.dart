@@ -500,7 +500,7 @@ class _DocScannerState extends State<DocScanner> {
                   child: SvgPicture.asset(
                     isDarkMode
                         ? 'assets/icons/doc scanner light.svg'
-                        : 'assets/icons/doc_illust.svg',
+                        : 'assets/icons/doc_scanner_dark.svg',
                     width: 260,
                     height: 260,
                     fit: BoxFit.contain,
