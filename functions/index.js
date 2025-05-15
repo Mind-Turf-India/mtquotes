@@ -38,14 +38,14 @@ exports.fetchAndStoreHolidays = functions.https.onRequest(async (req, res) => {
   const { country, year } = req.query;
 
   // Use environment variable for API key
-  const apiKey = process.env.CALENDARIFIC_API_KEY || "sus8gIvZCBFdPdah2O24JGSXSpU2fUWc"; //very important api key
-
+  const apiKey = process.env.CALENDARIFIC_API_KEY || "sus8gIvZCBFdPdah2O24JGSXSpU2fUWc"; //very important api ke
+  const today = new Date();
   try {
     const response = await axios.get(`https://calendarific.com/api/v2/holidays`, {
       params: {
         api_key: apiKey,
         country: country || 'IN',
-        year: 2025 || new Date().getFullYear()
+        year: 2025 || today.getFullYear()
       }
     });
     console.log('API Response structure:', JSON.stringify(response.data, null, 2).slice(0, 500) + '...');
