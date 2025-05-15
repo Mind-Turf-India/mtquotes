@@ -592,7 +592,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       borderSide: BorderSide(color: AppColors.primaryBlue),
                     ),
                   ),
-                  dropdownColor: Colors.white,
+                  dropdownColor: isDarkMode ? AppColors.darkSurface : Colors.white,
                   value: _gstType,
                   onChanged: (String? newValue) {
                     setState(() {
@@ -669,7 +669,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       borderSide: BorderSide(color: AppColors.primaryBlue),
                     ),
                   ),
-                  dropdownColor: Colors.white,
+                  dropdownColor: isDarkMode ? AppColors.darkSurface : Colors.white,
                   value: _cessType,
                   onChanged: (String? newValue) {
                     setState(() {
@@ -758,7 +758,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 borderSide: BorderSide(color: AppColors.primaryBlue),
               ),
             ),
-            dropdownColor: Colors.white,
+            dropdownColor: isDarkMode ? AppColors.darkSurface : Colors.white,
             value: _gstTreatment,
             onChanged: (String? newValue) {
               setState(() {

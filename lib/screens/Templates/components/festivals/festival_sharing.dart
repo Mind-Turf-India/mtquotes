@@ -336,7 +336,8 @@ class _FestivalSharingPageState extends State<FestivalSharingPage> {
                             context,
                             isPaid: false,
                           ),
-                          icon: Icon(Icons.share),
+                          icon: SvgPicture.asset('assets/icons/share.svg',colorFilter:
+                          ColorFilter.mode(Colors.white, BlendMode.srcIn),),
                           label: Text(
                             context.loc.shareBasic,
                             style: TextStyle(fontSize: fontSize - 2),

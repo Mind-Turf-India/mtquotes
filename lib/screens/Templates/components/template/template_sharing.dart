@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -259,6 +260,13 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
     final String currentImageUrl = widget.template.imageUrl;
     final bool hasCustomImage = _customImageData != null;
     double fontSize = textSizeProvider.fontSize;
+
+    print("TemplateSharingPage build:");
+    print("userName: ${widget.userName}");
+    print("userProfileImageUrl: ${widget.userProfileImageUrl}");
+    print("isPaidUser: ${widget.isPaidUser}");
+
+
 
     print(
         'Building sharing UI with template: $currentTemplateId, imageUrl: $currentImageUrl, hasCustomImage: $hasCustomImage');
@@ -676,15 +684,38 @@ class _TemplateSharingPageState extends State<TemplateSharingPage> {
                                           child: Row(
                                             children: [
                                               // Profile image
-                                              CircleAvatar(
-                                                radius: 20,
-                                                backgroundImage: userProfileUrl
-                                                        .isNotEmpty
-                                                    ? NetworkImage(
-                                                        userProfileUrl)
-                                                    : AssetImage(
-                                                            'assets/profile_placeholder.png')
-                                                        as ImageProvider,
+                                              Container(
+                                                width: 40,
+                                                height: 40,
+                                                decoration: BoxDecoration(
+                                                  shape: BoxShape.circle,
+                                                  border: Border.all(color: Colors.grey.shade300, width: 1),
+                                                ),
+                                                child: ClipRRect(
+                                                  borderRadius: BorderRadius.circular(20),
+                                                  child: widget.userProfileImageUrl.isNotEmpty
+                                                      ? CachedNetworkImage(
+                                                    imageUrl: widget.userProfileImageUrl,
+                                                    fit: BoxFit.cover,
+                                                    placeholder: (context, url) => CircularProgressIndicator(
+                                                      strokeWidth: 2,
+                                                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
+                                                    ),
+                                                    errorWidget: (context, url, error) {
+                                                      print("Error loading profile image in TemplateSharingPage: $error");
+                                                      return Icon(
+                                                        Icons.person,
+                                                        color: Colors.grey,
+                                                        size: 24,
+                                                      );
+                                                    },
+                                                  )
+                                                      : Icon(
+                                                    Icons.person,
+                                                    color: Colors.grey,
+                                                    size: 24,
+                                                  ),
+                                                ),
                                               ),
                                               SizedBox(width: 12),
 
