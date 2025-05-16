@@ -1,8 +1,5 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:flutter_quill/flutter_quill.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:mtquotes/providers/text_size_provider.dart';
 import 'package:mtquotes/screens/Auth_Screen/Login_Screen/login_screen.dart';
 import 'package:mtquotes/screens/Create_Screen/components/details_screen.dart';
@@ -14,11 +11,9 @@ import 'package:mtquotes/screens/User_Home/components/Doc%20Scanner/doc_scanner.
 import 'package:mtquotes/screens/User_Home/components/Invoice/invoice_create.dart';
 import 'package:mtquotes/screens/User_Home/components/Notifications/notification_service.dart';
 import 'package:mtquotes/screens/User_Home/components/Resume/resume_dashboard.dart';
-import 'package:mtquotes/screens/User_Home/components/app_open_tracker.dart';
-import 'package:mtquotes/screens/User_Home/components/templates_list.dart';
+import 'package:mtquotes/screens/User_Home/components/splash_screen.dart';
 import 'package:mtquotes/screens/User_Home/home_screen.dart';
 import 'package:mtquotes/utils/app_theme.dart';
-import 'package:mtquotes/screens/User_Home/components/splash_screen.dart';
 import 'package:mtquotes/utils/theme_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -28,9 +23,7 @@ import 'package:mtquotes/screens/navbar_mainscreen.dart';
 import 'package:mtquotes/screens/Onboarding_Screen/onboarding_screen.dart';
 import 'package:mtquotes/l10n/app_localization.dart';
 import 'firebase_options.dart';
-import 'package:mtquotes/utils/app_colors.dart';
 
-// Define the FontSizeProvider class here if not defined in another file
 class FontSizeProvider extends ChangeNotifier {
   double _fontSize = 14.0;
 
@@ -119,7 +112,7 @@ class MyAppState extends State<MyApp> {
           title: 'Vaky',
           debugShowCheckedModeBanner: false,
           // Start with the splash screen and pass the actual start screen
-          initialRoute: widget.initialRoute,
+          //initialRoute: widget.initialRoute,
           locale: _locale,
           supportedLocales: supportedLocales,
           localizationsDelegates: [
@@ -141,6 +134,7 @@ class MyAppState extends State<MyApp> {
             ),
           ),
           themeMode: themeProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+          home: SplashScreen(),
           routes: {
             'onboarding': (context) => OnboardingScreen(),
             'login': (context) => LoginScreen(),

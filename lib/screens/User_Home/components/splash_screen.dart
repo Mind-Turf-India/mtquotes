@@ -1,28 +1,54 @@
-// import 'package:animated_splash_screen/animated_splash_screen.dart';
-// import 'package:flutter/cupertino.dart';
-// import 'package:flutter/material.dart';
-// import 'package:mtquotes/utils/theme_provider.dart';
-// import 'package:provider/provider.dart';
-//
-// class GifSplashScreen extends StatelessWidget {
-//   final Widget nextScreen;
-//
-//   const GifSplashScreen({Key? key, required this.nextScreen}) : super(key: key);
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     final themeProvider = Provider.of<ThemeProvider>(context);
-//     final isDarkMode = themeProvider.isDarkMode;
-//
-//     return AnimatedSplashScreen(
-//       splash: Image.asset(
-//         isDarkMode ? 'assets/dark.gif' : 'assets/light.gif',
-//       ),
-//       nextScreen: nextScreen,
-//       splashIconSize: 250,
-//       duration: 1000,
-//       splashTransition: SplashTransition.fadeTransition,
-//       backgroundColor: isDarkMode ? Colors.black : Colors.white,
-//     );
-//   }
-// }
+import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
+import 'package:mtquotes/screens/navbar_mainscreen.dart';
+
+class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
+
+  @override
+  State<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen> {
+  @override
+  void initState() {
+    super.initState();
+    Timer(
+      const Duration(seconds: 4), // Adjust for actual animation length
+          () => Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const MainScreen()),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Lottie.asset(
+              'assets/intro.json',
+              width: 300,
+              height: 300,
+              repeat: false, // Set false if you want one-time play
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              "Welcome to Vaky",
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Colors.blueAccent,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
