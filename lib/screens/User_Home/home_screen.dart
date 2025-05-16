@@ -2094,7 +2094,7 @@ class HomeScreenState extends State<HomeScreen> {
       backgroundColor: AppColors.getBackgroundColor(isDarkMode),
       // Use shorter app bar with just the essential top UI elements
       appBar: PreferredSize(
-        preferredSize: Size.fromHeight(70), // Reduced height, only top elements
+        preferredSize: Size.fromHeight(90), // Reduced height, only top elements
         child: Container(
           color: AppColors.getBackgroundColor(isDarkMode),
           child: SafeArea(
@@ -2153,28 +2153,28 @@ class HomeScreenState extends State<HomeScreen> {
                           ),
                         ],
                       ),
-
                       // Right side with Vaky logo and notifications
                       Row(
                         children: [
-                          InkWell(
-                            onTap: () {
+                          IconButton(
+                            onPressed: () {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(builder: (context) => VakyPlus()),
                               );
                             },
-                            child: SvgPicture.asset(
+                            splashRadius: 10,
+                            icon: SvgPicture.asset(
                               "assets/icons/vaky_plus_wobg.svg", // Use your Vaky logo here
                               width: 50,
                               height: 50,
                             ),
                           ),
-                          SizedBox(width: 16),
-                          InkWell(
-                            onTap: showNotificationsSheet,
-                            borderRadius: BorderRadius.circular(8),
-                            child: SvgPicture.asset(
+
+                          IconButton(
+                            onPressed: showNotificationsSheet,
+                            splashRadius: 20,
+                            icon: SvgPicture.asset(
                               'assets/icons/notification_3002272.svg',
                               width: 24,
                               height: 24,

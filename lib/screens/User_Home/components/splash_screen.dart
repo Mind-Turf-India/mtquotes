@@ -2,7 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lottie/lottie.dart';
-import 'package:mtquotes/screens/navbar_mainscreen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -31,14 +32,33 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
       duration: const Duration(seconds: 3),
     );
 
-    _controller.addStatusListener((status) {
+    _controller.addStatusListener((status) async {
       if (status == AnimationStatus.completed) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const MainScreen()),
-        );
+        // Check onboarding status and auth status
+        await _navigateToNextScreen();
       }
     });
+  }
+
+  Future<void> _navigateToNextScreen() async {
+    final prefs = await SharedPreferences.getInstance();
+    bool hasCompletedOnboarding = prefs.getBool('hasCompletedOnboarding') ?? false;
+    User? currentUser = FirebaseAuth.instance.currentUser;
+
+    // Navigation logic that follows your desired flow
+    if (!hasCompletedOnboarding) {
+      // User hasn't completed onboarding
+      if (!mounted) return;
+      Navigator.pushReplacementNamed(context, 'onboarding');
+    } else if (currentUser == null) {
+      // User has completed onboarding but isn't logged in
+      if (!mounted) return;
+      Navigator.pushReplacementNamed(context, 'login');
+    } else {
+      // User is logged in
+      if (!mounted) return;
+      Navigator.pushReplacementNamed(context, '/nav_bar');
+    }
   }
 
   @override

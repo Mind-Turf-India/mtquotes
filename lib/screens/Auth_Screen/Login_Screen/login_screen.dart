@@ -155,7 +155,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Login Failed: $e"),
+          content: Text("Please Enter a Valid Email or Password."),
           backgroundColor: Colors.red,
         ),
       );
@@ -211,7 +211,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Login Failed: $e"),
+          content: Text("Please Enter a Valid Email or Password."),
           backgroundColor: Colors.red,
         ),
       );
@@ -587,7 +587,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               "Don't have an account? ",
                               style: TextStyle(color: textColor),
                             ),
-                            GestureDetector(
+                            InkWell(
                               onTap: () {
                                 Navigator.push(
                                   context,
@@ -598,8 +598,8 @@ class _LoginScreenState extends State<LoginScreen> {
                               },
                               child: Text(
                                 'Sign Up',
-                                style: TextStyle(color: AppColors.primaryBlue),
-                              ),
+                                style: TextStyle(color: AppColors.primaryBlue,fontWeight: FontWeight.bold),
+                              )
                             ),
                           ],
                         ),

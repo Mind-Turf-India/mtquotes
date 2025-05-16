@@ -46,8 +46,6 @@ void main() async {
   bool hasCompletedOnboarding = prefs.getBool('hasCompletedOnboarding') ?? false;
   String? savedLocale = prefs.getString('languageCode') ?? 'en';
 
-  User? currentUser = FirebaseAuth.instance.currentUser;
-
   // Initialize notification service
   await NotificationService.instance.initialize();
 
@@ -63,9 +61,6 @@ void main() async {
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
       ],
       child: MyApp(
-        initialRoute: currentUser != null
-            ? '/nav_bar'
-            : (hasCompletedOnboarding ? 'login' : 'onboarding'),
         locale: Locale(savedLocale),
       ),
     ),
@@ -74,10 +69,8 @@ void main() async {
 
 class MyApp extends StatefulWidget {
   final Locale locale;
-  final String initialRoute;
 
-
-  const MyApp({super.key, required this.initialRoute, required this.locale});
+  const MyApp({super.key, required this.locale});
 
   @override
   MyAppState createState() => MyAppState();
@@ -111,8 +104,6 @@ class MyAppState extends State<MyApp> {
         return MaterialApp(
           title: 'Vaky',
           debugShowCheckedModeBanner: false,
-          // Start with the splash screen and pass the actual start screen
-          //initialRoute: widget.initialRoute,
           locale: _locale,
           supportedLocales: supportedLocales,
           localizationsDelegates: [

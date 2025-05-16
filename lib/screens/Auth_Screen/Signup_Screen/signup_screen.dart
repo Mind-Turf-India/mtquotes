@@ -146,7 +146,7 @@ Future<void> _signInWithEmailAndPassword() async {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text("Signup Failed: $e"),
+        content: Text("Please Enter a Valid Email or Password."),
         backgroundColor: Colors.red,
       ),
     );
@@ -723,7 +723,7 @@ Future<String?> _getPendingReferralCode() async {
                           "Already have an account? ",
                           style: TextStyle(color: textColor),
                         ),
-                        GestureDetector(
+                        InkWell(
                           onTap: () {
                             Navigator.push(
                                 context,
