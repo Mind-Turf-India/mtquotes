@@ -6,8 +6,6 @@ import android.net.Uri
 import android.os.Bundle
 import android.view.WindowManager
 import io.flutter.embedding.android.FlutterActivity
-import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
@@ -15,7 +13,6 @@ class MainActivity: FlutterActivity() {
     private val CHANNEL = "com.example.mtquotes/upi_intent"
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        installSplashScreen()
         super.onCreate(savedInstanceState)
 
         // Block screenshots and screen recording
