@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:lottie/lottie.dart';
 import 'package:mtquotes/screens/navbar_mainscreen.dart';
 
@@ -10,17 +11,40 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
   @override
   void initState() {
     super.initState();
-    Timer(
-      const Duration(seconds: 4), // Adjust for actual animation length
-          () => Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const MainScreen()),
+
+    // Set system UI to match your splash screen
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
       ),
     );
+
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 3),
+    );
+
+    _controller.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const MainScreen()),
+        );
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   @override
@@ -33,9 +57,14 @@ class _SplashScreenState extends State<SplashScreen> {
           children: [
             Lottie.asset(
               'assets/intro.json',
-              width: 300,
-              height: 300,
-              repeat: false, // Set false if you want one-time play
+              width: 500,
+              height: 500,
+              controller: _controller,
+              onLoaded: (composition) {
+                // Configure the animation controller
+                _controller.duration = composition.duration;
+                _controller.forward();
+              },
             ),
             const SizedBox(height: 20),
             const Text(
